@@ -1,0 +1,46 @@
+.root {
+  margin-bottom: 1.5rem;
+}
+
+.inputRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid #c0bbb5;
+  border-radius: 4px;
+  background: #fff;
+  color: #1a1a1a;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #6b3fa0;
+  box-shadow: 0 0 0 2px rgba(107, 63, 160, 0.15);
+}
+
+.button {
+  padding: 0.625rem 1.25rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #6b3fa0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #5a3490;
+}
+
+.error {
+  margin: 0.375rem 0 0;
+  font-size: 0.875rem;
+  color: #b91c1c;
+}

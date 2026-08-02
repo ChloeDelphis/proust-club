@@ -1,0 +1,65 @@
+import { useState } from 'react'
+import type { RegisterFormProps } from './RegisterForm.types'
+import FormField from '../FormField/FormField'
+import styles from '../AuthForm.module.css'
+
+export default function RegisterForm({ onSubmit }: RegisterFormProps) {
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const trimmedUsername = username.trim()
+    const trimmedEmail = email.trim()
+
+    if (trimmedUsername.length < 3) {
+      setError('Le nom d’utilisateur doit contenir au moins 3 caractères.')
+      return
+    }
+    if (!trimmedEmail.includes('@')) {
+      setError('Adresse email invalide.')
+      return
+    }
+    if (password.length < 15) {
+      setError('Le mot de passe doit contenir au moins 15 caractères — une phrase de passe fonctionne très bien.')
+      return
+    }
+    setError('')
+    onSubmit({ username: trimmedUsername, email: trimmedEmail, password })
+  }
+
+  return (
+    <form className={styles.root} onSubmit={handleSubmit} noValidate>
+      <FormField
+        label="Nom d’utilisateur"
+        type="text"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
+        autoComplete="username"
+        maxLength={50}
+      />
+      <FormField
+        label="Email"
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        autoComplete="email"
+        maxLength={255}
+      />
+      <FormField
+        label="Mot de passe"
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        autoComplete="new-password"
+        maxLength={128}
+      />
+      <button className={styles.button} type="submit">
+        Créer un compte
+      </button>
+      {error && <p className={styles.error} role="alert">{error}</p>}
+    </form>
+  )
+}

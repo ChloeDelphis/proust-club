@@ -1,0 +1,20 @@
+# ── Backend — Gradle / Spring Boot ────────────────────────────────────────────
+apps/backend/.gradle/
+apps/backend/build/
+application-local.yml
+
+# ── Frontend — Node / Vite ────────────────────────────────────────────────────
+apps/frontend/node_modules/
+apps/frontend/dist/
+apps/frontend/.env.local
+apps/frontend/.env.*.local
+
+# ── IDE — IntelliJ IDEA ───────────────────────────────────────────────────────
+# On ignore .idea/* (pas .idea/) pour pouvoir faire une exception sur runConfigurations
+.idea/*
+!.idea/runConfigurations/
+*.iml
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

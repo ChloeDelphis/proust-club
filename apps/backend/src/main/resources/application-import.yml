@@ -1,0 +1,13 @@
+corpus:
+  # Chemin vers le fichier texte source du corpus Proust.
+  # Relatif au répertoire d'exécution (apps/backend/) → ../../corpus/proust_text.txt
+  # Peut être surchargé via : ./gradlew importProust -Dcorpus.path=/chemin/absolu/proust_text.txt
+  path: ../../corpus/proust_text.txt
+
+spring:
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    com.proustclub.importer: INFO

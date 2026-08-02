@@ -1,0 +1,61 @@
+package com.proustclub.auth;
+
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+class UserRepository {
+
+    private final DSLContext dsl;
+
+    UserRepository(DSLContext dsl) {
+        this.dsl = dsl;
+    }
+
+    boolean existsByUsername(String username) {
+        return dsl.fetchExists(
+                DSL.selectOne()
+                        .from(DSL.table("users"))
+                        .where(DSL.field("username", String.class).eq(username))
+        );
+    }
+
+    boolean existsByEmail(String email) {
+        return dsl.fetchExists(
+                DSL.selectOne()
+                        .from(DSL.table("users"))
+                        .where(DSL.field("email", String.class).eq(email))
+        );
+    }
+
+    UUID insert(String username, String email, String passwordHash) {
+        return dsl.insertInto(DSL.table("users"),
+                        DSL.field("username"), DSL.field("email"), DSL.field("password_hash"))
+                .values(username, email, passwordHash)
+                .returning(DSL.field("uuid", UUID.class))
+                .fetchOne(r -> r.get("uuid", UUID.class));
+    }
+
+    Optional<AuthUser> findByUsername(String username) {
+        return dsl.select(
+                        DSL.field("uuid", UUID.class),
+                        DSL.field("username", String.class),
+                        DSL.field("email", String.class),
+                        DSL.field("password_hash", String.class),
+                        DSL.field("role", String.class)
+                )
+                .from(DSL.table("users"))
+                .where(DSL.field("username", String.class).eq(username))
+                .fetchOptional(r -> new AuthUser(
+                        r.get("uuid", UUID.class),
+                        r.get("username", String.class),
+                        r.get("email", String.class),
+                        r.get("password_hash", String.class),
+                        r.get("role", String.class)
+                ));
+    }
+}

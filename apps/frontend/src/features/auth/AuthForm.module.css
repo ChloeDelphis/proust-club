@@ -1,0 +1,28 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 24rem;
+}
+
+.button {
+  padding: 0.625rem 1.25rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #6b3fa0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.button:hover {
+  background: #5a3490;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #b91c1c;
+}

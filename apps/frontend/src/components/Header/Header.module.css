@@ -1,0 +1,44 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0;
+  font-family: system-ui, sans-serif;
+}
+
+.brand {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.1rem;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.session {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #1a1a1a;
+}
+
+.logoutButton {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: transparent;
+  color: #6b3fa0;
+  border: 1px solid #6b3fa0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logoutButton:hover {
+  background: rgba(107, 63, 160, 0.08);
+}
