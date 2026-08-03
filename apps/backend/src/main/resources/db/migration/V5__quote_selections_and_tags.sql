@@ -31,7 +31,7 @@ CREATE INDEX quote_selections_paragraph_id_idx ON quote_selections(paragraph_id)
 
 CREATE TABLE quote_selection_tags (
     quote_selection_id INTEGER NOT NULL REFERENCES quote_selections(id) ON DELETE CASCADE,
-    tag_id              INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    tag_id             INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
 
     PRIMARY KEY (quote_selection_id, tag_id)
 );

@@ -26,8 +26,6 @@ class TagService {
 
     @Transactional(readOnly = true)
     List<TagResponse> list(UUID userId) {
-        return repository.findByUserId(userId).stream()
-                .map(tag -> new TagResponse(tag.id(), tag.name()))
-                .toList();
+        return repository.findByUserId(userId);
     }
 }

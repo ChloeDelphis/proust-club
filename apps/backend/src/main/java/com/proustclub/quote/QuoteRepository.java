@@ -31,8 +31,12 @@ class QuoteRepository {
                 .fetchOptional(textField);
     }
 
-    int insert(UUID userId, int paragraphId, int startOffset, int endOffset, String selectedText) {
+    // Returns the full domain object built from the INSERT ... RETURNING row (id + the
+    // DB-generated created_at) rather than just the id — every other field is already known from
+    // the arguments, so there's no need for the caller to re-SELECT the row it just wrote.
+    QuoteSelection insert(UUID userId, int paragraphId, int startOffset, int endOffset, String selectedText) {
         var idField = DSL.field("id", Integer.class);
+        var createdAtField = DSL.field("created_at", Instant.class);
 
         return dsl.insertInto(DSL.table("quote_selections"))
                 .set(DSL.field("user_id", UUID.class), userId)
@@ -40,8 +44,10 @@ class QuoteRepository {
                 .set(DSL.field("start_offset", Integer.class), startOffset)
                 .set(DSL.field("end_offset", Integer.class), endOffset)
                 .set(DSL.field("selected_text", String.class), selectedText)
-                .returning(idField)
-                .fetchOne(idField);
+                .returning(idField, createdAtField)
+                .fetchOne(r -> new QuoteSelection(
+                        r.get(idField), paragraphId, startOffset, endOffset, selectedText, r.get(createdAtField)
+                ));
     }
 
     Optional<QuoteSelection> findByIdAndUserId(int quoteId, UUID userId) {
@@ -57,7 +63,7 @@ class QuoteRepository {
                 .where(idField.eq(quoteId))
                 .and(DSL.field("user_id", UUID.class).eq(userId))
                 .fetchOptional(r -> new QuoteSelection(
-                        r.get(idField), userId, r.get(paragraphIdField),
+                        r.get(idField), r.get(paragraphIdField),
                         r.get(startOffsetField), r.get(endOffsetField),
                         r.get(selectedTextField), r.get(createdAtField)
                 ));
@@ -78,7 +84,7 @@ class QuoteRepository {
                 .limit(size)
                 .offset((long) page * size)
                 .fetch(r -> new QuoteSelection(
-                        r.get(idField), userId, r.get(paragraphIdField),
+                        r.get(idField), r.get(paragraphIdField),
                         r.get(startOffsetField), r.get(endOffsetField),
                         r.get(selectedTextField), r.get(createdAtField)
                 ));

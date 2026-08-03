@@ -44,7 +44,7 @@ class TagController {
     }
 
     @Operation(summary = "List my tags", description = "Returns the authenticated user's tags, ordered alphabetically (case-insensitive).")
-    @ApiResponse(responseCode = "200", description = "Tags", content = @Content(schema = @Schema(implementation = TagResponse.class)))
+    @ApiResponse(responseCode = "200", description = "Tags")
     @GetMapping(value = "/api/tags", produces = MediaType.APPLICATION_JSON_VALUE)
     List<TagResponse> list(Authentication authentication) {
         return service.list(currentUser.resolveUuid(authentication));

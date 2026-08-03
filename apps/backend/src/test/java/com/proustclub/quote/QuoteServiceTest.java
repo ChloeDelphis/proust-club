@@ -39,9 +39,8 @@ class QuoteServiceTest {
     void createSavesQuoteWhenSelectedTextMatchesParagraph() {
         var request = new CreateQuoteSelectionRequest(1, 3, 12, "madeleine", List.of());
         when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("La madeleine est un symbole fort."));
-        when(quoteRepository.insert(userId, 1, 3, 12, "madeleine")).thenReturn(42);
-        when(quoteRepository.findByIdAndUserId(42, userId)).thenReturn(Optional.of(
-                new QuoteSelection(42, userId, 1, 3, 12, "madeleine", Instant.now())));
+        when(quoteRepository.insert(userId, 1, 3, 12, "madeleine"))
+                .thenReturn(new QuoteSelection(42, 1, 3, 12, "madeleine", Instant.now()));
         when(quoteRepository.tagsForQuoteIds(List.of(42))).thenReturn(Map.of());
 
         var response = service.create(userId, request);

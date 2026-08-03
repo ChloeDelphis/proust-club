@@ -32,20 +32,18 @@ class QuoteService {
 
         validateSelection(paragraphText, request.startOffset(), request.endOffset(), request.selectedText());
 
-        int quoteId = quoteRepository.insert(
+        var quote = quoteRepository.insert(
                 userId, request.paragraphId(), request.startOffset(), request.endOffset(), request.selectedText());
 
         var tagNames = request.tagNames() == null ? List.<String>of() : request.tagNames();
         for (String tagName : tagNames) {
             int tagId = tagRepository.upsertByName(userId, tagName);
-            quoteRepository.addTagForOwner(userId, quoteId, tagId);
+            quoteRepository.addTagForOwner(userId, quote.id(), tagId);
         }
 
         log.info("Quote saved: user={} paragraphId={}", userId, request.paragraphId());
 
-        var quote = quoteRepository.findByIdAndUserId(quoteId, userId).orElseThrow(ApiException::quoteNotFound);
-        var tags = quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
-        return toResponse(quote, tags);
+        return toResponse(quote, tagsFor(quote.id()));
     }
 
     @Transactional(readOnly = true)
@@ -77,8 +75,7 @@ class QuoteService {
         int tagId = tagRepository.upsertByName(userId, tagName);
         quoteRepository.addTagForOwner(userId, quoteId, tagId);
 
-        var tags = quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
-        return toResponse(quote, tags);
+        return toResponse(quote, tagsFor(quoteId));
     }
 
     @Transactional
@@ -88,11 +85,13 @@ class QuoteService {
         }
     }
 
+    private List<TagResponse> tagsFor(int quoteId) {
+        return quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
+    }
+
     private static void validateSelection(String paragraphText, int startOffset, int endOffset, String selectedText) {
-        if (startOffset < 0 || endOffset > paragraphText.length() || startOffset >= endOffset) {
-            throw ApiException.selectionMismatch();
-        }
-        if (!paragraphText.substring(startOffset, endOffset).equals(selectedText)) {
+        if (startOffset < 0 || endOffset > paragraphText.length() || startOffset >= endOffset
+                || !paragraphText.substring(startOffset, endOffset).equals(selectedText)) {
             throw ApiException.selectionMismatch();
         }
     }

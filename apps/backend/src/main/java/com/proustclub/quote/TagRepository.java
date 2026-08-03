@@ -1,5 +1,6 @@
 package com.proustclub.quote;
 
+import com.proustclub.quote.dto.TagResponse;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
@@ -18,7 +19,7 @@ class TagRepository {
         this.dsl = dsl;
     }
 
-    List<Tag> findByUserId(UUID userId) {
+    List<TagResponse> findByUserId(UUID userId) {
         var idField = DSL.field("id", Integer.class);
         var nameField = DSL.field("name", String.class);
 
@@ -26,18 +27,18 @@ class TagRepository {
                 .from(DSL.table("tags"))
                 .where(DSL.field("user_id", UUID.class).eq(userId))
                 .orderBy(DSL.lower(nameField), idField)
-                .fetch(r -> new Tag(r.get(idField), userId, r.get(nameField)));
+                .fetch(r -> new TagResponse(r.get(idField), r.get(nameField)));
     }
 
-    Optional<Tag> findByUserIdAndNormalizedName(UUID userId, String trimmedName) {
+    private Optional<Integer> findIdByUserIdAndNormalizedName(UUID userId, String trimmedName) {
         var idField = DSL.field("id", Integer.class);
         var nameField = DSL.field("name", String.class);
 
-        return dsl.select(idField, nameField)
+        return dsl.select(idField)
                 .from(DSL.table("tags"))
                 .where(DSL.field("user_id", UUID.class).eq(userId))
                 .and(DSL.lower(nameField).eq(trimmedName.toLowerCase(Locale.ROOT)))
-                .fetchOptional(r -> new Tag(r.get(idField), userId, r.get(nameField)));
+                .fetchOptional(idField);
     }
 
     // Shared primitive for TagService.create() (409 on conflict) and upsertByName() (reuse on
@@ -60,8 +61,7 @@ class TagRepository {
     int upsertByName(UUID userId, String rawName) {
         String trimmed = rawName.trim();
         return insertIfAbsent(userId, trimmed)
-                .orElseGet(() -> findByUserIdAndNormalizedName(userId, trimmed)
-                        .orElseThrow(() -> new IllegalStateException("Tag conflict detected but row not found: " + trimmed))
-                        .id());
+                .orElseGet(() -> findIdByUserIdAndNormalizedName(userId, trimmed)
+                        .orElseThrow(() -> new IllegalStateException("Tag conflict detected but row not found: " + trimmed)));
     }
 }

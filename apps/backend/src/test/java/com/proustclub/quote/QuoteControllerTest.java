@@ -191,6 +191,38 @@ class QuoteControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void listQuotesNegativePageReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listQuotesSizeBelowMinimumReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listQuotesSizeAboveMaximumReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("size", "21"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listQuotesTagIdBelowMinimumReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("tagId", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
     // --- DELETE /api/quotes/{id} ---
 
     @Test
@@ -239,6 +271,16 @@ class QuoteControllerTest {
                         .content("{\"name\":\"combray\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tags.length()").value(1));
+    }
+
+    @Test
+    void addTagToQuoteWithBlankNameReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(post("/api/quotes/" + quoteId + "/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"  \"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
