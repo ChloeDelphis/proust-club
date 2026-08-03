@@ -1,0 +1,106 @@
+package com.proustclub.quote;
+
+import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
+import com.proustclub.quote.dto.QuoteSelectionListResponse;
+import com.proustclub.quote.dto.QuoteSelectionResponse;
+import com.proustclub.quote.dto.TagResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+class QuoteService {
+
+    private static final Logger log = LoggerFactory.getLogger(QuoteService.class);
+
+    private final QuoteRepository quoteRepository;
+    private final TagRepository tagRepository;
+
+    QuoteService(QuoteRepository quoteRepository, TagRepository tagRepository) {
+        this.quoteRepository = quoteRepository;
+        this.tagRepository = tagRepository;
+    }
+
+    @Transactional
+    QuoteSelectionResponse create(UUID userId, CreateQuoteSelectionRequest request) {
+        var paragraphText = quoteRepository.findParagraphText(request.paragraphId())
+                .orElseThrow(ApiException::paragraphNotFound);
+
+        validateSelection(paragraphText, request.startOffset(), request.endOffset(), request.selectedText());
+
+        int quoteId = quoteRepository.insert(
+                userId, request.paragraphId(), request.startOffset(), request.endOffset(), request.selectedText());
+
+        var tagNames = request.tagNames() == null ? List.<String>of() : request.tagNames();
+        for (String tagName : tagNames) {
+            int tagId = tagRepository.upsertByName(userId, tagName);
+            quoteRepository.addTagForOwner(userId, quoteId, tagId);
+        }
+
+        log.info("Quote saved: user={} paragraphId={}", userId, request.paragraphId());
+
+        var quote = quoteRepository.findByIdAndUserId(quoteId, userId).orElseThrow(ApiException::quoteNotFound);
+        var tags = quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
+        return toResponse(quote, tags);
+    }
+
+    @Transactional(readOnly = true)
+    QuoteSelectionListResponse list(UUID userId, Integer tagId, int page, int size) {
+        var quotes = quoteRepository.findByUserId(userId, tagId, page, size);
+        long total = quoteRepository.countByUserId(userId, tagId);
+
+        var quoteIds = quotes.stream().map(QuoteSelection::id).toList();
+        var tagsByQuoteId = quoteRepository.tagsForQuoteIds(quoteIds);
+
+        var results = quotes.stream()
+                .map(quote -> toResponse(quote, tagsByQuoteId.getOrDefault(quote.id(), List.of())))
+                .toList();
+
+        return new QuoteSelectionListResponse(results, total, page, size);
+    }
+
+    @Transactional
+    void delete(UUID userId, int quoteId) {
+        if (!quoteRepository.deleteByIdAndUserId(quoteId, userId)) {
+            throw ApiException.quoteNotFound();
+        }
+    }
+
+    @Transactional
+    QuoteSelectionResponse addTag(UUID userId, int quoteId, String tagName) {
+        var quote = quoteRepository.findByIdAndUserId(quoteId, userId).orElseThrow(ApiException::quoteNotFound);
+
+        int tagId = tagRepository.upsertByName(userId, tagName);
+        quoteRepository.addTagForOwner(userId, quoteId, tagId);
+
+        var tags = quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
+        return toResponse(quote, tags);
+    }
+
+    @Transactional
+    void removeTag(UUID userId, int quoteId, int tagId) {
+        if (quoteRepository.removeTagForOwner(userId, quoteId, tagId) == 0) {
+            throw ApiException.tagNotFound();
+        }
+    }
+
+    private static void validateSelection(String paragraphText, int startOffset, int endOffset, String selectedText) {
+        if (startOffset < 0 || endOffset > paragraphText.length() || startOffset >= endOffset) {
+            throw ApiException.selectionMismatch();
+        }
+        if (!paragraphText.substring(startOffset, endOffset).equals(selectedText)) {
+            throw ApiException.selectionMismatch();
+        }
+    }
+
+    private static QuoteSelectionResponse toResponse(QuoteSelection quote, List<TagResponse> tags) {
+        return new QuoteSelectionResponse(
+                quote.id(), quote.paragraphId(), quote.startOffset(), quote.endOffset(),
+                quote.selectedText(), tags, quote.createdAt()
+        );
+    }
+}
