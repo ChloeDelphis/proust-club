@@ -57,7 +57,7 @@ erDiagram
 
 ## User data
 
-`users` is implemented (auth, MVP step 4). `quote_selections`, `tags` and `quote_selection_tags` are defined here but not yet implemented (planned for the quote-saving step).
+`users` (auth, MVP step 4) and `quote_selections` / `tags` / `quote_selection_tags` (quote saving, MVP step 5) are implemented.
 
 ```mermaid
 erDiagram
@@ -84,11 +84,12 @@ erDiagram
         serial  id PK
         uuid    user_id FK
         varchar name
+        timestamptz created_at
     }
 
     quote_selection_tags {
-        integer quote_selection_id FK
-        integer tag_id FK
+        integer quote_selection_id PK_FK
+        integer tag_id PK_FK
     }
 
     users          ||--o{ quote_selections     : saves
@@ -101,9 +102,13 @@ erDiagram
 
 **`users.uuid`** is a UUID (not a serial integer) — avoids enumerable user IDs in URLs and API responses. Generated in Postgres via `gen_random_uuid()` (built into Postgres 13+, no `pgcrypto` extension needed).
 
-**`quote_selections.selected_text`** is stored alongside the offsets for display and debugging — if the corpus text were ever corrected, the saved text remains readable.
+**`quote_selections.id` and `tags.id` are plain `SERIAL`, not UUID**, unlike `users.uuid` — deliberately. Ownership of these two tables is never enforced by making their IDs hard to guess; every read, update and delete filters on `user_id` in the query itself (see [Feature doc](../features/quote-save-tags.md)). A sequential ID in a URL like `/api/quotes/42` reveals nothing exploitable under that model, so there is no reason to pay UUID's cost (larger index, less locality) here.
 
-**`tags`** are per-user and private. There is no shared tag taxonomy.
+**`quote_selections.selected_text`** is stored alongside the offsets for display and debugging — if the corpus text were ever corrected, the saved text remains readable. Once a quote is saved, `selected_text`/`start_offset`/`end_offset` are immutable for now — only its tags can change (full editing is a possible future iteration).
+
+**Tagging is optional.** A quote selection can have zero tags; a tag can exist without being attached to any quote. The many-to-many relationship is genuinely `0..n ↔ 0..n` in both directions — there is no floor on either side.
+
+**`tags`** are per-user and private — there is no shared tag taxonomy. Uniqueness is `(user_id, name)`, compared case-insensitively after trimming (a `CHECK` constraint guarantees `name` is always already trimmed and non-empty; a unique index on `(user_id, LOWER(name))` enforces the case-insensitive part) — so "Combray" and "combray" cannot both exist for the same user, while the casing a user actually typed is preserved for display.
 
 ## Offset convention
 
