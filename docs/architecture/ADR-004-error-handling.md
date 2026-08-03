@@ -6,7 +6,7 @@ Business exceptions continue to extend Spring's `ErrorResponseException` and bui
 
 ## Context
 
-While auditing the API's error-handling contract (see `private/tickets/error-handling-contract.md`), two options were on the table:
+While auditing the API's error-handling contract, two options were on the table:
 
 **Option A — Plain `RuntimeException` + `@RestControllerAdvice`**
 Business exceptions stay HTTP-agnostic; a single `ApiExceptionHandler` maps each exception type to a status/`ProblemDetail`. Cleaner separation of concerns on paper, but every new business exception (e.g. `CitationNotFoundException`, `TagNotFoundException` for the upcoming quote-saving step) requires a new `@ExceptionHandler` case — hand-written dispatch code that duplicates what Spring already does natively for `ErrorResponseException`.

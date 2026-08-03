@@ -44,7 +44,7 @@ Login checks **both** buckets before attempting authentication — either one be
 
 ## Client IP
 
-`ClientIp.resolve(request)` currently just returns `request.getRemoteAddr()`. There is no reverse proxy in front of the app yet. `X-Forwarded-For` (or similar) is **not** read — a client can set that header itself, and trusting it without a specific, known proxy stripping/overwriting it would let anyone choose their own bucket. Revisit when a real proxy is introduced (tracked in `private/tickets/prod-to-be-determined.md`).
+`ClientIp.resolve(request)` currently just returns `request.getRemoteAddr()`. There is no reverse proxy in front of the app yet. `X-Forwarded-For` (or similar) is **not** read — a client can set that header itself, and trusting it without a specific, known proxy stripping/overwriting it would let anyone choose their own bucket. Revisit when a real proxy is introduced.
 
 ---
 

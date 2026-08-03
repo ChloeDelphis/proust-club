@@ -6,7 +6,7 @@ Programmatic session authentication: a custom `AuthController` calls Spring Secu
 
 ## Context
 
-The private cadrage's `adr-001-auth.md` already decided *server-side session (Spring Security's native `HttpSession`) vs JWT* in favor of session cookies — not the separate Spring Session module, which is only needed to share sessions across multiple instances (Redis/JDBC). That decision leaves open *how* a session gets established when there is no server-rendered login form — Proust Club's frontend is a pure JSON SPA, and Spring Security's `formLogin()` assumes an HTML login page.
+ADR-005 already decided *server-side session (Spring Security's native `HttpSession`) vs JWT* in favor of session cookies — not the separate Spring Session module, which is only needed to share sessions across multiple instances (Redis/JDBC). That decision leaves open *how* a session gets established when there is no server-rendered login form — Proust Club's frontend is a pure JSON SPA, and Spring Security's `formLogin()` assumes an HTML login page.
 
 Two implementation paths were considered:
 
@@ -24,7 +24,7 @@ Disable `formLogin()` entirely. `AuthController.login()` accepts a JSON body (`L
 
 ## CSRF
 
-Spring Security's CSRF protection is **kept enabled** — never disabled — per the project's security baseline (`securité.md`, `adr-001-auth.md`). Since the frontend is a pure SPA with no server-rendered `<form>` carrying a hidden CSRF field, the token needs to reach it another way:
+Spring Security's CSRF protection is **kept enabled** — never disabled — per the project's security baseline and ADR-005. Since the frontend is a pure SPA with no server-rendered `<form>` carrying a hidden CSRF field, the token needs to reach it another way:
 
 - `CookieCsrfTokenRepository.withHttpOnlyFalse()` writes the token into a JS-readable `XSRF-TOKEN` cookie.
 - `apiFetch()` (`src/api/client.ts`) reads that cookie and echoes it back as an `X-XSRF-TOKEN` header on every non-GET request.
@@ -46,7 +46,7 @@ The controller carries a small amount of session-plumbing (`SecurityContextHolde
 
 ## Addendum (2026-08-02) — what "session-plumbing" turned out to mean in practice
 
-A security audit (`private/impl/auth-3-audit-securite.md`) found that the "small amount of plumbing" above was, at first, incomplete in three concrete ways — all because `formLogin()`'s filter-based flow runs a few Spring Security mechanisms automatically that a programmatic controller has to invoke explicitly instead:
+A security audit found that the "small amount of plumbing" above was, at first, incomplete in three concrete ways — all because `formLogin()`'s filter-based flow runs a few Spring Security mechanisms automatically that a programmatic controller has to invoke explicitly instead:
 
 1. **Session fixation.** Successful authentication must rotate the session id. `SessionManagementFilter` does this via a `SessionAuthenticationStrategy`; our controller has to call one itself. Fixed by injecting a `SessionAuthenticationStrategy` bean and calling `.onAuthentication(...)` in `AuthController.persistSession()`.
 2. **CSRF token rotation.** The pre-auth CSRF token should be invalidated on login/logout (`CsrfAuthenticationStrategy`, `CsrfLogoutHandler`) — otherwise it silently doesn't happen for a controller-driven flow.
@@ -55,3 +55,9 @@ A security audit (`private/impl/auth-3-audit-securite.md`) found that the "small
 The fix for all three follows the same shape: assemble Spring Security's own composable objects as beans (`CompositeSessionAuthenticationStrategy` combining `ChangeSessionIdAuthenticationStrategy` + `CsrfAuthenticationStrategy`; a `List<LogoutHandler>` combining `CsrfLogoutHandler` + `CookieClearingLogoutHandler` + `SecurityContextLogoutHandler`), and have the controller invoke the assembled object — rather than hand-rolling the individual steps or skipping them. See `SecurityConfig.java` (`sessionAuthenticationStrategy`, `csrfLogoutHandler`, `cookieClearingLogoutHandler`, `securityContextLogoutHandler` beans) and `AuthController.persistSession()`/`logout()`.
 
 Practical takeaway for future programmatic-auth work in this codebase: when bypassing a Spring Security filter to do something "by hand," check what `SessionManagementFilter`/`LogoutFilter` would normally have assembled on that code path, and reuse the same building blocks explicitly rather than assuming the manual version is complete.
+
+## Addendum (2026-08-03) — the "401 entry point" section above is superseded
+
+The "401 entry point" section describes `HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)` returning a bare 401 with no body. That is no longer the case: consolidating the API's error-handling contract (see `docs/architecture/ADR-004-error-handling.md`) surfaced this as a genuine inconsistency — every other error response in the API already carried a `ProblemDetail` body, but this one didn't, purely because Spring Security's filter chain sits in front of `DispatcherServlet` and never reaches the resolvers that produce one.
+
+`ProblemDetailSecurityHandlers` (`config/`) now implements both `AuthenticationEntryPoint` and `AccessDeniedHandler`, writing the same `ProblemDetail` shape as the rest of the API for both the 401 (unauthenticated) and 403 (CSRF rejection) cases, and is wired in `SecurityConfig` in place of the old `HttpStatusEntryPoint`. The original reasoning for *not* needing a body — "this is a routine state check, not a business exception" — no longer held once other 401s in the app (e.g. an invalid-login `ApiException`) already carried one; consistency won out.

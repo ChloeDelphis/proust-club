@@ -256,10 +256,9 @@ class AuthControllerTest {
     // under MockMvc depending on test execution order — sometimes no Set-Cookie header appears
     // for reasons not fully root-caused, even though SecurityContextHolder is clean and the
     // response status is correct. The behavior itself is solidly verified: manually against the
-    // real running server (repeated, precise before/after comparisons — see
-    // private/impl/auth-3-audit-securite.md, section 4) and structurally by loginRotatesSessionId
-    // below, which exercises the same CompositeSessionAuthenticationStrategy that also carries
-    // CsrfAuthenticationStrategy.
+    // real running server (repeated, precise before/after comparisons) and structurally by
+    // loginRotatesSessionId below, which exercises the same CompositeSessionAuthenticationStrategy
+    // that also carries CsrfAuthenticationStrategy.
 
     @Test
     void meWithoutSessionReturnsUnauthorized() throws Exception {

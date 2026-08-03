@@ -6,7 +6,7 @@
 
 ## Context
 
-`securité.md` asks for rate limiting "from day one" on login, registration, and search. Two implementation paths were considered:
+The project's security baseline asks for rate limiting "from day one" on login, registration, and search. Two implementation paths were considered:
 
 **Option A — Hand-rolled filter** (e.g. a `ConcurrentHashMap<String, ...>` with a manual sliding window)
 Zero new dependency. But a rate limiter that looks trivial has to correctly handle concurrency, refill computation, bursts, time windows, clock access, time-to-availability, and bucket lifecycle (eviction) — problems a dedicated, mature library has already solved.
@@ -14,9 +14,9 @@ Zero new dependency. But a rate limiter that looks trivial has to correctly hand
 **Option B — Bucket4j**
 A concurrent token-bucket implementation covering exactly the above. Chosen for the algorithm itself, not for a future need to scale — the bucket storage stays purely local (Caffeine) for now, independent of whether the app ever runs as more than one instance.
 
-## Why Bucket4j, decoupled from ADR-001
+## Why Bucket4j, decoupled from ADR-005
 
-This choice is **independent** of the session-vs-JWT decision in `adr-001-auth.md`. Rate limiting could pair with any combination — local session + local rate limiting, local session + distributed rate limiting, JWT + distributed rate limiting — there's no coupling between the two. A single-instance deployment is not, by itself, an argument against Bucket4j: it works identically well with a local backend as with a distributed one (Redis, Hazelcast, etc.), and the storage backend is swappable later without revisiting the decision to use Bucket4j at all.
+This choice is **independent** of the session-vs-JWT decision in ADR-005. Rate limiting could pair with any combination — local session + local rate limiting, local session + distributed rate limiting, JWT + distributed rate limiting — there's no coupling between the two. A single-instance deployment is not, by itself, an argument against Bucket4j: it works identically well with a local backend as with a distributed one (Redis, Hazelcast, etc.), and the storage backend is swappable later without revisiting the decision to use Bucket4j at all.
 
 ## Local storage: Caffeine, not a raw `ConcurrentHashMap`
 
@@ -47,7 +47,7 @@ Explicitly not implemented: "N failures → account locked for 24h." A hard lock
 
 ## Client IP resolution
 
-`request.getRemoteAddr()` — correct as long as no reverse proxy sits in front of the app (currently the case; no production deployment exists yet, see `private/tickets/prod-to-be-determined.md`). `X-Forwarded-For` and similar headers are never trusted: a client can set that header itself, and without a specific, known, trusted proxy stripping/overwriting it, trusting it would let anyone pick their own rate-limit bucket. Revisit this when a real reverse proxy is introduced.
+`request.getRemoteAddr()` — correct as long as no reverse proxy sits in front of the app (currently the case; no production deployment exists yet). `X-Forwarded-For` and similar headers are never trusted: a client can set that header itself, and without a specific, known, trusted proxy stripping/overwriting it, trusting it would let anyone pick their own rate-limit bucket. Revisit this when a real reverse proxy is introduced.
 
 ## Tradeoff accepted
 

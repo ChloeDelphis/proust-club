@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 // The API's cross-cutting error contract (RFC 9457 ProblemDetail): Spring MVC's own native error
 // handling (spring.mvc.problemdetails.enabled) plus the two Spring Security paths that bypass it
-// (ProblemDetailSecurityHandlers, see ADR-004 / private/tickets/error-handling-contract.md). Not
+// (ProblemDetailSecurityHandlers, see ADR-004). Not
 // tied to one feature, hence its own package-neutral home rather than living inside a feature's
 // controller test.
 @Import(TestcontainersConfiguration.class)
