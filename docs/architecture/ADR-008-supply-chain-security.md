@@ -27,7 +27,7 @@ pnpm 11 (the version used here, `11.19.0`) already defaults `minimumReleaseAge` 
 
 `package.json` direct dependencies (`dependencies` + `devDependencies`) are pinned to exact versions rather than ranges. The lockfile already guarantees reproducible installs in principle, but a range leaves room for a `pnpm add`, a `pnpm update`, or a lockfile regeneration to silently resolve a newer — potentially compromised — version without a visible diff in `package.json`. Exact pins make every version bump a deliberate, reviewable change, consistent with the intent behind `minimumReleaseAge`: adoption should be a choice, not a side effect.
 
-**Trade-off accepted:** this moves the responsibility for staying current onto a human remembering to bump versions. Without periodic, deliberate updates, pinned versions can become stale (and eventually vulnerable) faster than they would under a caret range with regular reinstalls. No automated reminder exists yet for this — worth revisiting (e.g. Dependabot version updates, once `securite-chaine-appro-deps-dependabot.md` is unblocked) rather than left as a purely manual habit.
+**Trade-off accepted:** this moves the responsibility for staying current onto a human remembering to bump versions. Without periodic, deliberate updates, pinned versions can become stale (and eventually vulnerable) faster than they would under a caret range with regular reinstalls. No automated reminder exists yet for this — worth revisiting (e.g. Dependabot version updates, once GitHub monitoring is set up) rather than left as a purely manual habit.
 
 ## Install script restriction
 
@@ -48,7 +48,7 @@ Both run manually against the current lockfile:
 - `pnpm audit` — no known vulnerabilities.
 - `pnpm audit signatures` — 339 packages audited, all with verified registry signatures.
 
-Neither is wired into an automated pipeline yet, because **no CI exists in this repository at all** (no `.github/workflows/`, no other pipeline). This is a pre-existing gap, not something introduced or fixed by this ticket. The requirement that a future CI install dependencies with `pnpm install --frozen-lockfile` and run `pnpm audit` is recorded as a decision to apply once that CI is built — tracked in `private/tickets/prod-to-be-determined.md` (point 6) rather than repeated here, to avoid two sources of truth for the same pending work.
+Neither is wired into an automated pipeline yet, because **no CI exists in this repository at all** (no `.github/workflows/`, no other pipeline). This is a pre-existing gap, not something introduced or fixed by this ticket. Once a CI is built, it must install dependencies with `pnpm install --frozen-lockfile` and run `pnpm audit` — tracked separately as its own decision to apply at that time.
 
 ## Socket / Aikido Safe Chain — evaluated, not adopted now
 
