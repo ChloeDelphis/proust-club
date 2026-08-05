@@ -1,0 +1,64 @@
+# ADR-008: Supply chain security — pnpm baseline
+
+## Decision
+
+Four complementary controls on the frontend's dependency chain (`apps/frontend/`):
+
+1. **`minimumReleaseAge: 4320` (3 days), `minimumReleaseAgeStrict: true`** in `pnpm-workspace.yaml`.
+2. **Exact version pinning** in `package.json` — no `^`/`~`/`>=` ranges on direct dependencies.
+3. **Install script restriction** via `allowBuilds`/`onlyBuiltDependencies` (already in place, reviewed here).
+4. **`pnpm audit` and `pnpm audit signatures`** run manually for now (no CI yet — see below).
+
+Evaluated and **not adopted for now**: a dedicated supply-chain tool (Socket, Aikido Safe Chain).
+
+## Context
+
+Recent NPM ecosystem attacks have shown that a compromised dependency can execute arbitrary code at install time via `preinstall`/`postinstall` scripts, potentially reaching developer machines or CI runners and any credentials available in that environment. This ADR documents the baseline put in place to reduce that exposure for Proust Club's frontend.
+
+## `minimumReleaseAge`
+
+pnpm 11 (the version used here, `11.19.0`) already defaults `minimumReleaseAge` to `1440` minutes (1 day) — this project raises it explicitly to `4320` (3 days). Malware in newly published packages is typically caught and unpublished within the first day or two; a 3-day window trades a small amount of freshness for a meaningfully lower chance of installing a version before it's been flagged.
+
+`minimumReleaseAgeStrict: true` is set explicitly, even though it is already pnpm's default once `minimumReleaseAge` is configured (per pnpm's settings reference: strict defaults to `true` when the setting is explicit, `false` otherwise). Written explicitly here so the intent doesn't silently depend on an undocumented default.
+
+**Trade-off accepted:** this also delays adoption of legitimate emergency security patches on already-used dependencies by the same window. pnpm exposes `minimumReleaseAgeExclude` (a list of packages exempt from the delay) as an escape hatch — not configured today since no such case has come up, but the right tool if one does (e.g. an urgent CVE fix on a dependency already in use).
+
+## Exact version pinning
+
+`package.json` direct dependencies (`dependencies` + `devDependencies`) are pinned to exact versions rather than ranges. The lockfile already guarantees reproducible installs in principle, but a range leaves room for a `pnpm add`, a `pnpm update`, or a lockfile regeneration to silently resolve a newer — potentially compromised — version without a visible diff in `package.json`. Exact pins make every version bump a deliberate, reviewable change, consistent with the intent behind `minimumReleaseAge`: adoption should be a choice, not a side effect.
+
+**Trade-off accepted:** this moves the responsibility for staying current onto a human remembering to bump versions. Without periodic, deliberate updates, pinned versions can become stale (and eventually vulnerable) faster than they would under a caret range with regular reinstalls. No automated reminder exists yet for this — worth revisiting (e.g. Dependabot version updates, once `securite-chaine-appro-deps-dependabot.md` is unblocked) rather than left as a purely manual habit.
+
+## Install script restriction
+
+`pnpm-workspace.yaml` already restricted build/install scripts before this ADR:
+
+```yaml
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild
+```
+
+Reviewed as part of this ticket: `pnpm install` with the settings above (plus the new `minimumReleaseAge`) completes without requiring any additional package to run a build script, so the allow-list is left as-is rather than extended pre-emptively. pnpm also offers `dangerouslyAllowAllBuilds` to disable this restriction globally — deliberately not used.
+
+## `pnpm audit` / `pnpm audit signatures`
+
+Both run manually against the current lockfile:
+- `pnpm audit` — no known vulnerabilities.
+- `pnpm audit signatures` — 339 packages audited, all with verified registry signatures.
+
+Neither is wired into an automated pipeline yet, because **no CI exists in this repository at all** (no `.github/workflows/`, no other pipeline). This is a pre-existing gap, not something introduced or fixed by this ticket. The requirement that a future CI install dependencies with `pnpm install --frozen-lockfile` and run `pnpm audit` is recorded as a decision to apply once that CI is built — tracked in `private/tickets/prod-to-be-determined.md` (point 6) rather than repeated here, to avoid two sources of truth for the same pending work.
+
+## Socket / Aikido Safe Chain — evaluated, not adopted now
+
+Both are dedicated supply-chain tools that intercept package installs and check them against threat intelligence before allowing them through:
+
+- **Aikido Safe Chain** — free, open source, no account/token required. Runs as a local proxy wrapping `npm`/`pnpm`/`yarn`/`pip`/etc. Low friction to try.
+- **Socket (Firewall)** — more feature-rich free tier, but licensing terms make broader adoption less straightforward.
+
+**Not adopted for now:** the project has a single `package.json`, 339 resolved packages, and pnpm 11 already covers a large part of the same threat model natively (`minimumReleaseAge`, `audit signatures`, install-script allow-listing) at zero setup or ongoing cost. Revisiting either tool makes more sense once there's a CI to run it automatically, or once the dependency surface grows (a second package manager, a larger team). If proactive blocking is wanted sooner, Aikido Safe Chain is the lower-friction pick to try manually — free, no tokens, no lock-in.
+
+## Date
+
+2026-08-05
