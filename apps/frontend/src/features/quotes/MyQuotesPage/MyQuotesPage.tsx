@@ -19,12 +19,8 @@ export default function MyQuotesPage() {
   const [tagId, setTagId] = useState<number | null>(null)
   const [page, setPage] = useState(0)
 
-  // A page kept from a previous filter no longer makes sense once the filter changes.
-  // Adjusted during render, same pattern as SearchPage — see
-  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-  const [lastFilterResetKey, setLastFilterResetKey] = useState(tagId)
-  if (lastFilterResetKey !== tagId) {
-    setLastFilterResetKey(tagId)
+  function handleSelectTag(id: number | null) {
+    setTagId(id)
     setPage(0)
   }
 
@@ -77,7 +73,7 @@ export default function MyQuotesPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>Mes citations</h1>
-      <TagFilterBar activeTagId={tagId} onSelectTag={setTagId} />
+      <TagFilterBar activeTagId={tagId} onSelectTag={handleSelectTag} />
       {content}
     </main>
   )

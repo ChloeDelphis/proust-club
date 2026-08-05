@@ -7,6 +7,13 @@ export class ApiError extends Error {
   }
 }
 
+export function buildQuery(params: Record<string, string | number | undefined>): string {
+  const definedEntries = Object.entries(params).filter(
+    (entry): entry is [string, string | number] => entry[1] !== undefined,
+  )
+  return new URLSearchParams(definedEntries.map(([key, value]) => [key, String(value)])).toString()
+}
+
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`))
   return match ? decodeURIComponent(match[1]) : null

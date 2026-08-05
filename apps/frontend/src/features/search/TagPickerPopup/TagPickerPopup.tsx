@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { listTags } from '../../../api/tag'
 import { useClickOutside } from '../../../hooks/useClickOutside'
+import { useTags } from '../../../hooks/useTags'
 import Spinner from '../../../components/Spinner/Spinner'
 import type { TagPickerPopupProps } from './TagPickerPopup.types'
 import styles from './TagPickerPopup.module.css'
@@ -10,10 +9,7 @@ export default function TagPickerPopup({ onFinish, onDismiss }: TagPickerPopupPr
   const popupRef = useRef<HTMLDivElement>(null)
   useClickOutside(popupRef, onDismiss)
 
-  const { data: tags, isPending } = useQuery({
-    queryKey: ['tags'],
-    queryFn: ({ signal }) => listTags(signal),
-  })
+  const { data: tags, isPending } = useTags()
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
 

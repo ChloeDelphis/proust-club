@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, buildQuery } from './client'
 import type { operations } from './schema.generated'
 
 export type SearchHit = {
@@ -21,10 +21,6 @@ export type SearchResponse = {
 export type SearchParams = operations['search']['parameters']['query']
 
 export function searchParagraphs(params: SearchParams, signal?: AbortSignal): Promise<SearchResponse> {
-  const qs = new URLSearchParams({
-    q: params.q,
-    ...(params.page !== undefined && { page: String(params.page) }),
-    ...(params.size !== undefined && { size: String(params.size) }),
-  })
+  const qs = buildQuery({ q: params.q, page: params.page, size: params.size })
   return apiFetch<SearchResponse>(`/api/search?${qs}`, { signal })
 }

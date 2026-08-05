@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, buildQuery } from './client'
 import type { operations } from './schema.generated'
 import type { TagResponse } from './tag'
 
@@ -37,11 +37,7 @@ export type QuoteSelectionListResponse = {
 }
 
 export function listQuotes(params: QuoteListParams = {}, signal?: AbortSignal): Promise<QuoteSelectionListResponse> {
-  const qs = new URLSearchParams({
-    ...(params.tagId !== undefined && { tagId: String(params.tagId) }),
-    ...(params.page !== undefined && { page: String(params.page) }),
-    ...(params.size !== undefined && { size: String(params.size) }),
-  })
+  const qs = buildQuery({ tagId: params.tagId, page: params.page, size: params.size })
   return apiFetch<QuoteSelectionListResponse>(`/api/quotes?${qs}`, { signal })
 }
 

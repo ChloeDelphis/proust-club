@@ -1,19 +1,21 @@
 import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteTag, listTags, renameTag } from '../../../api/tag'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { deleteTag, renameTag } from '../../../api/tag'
 import { ApiError } from '../../../api/client'
+import { useTags } from '../../../hooks/useTags'
 import { useToast } from '../../../components/Toast/useToast'
 import type { TagFilterBarProps } from './TagFilterBar.types'
 import styles from './TagFilterBar.module.css'
 
+function filterButtonClass(active: boolean): string {
+  return active ? `${styles.filterButton} ${styles.isActive}` : styles.filterButton
+}
+
 export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarProps) {
   const queryClient = useQueryClient()
   const showToast = useToast()
-  const { data: tags } = useQuery({
-    queryKey: ['tags'],
-    queryFn: ({ signal }) => listTags(signal),
-  })
+  const { data: tags } = useTags()
 
   const [editingTagId, setEditingTagId] = useState<number | null>(null)
   const [editingValue, setEditingValue] = useState('')
@@ -40,9 +42,13 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteTag(id),
     onSuccess: (_result, id) => {
+      const wasActiveFilter = activeTagId === id
       queryClient.invalidateQueries({ queryKey: ['tags'] })
-      queryClient.invalidateQueries({ queryKey: ['quotes'] })
-      if (activeTagId === id) onSelectTag(null)
+      // If this tag was the active filter, onSelectTag(null) below already triggers a fresh
+      // fetch under the new query key — refetching the about-to-be-abandoned key too would
+      // just be a wasted request. Other cached quote pages are still marked stale either way.
+      queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: wasActiveFilter ? 'none' : 'active' })
+      if (wasActiveFilter) onSelectTag(null)
     },
     onError: () => {
       showToast("Le tag n'a pas pu être supprimé.")
@@ -94,7 +100,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     <nav className={styles.root} aria-label="Filtrer par tag">
       <button
         type="button"
-        className={activeTagId === null ? `${styles.filterButton} ${styles.isActive}` : styles.filterButton}
+        className={filterButtonClass(activeTagId === null)}
         onClick={() => onSelectTag(null)}
       >
         Tous
@@ -117,7 +123,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
               <>
                 <button
                   type="button"
-                  className={activeTagId === tag.id ? `${styles.filterButton} ${styles.isActive}` : styles.filterButton}
+                  className={filterButtonClass(activeTagId === tag.id)}
                   onClick={() => onSelectTag(tag.id)}
                 >
                   {tag.name}
