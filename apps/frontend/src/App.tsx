@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router'
 import SearchPage from './features/search/SearchPage'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
+import MyQuotesPage from './features/quotes/MyQuotesPage/MyQuotesPage'
 import Header from './components/Header/Header'
 import ToastProvider from './components/Toast/ToastProvider'
 
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/" element={<SearchPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/mes-citations" element={<MyQuotesPage />} />
           </Routes>
         </BrowserRouter>
       </ToastProvider>

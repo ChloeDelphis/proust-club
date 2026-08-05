@@ -22,6 +22,7 @@ export default function Header() {
       <Link className={styles.brand} to="/">Proust Club</Link>
       {isSuccess ? (
         <div className={styles.session}>
+          <Link to="/mes-citations">Mes citations</Link>
           <span>Connecté en tant que {user.username}</span>
           <button className={styles.logoutButton} type="button" onClick={() => logoutMutation.mutate()}>
             Se déconnecter
