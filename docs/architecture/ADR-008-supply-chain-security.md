@@ -9,8 +9,6 @@ Four complementary controls on the frontend's dependency chain (`apps/frontend/`
 3. **Install script restriction** via `allowBuilds`/`onlyBuiltDependencies` (already in place, reviewed here).
 4. **`pnpm audit` and `pnpm audit signatures`** run manually for now (no CI yet — see below).
 
-Evaluated and **not adopted for now**: a dedicated supply-chain tool (Socket, Aikido Safe Chain).
-
 ## Context
 
 Recent NPM ecosystem attacks have shown that a compromised dependency can execute arbitrary code at install time via `preinstall`/`postinstall` scripts, potentially reaching developer machines or CI runners and any credentials available in that environment. This ADR documents the baseline put in place to reduce that exposure for Proust Club's frontend.
@@ -49,15 +47,6 @@ Both run manually against the current lockfile:
 - `pnpm audit signatures` — 339 packages audited, all with verified registry signatures.
 
 Neither is wired into an automated pipeline yet, because **no CI exists in this repository at all** (no `.github/workflows/`, no other pipeline). This is a pre-existing gap, not something introduced or fixed by this ticket. Once a CI is built, it must install dependencies with `pnpm install --frozen-lockfile` and run `pnpm audit` — tracked separately as its own decision to apply at that time.
-
-## Socket / Aikido Safe Chain — evaluated, not adopted now
-
-Both are dedicated supply-chain tools that intercept package installs and check them against threat intelligence before allowing them through:
-
-- **Aikido Safe Chain** — free, open source, no account/token required. Runs as a local proxy wrapping `npm`/`pnpm`/`yarn`/`pip`/etc. Low friction to try.
-- **Socket (Firewall)** — more feature-rich free tier, but licensing terms make broader adoption less straightforward.
-
-**Not adopted for now:** the project has a single `package.json`, 339 resolved packages, and pnpm 11 already covers a large part of the same threat model natively (`minimumReleaseAge`, `audit signatures`, install-script allow-listing) at zero setup or ongoing cost. Revisiting either tool makes more sense once there's a CI to run it automatically, or once the dependency surface grows (a second package manager, a larger team). If proactive blocking is wanted sooner, Aikido Safe Chain is the lower-friction pick to try manually — free, no tokens, no lock-in.
 
 ## Date
 
