@@ -14,17 +14,3 @@
   color: #6b6660;
   letter-spacing: 0.02em;
 }
-
-.text {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.75;
-  color: #1a1a1a;
-}
-
-.mark {
-  background: #fff3cd;
-  color: inherit;
-  padding: 0 0.1em;
-  border-radius: 2px;
-}

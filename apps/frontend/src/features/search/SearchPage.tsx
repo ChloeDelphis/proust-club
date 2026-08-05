@@ -14,6 +14,16 @@ const PAGE_SIZE = 10
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
+  const [activeSelectionParagraphId, setActiveSelectionParagraphId] = useState<number | null>(null)
+
+  // A selection in progress no longer makes sense once the visible results change underneath it.
+  // Adjusted during render (not in an effect) — the React-recommended way to reset state when
+  // inputs change, see https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [lastSelectionResetKey, setLastSelectionResetKey] = useState({ query, page })
+  if (lastSelectionResetKey.query !== query || lastSelectionResetKey.page !== page) {
+    setLastSelectionResetKey({ query, page })
+    setActiveSelectionParagraphId(null)
+  }
 
   const isQueryValid = query.length >= 2
 
@@ -47,6 +57,9 @@ export default function SearchPage() {
           size={data.size}
           isFetching={isFetching}
           onPageChange={setPage}
+          activeSelectionParagraphId={activeSelectionParagraphId}
+          onSelectionStart={setActiveSelectionParagraphId}
+          onSelectionEnd={() => setActiveSelectionParagraphId(null)}
         />
       )
     }
