@@ -123,6 +123,26 @@ Cursor snapping precision needs more work — placing/repositioning a marker exa
 
 ---
 
+## Frontend — browsing and managing my quotes (`MyQuotesPage`)
+
+`src/features/quotes/MyQuotesPage/`, routed at `/mes-citations`, linked from `Header` only when a session is active. Lists the authenticated user's saved quotes (most recent first), filterable by tag, with quote deletion and inline tag rename/delete — no separate page for tag management.
+
+### Route protection is ad hoc, not a `ProtectedRoute`
+
+`MyQuotesPage` checks `useCurrentUser()` itself and renders `<Navigate to="/login" replace />` if the session query resolves without a user (a `Spinner` is shown while it's still pending, to avoid a redirect flash before the session is known). This is the first "redirect if not authenticated" page in the app — `QuoteSelection` only conditionally renders UI, it never redirects. A generic `ProtectedRoute` wasn't extracted for a single consumer; it's expected to be worth it once the personal timeline (MVP step 7) needs the same guard. The check is UX only, not a security boundary — every underlying endpoint independently rejects an unauthenticated request with `401` regardless of what the frontend renders.
+
+### Composition
+
+- **`TagFilterBar`** (`src/features/quotes/TagFilterBar/`) — a "Tous" button plus one button per tag (`useTags()`, a hook shared with `TagPickerPopup` since this is its second consumer). Renaming is inline: a pencil icon turns the tag's name into a text `<input>` in place; Enter commits, Escape cancels, and losing focus (blur) also commits — a `suppressNextBlurRef` ref prevents Enter/Escape from double-committing through the blur that follows a `<input>` unmount. A `409` (name already taken) shows a toast and leaves the field in edit mode. Deleting a tag asks for confirmation (`window.confirm`) and, if the deleted tag was the active filter, resets the filter to "Tous" — the cache invalidation for `['quotes']` skips its own immediate refetch in that case (`refetchType: 'none'`) since the filter reset already triggers a fresh fetch under the new query key; other cached quote pages are still marked stale normally.
+- **`QuoteCard`** (`src/features/quotes/QuoteCard/`) — one quote's `selectedText`, its tags (plain chips, not clickable — filtering goes through `TagFilterBar`), a formatted `createdAt`, and a delete button (confirmation, then `DELETE /api/quotes/{id}`, invalidates `['quotes']`).
+- **`Pagination`** (`src/components/Pagination/`) — extracted from `ResultList` in the same change that introduced this page, since `MyQuotesPage` needed the identical page/size/total/prev-next block. `ResultList` now consumes it too, rather than keeping its own copy.
+
+### Filter changes reset the page
+
+Selecting a different tag (or "Tous") resets `page` to `0` via a single wrapped handler (`handleSelectTag`) passed down as `onSelectTag` — unlike `SearchPage`'s selection reset, there's only one entry point that changes `tagId` here, so no render-time state-adjustment trick is needed.
+
+---
+
 ## Manual verification
 
 - Search for a phrase, save it as a quote with two tags, confirm both appear in the response with their own ids. **Gotcha**: `/api/search` matches case-insensitively, but `selectedText` revalidation is an exact (case-sensitive) match — the phrase actually highlighted at the returned offsets may not be the same case as the search query typed (e.g. searching "madeleine" can surface a paragraph where the match is actually "Madeleine"); send the text exactly as it appears in the paragraph, not as typed in the search box.
@@ -152,3 +172,18 @@ Cursor snapping precision needs more work — placing/repositioning a marker exa
 **Not manually re-verified** (already covered deterministically by `QuoteSelection.test.tsx`, which drives the same phases with controlled offsets rather than pixel coordinates): dropping the second marker on the first one's boundary is a no-op; repositioning an already-placed marker and having it swap start/end roles when it crosses the other one; "Annuler" resetting to idle.
 
 **Known issue, not yet refined**: cursor snapping precision when placing/repositioning a marker needs more work — see `private/tickets/precision-repere-selection.md`.
+
+### Frontend (`/mes-citations` — `MyQuotesPage`)
+
+Verified manually end-to-end in a real browser (register a test account, save quotes from search, then exercise the page below) — see `CLAUDE.md` for a reusable local test account.
+
+- As an anonymous visitor, navigating directly to `/mes-citations` redirects to `/login`.
+- As a connected user with no saved quotes, the page shows the empty-state message and no filter bar (no tags exist yet either).
+- Save two quotes from search with different tags (one tag each) → both appear on `/mes-citations`, most recent first, each showing its own tag chip and a formatted date.
+- Click a tag in the filter bar → only quotes carrying that tag are shown; click "Tous" → full list returns.
+- Rename a tag (pencil icon → edit the inline input → Enter) → the new name appears immediately both in the filter bar and on every quote card that carried it.
+- Delete a quote (confirm the native dialog) → it disappears from the list immediately.
+- Delete a tag that is the currently active filter (confirm the dialog) → the filter bar loses that tag, the active filter resets to "Tous", and any quote that had it now shows one fewer chip (the quote itself is untouched).
+- Delete the last remaining quote while filtered to "Tous" → generic empty-state message ("Aucune citation sauvegardée pour le moment.").
+
+**Not manually re-verified** (already covered deterministically by `TagFilterBar.test.tsx`/`QuoteCard.test.tsx`/`MyQuotesPage.test.tsx`): the tag-specific empty-state message (filtered to a tag with zero matching quotes), Escape canceling an in-progress tag rename without committing, a declined delete confirmation being a no-op, and the page resetting to `0` when the active filter changes.
