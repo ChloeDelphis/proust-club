@@ -25,7 +25,7 @@ All nine endpoints require an authenticated session — none are `permitAll()`.
 ## Data flow
 
 ```
-React component (future — MVP step 6)
+QuoteSelection (search results — point-and-click marker selection, see below)
   → POST /api/quotes { paragraphId, startOffset, endOffset, selectedText, tagNames? }
   → QuoteController          resolves user_id from the session (never from the request body)
   → QuoteService.create()
@@ -106,3 +106,14 @@ Both endpoints follow the same ownership discipline as the rest of this feature:
 - Rename with a blank name or a name over 50 characters → `400`.
 - Rename or delete a tag id that doesn't exist, or belongs to another account → `404` in both cases, never `403`.
 - Attach a tag to a quote, then delete the tag → `204`; the quote itself is unaffected, but no longer lists that tag; the tag disappears from `GET /api/tags`.
+
+### Frontend (search results — `QuoteSelection`)
+
+- As a connected user, search for a phrase, click "Sauvegarder une citation", place "début" and "fin" by clicking between words, click "Valider la sélection", check a tag and create a new one, click "Terminer" → citation saved with the exact selected text (leading/trailing whitespace trimmed) and both tags, confirmed via `GET /api/quotes`.
+- Same flow, but close the tag popup via × instead of "Terminer" → citation still saved, with `tags: []`, even if a tag had been checked before closing.
+- As an anonymous visitor, no "Sauvegarder une citation" button appears on any result.
+- With a selection in progress on one paragraph, the "Sauvegarder une citation" button on every other visible result is disabled.
+
+**Not manually re-verified** (already covered deterministically by `QuoteSelection.test.tsx`, which drives the same phases with controlled offsets rather than pixel coordinates): dropping the second marker on the first one's boundary is a no-op; repositioning an already-placed marker and having it swap start/end roles when it crosses the other one; "Annuler" resetting to idle.
+
+**Known issue, not yet refined**: cursor snapping precision when placing/repositioning a marker needs more work — see `private/tickets/precision-repere-selection.md`.
