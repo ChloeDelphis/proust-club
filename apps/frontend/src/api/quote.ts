@@ -25,3 +25,26 @@ export function createQuote(params: CreateQuoteParams, signal?: AbortSignal): Pr
     signal,
   })
 }
+
+export type QuoteListParams = NonNullable<operations['list_1']['parameters']['query']>
+
+// Same reasoning as QuoteSelectionResponse above: fields written by hand as non-optional.
+export type QuoteSelectionListResponse = {
+  results: QuoteSelectionResponse[]
+  total: number
+  page: number
+  size: number
+}
+
+export function listQuotes(params: QuoteListParams = {}, signal?: AbortSignal): Promise<QuoteSelectionListResponse> {
+  const qs = new URLSearchParams({
+    ...(params.tagId !== undefined && { tagId: String(params.tagId) }),
+    ...(params.page !== undefined && { page: String(params.page) }),
+    ...(params.size !== undefined && { size: String(params.size) }),
+  })
+  return apiFetch<QuoteSelectionListResponse>(`/api/quotes?${qs}`, { signal })
+}
+
+export function deleteQuote(id: number, signal?: AbortSignal): Promise<void> {
+  return apiFetch<void>(`/api/quotes/${id}`, { method: 'DELETE', signal })
+}
