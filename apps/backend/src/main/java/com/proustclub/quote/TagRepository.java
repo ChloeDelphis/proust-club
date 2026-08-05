@@ -66,8 +66,9 @@ class TagRepository {
     }
 
     // UPDATE has no ON CONFLICT equivalent, so the conflict check is expressed as a NOT EXISTS
-    // in the WHERE clause itself rather than caught from a unique constraint violation. `id <> id`
-    // excludes the row being renamed, so re-casing a tag's own name never trips this.
+    // in the WHERE clause itself rather than caught from a unique constraint violation.
+    // `other.id <> tagId` excludes the row being renamed, so re-casing a tag's own name never
+    // trips this.
     RenameOutcome renameForOwner(UUID userId, int tagId, String trimmedName) {
         var idField = DSL.field("id", Integer.class);
         var userIdField = DSL.field("user_id", UUID.class);

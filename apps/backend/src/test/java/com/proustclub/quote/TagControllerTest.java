@@ -6,7 +6,6 @@ import com.proustclub.auth.dto.RegisterRequest;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,17 +36,6 @@ class TagControllerTest {
     DSLContext dsl;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private int paragraphId;
-
-    @BeforeEach
-    void setUp() {
-        paragraphId = dsl.insertInto(DSL.table("paragraphs"),
-                        DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
-                        DSL.field("page_number"), DSL.field("text"))
-                .values(1, 1, 1, 1, "La madeleine est un symbole fort chez Proust.")
-                .returning(DSL.field("id", Integer.class))
-                .fetchOne(DSL.field("id", Integer.class));
-    }
 
     @AfterEach
     void tearDown() {
@@ -232,6 +220,7 @@ class TagControllerTest {
     @Test
     void deleteTagStillAttachedToQuoteDetachesItWithoutAffectingTheQuote() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
+        int paragraphId = createParagraph();
 
         MvcResult quoteResult = mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"paragraphId\":" + paragraphId + ",\"startOffset\":3,\"endOffset\":12,\"selectedText\":\"madeleine\",\"tagNames\":[\"Combray\"]}"))
@@ -287,5 +276,14 @@ class TagControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asInt();
+    }
+
+    private int createParagraph() {
+        return dsl.insertInto(DSL.table("paragraphs"),
+                        DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
+                        DSL.field("page_number"), DSL.field("text"))
+                .values(1, 1, 1, 1, "La madeleine est un symbole fort chez Proust.")
+                .returning(DSL.field("id", Integer.class))
+                .fetchOne(DSL.field("id", Integer.class));
     }
 }
