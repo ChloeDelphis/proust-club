@@ -88,6 +88,41 @@ Both endpoints follow the same ownership discipline as the rest of this feature:
 
 ---
 
+## Frontend — saving a quote from search (`QuoteSelection`)
+
+`src/features/search/QuoteSelection/QuoteSelection.tsx`, rendered by `ParagraphCard` for every search result. Handles the full save flow: entering selection mode, placing two markers, opening the tag popup, and saving.
+
+### Why point-and-click markers instead of the browser's native text selection
+
+The obvious alternative — let the user drag-select text with the browser's native `Selection`/`Range` API — was the original design, but was replaced before any code was written. Mapping a native `Range` back to a character offset in the paragraph's plain text is genuinely awkward once the paragraph is rendered as several DOM nodes (the search-match `<mark>` splits it into `before`/`match`/`after`), and a dragged selection gives no control over snapping to word boundaries. Two repositionable markers, placed and moved by single clicks, sidestep both problems and match the product decision for a more guided, precise gesture.
+
+### Marker placement mechanism
+
+- **Word boundaries**: `getWordBoundaries` (`selectionOffsets.ts`) returns the valid marker positions in a paragraph's text — the start, the end, and the start of every word that follows a run of whitespace. Punctuation glued to a word is not a boundary.
+- **Cursor → offset**: `cursorOffset.ts` uses `document.caretRangeFromPoint`/`caretPositionFromPoint` on `mousemove` to find the DOM position under the cursor, then walks the paragraph's text nodes with a `TreeWalker` to convert that into a character offset. Neither browser API is meaningfully testable under jsdom, so this module is a thin, mockable boundary — `QuoteSelection.test.tsx` stubs it and drives the component by offset instead of by simulated screen coordinates.
+- **Snapping**: `snapToNearestBoundary` rounds a raw offset to the nearest valid word boundary.
+- **Labels are derived, never stored**: `QuoteSelection`'s `Phase` state only ever holds up to two raw offsets (`settled`, the first one placed; `live`, the one currently following the cursor). `deriveMarkerLabels(a, b)` returns `{ start: min(a,b), end: max(a,b) }` on every render — "début"/"fin" are just which offset is smaller right now, live, even mid-drag. This is what makes swapping roles when a marker is dragged past the other one work for free, with no explicit swap branch anywhere.
+- **Rendering**: `buildParagraphSegments` (`paragraphSegments.ts`) merges the search-match highlight range and the marker positions into one ordered list of text runs and marker points — replacing the old hardcoded `before`/`<mark>`/`after` split, since there are now up to two more cut points to interleave.
+- **Trimming**: once both markers are placed and the popup is dismissed, `trimSelection` strips any leading/trailing whitespace from the final `[start, end)` range before it's sent to the API — a marker landing right after a word still produces a clean `selectedText` with no stray space.
+
+### Single active selection
+
+Only one paragraph can be mid-selection at a time across a page of results. `SelectionContext` (`src/features/search/SelectionContext.ts` + `useSelectionContext.ts`) holds `activeParagraphId`/`startSelection`/`endSelection`, provided once by `SearchPage` around the whole `ResultList`. Every `QuoteSelection` instance disables its own "Sauvegarder une citation" button when another paragraph owns the active selection, and the provider's value resets whenever the search query or page changes (adjusted during render, not in a `useEffect` — see the comment in `SearchPage.tsx`; `setState` inside a plain effect body is flagged by this project's ESLint config).
+
+### Tag popup — no premature API calls
+
+`TagPickerPopup` lets the user search existing tags, check several, and type a name that doesn't exist yet to stage it for creation. Nothing is sent to the backend while the popup is open: a "new" tag name is just a string sitting in local state alongside the checked existing tags' names. The actual `POST /api/quotes` call — with the final `tagNames` array — only happens when the popup closes, whichever way: `Terminer` sends the checked/staged names, the × or a click outside sends an empty array. Calling `POST /api/tags` eagerly when "Créer « nom »" is clicked was considered and rejected: it would leave an orphaned tag in the database if the popup were then dismissed without saving.
+
+### Toast
+
+`ToastProvider` (`src/components/Toast/`), mounted once in `App.tsx`, shows a brief confirmation message after a successful save and dismisses itself after a few seconds. Generic, not specific to this feature — the first shared notification mechanism in the frontend.
+
+### Known limitation
+
+Cursor snapping precision needs more work — placing/repositioning a marker exactly where intended isn't always reliable yet. Not refined further in this iteration; see `private/tickets/precision-repere-selection.md`.
+
+---
+
 ## Manual verification
 
 - Search for a phrase, save it as a quote with two tags, confirm both appear in the response with their own ids. **Gotcha**: `/api/search` matches case-insensitively, but `selectedText` revalidation is an exact (case-sensitive) match — the phrase actually highlighted at the returned offsets may not be the same case as the search query typed (e.g. searching "madeleine" can surface a paragraph where the match is actually "Madeleine"); send the text exactly as it appears in the paragraph, not as typed in the search box.
