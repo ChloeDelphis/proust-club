@@ -28,4 +28,24 @@ class TagService {
     List<TagResponse> list(UUID userId) {
         return repository.findByUserId(userId);
     }
+
+    @Transactional
+    TagResponse rename(UUID userId, int tagId, String name) {
+        String trimmed = name.trim();
+        RenameOutcome outcome = repository.renameForOwner(userId, tagId, trimmed);
+        if (outcome == RenameOutcome.NOT_FOUND) {
+            throw ApiException.tagNotFound();
+        }
+        if (outcome == RenameOutcome.NAME_TAKEN) {
+            throw ApiException.tagAlreadyExists();
+        }
+        return new TagResponse(tagId, trimmed);
+    }
+
+    @Transactional
+    void delete(UUID userId, int tagId) {
+        if (!repository.deleteForOwner(userId, tagId)) {
+            throw ApiException.tagNotFound();
+        }
+    }
 }

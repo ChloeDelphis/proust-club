@@ -64,4 +64,48 @@ class TagRepository {
                 .orElseGet(() -> findIdByUserIdAndNormalizedName(userId, trimmed)
                         .orElseThrow(() -> new IllegalStateException("Tag conflict detected but row not found: " + trimmed)));
     }
+
+    // UPDATE has no ON CONFLICT equivalent, so the conflict check is expressed as a NOT EXISTS
+    // in the WHERE clause itself rather than caught from a unique constraint violation.
+    // `other.id <> tagId` excludes the row being renamed, so re-casing a tag's own name never
+    // trips this.
+    RenameOutcome renameForOwner(UUID userId, int tagId, String trimmedName) {
+        var idField = DSL.field("id", Integer.class);
+        var userIdField = DSL.field("user_id", UUID.class);
+        var nameField = DSL.field("name", String.class);
+        var otherTags = DSL.table("tags").as("other");
+        var otherIdField = DSL.field("other.id", Integer.class);
+        var otherUserIdField = DSL.field("other.user_id", UUID.class);
+        var otherNameField = DSL.field("other.name", String.class);
+
+        int affected = dsl.update(DSL.table("tags"))
+                .set(nameField, trimmedName)
+                .where(idField.eq(tagId))
+                .and(userIdField.eq(userId))
+                .and(DSL.notExists(
+                        dsl.selectOne().from(otherTags)
+                                .where(otherUserIdField.eq(userId))
+                                .and(DSL.lower(otherNameField).eq(trimmedName.toLowerCase(Locale.ROOT)))
+                                .and(otherIdField.ne(tagId))
+                ))
+                .execute();
+
+        if (affected > 0) {
+            return RenameOutcome.RENAMED;
+        }
+
+        boolean ownedByUser = dsl.fetchExists(
+                dsl.selectFrom(DSL.table("tags")).where(idField.eq(tagId)).and(userIdField.eq(userId)));
+        return ownedByUser ? RenameOutcome.NAME_TAKEN : RenameOutcome.NOT_FOUND;
+    }
+
+    // The cascade on quote_selection_tags.tag_id (ON DELETE CASCADE, V5) handles detaching this
+    // tag from every quote — no application-level cleanup needed here.
+    boolean deleteForOwner(UUID userId, int tagId) {
+        int affected = dsl.deleteFrom(DSL.table("tags"))
+                .where(DSL.field("id", Integer.class).eq(tagId))
+                .and(DSL.field("user_id", UUID.class).eq(userId))
+                .execute();
+        return affected > 0;
+    }
 }
