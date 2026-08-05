@@ -9,6 +9,7 @@ import { deriveMarkerLabels, getWordBoundaries, snapToNearestBoundary, trimSelec
 import { buildParagraphSegments } from '../paragraphSegments'
 import type { ParagraphSegment, SelectionMarkers } from '../paragraphSegments'
 import { getOffsetFromPoint } from './cursorOffset'
+import { useSelectionContext } from '../useSelectionContext'
 import TagPickerPopup from '../TagPickerPopup/TagPickerPopup'
 import type { QuoteSelectionProps, Phase } from './QuoteSelection.types'
 import styles from './QuoteSelection.module.css'
@@ -51,16 +52,11 @@ function renderSegments(segments: ParagraphSegment[], onMarkerClick?: (role: 'st
   })
 }
 
-export default function QuoteSelection({
-  paragraphId,
-  text,
-  highlightRange,
-  disabled,
-  onSelectionStart,
-  onSelectionEnd,
-}: QuoteSelectionProps) {
+export default function QuoteSelection({ paragraphId, text, highlightRange }: QuoteSelectionProps) {
   const { isSuccess: isConnected } = useCurrentUser()
   const showToast = useToast()
+  const { activeParagraphId, startSelection, endSelection } = useSelectionContext()
+  const disabled = activeParagraphId !== null && activeParagraphId !== paragraphId
   const containerRef = useRef<HTMLParagraphElement>(null)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
 
@@ -74,11 +70,11 @@ export default function QuoteSelection({
     if (phase.kind === 'idle') return { start: null, end: null }
     if (phase.kind === 'ready' || phase.kind === 'tagPopup') return { start: phase.a, end: phase.b }
 
-    if (phase.settled.length === 0) {
+    if (phase.settled === null) {
       return { start: phase.live, end: null }
     }
-    const live = phase.live ?? phase.settled[0]
-    return deriveMarkerLabels(phase.settled[0], live)
+    const live = phase.live ?? phase.settled
+    return deriveMarkerLabels(phase.settled, live)
   }, [phase])
 
   const segments = useMemo(
@@ -90,36 +86,38 @@ export default function QuoteSelection({
     if (phase.kind !== 'placing' || !containerRef.current) return
     const rawOffset = getOffsetFromPoint(containerRef.current, event.clientX, event.clientY)
     if (rawOffset === null) return
-    setPhase({ kind: 'placing', settled: phase.settled, live: snapToNearestBoundary(rawOffset, boundaries) })
+    const snapped = snapToNearestBoundary(rawOffset, boundaries)
+    if (snapped === phase.live) return // cursor still within the same snapped zone — nothing changed
+    setPhase({ kind: 'placing', settled: phase.settled, live: snapped })
   }
 
   function handleContainerClick() {
     if (phase.kind !== 'placing' || phase.live === null) return
     const offset = phase.live
 
-    if (phase.settled.length === 1 && offset === phase.settled[0]) {
+    if (phase.settled === null) {
+      setPhase({ kind: 'placing', settled: offset, live: null })
+      return
+    }
+
+    if (offset === phase.settled) {
       return // no-op: dropping the second marker on the first one's boundary (empty selection)
     }
 
-    const nextSettled = [...phase.settled, offset]
-    if (nextSettled.length === 2) {
-      const { start, end } = deriveMarkerLabels(nextSettled[0], nextSettled[1])
-      setPhase({ kind: 'ready', a: start, b: end })
-    } else {
-      setPhase({ kind: 'placing', settled: nextSettled, live: null })
-    }
+    const { start, end } = deriveMarkerLabels(phase.settled, offset)
+    setPhase({ kind: 'ready', a: start, b: end })
   }
 
   function handleMarkerClick(role: 'start' | 'end') {
     if (phase.kind !== 'ready') return
     const own = role === 'start' ? phase.a : phase.b
     const other = role === 'start' ? phase.b : phase.a
-    setPhase({ kind: 'placing', settled: [other], live: own })
+    setPhase({ kind: 'placing', settled: other, live: own })
   }
 
   function handleStart() {
-    onSelectionStart()
-    setPhase({ kind: 'placing', settled: [], live: null })
+    startSelection(paragraphId)
+    setPhase({ kind: 'placing', settled: null, live: null })
   }
 
   function handleValidate() {
@@ -129,7 +127,7 @@ export default function QuoteSelection({
 
   function handleCancel() {
     setPhase({ kind: 'idle' })
-    onSelectionEnd()
+    endSelection()
   }
 
   function saveQuote(rawStart: number, rawEnd: number, tagNames: string[]) {
@@ -140,7 +138,7 @@ export default function QuoteSelection({
         onSuccess: () => {
           showToast('Citation enregistrée.')
           setPhase({ kind: 'idle' })
-          onSelectionEnd()
+          endSelection()
         },
         onError: () => {
           showToast("La citation n'a pas pu être enregistrée.")

@@ -9,22 +9,9 @@ interface ResultListProps {
   size: number
   isFetching: boolean
   onPageChange: (page: number) => void
-  activeSelectionParagraphId: number | null
-  onSelectionStart: (paragraphId: number) => void
-  onSelectionEnd: () => void
 }
 
-export default function ResultList({
-  results,
-  total,
-  page,
-  size,
-  isFetching,
-  onPageChange,
-  activeSelectionParagraphId,
-  onSelectionStart,
-  onSelectionEnd,
-}: ResultListProps) {
+export default function ResultList({ results, total, page, size, isFetching, onPageChange }: ResultListProps) {
   const totalPages = Math.ceil(total / size)
   const hasPrev = page > 0
   const hasNext = page < totalPages - 1
@@ -37,12 +24,7 @@ export default function ResultList({
       <ul className={styles.list}>
         {results.map(hit => (
           <li key={hit.paragraphId}>
-            <ParagraphCard
-              {...hit}
-              disabled={activeSelectionParagraphId !== null && activeSelectionParagraphId !== hit.paragraphId}
-              onSelectionStart={() => onSelectionStart(hit.paragraphId)}
-              onSelectionEnd={onSelectionEnd}
-            />
+            <ParagraphCard {...hit} />
           </li>
         ))}
       </ul>

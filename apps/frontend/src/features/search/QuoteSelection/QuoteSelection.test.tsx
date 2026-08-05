@@ -9,19 +9,25 @@ import * as quoteApi from '../../../api/quote'
 import * as cursorOffset from './cursorOffset'
 import { ApiError } from '../../../api/client'
 import ToastProvider from '../../../components/Toast/ToastProvider'
+import { SelectionContext } from '../SelectionContext'
+import type { SelectionContextValue } from '../SelectionContext'
 
 vi.mock('../../../api/auth')
 vi.mock('../../../api/tag')
 vi.mock('../../../api/quote')
 vi.mock('./cursorOffset')
 
-function wrapper({ children }: { children: ReactNode }) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>{children}</ToastProvider>
-    </QueryClientProvider>
-  )
+function makeWrapper(selectionValue: SelectionContextValue) {
+  return function Wrapper({ children }: { children: ReactNode }) {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <SelectionContext.Provider value={selectionValue}>{children}</SelectionContext.Provider>
+        </ToastProvider>
+      </QueryClientProvider>
+    )
+  }
 }
 
 const connectedUser: authApi.UserResponse = {
@@ -34,23 +40,19 @@ const connectedUser: authApi.UserResponse = {
 // "hello world today" — boundaries at 0, 6, 12, 18. Highlight covers "world" (6-11).
 const TEXT = 'hello world today'
 const HIGHLIGHT = { start: 6, end: 11 }
+const PARAGRAPH_ID = 42
 
-function renderConnected(props: Partial<Parameters<typeof QuoteSelection>[0]> = {}) {
-  const onSelectionStart = vi.fn()
-  const onSelectionEnd = vi.fn()
-  render(
-    <QuoteSelection
-      paragraphId={42}
-      text={TEXT}
-      highlightRange={HIGHLIGHT}
-      disabled={false}
-      onSelectionStart={onSelectionStart}
-      onSelectionEnd={onSelectionEnd}
-      {...props}
-    />,
-    { wrapper },
-  )
-  return { onSelectionStart, onSelectionEnd }
+function renderConnected({ disabled = false }: { disabled?: boolean } = {}) {
+  const startSelection = vi.fn()
+  const endSelection = vi.fn()
+  render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, {
+    wrapper: makeWrapper({
+      activeParagraphId: disabled ? PARAGRAPH_ID + 1 : null,
+      startSelection,
+      endSelection,
+    }),
+  })
+  return { startSelection, endSelection }
 }
 
 function moveAndClickAt(offset: number) {
@@ -84,12 +86,12 @@ describe('QuoteSelection — connected', () => {
     expect(button).toBeDisabled()
   })
 
-  it('enters placing mode and calls onSelectionStart when clicking the save button', async () => {
-    const { onSelectionStart } = renderConnected()
+  it('enters placing mode and calls startSelection with its paragraph id when clicking the save button', async () => {
+    const { startSelection } = renderConnected()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
 
-    expect(onSelectionStart).toHaveBeenCalledTimes(1)
+    expect(startSelection).toHaveBeenCalledWith(PARAGRAPH_ID)
     expect(screen.getByRole('button', { name: 'Annuler' })).toBeInTheDocument()
   })
 
@@ -153,13 +155,13 @@ describe('QuoteSelection — connected', () => {
     expect(screen.getByRole('button', { name: 'fin' })).toBeInTheDocument()
   })
 
-  it('cancel resets to idle and calls onSelectionEnd', async () => {
-    const { onSelectionEnd } = renderConnected()
+  it('cancel resets to idle and calls endSelection', async () => {
+    const { endSelection } = renderConnected()
     await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
 
     await userEvent.click(screen.getByRole('button', { name: 'Annuler' }))
 
-    expect(onSelectionEnd).toHaveBeenCalledTimes(1)
+    expect(endSelection).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('button', { name: 'Sauvegarder une citation' })).toBeInTheDocument()
   })
 
@@ -167,14 +169,14 @@ describe('QuoteSelection — connected', () => {
     vi.mocked(tagApi.listTags).mockResolvedValue([{ id: 1, name: 'Combray' }])
     vi.mocked(quoteApi.createQuote).mockResolvedValue({
       id: 1,
-      paragraphId: 42,
+      paragraphId: PARAGRAPH_ID,
       startOffset: 0,
       endOffset: 11,
       selectedText: 'hello world',
       tags: [],
       createdAt: '2026-08-05T00:00:00Z',
     })
-    const { onSelectionEnd } = renderConnected()
+    const { endSelection } = renderConnected()
     await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
 
     const { paragraph } = moveAndClickAt(0)
@@ -191,21 +193,21 @@ describe('QuoteSelection — connected', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Terminer' }))
 
     expect(quoteApi.createQuote).toHaveBeenCalledWith({
-      paragraphId: 42,
+      paragraphId: PARAGRAPH_ID,
       startOffset: 0,
       endOffset: 11,
       selectedText: 'hello world',
       tagNames: ['Combray'],
     })
     expect(await screen.findByText('Citation enregistrée.')).toBeInTheDocument()
-    expect(onSelectionEnd).toHaveBeenCalled()
+    expect(endSelection).toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Sauvegarder une citation' })).toBeInTheDocument()
   })
 
   it('dismissing the popup via the × saves the quote without any tag', async () => {
     vi.mocked(quoteApi.createQuote).mockResolvedValue({
       id: 1,
-      paragraphId: 42,
+      paragraphId: PARAGRAPH_ID,
       startOffset: 0,
       endOffset: 11,
       selectedText: 'hello world',

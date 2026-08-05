@@ -17,9 +17,10 @@ export default function TagPickerPopup({ onFinish, onDismiss }: TagPickerPopupPr
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
 
+  const tagList = tags ?? []
   const normalizedSearch = search.trim().toLowerCase()
-  const filteredTags = (tags ?? []).filter(tag => tag.name.toLowerCase().includes(normalizedSearch))
-  const exactMatchExists = (tags ?? []).some(tag => tag.name.toLowerCase() === normalizedSearch)
+  const filteredTags = tagList.filter(tag => tag.name.toLowerCase().includes(normalizedSearch))
+  const exactMatchExists = tagList.some(tag => tag.name.toLowerCase() === normalizedSearch)
   const canCreate = normalizedSearch.length > 0 && !exactMatchExists
 
   function toggleTag(name: string) {
@@ -27,14 +28,6 @@ export default function TagPickerPopup({ onFinish, onDismiss }: TagPickerPopupPr
       const next = new Set(current)
       if (next.has(name)) next.delete(name)
       else next.add(name)
-      return next
-    })
-  }
-
-  function removeSelected(name: string) {
-    setSelectedNames(current => {
-      const next = new Set(current)
-      next.delete(name)
       return next
     })
   }
@@ -57,7 +50,7 @@ export default function TagPickerPopup({ onFinish, onDismiss }: TagPickerPopupPr
             {Array.from(selectedNames).map(name => (
               <li key={name} className={styles.selectedChip}>
                 {name}
-                <button type="button" onClick={() => removeSelected(name)} aria-label={`Retirer ${name}`}>
+                <button type="button" onClick={() => toggleTag(name)} aria-label={`Retirer ${name}`}>
                   ×
                 </button>
               </li>
