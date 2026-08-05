@@ -1,5 +1,6 @@
 import type { SearchHit } from '../../../api/search'
 import ParagraphCard from '../ParagraphCard/ParagraphCard'
+import Pagination from '../../../components/Pagination/Pagination'
 import styles from './ResultList.module.css'
 
 interface ResultListProps {
@@ -12,10 +13,6 @@ interface ResultListProps {
 }
 
 export default function ResultList({ results, total, page, size, isFetching, onPageChange }: ResultListProps) {
-  const totalPages = Math.ceil(total / size)
-  const hasPrev = page > 0
-  const hasNext = page < totalPages - 1
-
   return (
     <section className={isFetching ? `${styles.root} ${styles.isFetching}` : styles.root}>
       <p className={styles.count}>
@@ -28,25 +25,7 @@ export default function ResultList({ results, total, page, size, isFetching, onP
           </li>
         ))}
       </ul>
-      {totalPages > 1 && (
-        <nav className={styles.pagination} aria-label="Pagination">
-          <button
-            className={styles.pageButton}
-            onClick={() => onPageChange(page - 1)}
-            disabled={!hasPrev}
-          >
-            ← Précédent
-          </button>
-          <span className={styles.pageInfo}>{page + 1} / {totalPages}</span>
-          <button
-            className={styles.pageButton}
-            onClick={() => onPageChange(page + 1)}
-            disabled={!hasNext}
-          >
-            Suivant →
-          </button>
-        </nav>
-      )}
+      <Pagination page={page} size={size} total={total} onPageChange={onPageChange} />
     </section>
   )
 }

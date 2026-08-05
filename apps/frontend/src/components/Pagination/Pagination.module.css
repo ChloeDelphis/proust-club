@@ -1,0 +1,37 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0ddd8;
+}
+
+.pageButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: none;
+  border: 1px solid #c0bbb5;
+  border-radius: 4px;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.pageButton:hover:not(:disabled) {
+  border-color: #6b3fa0;
+  color: #6b3fa0;
+}
+
+.pageButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageInfo {
+  font-size: 0.875rem;
+  color: #6b6660;
+  min-width: 5rem;
+  text-align: center;
+}
