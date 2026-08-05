@@ -4,14 +4,22 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import SearchPage from './SearchPage'
 import * as searchApi from '../../api/search'
+import * as authApi from '../../api/auth'
+import { ApiError } from '../../api/client'
+import ToastProvider from '../../components/Toast/ToastProvider'
 
 vi.mock('../../api/search')
+vi.mock('../../api/auth')
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{children}</ToastProvider>
+    </QueryClientProvider>
+  )
 }
 
 const mockHit: searchApi.SearchHit = {
@@ -33,6 +41,7 @@ const mockResponse: searchApi.SearchResponse = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
 })
 
 describe('SearchPage', () => {

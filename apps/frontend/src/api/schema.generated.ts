@@ -4,6 +4,75 @@
  */
 
 export interface paths {
+    "/api/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my tags
+         * @description Returns the authenticated user's tags, ordered alphabetically (case-insensitive).
+         */
+        get: operations["list"];
+        put?: never;
+        /**
+         * Create a tag
+         * @description Creates a tag ahead of tagging any quote. 409 if a tag with the same name (case-insensitive) already exists for this user.
+         */
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my quote selections
+         * @description Returns the authenticated user's quotes, most recent first. Filterable by tagId.
+         */
+        get: operations["list_1"];
+        put?: never;
+        /**
+         * Save a quote selection
+         * @description Saves a selection of text found in a paragraph (whole paragraph or a substring),
+         *     with optional tags. The server re-validates that `selectedText` matches the paragraph's actual text at the given offsets, rejecting the request otherwise.
+         */
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a tag to a quote
+         * @description Attaches a tag (by name, created if it doesn't exist yet) to an existing quote. Idempotent: adding a tag already attached does nothing.
+         */
+        post: operations["addTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -64,6 +133,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tags/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a tag
+         * @description Deletes a tag and detaches it from every quote that had it (cascade). Quotes themselves are not affected — only this tag disappears from their tag list.
+         */
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename a tag
+         * @description Renames a tag. 409 if another tag with the same name (case-insensitive) already exists for this user; renaming to the same tag's own name with different casing succeeds.
+         */
+        patch: operations["rename"];
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -109,10 +202,154 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/quotes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a quote selection
+         * @description Deletes a quote and all its tag associations. 404 if it doesn't exist or doesn't belong to the authenticated user.
+         */
+        delete: operations["delete_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quotes/{id}/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a tag from a quote
+         * @description Detaches a tag from a quote. No floor on the number of tags — a quote can end up with zero.
+         */
+        delete: operations["removeTag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Request to create a tag ahead of tagging any quote */
+        CreateTagRequest: {
+            /**
+             * @description Tag name, unique per user (case-insensitive after trimming)
+             * @example Combray
+             */
+            name: string;
+        };
+        /** @description A personal tag */
+        TagResponse: {
+            /**
+             * Format: int32
+             * @description Tag identifier
+             * @example 12
+             */
+            id?: number;
+            /**
+             * @description Tag name, as entered by the user (trimmed, original casing preserved)
+             * @example Combray
+             */
+            name?: string;
+        };
+        ProblemDetail: {
+            /** Format: uri */
+            type?: string;
+            title?: string;
+            /** Format: int32 */
+            status?: number;
+            detail?: string;
+            /** Format: uri */
+            instance?: string;
+            properties?: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Request to save a quote selection, with optional tags */
+        CreateQuoteSelectionRequest: {
+            /**
+             * Format: int32
+             * @description Paragraph the selection belongs to
+             * @example 42
+             */
+            paragraphId?: number;
+            /**
+             * Format: int32
+             * @description Start offset within the paragraph text (inclusive, 0-based)
+             * @example 0
+             */
+            startOffset?: number;
+            /**
+             * Format: int32
+             * @description End offset within the paragraph text (exclusive, 0-based)
+             * @example 120
+             */
+            endOffset?: number;
+            /** @description Selected text — must match the paragraph exactly at the given offsets; can be the whole paragraph */
+            selectedText: string;
+            /** @description Tag names to attach, created if they don't exist yet for this user. Optional — a quote can be saved without any tag. */
+            tagNames?: string[];
+        };
+        /** @description A saved quote selection */
+        QuoteSelectionResponse: {
+            /**
+             * Format: int32
+             * @description Quote selection identifier
+             * @example 7
+             */
+            id?: number;
+            /**
+             * Format: int32
+             * @description Paragraph the selection belongs to
+             * @example 42
+             */
+            paragraphId?: number;
+            /**
+             * Format: int32
+             * @description Start offset within the paragraph text (inclusive, 0-based)
+             * @example 0
+             */
+            startOffset?: number;
+            /**
+             * Format: int32
+             * @description End offset within the paragraph text (exclusive, 0-based)
+             * @example 120
+             */
+            endOffset?: number;
+            /** @description Selected text */
+            selectedText?: string;
+            /** @description Tags attached to this quote (possibly empty — tagging is optional) */
+            tags?: components["schemas"]["TagResponse"][];
+            /**
+             * Format: date-time
+             * @description When this quote was saved
+             */
+            createdAt?: string;
+        };
+        /** @description Request to attach a tag to a quote selection, by name */
+        AddTagRequest: {
+            /**
+             * @description Tag name — reused if it already exists for this user, created otherwise
+             * @example Combray
+             */
+            name: string;
+        };
         /** @description Account creation request */
         RegisterRequest: {
             /**
@@ -155,19 +392,6 @@ export interface components {
              */
             role?: string;
         };
-        ProblemDetail: {
-            /** Format: uri */
-            type?: string;
-            title?: string;
-            /** Format: int32 */
-            status?: number;
-            detail?: string;
-            /** Format: uri */
-            instance?: string;
-            properties?: {
-                [key: string]: unknown;
-            };
-        };
         /** @description Login request */
         LoginRequest: {
             /**
@@ -180,6 +404,14 @@ export interface components {
              * @example hunter2222
              */
             password: string;
+        };
+        /** @description Request to rename an existing tag */
+        RenameTagRequest: {
+            /**
+             * @description New tag name, unique per user (case-insensitive after trimming)
+             * @example Jalousie
+             */
+            name: string;
         };
         /** @description A paragraph matching the search query */
         SearchHit: {
@@ -242,6 +474,29 @@ export interface components {
              */
             size?: number;
         };
+        /** @description Paginated list of the current user's quote selections */
+        QuoteSelectionListResponse: {
+            /** @description List of quote selections */
+            results?: components["schemas"]["QuoteSelectionResponse"][];
+            /**
+             * Format: int64
+             * @description Total number of matches across all pages
+             * @example 3
+             */
+            total?: number;
+            /**
+             * Format: int32
+             * @description Current page number (0-based)
+             * @example 0
+             */
+            page?: number;
+            /**
+             * Format: int32
+             * @description Requested page size
+             * @example 10
+             */
+            size?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -251,6 +506,199 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tags */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"][];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Tag created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Invalid request body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Tag name already exists for this user */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty list, not an error.
+                 * @example 12
+                 */
+                tagId?: number;
+                /**
+                 * @description Zero-based page index (default: 0)
+                 * @example 0
+                 */
+                page?: number;
+                /**
+                 * @description Number of results per batch (1–20, default 10)
+                 * @example 10
+                 */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quote selections (empty list if none match) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteSelectionListResponse"];
+                };
+            };
+            /** @description Invalid request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuoteSelectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Quote saved */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteSelectionResponse"];
+                };
+            };
+            /** @description Invalid request body, or selectedText/offsets don't match the paragraph */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Paragraph not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    addTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated quote selection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteSelectionResponse"];
+                };
+            };
+            /** @description Invalid request body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Quote not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;
@@ -344,6 +792,88 @@ export interface operations {
             };
         };
     };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    rename: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Tag renamed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Invalid request body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Another tag with this name already exists for this user */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query: {
@@ -414,6 +944,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    delete_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quote deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quote not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    removeTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                tagId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quote not found, or tag not attached to this quote */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };

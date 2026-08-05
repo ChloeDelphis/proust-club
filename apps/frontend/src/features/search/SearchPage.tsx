@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { searchParagraphs } from '../../api/search'
@@ -7,6 +7,7 @@ import ResultList from './ResultList/ResultList'
 import Spinner from '../../components/Spinner/Spinner'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import EmptyState from '../../components/EmptyState/EmptyState'
+import { SelectionContext } from './SelectionContext'
 import styles from './SearchPage.module.css'
 
 const PAGE_SIZE = 10
@@ -14,6 +15,25 @@ const PAGE_SIZE = 10
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
+  const [activeSelectionParagraphId, setActiveSelectionParagraphId] = useState<number | null>(null)
+
+  // A selection in progress no longer makes sense once the visible results change underneath it.
+  // Adjusted during render (not in an effect) — the React-recommended way to reset state when
+  // inputs change, see https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [lastSelectionResetKey, setLastSelectionResetKey] = useState({ query, page })
+  if (lastSelectionResetKey.query !== query || lastSelectionResetKey.page !== page) {
+    setLastSelectionResetKey({ query, page })
+    setActiveSelectionParagraphId(null)
+  }
+
+  const selectionContextValue = useMemo(
+    () => ({
+      activeParagraphId: activeSelectionParagraphId,
+      startSelection: setActiveSelectionParagraphId,
+      endSelection: () => setActiveSelectionParagraphId(null),
+    }),
+    [activeSelectionParagraphId],
+  )
 
   const isQueryValid = query.length >= 2
 
@@ -40,14 +60,16 @@ export default function SearchPage() {
       content = <EmptyState message={`Aucun résultat pour « ${query} ».`} />
     } else {
       content = (
-        <ResultList
-          results={data.results}
-          total={data.total}
-          page={data.page}
-          size={data.size}
-          isFetching={isFetching}
-          onPageChange={setPage}
-        />
+        <SelectionContext.Provider value={selectionContextValue}>
+          <ResultList
+            results={data.results}
+            total={data.total}
+            page={data.page}
+            size={data.size}
+            isFetching={isFetching}
+            onPageChange={setPage}
+          />
+        </SelectionContext.Provider>
       )
     }
   }

@@ -1,0 +1,110 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.root {
+  position: relative;
+  width: min(360px, 90vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.closeButton {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  border: none;
+  background: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b6660;
+  padding: 0.25rem 0.5rem;
+}
+
+.selectedList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.selectedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #fff3cd;
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.selectedChip button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e0ddd8;
+  border-radius: 4px;
+  font-size: 0.9375rem;
+  margin-bottom: 0.75rem;
+}
+
+.tagList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tagOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.createButton {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+  border: 1px dashed #6b6660;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.finishButton {
+  display: block;
+  width: 100%;
+  padding: 0.625rem;
+  border: none;
+  border-radius: 4px;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9375rem;
+}
