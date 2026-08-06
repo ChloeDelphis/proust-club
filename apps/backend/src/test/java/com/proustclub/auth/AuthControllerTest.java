@@ -251,14 +251,21 @@ class AuthControllerTest {
         assertThat(sessionAfterLogin.getId()).isNotEqualTo(sessionIdAfterRegister);
     }
 
-    // No automated MockMvc test for CSRF-token rotation after login/logout: the deferred
-    // cookie-writing mechanism (CsrfCookieFilter forcing CsrfToken#getToken()) proved flaky
-    // under MockMvc depending on test execution order — sometimes no Set-Cookie header appears
-    // for reasons not fully root-caused, even though SecurityContextHolder is clean and the
-    // response status is correct. The behavior itself is solidly verified: manually against the
-    // real running server (repeated, precise before/after comparisons) and structurally by
-    // loginRotatesSessionId below, which exercises the same CompositeSessionAuthenticationStrategy
-    // that also carries CsrfAuthenticationStrategy.
+    // A real bug found and fixed 2026-08-06 lived here (see private/impl/csrf-rotation-bug-1-analyse.md):
+    // CsrfCookieFilter used to resolve the deferred CSRF token BEFORE the controller ran, so the
+    // token rotated by CsrfAuthenticationStrategy during register's auto-login (see SecurityConfig)
+    // never actually got written to a Set-Cookie — the client was left with a deleted CSRF cookie
+    // and no valid replacement, so the very next mutating request was rejected 403 before reaching
+    // any business logic. No MockMvc integration test for this here: a full cookie-round-trip
+    // attempt (bootstrap GET → register → second mutating call, all via real Set-Cookie headers
+    // rather than .with(csrf())) reproduced the bug correctly in isolation, but turned out exactly
+    // as order-dependent under MockMvc as the rotation test the 2026-08-02 audit had already tried
+    // and dropped for the same reason (see git history of this file for that comment) — some other
+    // test in this class leaves MockMvc's deferred-cookie resolution in a state where a fresh
+    // anonymous GET stops getting a Set-Cookie at all. Covered instead by a deterministic unit test
+    // with no Spring context (CsrfCookieFilterTest, config package) that exercises the exact fixed
+    // logic — resolving both before and after the chain, picking up an attribute swapped mid-chain —
+    // plus manual verification against the real running server (curl, before/after comparison).
 
     @Test
     void meWithoutSessionReturnsUnauthorized() throws Exception {
