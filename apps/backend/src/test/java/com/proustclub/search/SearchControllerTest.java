@@ -107,6 +107,10 @@ class SearchControllerTest {
                 .andExpect(jsonPath("$.total").value(0));
     }
 
+    // detail not asserted below: MockMvc doesn't render the ProblemDetail body for this native
+    // resolution path (see ErrorHandlingIntegrationTest) — the descriptive per-constraint message
+    // ("size must be <= 20", etc., set via @Min/@Max/@Size message=... + messages.properties) is
+    // verified manually against a real running server instead.
     @Test
     void searchQueryTooShortReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/api/search").param("q", "a"))
