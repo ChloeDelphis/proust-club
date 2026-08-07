@@ -35,8 +35,28 @@ public class CorpusImportService {
         log.info("Préparation de {} paragraphes...", data.size());
 
         batchInsert(data);
+        updateVolumePageRanges();
 
         log.info("Import terminé : {} paragraphes insérés", data.size());
+    }
+
+    private void updateVolumePageRanges() {
+        var ranges = dsl.select(
+                        DSL.field("volume_id", Integer.class),
+                        DSL.min(DSL.field("page_number", Integer.class)).as("min_page_agg"),
+                        DSL.max(DSL.field("page_number", Integer.class)).as("max_page_agg"))
+                .from(DSL.table("paragraphs"))
+                .groupBy(DSL.field("volume_id"))
+                .asTable("ranges");
+
+        dsl.update(DSL.table("volumes"))
+                .set(DSL.field("min_page", Integer.class), ranges.field("min_page_agg", Integer.class))
+                .set(DSL.field("max_page", Integer.class), ranges.field("max_page_agg", Integer.class))
+                .from(ranges)
+                .where(DSL.field("volumes.id", Integer.class).eq(ranges.field("volume_id", Integer.class)))
+                .execute();
+
+        log.info("Bornes de page des tomes recalculées");
     }
 
     private List<PartRange> loadPartRanges() {

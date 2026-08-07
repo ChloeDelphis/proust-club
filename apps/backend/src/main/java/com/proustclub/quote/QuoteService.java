@@ -4,6 +4,9 @@ import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import com.proustclub.quote.dto.QuoteSelectionListResponse;
 import com.proustclub.quote.dto.QuoteSelectionResponse;
 import com.proustclub.quote.dto.TagResponse;
+import com.proustclub.quote.dto.TimelineQuote;
+import com.proustclub.quote.dto.TimelineResponse;
+import com.proustclub.quote.dto.TimelineVolume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -59,6 +62,28 @@ class QuoteService {
                 .toList();
 
         return new QuoteSelectionListResponse(results, total, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    TimelineResponse getTimeline(UUID userId, Integer tagId) {
+        var entries = quoteRepository.findTimelineByUserId(userId, tagId);
+        var volumes = quoteRepository.findVolumesWithPageRange();
+
+        var quoteIds = entries.stream().map(TimelineEntry::id).toList();
+        var tagsByQuoteId = quoteRepository.tagsForQuoteIds(quoteIds);
+
+        var quotes = entries.stream()
+                .map(entry -> new TimelineQuote(
+                        entry.id(), entry.paragraphId(), entry.pageNumber(), entry.volumeId(),
+                        entry.selectedText(), tagsByQuoteId.getOrDefault(entry.id(), List.of()), entry.createdAt()
+                ))
+                .toList();
+
+        var volumeResponses = volumes.stream()
+                .map(v -> new TimelineVolume(v.id(), v.title(), v.position(), v.minPage(), v.maxPage()))
+                .toList();
+
+        return new TimelineResponse(volumeResponses, quotes);
     }
 
     @Transactional

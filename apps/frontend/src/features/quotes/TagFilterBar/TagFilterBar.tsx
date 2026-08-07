@@ -5,12 +5,9 @@ import { deleteTag, renameTag } from '../../../api/tag'
 import { ApiError } from '../../../api/client'
 import { useTags } from '../../../hooks/useTags'
 import { useToast } from '../../../components/Toast/useToast'
+import FilterButton from '../../../components/FilterButton/FilterButton'
 import type { TagFilterBarProps } from './TagFilterBar.types'
 import styles from './TagFilterBar.module.css'
-
-function filterButtonClass(active: boolean): string {
-  return active ? `${styles.filterButton} ${styles.isActive}` : styles.filterButton
-}
 
 export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarProps) {
   const queryClient = useQueryClient()
@@ -98,13 +95,9 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
 
   return (
     <nav className={styles.root} aria-label="Filtrer par tag">
-      <button
-        type="button"
-        className={filterButtonClass(activeTagId === null)}
-        onClick={() => onSelectTag(null)}
-      >
+      <FilterButton active={activeTagId === null} onClick={() => onSelectTag(null)}>
         Tous
-      </button>
+      </FilterButton>
       <ul className={styles.list}>
         {tagList.map(tag => (
           <li key={tag.id} className={styles.item}>
@@ -121,13 +114,9 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
               />
             ) : (
               <>
-                <button
-                  type="button"
-                  className={filterButtonClass(activeTagId === tag.id)}
-                  onClick={() => onSelectTag(tag.id)}
-                >
+                <FilterButton active={activeTagId === tag.id} onClick={() => onSelectTag(tag.id)}>
                   {tag.name}
-                </button>
+                </FilterButton>
                 <button
                   type="button"
                   className={styles.iconButton}

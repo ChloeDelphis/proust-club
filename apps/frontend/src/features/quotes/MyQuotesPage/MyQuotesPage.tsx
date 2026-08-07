@@ -5,6 +5,7 @@ import { Navigate } from 'react-router'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { listQuotes } from '../../../api/quote'
 import TagFilterBar from '../TagFilterBar/TagFilterBar'
+import TimelineBar from '../TimelineBar/TimelineBar'
 import QuoteCard from '../QuoteCard/QuoteCard'
 import Pagination from '../../../components/Pagination/Pagination'
 import Spinner from '../../../components/Spinner/Spinner'
@@ -73,6 +74,7 @@ export default function MyQuotesPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>Mes citations</h1>
+      <TimelineBar activeTagId={tagId} />
       <TagFilterBar activeTagId={tagId} onSelectTag={handleSelectTag} />
       {content}
     </main>

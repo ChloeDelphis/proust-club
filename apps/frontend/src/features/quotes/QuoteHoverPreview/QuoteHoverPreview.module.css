@@ -1,0 +1,17 @@
+/* Sized and positioned by its container (a foreignObject in TimelineBar's SVG) — this fills
+   that box rather than computing its own offset. */
+.root {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: fit-content;
+  padding: 0.5rem 0.75rem;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  white-space: normal;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}

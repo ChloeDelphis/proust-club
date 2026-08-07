@@ -182,6 +182,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/quotes/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get my personal timeline
+         * @description Returns every one of the authenticated user's saved quotes, positioned on the work's structure (volume, page) — unpaginated, unlike list(). Filterable by tagId, same semantics as list().
+         */
+        get: operations["timeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me": {
         parameters: {
             query?: never;
@@ -496,6 +516,81 @@ export interface components {
              * @example 10
              */
             size?: number;
+        };
+        /** @description A saved quote positioned on the personal timeline */
+        TimelineQuote: {
+            /**
+             * Format: int32
+             * @description Quote selection identifier
+             * @example 7
+             */
+            id?: number;
+            /**
+             * Format: int32
+             * @description Paragraph the selection belongs to
+             * @example 42
+             */
+            paragraphId?: number;
+            /**
+             * Format: int32
+             * @description Page this quote's paragraph appears on, used to position its bookmark
+             * @example 145
+             */
+            pageNumber?: number;
+            /**
+             * Format: int32
+             * @description Volume this quote's paragraph belongs to
+             * @example 2
+             */
+            volumeId?: number;
+            /** @description Selected text */
+            selectedText?: string;
+            /** @description Tags attached to this quote (possibly empty — tagging is optional) */
+            tags?: components["schemas"]["TagResponse"][];
+            /**
+             * Format: date-time
+             * @description When this quote was saved
+             */
+            createdAt?: string;
+        };
+        /** @description The user's saved quotes positioned on the work's structure, for the personal timeline */
+        TimelineResponse: {
+            /** @description All 7 volumes, always present regardless of whether they contain any saved quote */
+            volumes?: components["schemas"]["TimelineVolume"][];
+            /** @description The user's saved quotes, ordered by their position in the work */
+            quotes?: components["schemas"]["TimelineQuote"][];
+        };
+        /** @description A volume of the work, with the page range it spans (used to draw delimiters and position bookmarks) */
+        TimelineVolume: {
+            /**
+             * Format: int32
+             * @description Volume identifier
+             * @example 2
+             */
+            id?: number;
+            /**
+             * @description Volume title
+             * @example À l'Ombre des Jeunes Filles en Fleurs
+             */
+            title?: string;
+            /**
+             * Format: int32
+             * @description Order of this volume in the work (1-based)
+             * @example 2
+             */
+            position?: number;
+            /**
+             * Format: int32
+             * @description First page of this volume
+             * @example 104
+             */
+            minPage?: number;
+            /**
+             * Format: int32
+             * @description Last page of this volume
+             * @example 183
+             */
+            maxPage?: number;
         };
     };
     responses: never;
@@ -906,6 +1001,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Invalid request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    timeline: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty quotes list, not an error.
+                 * @example 12
+                 */
+                tagId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Timeline data (empty quotes list if none match; volumes are always present) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineResponse"];
                 };
             };
             /** @description Invalid request parameters */

@@ -50,6 +50,15 @@ class QuoteControllerTest {
                 .values(1, 1, 1, 1, "La madeleine est un symbole fort chez Proust.")
                 .returning(DSL.field("id", Integer.class))
                 .fetchOne(DSL.field("id", Integer.class));
+
+        // Mirrors what CorpusImportService computes for real after an import — the timeline
+        // endpoint assumes every volume always has a page range (see QuoteRepository.
+        // findVolumesWithPageRange), which only holds once import has run. Tests insert
+        // paragraphs directly, bypassing the importer, so this has to be stamped by hand.
+        dsl.update(DSL.table("volumes"))
+                .set(DSL.field("min_page", Integer.class), 1)
+                .set(DSL.field("max_page", Integer.class), 999)
+                .execute();
     }
 
     @AfterEach
@@ -223,6 +232,77 @@ class QuoteControllerTest {
 
         mockMvc.perform(get("/api/quotes").session(session).param("tagId", "0"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // --- GET /api/quotes/timeline ---
+
+    @Test
+    void timelineAlwaysReturnsAllSevenVolumesEvenWithNoQuotes() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes/timeline").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.volumes.length()").value(7))
+                .andExpect(jsonPath("$.quotes.length()").value(0));
+    }
+
+    @Test
+    void timelineReturnsQuotesOrderedByPositionAcrossVolumes() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        int laterParagraphId = dsl.insertInto(DSL.table("paragraphs"),
+                        DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
+                        DSL.field("page_number"), DSL.field("text"))
+                .values(2, 4, 2, 150, "Un paragraphe plus loin dans l'oeuvre, dans un autre tome.")
+                .returning(DSL.field("id", Integer.class))
+                .fetchOne(DSL.field("id", Integer.class));
+
+        createQuote(session, laterParagraphId, 0, 2, "Un");
+        createQuote(session, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(get("/api/quotes/timeline").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quotes.length()").value(2))
+                .andExpect(jsonPath("$.quotes[0].selectedText").value("madeleine"))
+                .andExpect(jsonPath("$.quotes[0].pageNumber").value(1))
+                .andExpect(jsonPath("$.quotes[0].volumeId").value(1))
+                .andExpect(jsonPath("$.quotes[1].selectedText").value("Un"))
+                .andExpect(jsonPath("$.quotes[1].pageNumber").value(150))
+                .andExpect(jsonPath("$.quotes[1].volumeId").value(2));
+    }
+
+    @Test
+    void timelineFiltersByTagId() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        MvcResult tagged = mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(createQuoteJson(paragraphId, 3, 12, "madeleine", List.of("Combray"))))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        createQuote(session, paragraphId, 0, 2, "La");
+
+        int tagId = objectMapper.readTree(tagged.getResponse().getContentAsString())
+                .get("tags").get(0).get("id").asInt();
+
+        mockMvc.perform(get("/api/quotes/timeline").session(session).param("tagId", String.valueOf(tagId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quotes.length()").value(1))
+                .andExpect(jsonPath("$.quotes[0].selectedText").value("madeleine"));
+    }
+
+    @Test
+    void timelineTagIdBelowMinimumReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes/timeline").session(session).param("tagId", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void timelineWithoutSessionReturnsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/quotes/timeline"))
+                .andExpect(status().isUnauthorized());
     }
 
     // --- DELETE /api/quotes/{id} ---

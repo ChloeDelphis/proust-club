@@ -44,3 +44,34 @@ export function listQuotes(params: QuoteListParams = {}, signal?: AbortSignal): 
 export function deleteQuote(id: number, signal?: AbortSignal): Promise<void> {
   return apiFetch<void>(`/api/quotes/${id}`, { method: 'DELETE', signal })
 }
+
+export type TimelineParams = NonNullable<operations['timeline']['parameters']['query']>
+
+// Same reasoning as QuoteSelectionResponse above: fields written by hand as non-optional.
+export type TimelineVolume = {
+  id: number
+  title: string
+  position: number
+  minPage: number
+  maxPage: number
+}
+
+export type TimelineQuote = {
+  id: number
+  paragraphId: number
+  pageNumber: number
+  volumeId: number
+  selectedText: string
+  tags: TagResponse[]
+  createdAt: string
+}
+
+export type TimelineResponse = {
+  volumes: TimelineVolume[]
+  quotes: TimelineQuote[]
+}
+
+export function getQuoteTimeline(params: TimelineParams = {}, signal?: AbortSignal): Promise<TimelineResponse> {
+  const qs = buildQuery({ tagId: params.tagId })
+  return apiFetch<TimelineResponse>(`/api/quotes/timeline?${qs}`, { signal })
+}
