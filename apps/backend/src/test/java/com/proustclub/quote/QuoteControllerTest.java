@@ -191,6 +191,8 @@ class QuoteControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    // detail not asserted below — same MockMvc limitation as ErrorHandlingIntegrationTest
+    // (the descriptive message is verified manually against a real running server instead).
     @Test
     void listQuotesNegativePageReturnsBadRequest() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");

@@ -107,6 +107,8 @@ class SearchControllerTest {
                 .andExpect(jsonPath("$.total").value(0));
     }
 
+    // detail not asserted below — same MockMvc limitation as ErrorHandlingIntegrationTest
+    // (the descriptive message is verified manually against a real running server instead).
     @Test
     void searchQueryTooShortReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/api/search").param("q", "a"))
