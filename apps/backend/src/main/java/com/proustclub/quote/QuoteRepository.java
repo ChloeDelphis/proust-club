@@ -79,7 +79,7 @@ class QuoteRepository {
 
         return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, createdAtField)
                 .from(DSL.table("quote_selections"))
-                .where(conditions(userId, tagId))
+                .where(conditions("", userId, tagId))
                 .orderBy(createdAtField.desc(), idField.desc())
                 .limit(size)
                 .offset((long) page * size)
@@ -90,22 +90,65 @@ class QuoteRepository {
                 ));
     }
 
+    // Flat, unpaginated: the personal timeline needs every one of the user's quotes at once to
+    // place all bookmarks — there is no page size that makes sense here, unlike findByUserId.
+    List<TimelineEntry> findTimelineByUserId(UUID userId, Integer tagId) {
+        var idField = DSL.field("qs.id", Integer.class);
+        var paragraphIdField = DSL.field("qs.paragraph_id", Integer.class);
+        var selectedTextField = DSL.field("qs.selected_text", String.class);
+        var createdAtField = DSL.field("qs.created_at", Instant.class);
+        var positionField = DSL.field("p.position", Integer.class);
+        var pageNumberField = DSL.field("p.page_number", Integer.class);
+        var volumeIdField = DSL.field("p.volume_id", Integer.class);
+
+        return dsl.select(idField, paragraphIdField, pageNumberField, volumeIdField, selectedTextField, createdAtField)
+                .from(DSL.table("quote_selections").as("qs"))
+                .join(DSL.table("paragraphs").as("p"))
+                        .on(paragraphIdField.eq(DSL.field("p.id", Integer.class)))
+                .where(conditions("qs.", userId, tagId))
+                .orderBy(positionField)
+                .fetch(r -> new TimelineEntry(
+                        r.get(idField), r.get(paragraphIdField), r.get(pageNumberField),
+                        r.get(volumeIdField), r.get(selectedTextField), r.get(createdAtField)
+                ));
+    }
+
+    // 7 rows, pre-computed at import time (see CorpusImportService) — no aggregation here, at
+    // any scale.
+    List<VolumeRange> findVolumesWithPageRange() {
+        var idField = DSL.field("id", Integer.class);
+        var titleField = DSL.field("title", String.class);
+        var positionField = DSL.field("position", Integer.class);
+        var minPageField = DSL.field("min_page", Integer.class);
+        var maxPageField = DSL.field("max_page", Integer.class);
+
+        return dsl.select(idField, titleField, positionField, minPageField, maxPageField)
+                .from(DSL.table("volumes"))
+                .orderBy(positionField)
+                .fetch(r -> new VolumeRange(
+                        r.get(idField), r.get(titleField), r.get(positionField),
+                        r.get(minPageField), r.get(maxPageField)
+                ));
+    }
+
     long countByUserId(UUID userId, Integer tagId) {
         return dsl.selectCount()
                 .from(DSL.table("quote_selections"))
-                .where(conditions(userId, tagId))
+                .where(conditions("", userId, tagId))
                 .fetchOne(0, Long.class);
     }
 
     // Filtering by tagId is a subquery rather than a join: it keeps this method's return type
     // identical whether or not a filter is applied, and reads clearly as "id is among the quotes
-    // tagged with tagId" rather than juggling join/no-join branches.
-    private List<Condition> conditions(UUID userId, Integer tagId) {
+    // tagged with tagId" rather than juggling join/no-join branches. `alias` qualifies the
+    // quote_selections columns for callers that join it under an alias (e.g. findTimelineByUserId
+    // joining "qs") — pass "" for callers selecting from quote_selections unaliased.
+    private List<Condition> conditions(String alias, UUID userId, Integer tagId) {
         var conditions = new ArrayList<Condition>();
-        conditions.add(DSL.field("user_id", UUID.class).eq(userId));
+        conditions.add(DSL.field(alias + "user_id", UUID.class).eq(userId));
 
         if (tagId != null) {
-            conditions.add(DSL.field("id", Integer.class).in(
+            conditions.add(DSL.field(alias + "id", Integer.class).in(
                     DSL.select(DSL.field("quote_selection_id", Integer.class))
                             .from(DSL.table("quote_selection_tags"))
                             .where(DSL.field("tag_id", Integer.class).eq(tagId))

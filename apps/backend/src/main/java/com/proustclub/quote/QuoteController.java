@@ -5,6 +5,7 @@ import com.proustclub.quote.dto.AddTagRequest;
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import com.proustclub.quote.dto.QuoteSelectionListResponse;
 import com.proustclub.quote.dto.QuoteSelectionResponse;
+import com.proustclub.quote.dto.TimelineResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -72,6 +73,19 @@ class QuoteController {
         Authentication authentication
     ) {
         return service.list(currentUser.resolveUuid(authentication), tagId, page, size);
+    }
+
+    @Operation(summary = "Get my personal timeline", description = "Returns every one of the authenticated user's saved quotes, positioned on the work's structure (volume, page) — unpaginated, unlike list(). Filterable by tagId, same semantics as list().")
+    @ApiResponse(responseCode = "200", description = "Timeline data (empty quotes list if none match; volumes are always present)", content = @Content(schema = @Schema(implementation = TimelineResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @GetMapping(value = "/api/quotes/timeline", produces = MediaType.APPLICATION_JSON_VALUE)
+    TimelineResponse timeline(
+        @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty quotes list, not an error.", example = "12")
+        @RequestParam(required = false) @Min(1) Integer tagId,
+
+        Authentication authentication
+    ) {
+        return service.getTimeline(currentUser.resolveUuid(authentication), tagId);
     }
 
     @Operation(summary = "Delete a quote selection", description = "Deletes a quote and all its tag associations. 404 if it doesn't exist or doesn't belong to the authenticated user.")

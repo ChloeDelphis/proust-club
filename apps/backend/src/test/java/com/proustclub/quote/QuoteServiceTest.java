@@ -84,6 +84,30 @@ class QuoteServiceTest {
     }
 
     @Test
+    void getTimelineAttachesTagsAndPreservesRepositoryOrder() {
+        var entries = List.of(
+                new TimelineEntry(1, 10, 5, 1, "madeleine", Instant.now()),
+                new TimelineEntry(2, 20, 150, 2, "Un", Instant.now())
+        );
+        var volumes = List.of(
+                new VolumeRange(1, "Du Côté de Chez Swann", 1, 1, 103),
+                new VolumeRange(2, "À l'Ombre des Jeunes Filles en Fleurs", 2, 104, 183)
+        );
+        when(quoteRepository.findTimelineByUserId(userId, null)).thenReturn(entries);
+        when(quoteRepository.findVolumesWithPageRange()).thenReturn(volumes);
+        when(quoteRepository.tagsForQuoteIds(List.of(1, 2))).thenReturn(Map.of(1, List.of()));
+
+        var response = service.getTimeline(userId, null);
+
+        assertThat(response.volumes()).hasSize(2);
+        assertThat(response.volumes().get(1).minPage()).isEqualTo(104);
+        assertThat(response.quotes()).hasSize(2);
+        assertThat(response.quotes().get(0).selectedText()).isEqualTo("madeleine");
+        assertThat(response.quotes().get(0).pageNumber()).isEqualTo(5);
+        assertThat(response.quotes().get(1).volumeId()).isEqualTo(2);
+    }
+
+    @Test
     void removeTagThrowsWhenNoAssociationWasRemoved() {
         when(quoteRepository.removeTagForOwner(userId, 1, 99)).thenReturn(0);
 
