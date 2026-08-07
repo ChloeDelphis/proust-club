@@ -92,6 +92,6 @@ Note: `paragraphs` holds both `part_id` and `volume_id` directly (denormalized).
 - Search for an existing phrase.
 - Search for a phrase that does not exist.
 - Verify pagination.
-- Verify validation for blank queries.
-- Verify validation for invalid page and size values.
+- Verify validation for blank queries — the `400` response's `detail` states the specific reason (e.g. `"q must not be blank"`), not a generic message.
+- Verify validation for invalid page and size values — same per-constraint `detail` (e.g. `"size must be <= 20"`; multiple simultaneous violations are concatenated with `, and `).
 - Verify that `%`, `_`, and `\` are treated literally.

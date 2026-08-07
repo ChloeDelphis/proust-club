@@ -148,7 +148,7 @@ Selecting a different tag (or "Tous") resets `page` to `0` via a single wrapped 
 - Search for a phrase, save it as a quote with two tags, confirm both appear in the response with their own ids. **Gotcha**: `/api/search` matches case-insensitively, but `selectedText` revalidation is an exact (case-sensitive) match — the phrase actually highlighted at the returned offsets may not be the same case as the search query typed (e.g. searching "madeleine" can surface a paragraph where the match is actually "Madeleine"); send the text exactly as it appears in the paragraph, not as typed in the search box.
 - Save a quote with no tags at all — succeeds, `tags: []`.
 - Try to save a quote whose `selectedText` doesn't match the paragraph at the given offsets → `400`.
-- `GET /api/quotes` with `page=-1`, `size=0`, `size=21`, or `tagId=0` → `400` in each case.
+- `GET /api/quotes` with `page=-1`, `size=0`, `size=21`, or `tagId=0` → `400` in each case, with a `detail` stating the specific reason (e.g. `"tagId must be >= 1"`) rather than a generic message.
 - List quotes filtered by an existing tag id → only matching quotes returned. Filter by a tag id that doesn't exist → empty list, not an error.
 - Attach the same tag name twice to the same quote → second call is a no-op, still `200`, still one tag.
 - Remove a quote's only tag → succeeds, quote now has zero tags.
