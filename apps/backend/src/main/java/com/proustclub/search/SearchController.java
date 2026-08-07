@@ -51,13 +51,13 @@ class SearchController {
     @GetMapping(value = "/api/search", produces = MediaType.APPLICATION_JSON_VALUE)
     SearchResponse search(
         @Parameter(description = "Phrase to search for (2–500 characters)", example = "petite madeleine")
-        @RequestParam @NotBlank(message = "q must not be blank") @Size(min = 2, max = 500, message = "q must be between 2 and 500 characters") String q,
+        @RequestParam @NotBlank(message = "q must not be blank") @Size(min = 2, max = 500, message = "q must be between {min} and {max} characters") String q,
 
         @Parameter(description = "Zero-based page index (default: 0). This paginates the search results, not the book's page numbers.", example = "0")
-        @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= 0") int page,
+        @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= {value}") int page,
 
         @Parameter(description = "Number of results per batch (1–20, default 10).", example = "10")
-        @RequestParam(defaultValue = "10") @Min(value = 1, message = "size must be >= 1") @Max(value = 20, message = "size must be <= 20") int size,
+        @RequestParam(defaultValue = "10") @Min(value = 1, message = "size must be >= {value}") @Max(value = 20, message = "size must be <= {value}") int size,
 
         HttpServletRequest httpRequest
     ) {

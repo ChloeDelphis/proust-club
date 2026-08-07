@@ -191,10 +191,8 @@ class QuoteControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // detail not asserted below: MockMvc doesn't render the ProblemDetail body for this native
-    // resolution path (see ErrorHandlingIntegrationTest) — the descriptive per-constraint message
-    // ("size must be <= 20", etc., set via @Min/@Max message=... + messages.properties) is
-    // verified manually against a real running server instead.
+    // detail not asserted below — same MockMvc limitation as ErrorHandlingIntegrationTest
+    // (the descriptive message is verified manually against a real running server instead).
     @Test
     void listQuotesNegativePageReturnsBadRequest() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");

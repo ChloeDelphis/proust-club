@@ -61,13 +61,13 @@ class QuoteController {
     @GetMapping(value = "/api/quotes", produces = MediaType.APPLICATION_JSON_VALUE)
     QuoteSelectionListResponse list(
         @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty list, not an error.", example = "12")
-        @RequestParam(required = false) @Min(value = 1, message = "tagId must be >= 1") Integer tagId,
+        @RequestParam(required = false) @Min(value = 1, message = "tagId must be >= {value}") Integer tagId,
 
         @Parameter(description = "Zero-based page index (default: 0)", example = "0")
-        @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= 0") int page,
+        @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= {value}") int page,
 
         @Parameter(description = "Number of results per batch (1–20, default 10)", example = "10")
-        @RequestParam(defaultValue = "10") @Min(value = 1, message = "size must be >= 1") @Max(value = 20, message = "size must be <= 20") int size,
+        @RequestParam(defaultValue = "10") @Min(value = 1, message = "size must be >= {value}") @Max(value = 20, message = "size must be <= {value}") int size,
 
         Authentication authentication
     ) {
