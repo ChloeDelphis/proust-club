@@ -81,7 +81,7 @@ class QuoteController {
     @GetMapping(value = "/api/quotes/timeline", produces = MediaType.APPLICATION_JSON_VALUE)
     TimelineResponse timeline(
         @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty quotes list, not an error.", example = "12")
-        @RequestParam(required = false) @Min(1) Integer tagId,
+        @RequestParam(required = false) @Min(value = 1, message = "tagId must be >= {value}") Integer tagId,
 
         Authentication authentication
     ) {
