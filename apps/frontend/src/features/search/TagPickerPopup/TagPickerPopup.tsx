@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useClickOutside } from '../../../hooks/useClickOutside'
 import { useTags } from '../../../hooks/useTags'
+import { useTagSearch } from '../../../hooks/useTagSearch'
 import Spinner from '../../../components/Spinner/Spinner'
 import type { TagPickerPopupProps } from './TagPickerPopup.types'
 import styles from './TagPickerPopup.module.css'
@@ -13,11 +14,7 @@ export default function TagPickerPopup({ onFinish, onDismiss }: TagPickerPopupPr
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
 
-  const tagList = tags ?? []
-  const normalizedSearch = search.trim().toLowerCase()
-  const filteredTags = tagList.filter(tag => tag.name.toLowerCase().includes(normalizedSearch))
-  const exactMatchExists = tagList.some(tag => tag.name.toLowerCase() === normalizedSearch)
-  const canCreate = normalizedSearch.length > 0 && !exactMatchExists
+  const { matches: filteredTags, canCreate } = useTagSearch(tags ?? [], search)
 
   function toggleTag(name: string) {
     setSelectedNames(current => {

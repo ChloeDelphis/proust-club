@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { addTagToQuote, removeTagFromQuote } from '../../../api/quote'
 import { useTags } from '../../../hooks/useTags'
+import { useTagSearch } from '../../../hooks/useTagSearch'
 import { useToast } from '../../../components/Toast/useToast'
 import Spinner from '../../../components/Spinner/Spinner'
 import type { QuoteTagEditorProps } from './QuoteTagEditor.types'
@@ -38,13 +39,11 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
   })
 
   const attachedNames = new Set(tags.map(tag => tag.name.toLowerCase()))
-  const tagList = allTags ?? []
-  const normalizedSearch = search.trim().toLowerCase()
-  const candidateTags = tagList.filter(
-    tag => !attachedNames.has(tag.name.toLowerCase()) && tag.name.toLowerCase().includes(normalizedSearch),
+  const { matches: candidateTags, canCreate } = useTagSearch(
+    allTags ?? [],
+    search,
+    tag => attachedNames.has(tag.name.toLowerCase()),
   )
-  const exactMatchExists = tagList.some(tag => tag.name.toLowerCase() === normalizedSearch)
-  const canCreate = normalizedSearch.length > 0 && !exactMatchExists
 
   return (
     <div className={styles.root}>
