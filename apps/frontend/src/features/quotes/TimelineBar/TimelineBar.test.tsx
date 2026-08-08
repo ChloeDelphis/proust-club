@@ -5,12 +5,19 @@ import type { ReactNode } from 'react'
 import TimelineBar from './TimelineBar'
 import * as quoteApi from '../../../api/quote'
 import type { TimelineResponse } from '../../../api/quote'
+import * as tagApi from '../../../api/tag'
+import ToastProvider from '../../../components/Toast/ToastProvider'
 
 vi.mock('../../../api/quote')
+vi.mock('../../../api/tag')
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{children}</ToastProvider>
+    </QueryClientProvider>
+  )
 }
 
 const volumes: TimelineResponse['volumes'] = [
@@ -19,11 +26,12 @@ const volumes: TimelineResponse['volumes'] = [
 ]
 
 function makeQuote(id: number, pageNumber: number, volumeId: number, selectedText = `citation ${id}`): TimelineResponse['quotes'][number] {
-  return { id, paragraphId: id, pageNumber, volumeId, selectedText, tags: [], createdAt: '2026-08-07T00:00:00Z' }
+  return { id, paragraphId: id, pageNumber, volumeId, selectedText, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(tagApi.listTags).mockResolvedValue([])
 })
 
 it('shows a spinner while loading', () => {

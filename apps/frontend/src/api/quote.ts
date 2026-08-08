@@ -13,6 +13,7 @@ export type QuoteSelectionResponse = {
   startOffset: number
   endOffset: number
   selectedText: string
+  comment: string | null
   tags: TagResponse[]
   createdAt: string
 }
@@ -24,6 +25,32 @@ export function createQuote(params: CreateQuoteParams, signal?: AbortSignal): Pr
     body: JSON.stringify(params),
     signal,
   })
+}
+
+export type UpdateQuoteCommentParams = operations['updateComment']['requestBody']['content']['application/json']
+
+export function updateQuoteComment(id: number, params: UpdateQuoteCommentParams, signal?: AbortSignal): Promise<QuoteSelectionResponse> {
+  return apiFetch<QuoteSelectionResponse>(`/api/quotes/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+    signal,
+  })
+}
+
+export type AddTagParams = operations['addTag']['requestBody']['content']['application/json']
+
+export function addTagToQuote(id: number, params: AddTagParams, signal?: AbortSignal): Promise<QuoteSelectionResponse> {
+  return apiFetch<QuoteSelectionResponse>(`/api/quotes/${id}/tags`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+    signal,
+  })
+}
+
+export function removeTagFromQuote(id: number, tagId: number, signal?: AbortSignal): Promise<void> {
+  return apiFetch<void>(`/api/quotes/${id}/tags/${tagId}`, { method: 'DELETE', signal })
 }
 
 export type QuoteListParams = NonNullable<operations['list_1']['parameters']['query']>
@@ -62,6 +89,7 @@ export type TimelineQuote = {
   pageNumber: number
   volumeId: number
   selectedText: string
+  comment: string | null
   tags: TagResponse[]
   createdAt: string
 }

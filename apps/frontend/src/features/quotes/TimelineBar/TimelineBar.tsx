@@ -1,7 +1,7 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getQuoteTimeline } from '../../../api/quote'
-import type { TimelineQuote, TimelineVolume } from '../../../api/quote'
+import type { TimelineVolume } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
 import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
 import FilterButton from '../../../components/FilterButton/FilterButton'
@@ -39,7 +39,10 @@ function activateOnEnterOrSpace(onActivate: () => void) {
 export default function TimelineBar({ activeTagId }: TimelineBarProps) {
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
   const [hoveredQuoteId, setHoveredQuoteId] = useState<number | null>(null)
-  const [openQuote, setOpenQuote] = useState<TimelineQuote | null>(null)
+  // Stores an id, not the quote object itself, so the modal re-derives fresh data from the query
+  // cache below on every render — a mutation issued from inside the modal (comment/tags) just
+  // needs to invalidate ['quotes'] to show up here, no extra plumbing to patch local state.
+  const [openQuoteId, setOpenQuoteId] = useState<number | null>(null)
 
   const { data, isPending, isError } = useQuery({
     queryKey: ['quotes', 'timeline', activeTagId],
@@ -73,6 +76,7 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
   if (data.volumes.length === 0) return null
 
   const hoveredGroup = groups.find(g => g.quotes[0].id === hoveredQuoteId)
+  const openQuote = openQuoteId !== null ? (data.quotes.find(q => q.id === openQuoteId) ?? null) : null
 
   return (
     <section className={styles.root} aria-label="Frise de mes citations">
@@ -134,8 +138,8 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
               role="button"
               tabIndex={0}
               aria-label={`Citation page ${quote.pageNumber}`}
-              onClick={() => setOpenQuote(quote)}
-              onKeyDown={activateOnEnterOrSpace(() => setOpenQuote(quote))}
+              onClick={() => setOpenQuoteId(quote.id)}
+              onKeyDown={activateOnEnterOrSpace(() => setOpenQuoteId(quote.id))}
               onMouseEnter={() => setHoveredQuoteId(quote.id)}
               onMouseLeave={() => setHoveredQuoteId(null)}
               onFocus={() => setHoveredQuoteId(quote.id)}
@@ -159,7 +163,7 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
       <QuoteDetailModal
         quote={openQuote}
         volumeTitle={openQuote ? volumesById.get(openQuote.volumeId)?.title : undefined}
-        onClose={() => setOpenQuote(null)}
+        onClose={() => setOpenQuoteId(null)}
       />
     </section>
   )

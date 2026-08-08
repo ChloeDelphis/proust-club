@@ -3,7 +3,7 @@ import { positionTimelineQuotes } from './positionTimelineQuotes'
 import type { TimelineQuote } from '../../../api/quote'
 
 function quote(id: number, pageNumber: number): TimelineQuote {
-  return { id, paragraphId: id, pageNumber, volumeId: 1, selectedText: `quote ${id}`, tags: [], createdAt: '2026-08-07T00:00:00Z' }
+  return { id, paragraphId: id, pageNumber, volumeId: 1, selectedText: `quote ${id}`, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }
 }
 
 describe('positionTimelineQuotes', () => {
