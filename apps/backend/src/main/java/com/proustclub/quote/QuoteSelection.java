@@ -8,5 +8,6 @@ record QuoteSelection(
         int startOffset,
         int endOffset,
         String selectedText,
+        String comment,
         Instant createdAt
 ) {}

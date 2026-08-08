@@ -157,6 +157,30 @@ export interface paths {
         patch: operations["rename"];
         trace?: never;
     };
+    "/api/quotes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a quote selection
+         * @description Deletes a quote and all its tag associations. 404 if it doesn't exist or doesn't belong to the authenticated user.
+         */
+        delete: operations["delete_1"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a quote's personal comment
+         * @description Sets or clears the authenticated user's private comment on a quote. A blank or omitted comment clears it (stored as null).
+         */
+        patch: operations["updateComment"];
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -217,26 +241,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/quotes/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete a quote selection
-         * @description Deletes a quote and all its tag associations. 404 if it doesn't exist or doesn't belong to the authenticated user.
-         */
-        delete: operations["delete_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -354,6 +358,11 @@ export interface components {
             endOffset?: number;
             /** @description Selected text */
             selectedText?: string;
+            /**
+             * @description Personal comment on this quote, or null if none
+             * @example Passage qui résonne encore aujourd'hui
+             */
+            comment?: string;
             /** @description Tags attached to this quote (possibly empty — tagging is optional) */
             tags?: components["schemas"]["TagResponse"][];
             /**
@@ -432,6 +441,14 @@ export interface components {
              * @example Jalousie
              */
             name: string;
+        };
+        /** @description Request to set or clear a quote's personal comment */
+        UpdateQuoteCommentRequest: {
+            /**
+             * @description New comment, or null/blank to clear it
+             * @example Passage qui résonne encore aujourd'hui
+             */
+            comment?: string;
         };
         /** @description A paragraph matching the search query */
         SearchHit: {
@@ -545,6 +562,11 @@ export interface components {
             volumeId?: number;
             /** @description Selected text */
             selectedText?: string;
+            /**
+             * @description Personal comment on this quote, or null if none
+             * @example Passage qui résonne encore aujourd'hui
+             */
+            comment?: string;
             /** @description Tags attached to this quote (possibly empty — tagging is optional) */
             tags?: components["schemas"]["TagResponse"][];
             /**
@@ -969,6 +991,79 @@ export interface operations {
             };
         };
     };
+    delete_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Quote deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quote not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    updateComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateQuoteCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated quote selection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteSelectionResponse"];
+                };
+            };
+            /** @description Invalid request body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Quote not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query: {
@@ -1074,35 +1169,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-        };
-    };
-    delete_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Quote deleted */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Quote not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };

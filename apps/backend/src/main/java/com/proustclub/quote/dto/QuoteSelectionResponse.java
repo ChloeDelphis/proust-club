@@ -22,6 +22,9 @@ public record QuoteSelectionResponse(
         @Schema(description = "Selected text")
         String selectedText,
 
+        @Schema(description = "Personal comment on this quote, or null if none", example = "Passage qui résonne encore aujourd'hui")
+        String comment,
+
         @Schema(description = "Tags attached to this quote (possibly empty — tagging is optional)")
         List<TagResponse> tags,
 

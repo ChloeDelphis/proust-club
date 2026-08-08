@@ -75,7 +75,7 @@ class QuoteService {
         var quotes = entries.stream()
                 .map(entry -> new TimelineQuote(
                         entry.id(), entry.paragraphId(), entry.pageNumber(), entry.volumeId(),
-                        entry.selectedText(), tagsByQuoteId.getOrDefault(entry.id(), List.of()), entry.createdAt()
+                        entry.selectedText(), entry.comment(), tagsByQuoteId.getOrDefault(entry.id(), List.of()), entry.createdAt()
                 ))
                 .toList();
 
@@ -84,6 +84,15 @@ class QuoteService {
                 .toList();
 
         return new TimelineResponse(volumeResponses, quotes);
+    }
+
+    @Transactional
+    QuoteSelectionResponse updateComment(UUID userId, int quoteId, String rawComment) {
+        String comment = normalizeComment(rawComment);
+        var quote = quoteRepository.updateCommentForOwner(userId, quoteId, comment)
+                .orElseThrow(ApiException::quoteNotFound);
+
+        return toResponse(quote, tagsFor(quoteId));
     }
 
     @Transactional
@@ -114,6 +123,15 @@ class QuoteService {
         return quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
     }
 
+    // Blank (empty/whitespace-only) clears the comment — NULL, not an empty string stored.
+    private static String normalizeComment(String rawComment) {
+        if (rawComment == null) {
+            return null;
+        }
+        String trimmed = rawComment.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private static void validateSelection(String paragraphText, int startOffset, int endOffset, String selectedText) {
         if (startOffset < 0 || endOffset > paragraphText.length() || startOffset >= endOffset
                 || !paragraphText.substring(startOffset, endOffset).equals(selectedText)) {
@@ -124,7 +142,7 @@ class QuoteService {
     private static QuoteSelectionResponse toResponse(QuoteSelection quote, List<TagResponse> tags) {
         return new QuoteSelectionResponse(
                 quote.id(), quote.paragraphId(), quote.startOffset(), quote.endOffset(),
-                quote.selectedText(), tags, quote.createdAt()
+                quote.selectedText(), quote.comment(), tags, quote.createdAt()
         );
     }
 }
