@@ -5,7 +5,7 @@ import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
 import { useToast } from '../../components/Toast/useToast'
 import ResetPasswordForm from './ResetPasswordForm/ResetPasswordForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
-import styles from './ResetPasswordPage.module.css'
+import styles from './AuthPage.module.css'
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()

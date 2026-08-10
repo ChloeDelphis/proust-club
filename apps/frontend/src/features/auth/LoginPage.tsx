@@ -5,7 +5,7 @@ import type { LoginParams } from '../../api/auth'
 import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
 import LoginForm from './LoginForm/LoginForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
-import styles from './LoginPage.module.css'
+import styles from './AuthPage.module.css'
 
 export default function LoginPage() {
   const navigate = useNavigate()

@@ -5,7 +5,7 @@ import type { RegisterParams } from '../../api/auth'
 import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
 import RegisterForm from './RegisterForm/RegisterForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
-import styles from './RegisterPage.module.css'
+import styles from './AuthPage.module.css'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
