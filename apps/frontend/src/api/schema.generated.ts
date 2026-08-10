@@ -93,6 +93,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/password-reset/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request a password reset
+         * @description Sends a reset link by email if the address matches an account. Always returns the same generic response, whether or not it does — this endpoint never reveals account existence.
+         */
+        post: operations["requestReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a password reset
+         * @description Sets a new password from a valid reset token and opens a session (auto-login, same pattern as register). Invalidates every other active session for the account.
+         */
+        post: operations["confirmReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/logout": {
         parameters: {
             query?: never;
@@ -420,6 +460,33 @@ export interface components {
              * @example USER
              */
             role?: string;
+        };
+        /** @description Password reset request (forgot password) */
+        PasswordResetRequestRequest: {
+            /**
+             * Format: email
+             * @description Account email address
+             * @example marcel@example.com
+             */
+            email: string;
+        };
+        /** @description Generic confirmation message */
+        MessageResponse: {
+            /**
+             * @description Human-readable message
+             * @example If an account exists for this email, a reset link has been sent.
+             */
+            message?: string;
+        };
+        /** @description Password reset confirmation */
+        PasswordResetConfirmRequest: {
+            /** @description Reset token received by email */
+            token: string;
+            /**
+             * @description New password (15-128 characters — length over composition rules; passphrases and spaces are welcome)
+             * @example Les madeleines de Combray
+             */
+            newPassword: string;
         };
         /** @description Login request */
         LoginRequest: {
@@ -849,6 +916,72 @@ export interface operations {
             };
             /** @description Username or email already taken */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    requestReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description Request accepted (generic response) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Invalid request body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    confirmReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Password changed, session opened */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Invalid request body, or invalid/expired token */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

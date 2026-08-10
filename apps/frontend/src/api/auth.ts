@@ -13,6 +13,8 @@ export type UserResponse = {
 
 export type RegisterParams = operations['register']['requestBody']['content']['application/json']
 export type LoginParams = operations['login']['requestBody']['content']['application/json']
+export type PasswordResetRequestParams = operations['requestReset']['requestBody']['content']['application/json']
+export type PasswordResetConfirmParams = operations['confirmReset']['requestBody']['content']['application/json']
 
 export function register(params: RegisterParams, signal?: AbortSignal): Promise<UserResponse> {
   return apiFetch<UserResponse>('/api/auth/register', {
@@ -38,4 +40,22 @@ export function logout(signal?: AbortSignal): Promise<void> {
 
 export function getCurrentUser(signal?: AbortSignal): Promise<UserResponse> {
   return apiFetch<UserResponse>('/api/auth/me', { signal })
+}
+
+export function requestPasswordReset(params: PasswordResetRequestParams, signal?: AbortSignal): Promise<void> {
+  return apiFetch<void>('/api/auth/password-reset/request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+    signal,
+  })
+}
+
+export function confirmPasswordReset(params: PasswordResetConfirmParams, signal?: AbortSignal): Promise<UserResponse> {
+  return apiFetch<UserResponse>('/api/auth/password-reset/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+    signal,
+  })
 }

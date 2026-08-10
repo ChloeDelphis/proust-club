@@ -25,6 +25,9 @@ export default function LoginPage() {
       <LoginForm onSubmit={params => mutation.mutate(params)} />
       {mutation.isError && <ErrorMessage message="Identifiants invalides." />}
       <p className={styles.switch}>
+        <Link to="/forgot-password">Mot de passe oublié ?</Link>
+      </p>
+      <p className={styles.switch}>
         Pas encore de compte ? <Link to="/register">Créer un compte</Link>
       </p>
     </main>
