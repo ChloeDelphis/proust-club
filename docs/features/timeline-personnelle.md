@@ -39,7 +39,7 @@ WHERE volumes.id = ranges.volume_id
     ...
   ],
   "quotes": [
-    { "id": 7, "paragraphId": 45, "pageNumber": 9, "volumeId": 1, "selectedText": "...", "tags": [...], "createdAt": "..." }
+    { "id": 7, "paragraphId": 45, "pageNumber": 9, "volumeId": 1, "selectedText": "...", "comment": null, "tags": [...], "createdAt": "..." }
   ]
 }
 ```
@@ -55,13 +55,12 @@ WHERE volumes.id = ranges.volume_id
 - **Positioning** (`positionTimelineQuotes.ts`) is a pure function, tested in isolation: page number → percent offset, sorted, with overlapping bookmarks (below a pixel-distance-equivalent threshold) alternately marked `isExtended` so they render at different heights instead of fully occluding each other. Returns **groups** of quotes (always length 1 today, every rendering consumer still reads `quotes[0]`) rather than one quote per entry directly — a deliberately cheap hook for a future clustering pass (see `private/tickets/timeline-clustering-signets.md`) to build on without changing this function's signature. It does **not** make clustering free: the rendering layer (plural aria-labels, a multi-quote preview/modal) would still need real work then.
 - **Zoom on a volume** — two triggers, both wired to the same `selectedVolumeId` state: clicking a volume's own zone directly in the bar (an invisible `<rect>` per volume, behind the bookmarks), or clicking its button in the filter block to the left (`"Tous les tomes"` + one per volume, generated from `data.volumes` — never hardcoded). Zooming recomputes the page range passed to `positionTimelineQuotes` to that volume's own `minPage`/`maxPage`, filters `quotes` to that `volumeId`, and hides the delimiter lines (only one volume is in view). Resetting is re-selecting `"Tous les tomes"` — there is no separate "go back" affordance.
 - **Hover preview** (`QuoteHoverPreview/`) — a normal HTML component (built like `Toast`, not SVG) embedded via `<foreignObject>` so it gets real text wrapping instead of an SVG text-width estimate. Shown via React state (`onMouseEnter`/`onFocus` on the bookmark `<rect>`), not pure CSS `:hover` — consistent with how `Toast`/`TagPickerPopup` already work in this codebase.
-- **Detail modal** (`QuoteDetailModal/`) — Base UI `Dialog`, read-only (no delete, no tag management — see `private/tickets/timeline-modale-actions.md` for the deferred want). Shows the full quote, its tags, and `{volume title} — page {N} · {date}`.
+- **Detail modal** (`QuoteDetailModal/`) — Base UI `Dialog`. Shows the full quote, `{volume title} — page {N} · {date}`, and is interactive: a personal comment (editable `<textarea>`, saved when the modal closes) and tag management (`QuoteTagEditor`, add/remove live) — see `docs/features/quote-save-tags.md` for both, they're documented there alongside the endpoints and data model they build on rather than duplicated here. No delete from the modal — that stays on `QuoteCard` in the list below.
 
 ## What this deliberately does not do (v1)
 
 - **No tag filter specific to the timeline** — it inherits whatever tag is active in `TagFilterBar` below it; there's no separate control.
 - **No clustering of overlapping bookmarks** — only the alternating-height trick above. Deferred to `private/tickets/timeline-clustering-signets.md`, once real usage shows whether density is actually a problem (it depends on one user's own quote count over time, not on how many users the app has).
-- **No actions from the modal** (delete, tag management, personal comments) — deferred to `private/tickets/timeline-modale-actions.md`.
 
 ## Manual verification
 
@@ -70,5 +69,5 @@ WHERE volumes.id = ranges.volume_id
 - Filtering by tag (the existing `TagFilterBar`) removes non-matching bookmarks from the bar, not just from the list below.
 - Clicking a volume's zone directly, and clicking its filter button, both zoom the same way; re-selecting "Tous les tomes" returns to the full view.
 - Hovering a bookmark shows a truncated preview; leaving hides it.
-- Clicking a bookmark opens the full quote in a modal (no delete/tag controls); `Escape`, the close button, and an outside click all dismiss it.
+- Clicking a bookmark opens the full quote in a modal; `Escape`, the close button, and an outside click all dismiss it. Editing the comment and the tags from within the modal — see `docs/features/quote-save-tags.md` for the detailed manual verification matrix (comment save/trim/clear, tag add/remove, re-opening the same quote).
 - Two quotes on nearby pages render at visibly different bar heights instead of fully overlapping.
