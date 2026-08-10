@@ -86,7 +86,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionConcurrency(concurrency -> concurrency
                                 .maximumSessions(-1)
-                                .sessionRegistry(sessionRegistry))
+                                .sessionRegistry(sessionRegistry)
+                                // Default strategy writes a bare 200 with a plain-text body —
+                                // inconsistent with this API's ProblemDetail contract everywhere
+                                // else. securityHandlers already implements this interface too.
+                                .expiredSessionStrategy(securityHandlers))
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);
