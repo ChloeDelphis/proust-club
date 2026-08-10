@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -69,7 +68,7 @@ class AuthController {
         rateLimiter.checkRegisterByIp(httpRequest);
         var created = service.register(request);
         var authentication = service.authenticate(request.username(), request.password());
-        persistSession(authentication, httpRequest, httpResponse);
+        SessionPersister.persist(authentication, httpRequest, httpResponse, sessionAuthenticationStrategy, securityContextRepository);
         return created;
     }
 
@@ -81,7 +80,7 @@ class AuthController {
         rateLimiter.checkLoginByIp(httpRequest);
         rateLimiter.checkLoginByAccount(request.username());
         var authentication = service.authenticate(request.username(), request.password());
-        persistSession(authentication, httpRequest, httpResponse);
+        SessionPersister.persist(authentication, httpRequest, httpResponse, sessionAuthenticationStrategy, securityContextRepository);
         return service.currentUser(authentication.getName());
     }
 
@@ -101,13 +100,5 @@ class AuthController {
     @GetMapping(value = "/api/auth/me", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse me(Authentication authentication) {
         return service.currentUser(authentication.getName());
-    }
-
-    private void persistSession(Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
-        sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-        securityContextRepository.saveContext(context, request, response);
     }
 }

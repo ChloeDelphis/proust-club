@@ -21,4 +21,10 @@ class ApiException extends ErrorResponseException {
     static ApiException invalidCredentials() {
         return new ApiException(HttpStatus.UNAUTHORIZED, "Invalid username or password.");
     }
+
+    // Deliberately generic — never distinguishes "expired" from "already used" from "never
+    // existed", so the endpoint can't be used to probe the state of a specific link.
+    static ApiException invalidOrExpiredResetToken() {
+        return new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token.");
+    }
 }

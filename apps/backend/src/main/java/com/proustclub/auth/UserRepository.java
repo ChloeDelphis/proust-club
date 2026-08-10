@@ -59,6 +59,25 @@ class UserRepository {
                 ));
     }
 
+    Optional<AuthUser> findByUuid(UUID uuid) {
+        return dsl.select(
+                        DSL.field("uuid", UUID.class),
+                        DSL.field("username", String.class),
+                        DSL.field("email", String.class),
+                        DSL.field("password_hash", String.class),
+                        DSL.field("role", String.class)
+                )
+                .from(DSL.table("users"))
+                .where(DSL.field("uuid", UUID.class).eq(uuid))
+                .fetchOptional(r -> new AuthUser(
+                        r.get("uuid", UUID.class),
+                        r.get("username", String.class),
+                        r.get("email", String.class),
+                        r.get("password_hash", String.class),
+                        r.get("role", String.class)
+                ));
+    }
+
     Optional<AuthUser> findByEmail(String email) {
         return dsl.select(
                         DSL.field("uuid", UUID.class),
