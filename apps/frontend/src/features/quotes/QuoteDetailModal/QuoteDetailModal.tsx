@@ -17,11 +17,16 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
   // Resets the draft when a different quote opens, without a useEffect: this component stays
   // mounted across quote changes (only the Dialog's `open` prop toggles), so a plain useState
   // initializer would only apply on this component's own first mount, not on every reopen.
+  // renderedQuoteId is reset to null on close (not just changed on a new id) so that reopening
+  // the SAME quote also re-syncs the draft from the current `quote.comment` — otherwise the
+  // leftover local draft from before closing would stick around instead of the saved value.
   const [renderedQuoteId, setRenderedQuoteId] = useState<number | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
   if (quote && quote.id !== renderedQuoteId) {
     setRenderedQuoteId(quote.id)
     setCommentDraft(quote.comment ?? '')
+  } else if (!quote && renderedQuoteId !== null) {
+    setRenderedQuoteId(null)
   }
 
   const updateCommentMutation = useMutation({

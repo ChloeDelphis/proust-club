@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -57,6 +57,20 @@ describe('QuoteDetailModal', () => {
     )
 
     expect(screen.getByRole('textbox', { name: 'Commentaire personnel' })).toHaveValue('Un souvenir marquant.')
+  })
+
+  it('re-syncs the draft from the server value when the same quote is reopened', () => {
+    const { rerender } = render(<QuoteDetailModal quote={quote} volumeTitle={undefined} onClose={vi.fn()} />, { wrapper })
+
+    const textarea = screen.getByRole('textbox', { name: 'Commentaire personnel' })
+    fireEvent.change(textarea, { target: { value: 'Brouillon jamais sauvegardé' } })
+
+    // Modal closes, then reopens on the same quote (same id) with a fresh comment from the server —
+    // the leftover local draft above must not stick around instead of it.
+    rerender(<QuoteDetailModal quote={null} volumeTitle={undefined} onClose={vi.fn()} />)
+    rerender(<QuoteDetailModal quote={{ ...quote, comment: 'Valeur serveur à jour' }} volumeTitle={undefined} onClose={vi.fn()} />)
+
+    expect(screen.getByRole('textbox', { name: 'Commentaire personnel' })).toHaveValue('Valeur serveur à jour')
   })
 
   it('allows adding/removing tags from within the modal', async () => {
