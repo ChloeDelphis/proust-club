@@ -76,9 +76,10 @@ class RateLimiterTest {
     private static RateLimiter newLimiter(int capacity, Duration refillPeriod) {
         var limit = new RateLimitProperties.Limit(capacity, refillPeriod);
         var properties = new RateLimitProperties(
-                new RateLimitProperties.LoginLimits(limit, limit),
+                new RateLimitProperties.IpAndAccountLimit(limit, limit),
                 new RateLimitProperties.IpLimit(limit),
-                new RateLimitProperties.IpLimit(limit)
+                new RateLimitProperties.IpLimit(limit),
+                new RateLimitProperties.IpAndAccountLimit(limit, limit)
         );
         return new RateLimiter(properties);
     }

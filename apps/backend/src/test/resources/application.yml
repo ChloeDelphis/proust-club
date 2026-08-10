@@ -1,3 +1,16 @@
+# spring.mail.host must be set for Spring Boot's mail autoconfiguration to register a
+# JavaMailSender bean at all — MailService (constructor-injected) fails the whole application
+# context otherwise, breaking every @SpringBootTest, not just password-reset ones. No test sends
+# a real email (MailService is mocked wherever a test needs to assert on it), so these values
+# never need to resolve to anything real.
+spring:
+  mail:
+    host: localhost
+    port: 1025
+
+app:
+  frontend-base-url: http://localhost:5173
+
 # Test override: generous rate limits so unrelated functional tests (which all share the same
 # MockMvc "127.0.0.1" remote address, and often reuse the same Spring context/RateLimiter
 # singleton across test classes) never hit a 429 by accident. Rate limiting itself is exercised
@@ -16,5 +29,12 @@ rate-limit:
       refill-period: 1m
   search:
     per-ip:
+      capacity: 100000
+      refill-period: 1m
+  password-reset:
+    per-ip:
+      capacity: 100000
+      refill-period: 1m
+    per-account:
       capacity: 100000
       refill-period: 1m

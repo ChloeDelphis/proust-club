@@ -74,6 +74,13 @@ rate-limit:
     per-ip:
       capacity: 60
       refill-period: 1m
+  password-reset:
+    per-ip:
+      capacity: 5
+      refill-period: 1h
+    per-account:
+      capacity: 3
+      refill-period: 15m
 
 logging:
   level:
