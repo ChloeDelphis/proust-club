@@ -1,5 +1,6 @@
 package com.proustclub.auth;
 
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
@@ -41,44 +42,18 @@ class UserRepository {
     }
 
     Optional<AuthUser> findByUsername(String username) {
-        return dsl.select(
-                        DSL.field("uuid", UUID.class),
-                        DSL.field("username", String.class),
-                        DSL.field("email", String.class),
-                        DSL.field("password_hash", String.class),
-                        DSL.field("role", String.class)
-                )
-                .from(DSL.table("users"))
-                .where(DSL.field("username", String.class).eq(username))
-                .fetchOptional(r -> new AuthUser(
-                        r.get("uuid", UUID.class),
-                        r.get("username", String.class),
-                        r.get("email", String.class),
-                        r.get("password_hash", String.class),
-                        r.get("role", String.class)
-                ));
+        return findOneWhere(DSL.field("username", String.class).eq(username));
     }
 
     Optional<AuthUser> findByUuid(UUID uuid) {
-        return dsl.select(
-                        DSL.field("uuid", UUID.class),
-                        DSL.field("username", String.class),
-                        DSL.field("email", String.class),
-                        DSL.field("password_hash", String.class),
-                        DSL.field("role", String.class)
-                )
-                .from(DSL.table("users"))
-                .where(DSL.field("uuid", UUID.class).eq(uuid))
-                .fetchOptional(r -> new AuthUser(
-                        r.get("uuid", UUID.class),
-                        r.get("username", String.class),
-                        r.get("email", String.class),
-                        r.get("password_hash", String.class),
-                        r.get("role", String.class)
-                ));
+        return findOneWhere(DSL.field("uuid", UUID.class).eq(uuid));
     }
 
     Optional<AuthUser> findByEmail(String email) {
+        return findOneWhere(DSL.field("email", String.class).eq(email));
+    }
+
+    private Optional<AuthUser> findOneWhere(Condition condition) {
         return dsl.select(
                         DSL.field("uuid", UUID.class),
                         DSL.field("username", String.class),
@@ -87,7 +62,7 @@ class UserRepository {
                         DSL.field("role", String.class)
                 )
                 .from(DSL.table("users"))
-                .where(DSL.field("email", String.class).eq(email))
+                .where(condition)
                 .fetchOptional(r -> new AuthUser(
                         r.get("uuid", UUID.class),
                         r.get("username", String.class),

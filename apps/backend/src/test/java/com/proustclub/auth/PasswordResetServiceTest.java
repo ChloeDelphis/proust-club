@@ -85,20 +85,20 @@ class PasswordResetServiceTest {
         var token = new PasswordResetToken(42L, uuid);
         var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER");
 
-        when(tokenRepository.findValidByTokenHash(anyString())).thenReturn(Optional.of(token));
+        when(tokenRepository.consumeValidToken(anyString())).thenReturn(Optional.of(token));
         when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
         when(passwordEncoder.encode("new-password-long-enough")).thenReturn("new-hash");
 
-        var username = service.confirmReset("raw-token", "new-password-long-enough");
+        var updatedUser = service.confirmReset("raw-token", "new-password-long-enough");
 
-        assertThat(username).isEqualTo("marcel");
-        verify(tokenRepository).markUsed(42L);
+        assertThat(updatedUser.username()).isEqualTo("marcel");
+        assertThat(updatedUser.passwordHash()).isEqualTo("new-hash");
         verify(userRepository).updatePasswordHash(uuid, "new-hash");
     }
 
     @Test
     void confirmResetRejectsUnknownToken() {
-        when(tokenRepository.findValidByTokenHash(anyString())).thenReturn(Optional.empty());
+        when(tokenRepository.consumeValidToken(anyString())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.confirmReset("garbage-token", "new-password-long-enough"))
                 .isInstanceOf(ApiException.class);

@@ -25,23 +25,21 @@ class PasswordResetTokenRepository {
                 .execute();
     }
 
-    Optional<PasswordResetToken> findValidByTokenHash(String tokenHash) {
+    // Validate-and-burn in a single statement rather than a SELECT followed by an UPDATE — one
+    // DB round trip instead of two, and closes the race window a separate check-then-set would
+    // leave open between two concurrent confirm attempts presenting the same token: whichever
+    // UPDATE lands first is the only one that can ever match a still-unused, unexpired row.
+    Optional<PasswordResetToken> consumeValidToken(String tokenHash) {
         var idField = DSL.field("id", Long.class);
         var userIdField = DSL.field("user_id", UUID.class);
 
-        return dsl.select(idField, userIdField)
-                .from(DSL.table("password_reset_tokens"))
+        return dsl.update(DSL.table("password_reset_tokens"))
+                .set(DSL.field("used_at", Instant.class), Instant.now())
                 .where(DSL.field("token_hash", String.class).eq(tokenHash))
                 .and(DSL.field("used_at", Instant.class).isNull())
                 .and(DSL.field("expires_at", Instant.class).gt(Instant.now()))
+                .returning(idField, userIdField)
                 .fetchOptional(r -> new PasswordResetToken(r.get(idField), r.get(userIdField)));
-    }
-
-    void markUsed(long id) {
-        dsl.update(DSL.table("password_reset_tokens"))
-                .set(DSL.field("used_at", Instant.class), Instant.now())
-                .where(DSL.field("id", Long.class).eq(id))
-                .execute();
     }
 
     // Called before issuing a fresh token so a user never has more than one live reset link at

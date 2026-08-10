@@ -20,8 +20,6 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,21 +37,18 @@ class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthService service;
-    private final SecurityContextRepository securityContextRepository;
-    private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+    private final SessionPersister sessionPersister;
     private final List<LogoutHandler> logoutHandlers;
     private final RateLimiter rateLimiter;
 
     AuthController(
             AuthService service,
-            SecurityContextRepository securityContextRepository,
-            SessionAuthenticationStrategy sessionAuthenticationStrategy,
+            SessionPersister sessionPersister,
             List<LogoutHandler> logoutHandlers,
             RateLimiter rateLimiter
     ) {
         this.service = service;
-        this.securityContextRepository = securityContextRepository;
-        this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
+        this.sessionPersister = sessionPersister;
         this.logoutHandlers = logoutHandlers;
         this.rateLimiter = rateLimiter;
     }
@@ -68,7 +63,7 @@ class AuthController {
         rateLimiter.checkRegisterByIp(httpRequest);
         var created = service.register(request);
         var authentication = service.authenticate(request.username(), request.password());
-        SessionPersister.persist(authentication, httpRequest, httpResponse, sessionAuthenticationStrategy, securityContextRepository);
+        sessionPersister.persist(authentication, httpRequest, httpResponse);
         return created;
     }
 
@@ -80,7 +75,7 @@ class AuthController {
         rateLimiter.checkLoginByIp(httpRequest);
         rateLimiter.checkLoginByAccount(request.username());
         var authentication = service.authenticate(request.username(), request.password());
-        SessionPersister.persist(authentication, httpRequest, httpResponse, sessionAuthenticationStrategy, securityContextRepository);
+        sessionPersister.persist(authentication, httpRequest, httpResponse);
         return service.currentUser(authentication.getName());
     }
 

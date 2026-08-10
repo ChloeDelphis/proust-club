@@ -16,8 +16,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
-import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -34,20 +33,12 @@ class PasswordResetController {
             new MessageResponse("If an account exists for this email, a reset link has been sent.");
 
     private final PasswordResetService service;
-    private final AuthService authService;
-    private final SecurityContextRepository securityContextRepository;
-    private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+    private final SessionPersister sessionPersister;
     private final RateLimiter rateLimiter;
 
-    PasswordResetController(
-            PasswordResetService service, AuthService authService,
-            SecurityContextRepository securityContextRepository, SessionAuthenticationStrategy sessionAuthenticationStrategy,
-            RateLimiter rateLimiter
-    ) {
+    PasswordResetController(PasswordResetService service, SessionPersister sessionPersister, RateLimiter rateLimiter) {
         this.service = service;
-        this.authService = authService;
-        this.securityContextRepository = securityContextRepository;
-        this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
+        this.sessionPersister = sessionPersister;
         this.rateLimiter = rateLimiter;
     }
 
@@ -76,17 +67,20 @@ class PasswordResetController {
     @ApiResponse(responseCode = "400", description = "Invalid request body, or invalid/expired token", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/password-reset/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse confirmReset(@Valid @RequestBody PasswordResetConfirmRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        var username = service.confirmReset(request.token(), request.newPassword());
+        var user = service.confirmReset(request.token(), request.newPassword());
 
-        var authentication = authService.authenticate(username, request.newPassword());
-        SessionPersister.persist(authentication, httpRequest, httpResponse, sessionAuthenticationStrategy, securityContextRepository);
+        // Built directly from the user this method just updated — no need to round-trip through
+        // AuthenticationManager to re-verify a password confirmReset() itself just wrote.
+        var userDetails = AuthUserDetailsService.toUserDetails(user);
+        var authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        sessionPersister.persist(authentication, httpRequest, httpResponse);
 
         // Read after persist(): ChangeSessionIdAuthenticationStrategy may have rotated the id,
         // and RegisterSessionAuthenticationStrategy has by now registered this exact id as the
         // session to keep — everything else for this user gets swept.
         var newSessionId = httpRequest.getSession(false).getId();
-        service.invalidateOtherSessions(username, newSessionId);
+        service.invalidateOtherSessions(user.username(), newSessionId);
 
-        return authService.currentUser(username);
+        return new UserResponse(user.uuid(), user.username(), user.email(), user.role());
     }
 }

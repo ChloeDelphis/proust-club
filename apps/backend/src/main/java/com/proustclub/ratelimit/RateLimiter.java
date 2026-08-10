@@ -1,5 +1,6 @@
 package com.proustclub.ratelimit;
 
+import com.proustclub.auth.EmailNormalizer;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.github.bucket4j.Bucket;
@@ -56,7 +57,7 @@ public class RateLimiter {
     }
 
     public void checkPasswordResetByAccount(String email) {
-        check(passwordResetByAccount, email.trim().toLowerCase(Locale.ROOT), "password-reset", "account");
+        check(passwordResetByAccount, EmailNormalizer.normalize(email), "password-reset", "account");
     }
 
     private void check(LoadingCache<String, Bucket> buckets, String key, String endpoint, String keyType) {

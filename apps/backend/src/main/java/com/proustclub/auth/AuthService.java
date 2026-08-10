@@ -12,8 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
-
 @Service
 class AuthService {
 
@@ -31,10 +29,7 @@ class AuthService {
 
     @Transactional
     UserResponse register(RegisterRequest request) {
-        // Email is case-insensitive in practice (mail providers treat it that way); normalizing
-        // before every check/insert makes the plain UNIQUE constraint on the column behave as a
-        // case-insensitive one, without needing citext or a functional index.
-        var normalizedEmail = request.email().trim().toLowerCase(Locale.ROOT);
+        var normalizedEmail = EmailNormalizer.normalize(request.email());
 
         if (repository.existsByUsername(request.username())) {
             throw ApiException.usernameAlreadyExists();

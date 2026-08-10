@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 class PasswordResetService {
@@ -49,7 +48,7 @@ class PasswordResetService {
     // always returns the same generic response regardless of what happens in here.
     @Transactional
     void requestReset(String email) {
-        var normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        var normalizedEmail = EmailNormalizer.normalize(email);
 
         userRepository.findByEmail(normalizedEmail).ifPresent(user -> {
             // A fresh request supersedes any still-live token from an earlier one — a user only
@@ -63,16 +62,14 @@ class PasswordResetService {
         });
     }
 
-    // Returns the username so the caller can open a new session (auto-login, same pattern as
-    // AuthService.register()) — this method only replaces the password, it doesn't authenticate.
+    // Returns the updated user so the caller can open a new session (auto-login, same intent as
+    // AuthService.register()) directly from it — no need to re-authenticate through
+    // AuthenticationManager just to re-verify a password this method itself just wrote.
     @Transactional
-    String confirmReset(String rawToken, String newPassword) {
-        var token = tokenRepository.findValidByTokenHash(hash(rawToken))
+    AuthUser confirmReset(String rawToken, String newPassword) {
+        // Validated and burned in one statement — see PasswordResetTokenRepository for why.
+        var token = tokenRepository.consumeValidToken(hash(rawToken))
                 .orElseThrow(ApiException::invalidOrExpiredResetToken);
-
-        // Burned immediately — a token funds exactly one confirm attempt, successful or not, so
-        // an intercepted link can't be retried against this endpoint.
-        tokenRepository.markUsed(token.id());
 
         // Enforced by a foreign key with ON DELETE CASCADE, so this should never be empty in
         // practice; reusing the same generic exception rather than adding a dedicated case for a
@@ -80,9 +77,10 @@ class PasswordResetService {
         var user = userRepository.findByUuid(token.userId())
                 .orElseThrow(ApiException::invalidOrExpiredResetToken);
 
-        userRepository.updatePasswordHash(user.uuid(), passwordEncoder.encode(newPassword));
+        var newPasswordHash = passwordEncoder.encode(newPassword);
+        userRepository.updatePasswordHash(user.uuid(), newPasswordHash);
         log.info("Password reset confirmed");
-        return user.username();
+        return new AuthUser(user.uuid(), user.username(), user.email(), newPasswordHash, user.role());
     }
 
     // Called once the caller has established its own new session, so that session's id can be
