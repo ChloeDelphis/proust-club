@@ -15,5 +15,13 @@ services:
       timeout: 5s
       retries: 5
 
+  # Fake SMTP for local dev — captures every email sent by the backend instead of delivering it.
+  # Web UI: http://localhost:8025. No real provider needed to develop/test the password-reset flow.
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
   pgdata:

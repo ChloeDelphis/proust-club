@@ -15,6 +15,19 @@ spring:
     username: ${DB_USERNAME:proustclub}
     password: ${DB_PASSWORD:proustclub_dev}
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    # Mailhog (dev) accepts unauthenticated, unencrypted SMTP — a real prod provider will need
+    # username/password/starttls, to be set via env vars when that's configured (see
+    # private/tickets/prod-to-be-determined.md).
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -39,6 +52,11 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     enabled: true
+
+app:
+  # Base URL of the frontend SPA — used to build the password-reset link sent by email.
+  # Points at the frontend (Vite dev server), never the backend, which has no such route.
+  frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
 
 rate-limit:
   login:
