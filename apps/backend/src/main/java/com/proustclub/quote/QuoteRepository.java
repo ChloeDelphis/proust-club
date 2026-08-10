@@ -34,6 +34,8 @@ class QuoteRepository {
     // Returns the full domain object built from the INSERT ... RETURNING row (id + the
     // DB-generated created_at) rather than just the id — every other field is already known from
     // the arguments, so there's no need for the caller to re-SELECT the row it just wrote.
+    // comment is hardcoded to null here (not a DB round-trip): a freshly inserted quote never has
+    // one yet — it's only set later via updateCommentForOwner.
     QuoteSelection insert(UUID userId, int paragraphId, int startOffset, int endOffset, String selectedText) {
         var idField = DSL.field("id", Integer.class);
         var createdAtField = DSL.field("created_at", Instant.class);
@@ -46,7 +48,7 @@ class QuoteRepository {
                 .set(DSL.field("selected_text", String.class), selectedText)
                 .returning(idField, createdAtField)
                 .fetchOne(r -> new QuoteSelection(
-                        r.get(idField), paragraphId, startOffset, endOffset, selectedText, r.get(createdAtField)
+                        r.get(idField), paragraphId, startOffset, endOffset, selectedText, null, r.get(createdAtField)
                 ));
     }
 
@@ -56,16 +58,17 @@ class QuoteRepository {
         var startOffsetField = DSL.field("start_offset", Integer.class);
         var endOffsetField = DSL.field("end_offset", Integer.class);
         var selectedTextField = DSL.field("selected_text", String.class);
+        var commentField = DSL.field("comment", String.class);
         var createdAtField = DSL.field("created_at", Instant.class);
 
-        return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, createdAtField)
+        return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, commentField, createdAtField)
                 .from(DSL.table("quote_selections"))
                 .where(idField.eq(quoteId))
                 .and(DSL.field("user_id", UUID.class).eq(userId))
                 .fetchOptional(r -> new QuoteSelection(
                         r.get(idField), r.get(paragraphIdField),
                         r.get(startOffsetField), r.get(endOffsetField),
-                        r.get(selectedTextField), r.get(createdAtField)
+                        r.get(selectedTextField), r.get(commentField), r.get(createdAtField)
                 ));
     }
 
@@ -75,9 +78,10 @@ class QuoteRepository {
         var startOffsetField = DSL.field("start_offset", Integer.class);
         var endOffsetField = DSL.field("end_offset", Integer.class);
         var selectedTextField = DSL.field("selected_text", String.class);
+        var commentField = DSL.field("comment", String.class);
         var createdAtField = DSL.field("created_at", Instant.class);
 
-        return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, createdAtField)
+        return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, commentField, createdAtField)
                 .from(DSL.table("quote_selections"))
                 .where(conditions("", userId, tagId))
                 .orderBy(createdAtField.desc(), idField.desc())
@@ -86,7 +90,30 @@ class QuoteRepository {
                 .fetch(r -> new QuoteSelection(
                         r.get(idField), r.get(paragraphIdField),
                         r.get(startOffsetField), r.get(endOffsetField),
-                        r.get(selectedTextField), r.get(createdAtField)
+                        r.get(selectedTextField), r.get(commentField), r.get(createdAtField)
+                ));
+    }
+
+    // Mirrors insert()'s use of RETURNING: avoids a second SELECT after the UPDATE. Empty if
+    // quoteId doesn't exist or isn't owned by userId — same semantics as findByIdAndUserId.
+    Optional<QuoteSelection> updateCommentForOwner(UUID userId, int quoteId, String comment) {
+        var idField = DSL.field("id", Integer.class);
+        var paragraphIdField = DSL.field("paragraph_id", Integer.class);
+        var startOffsetField = DSL.field("start_offset", Integer.class);
+        var endOffsetField = DSL.field("end_offset", Integer.class);
+        var selectedTextField = DSL.field("selected_text", String.class);
+        var commentField = DSL.field("comment", String.class);
+        var createdAtField = DSL.field("created_at", Instant.class);
+
+        return dsl.update(DSL.table("quote_selections"))
+                .set(commentField, comment)
+                .where(idField.eq(quoteId))
+                .and(DSL.field("user_id", UUID.class).eq(userId))
+                .returning(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, commentField, createdAtField)
+                .fetchOptional(r -> new QuoteSelection(
+                        r.get(idField), r.get(paragraphIdField),
+                        r.get(startOffsetField), r.get(endOffsetField),
+                        r.get(selectedTextField), r.get(commentField), r.get(createdAtField)
                 ));
     }
 
@@ -96,12 +123,13 @@ class QuoteRepository {
         var idField = DSL.field("qs.id", Integer.class);
         var paragraphIdField = DSL.field("qs.paragraph_id", Integer.class);
         var selectedTextField = DSL.field("qs.selected_text", String.class);
+        var commentField = DSL.field("qs.comment", String.class);
         var createdAtField = DSL.field("qs.created_at", Instant.class);
         var positionField = DSL.field("p.position", Integer.class);
         var pageNumberField = DSL.field("p.page_number", Integer.class);
         var volumeIdField = DSL.field("p.volume_id", Integer.class);
 
-        return dsl.select(idField, paragraphIdField, pageNumberField, volumeIdField, selectedTextField, createdAtField)
+        return dsl.select(idField, paragraphIdField, pageNumberField, volumeIdField, selectedTextField, commentField, createdAtField)
                 .from(DSL.table("quote_selections").as("qs"))
                 .join(DSL.table("paragraphs").as("p"))
                         .on(paragraphIdField.eq(DSL.field("p.id", Integer.class)))
@@ -109,7 +137,7 @@ class QuoteRepository {
                 .orderBy(positionField)
                 .fetch(r -> new TimelineEntry(
                         r.get(idField), r.get(paragraphIdField), r.get(pageNumberField),
-                        r.get(volumeIdField), r.get(selectedTextField), r.get(createdAtField)
+                        r.get(volumeIdField), r.get(selectedTextField), r.get(commentField), r.get(createdAtField)
                 ));
     }
 

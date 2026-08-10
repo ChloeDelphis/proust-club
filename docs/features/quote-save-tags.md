@@ -10,6 +10,7 @@ Lets an authenticated user save a selection of text found in a paragraph (the wh
 |---|---|---|
 | `POST` | `/api/quotes` | Save a quote selection, with optional tags |
 | `GET` | `/api/quotes` | List the authenticated user's quotes, optionally filtered by `tagId`, paginated |
+| `PATCH` | `/api/quotes/{id}` | Set or clear a quote's personal comment |
 | `DELETE` | `/api/quotes/{id}` | Delete a quote (and its tag associations) |
 | `POST` | `/api/quotes/{id}/tags` | Attach a tag (by name) to an existing quote |
 | `DELETE` | `/api/quotes/{id}/tags/{tagId}` | Detach a tag from a quote |
@@ -18,7 +19,7 @@ Lets an authenticated user save a selection of text found in a paragraph (the wh
 | `PATCH` | `/api/tags/{id}` | Rename a tag |
 | `DELETE` | `/api/tags/{id}` | Delete a tag, independently of any quote |
 
-All nine endpoints require an authenticated session — none are `permitAll()`.
+All ten endpoints require an authenticated session — none are `permitAll()`.
 
 ---
 
@@ -60,6 +61,16 @@ Cross-owner access (e.g. one account targeting another account's quote or tag id
 
 Since tagging is optional, removing a quote's only tag is a normal operation — it succeeds (`204`) and leaves the quote with zero tags, exactly as if it had been created without any.
 
+### Personal comment on a quote
+
+`PATCH /api/quotes/{id}` sets or clears the authenticated user's private comment on a quote (`comment TEXT NULL` on `quote_selections`, `V7__quote_comment.sql`). Not settable at creation time — only editable afterwards, from the timeline detail modal (see below and `docs/features/timeline-personnelle.md`).
+
+`UpdateQuoteCommentRequest.comment` has no `@NotBlank` (unlike tag names): blank/omitted is a valid input and means "clear it". The service trims and normalizes an empty/whitespace-only value to `null` — the database never stores an empty string, only `NULL` or real content, mirroring the trim-and-non-empty guarantee already enforced by a `CHECK` constraint on `tags.name` (here done in the service layer instead of a `CHECK`, since `NULL` — not "always non-empty" — is the valid empty state). Max length `2000` (`@Size`), enforced at the application level only — like `selected_text`, there's no DB-level length constraint, since the value isn't indexed or searched.
+
+`updateCommentForOwner` mirrors `insert()`'s use of `UPDATE ... RETURNING` to avoid a second `SELECT` after the write, and — like every other mutation in this feature — embeds `user_id` directly in the `WHERE` clause rather than checking ownership beforehand: a `quoteId` not owned by the caller simply matches zero rows, surfaced as `404` (`ApiException.quoteNotFound()`), the same as every other cross-owner case in this file.
+
+The `comment` field is always present in `QuoteSelectionResponse`/`TimelineQuote` (nullable), even though the frontend currently only ever displays or edits it from the timeline modal — one consistent DTO shape rather than two response variants with/without it.
+
 ### Filtering by tag
 
 `GET /api/quotes?tagId=...` filters to quotes associated with that tag id. A `tagId` that doesn't exist, or belongs to a different user, isn't an error — it just matches nothing, so the response is `200` with an empty `results` list. This is a collection filter, not a lookup by identity: it also avoids confirming whether a given tag id exists for someone else.
@@ -80,7 +91,7 @@ Both endpoints follow the same ownership discipline as the rest of this feature:
 
 ## Response shapes
 
-**`QuoteSelectionResponse`**: `id`, `paragraphId`, `startOffset`, `endOffset`, `selectedText`, `tags` (a list of `{id, name}`, not bare names — a tag is a real resource with its own id, needed by the frontend to call the detach endpoint without a round trip to look it up), `createdAt`.
+**`QuoteSelectionResponse`**: `id`, `paragraphId`, `startOffset`, `endOffset`, `selectedText`, `comment` (nullable), `tags` (a list of `{id, name}`, not bare names — a tag is a real resource with its own id, needed by the frontend to call the detach endpoint without a round trip to look it up), `createdAt`.
 
 **`QuoteSelectionListResponse`**: `results`, `total`, `page`, `size` — same pagination envelope as `/api/search`. Ordered by `createdAt` descending, `id` descending as a tiebreaker (two quotes saved in the same instant still need a total order, or `LIMIT`/`OFFSET` pagination could skip or repeat a row across pages).
 
@@ -143,6 +154,14 @@ Selecting a different tag (or "Tous") resets `page` to `0` via a single wrapped 
 
 ---
 
+## Frontend — editing an existing quote (`QuoteTagEditor`)
+
+`src/features/quotes/QuoteTagEditor/`, the first frontend consumer of `POST/DELETE /api/quotes/{id}/tags[/{tagId}]` — both endpoints existed since this feature's initial build but had no UI caller until the timeline detail modal (`QuoteDetailModal`, see `docs/features/timeline-personnelle.md`) needed one. Live editing, not a staged batch: every add or remove calls the API immediately (`useMutation` + `queryClient.invalidateQueries({ queryKey: ['quotes'] })`, the same pattern already used by `TagFilterBar`'s rename/delete) — unlike `TagPickerPopup`, there's no "Terminer" step to collect changes before sending them, because the quote this component edits already exists server-side (nothing to defer until a later creation call). The search/create-if-missing matching logic (`useTagSearch`, `src/hooks/`) is shared with `TagPickerPopup` — both search an existing tag list and offer to create one that doesn't match, `QuoteTagEditor` additionally excluding tags already attached to the quote from its suggestions.
+
+The personal comment field lives directly in `QuoteDetailModal` (no dedicated sub-component — a single `<textarea>`, one consumer). Saved when the modal **closes** (cross, backdrop click, or Escape — Base UI routes all three through one `onOpenChange` handler), not on blur: closing is the natural "done editing" signal for a field inside a modal, unlike inline editing outside one. Trimmed at save time, and skipped entirely if the trimmed value didn't actually change (no gratuitous `PATCH`). The draft resets from the server value whenever the modal opens on a *different* quote, and also — this needs an explicit check, not just a quote-id comparison — when it **reopens on the same quote**, since `QuoteDetailModal` stays mounted across opens/closes (only the Dialog's `open` prop toggles); without resetting `renderedQuoteId` back to `null` on close too, a stale local draft from before closing would stick around instead of the value actually on the server (found and fixed during manual verification of this feature, see `private/impl/timeline-modale-actions_bilan.md`).
+
+---
+
 ## Manual verification
 
 - Search for a phrase, save it as a quote with two tags, confirm both appear in the response with their own ids. **Gotcha**: `/api/search` matches case-insensitively, but `selectedText` revalidation is an exact (case-sensitive) match — the phrase actually highlighted at the returned offsets may not be the same case as the search query typed (e.g. searching "madeleine" can surface a paragraph where the match is actually "Madeleine"); send the text exactly as it appears in the paragraph, not as typed in the search box.
@@ -161,6 +180,18 @@ Selecting a different tag (or "Tous") resets `page` to `0` via a single wrapped 
 - Rename with a blank name or a name over 50 characters → `400`.
 - Rename or delete a tag id that doesn't exist, or belongs to another account → `404` in both cases, never `403`.
 - Attach a tag to a quote, then delete the tag → `204`; the quote itself is unaffected, but no longer lists that tag; the tag disappears from `GET /api/tags`.
+
+**`PATCH /api/quotes/{id}` — comment**
+
+- Happy path: set a comment on a quote with none yet (`{"comment": "Un souvenir marquant."}`) → `200`, `comment` in the response matches, and `GET /api/quotes`/`GET /api/quotes/timeline` both reflect it afterwards.
+- Happy path: update an existing comment to a different value → `200`, new value persisted.
+- Edge case: send `"  Un souvenir marquant.  "` (leading/trailing whitespace) → `200`, `comment` in the response is trimmed.
+- Edge case: send `""` or `"   "` on a quote that already has a comment → `200`, `comment` is `null` afterwards (cleared, not stored as an empty string).
+- Edge case: send exactly 2000 characters → `200`, accepted at the limit.
+- Validation error: send 2001 characters → `400`.
+- Validation error: as a second account, `PATCH` the first account's quote → `404`, never `403`.
+- Validation error: `PATCH` a quote id that doesn't exist → `404`.
+- Validation error: without a session → `401`.
 
 ### Frontend (search results — `QuoteSelection`)
 
@@ -187,3 +218,17 @@ Verified manually end-to-end in a real browser (register a test account, save qu
 - Delete the last remaining quote while filtered to "Tous" → generic empty-state message ("Aucune citation sauvegardée pour le moment.").
 
 **Not manually re-verified** (already covered deterministically by `TagFilterBar.test.tsx`/`QuoteCard.test.tsx`/`MyQuotesPage.test.tsx`): the tag-specific empty-state message (filtered to a tag with zero matching quotes), Escape canceling an in-progress tag rename without committing, a declined delete confirmation being a no-op, and the page resetting to `0` when the active filter changes.
+
+### Frontend (timeline detail modal — `QuoteDetailModal`/`QuoteTagEditor`)
+
+Verified manually end-to-end in a real browser against the running dev servers, on a quote saved with an existing tag, opened from its bookmark on the `/mes-citations` timeline.
+
+- Open the modal → the comment field is empty (no comment saved yet) and the existing tag shows as a removable chip.
+- Type a comment with leading/trailing spaces, close via the × button → reopening the same quote shows the trimmed comment, confirmed against the database directly (`quote_selections.comment`).
+- Same, closing via Escape instead of the × → same result (both routes call the same close handler).
+- Remove the existing tag chip → it disappears immediately (no page reload), and also disappears from the quote's card on `/mes-citations` below; the removed tag reappears as a suggestion in the "Ajouter un tag..." field.
+- Type a name that doesn't exist yet and click "Créer « nom »" → the tag is attached immediately, appears as a chip with a remove button.
+- Reopen the modal on the same quote after these changes → both the comment and the tag list reflect the values just saved, not stale values left over from before closing (regression: see below).
+- Close the modal without changing the comment → confirmed via network inspection that no `PATCH /api/quotes/{id}` request is sent (the unchanged-value guard works).
+
+**Bug found and fixed during this verification**: reopening the *same* quote (not a different one) left the comment textarea showing whatever was last typed locally, rather than the actual saved value — `QuoteDetailModal` stays mounted across opens/closes, and the draft-reset logic only checked whether the quote's *id* had changed, never re-triggering for the same id. Fixed by also resetting the tracked id to `null` when the modal closes, so every reopen — same quote or not — re-syncs the draft from the current `quote.comment`. Covered by a new test (`QuoteDetailModal.test.tsx`, "re-syncs the draft from the server value when the same quote is reopened") in addition to the manual check above.

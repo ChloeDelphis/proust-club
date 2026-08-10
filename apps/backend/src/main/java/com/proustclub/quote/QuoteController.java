@@ -6,6 +6,7 @@ import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import com.proustclub.quote.dto.QuoteSelectionListResponse;
 import com.proustclub.quote.dto.QuoteSelectionResponse;
 import com.proustclub.quote.dto.TimelineResponse;
+import com.proustclub.quote.dto.UpdateQuoteCommentRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,6 +22,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -95,6 +97,15 @@ class QuoteController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@PathVariable int id, Authentication authentication) {
         service.delete(currentUser.resolveUuid(authentication), id);
+    }
+
+    @Operation(summary = "Update a quote's personal comment", description = "Sets or clears the authenticated user's private comment on a quote. A blank or omitted comment clears it (stored as null).")
+    @ApiResponse(responseCode = "200", description = "Updated quote selection", content = @Content(schema = @Schema(implementation = QuoteSelectionResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Quote not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @PatchMapping(value = "/api/quotes/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    QuoteSelectionResponse updateComment(@PathVariable int id, @Valid @RequestBody UpdateQuoteCommentRequest request, Authentication authentication) {
+        return service.updateComment(currentUser.resolveUuid(authentication), id, request.comment());
     }
 
     @Operation(summary = "Add a tag to a quote", description = "Attaches a tag (by name, created if it doesn't exist yet) to an existing quote. Idempotent: adding a tag already attached does nothing.")

@@ -173,6 +173,7 @@ describe('QuoteSelection — connected', () => {
       startOffset: 0,
       endOffset: 11,
       selectedText: 'hello world',
+      comment: null,
       tags: [],
       createdAt: '2026-08-05T00:00:00Z',
     })
@@ -211,6 +212,7 @@ describe('QuoteSelection — connected', () => {
       startOffset: 0,
       endOffset: 11,
       selectedText: 'hello world',
+      comment: null,
       tags: [],
       createdAt: '2026-08-05T00:00:00Z',
     })

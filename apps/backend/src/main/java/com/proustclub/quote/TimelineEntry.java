@@ -8,5 +8,6 @@ record TimelineEntry(
         int pageNumber,
         int volumeId,
         String selectedText,
+        String comment,
         Instant createdAt
 ) {}

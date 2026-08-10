@@ -21,9 +21,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -332,6 +334,66 @@ class QuoteControllerTest {
     @Test
     void deleteQuoteWithoutSessionReturnsUnauthorized() throws Exception {
         mockMvc.perform(delete("/api/quotes/1").with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- PATCH /api/quotes/{id} ---
+
+    @Test
+    void updateQuoteCommentTrimsAndSucceeds() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"comment\":\"  Un souvenir d'enfance.  \"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comment").value("Un souvenir d'enfance."));
+
+        mockMvc.perform(get("/api/quotes").session(session))
+                .andExpect(jsonPath("$.results[0].comment").value("Un souvenir d'enfance."));
+    }
+
+    @Test
+    void updateQuoteCommentWithBlankClearsIt() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"comment\":\"Un premier commentaire.\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"comment\":\"   \"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comment").value(nullValue()));
+    }
+
+    @Test
+    void updateQuoteCommentTooLongReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String tooLong = "a".repeat(2001);
+
+        mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("comment", tooLong))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateQuoteCommentOfAnotherUserReturnsNotFound() throws Exception {
+        var alice = registerAndLogin("alice", "alice@example.com");
+        var bob = registerAndLogin("bob", "bob@example.com");
+        int quoteId = createQuote(alice, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(bob).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"comment\":\"Pas le mien.\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateQuoteCommentWithoutSessionReturnsUnauthorized() throws Exception {
+        mockMvc.perform(patch("/api/quotes/1").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"comment\":\"x\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
