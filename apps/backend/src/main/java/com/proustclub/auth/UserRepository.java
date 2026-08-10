@@ -58,4 +58,30 @@ class UserRepository {
                         r.get("role", String.class)
                 ));
     }
+
+    Optional<AuthUser> findByEmail(String email) {
+        return dsl.select(
+                        DSL.field("uuid", UUID.class),
+                        DSL.field("username", String.class),
+                        DSL.field("email", String.class),
+                        DSL.field("password_hash", String.class),
+                        DSL.field("role", String.class)
+                )
+                .from(DSL.table("users"))
+                .where(DSL.field("email", String.class).eq(email))
+                .fetchOptional(r -> new AuthUser(
+                        r.get("uuid", UUID.class),
+                        r.get("username", String.class),
+                        r.get("email", String.class),
+                        r.get("password_hash", String.class),
+                        r.get("role", String.class)
+                ));
+    }
+
+    void updatePasswordHash(UUID uuid, String passwordHash) {
+        dsl.update(DSL.table("users"))
+                .set(DSL.field("password_hash", String.class), passwordHash)
+                .where(DSL.field("uuid", UUID.class).eq(uuid))
+                .execute();
+    }
 }
