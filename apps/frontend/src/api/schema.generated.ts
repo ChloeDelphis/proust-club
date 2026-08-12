@@ -193,6 +193,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/email/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm an email address
+         * @description Marks the account's email as verified from a valid confirmation token. Does not require an active session — the link may be opened on a different device/browser than the one used to register.
+         */
+        post: operations["confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tags/{id}": {
         parameters: {
             query?: never;
@@ -480,6 +500,8 @@ export interface components {
              * @example USER
              */
             role?: string;
+            /** @description Whether the account's email address has been confirmed */
+            emailVerified?: boolean;
         };
         /** @description Password change for the currently authenticated user */
         PasswordChangeRequest: {
@@ -530,6 +552,11 @@ export interface components {
              * @example hunter2222
              */
             password: string;
+        };
+        /** @description Email confirmation */
+        EmailVerificationConfirmRequest: {
+            /** @description Confirmation token received by email */
+            token: string;
         };
         /** @description Request to rename an existing tag */
         RenameTagRequest: {
@@ -1108,6 +1135,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailVerificationConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Email confirmed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request body, or invalid/expired token */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
