@@ -16,5 +16,8 @@ public record UserResponse(
         String email,
 
         @Schema(description = "Role", example = "USER")
-        String role
+        String role,
+
+        @Schema(description = "Whether the account's email address has been confirmed")
+        boolean emailVerified
 ) {}

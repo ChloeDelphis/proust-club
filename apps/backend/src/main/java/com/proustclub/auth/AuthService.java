@@ -20,11 +20,16 @@ class AuthService {
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final EmailVerificationService emailVerificationService;
 
-    AuthService(UserRepository repository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+    AuthService(
+            UserRepository repository, PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager, EmailVerificationService emailVerificationService
+    ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Transactional
@@ -42,7 +47,9 @@ class AuthService {
         var uuid = repository.insert(request.username(), normalizedEmail, passwordHash);
         log.info("User registered: {}", request.username());
 
-        return new UserResponse(uuid, request.username(), normalizedEmail, "USER");
+        emailVerificationService.sendVerification(uuid, normalizedEmail);
+
+        return new UserResponse(uuid, request.username(), normalizedEmail, "USER", false);
     }
 
     @Transactional(readOnly = true)
@@ -69,6 +76,6 @@ class AuthService {
     UserResponse currentUser(String username) {
         var user = repository.findByUsername(username)
                 .orElseThrow(ApiException::invalidCredentials);
-        return new UserResponse(user.uuid(), user.username(), user.email(), user.role());
+        return new UserResponse(user.uuid(), user.username(), user.email(), user.role(), user.emailVerified());
     }
 }

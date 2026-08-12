@@ -43,7 +43,7 @@ class PasswordResetServiceTest {
     @Test
     void requestResetInvalidatesPreviousTokensAndSendsEmailForKnownAccount() {
         var uuid = UUID.randomUUID();
-        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER");
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER", true);
         when(userRepository.findByEmail("marcel@example.com")).thenReturn(Optional.of(user));
 
         service.requestReset("marcel@example.com");
@@ -76,7 +76,7 @@ class PasswordResetServiceTest {
     void confirmResetBurnsTokenAndUpdatesPassword() {
         var uuid = UUID.randomUUID();
         var token = new PasswordResetToken(42L, uuid);
-        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER");
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER", true);
 
         when(tokenRepository.consumeValidToken(anyString())).thenReturn(Optional.of(token));
         when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));

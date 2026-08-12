@@ -33,4 +33,18 @@ public class MailService {
         mailSender.send(message);
         log.info("Password reset email sent");
     }
+
+    public void sendEmailConfirmation(String to, String token) {
+        var message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Confirmez votre adresse email — Proust Club");
+        message.setText(
+                "Bienvenue sur Proust Club !\n\n"
+                        + "Cliquez sur ce lien pour confirmer votre adresse email (valable 24h) :\n"
+                        + frontendBaseUrl + "/confirm-email?token=" + token + "\n\n"
+                        + "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email."
+        );
+        mailSender.send(message);
+        log.info("Email confirmation sent");
+    }
 }

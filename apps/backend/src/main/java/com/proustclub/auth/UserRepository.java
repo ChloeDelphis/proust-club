@@ -59,7 +59,8 @@ class UserRepository {
                         DSL.field("username", String.class),
                         DSL.field("email", String.class),
                         DSL.field("password_hash", String.class),
-                        DSL.field("role", String.class)
+                        DSL.field("role", String.class),
+                        DSL.field("email_verified", Boolean.class)
                 )
                 .from(DSL.table("users"))
                 .where(condition)
@@ -68,8 +69,16 @@ class UserRepository {
                         r.get("username", String.class),
                         r.get("email", String.class),
                         r.get("password_hash", String.class),
-                        r.get("role", String.class)
+                        r.get("role", String.class),
+                        r.get("email_verified", Boolean.class)
                 ));
+    }
+
+    void markEmailVerified(UUID uuid) {
+        dsl.update(DSL.table("users"))
+                .set(DSL.field("email_verified", Boolean.class), true)
+                .where(DSL.field("uuid", UUID.class).eq(uuid))
+                .execute();
     }
 
     void updatePasswordHash(UUID uuid, String passwordHash) {
