@@ -30,31 +30,18 @@ export default function ConfirmEmailPage() {
     }
   }, [token, mutate])
 
-  if (!token) {
-    return (
-      <main className={styles.root}>
-        <h1 className={styles.title}>Confirmation de l’email</h1>
-        <ErrorMessage message="Ce lien de confirmation est invalide." />
-        <p className={styles.switch}>
-          <Link to="/">Retour à l’accueil</Link>
-        </p>
-      </main>
-    )
-  }
-
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>Confirmation de l’email</h1>
-      {isPending && <Spinner />}
-      {isSuccess && (
-        <>
-          <p>Votre adresse email a été confirmée.</p>
-          <p className={styles.switch}>
-            <Link to="/">Retour à l’accueil</Link>
-          </p>
-        </>
+      {!token && <ErrorMessage message="Ce lien de confirmation est invalide." />}
+      {token && isPending && <Spinner />}
+      {token && isSuccess && <p>Votre adresse email a été confirmée.</p>}
+      {token && isError && <ErrorMessage message="Ce lien de confirmation est invalide ou a expiré." />}
+      {(!token || isSuccess) && (
+        <p className={styles.switch}>
+          <Link to="/">Retour à l’accueil</Link>
+        </p>
       )}
-      {isError && <ErrorMessage message="Ce lien de confirmation est invalide ou a expiré." />}
     </main>
   )
 }

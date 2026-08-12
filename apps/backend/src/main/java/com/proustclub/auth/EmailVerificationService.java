@@ -16,13 +16,14 @@ class EmailVerificationService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailVerificationService.class);
     private static final Duration TOKEN_TTL = Duration.ofHours(24);
+    private static final String TOKEN_TABLE = "email_verification_tokens";
 
-    private final EmailVerificationTokenRepository tokenRepository;
+    private final OneTimeTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final MailService mailService;
 
     EmailVerificationService(
-            EmailVerificationTokenRepository tokenRepository, UserRepository userRepository, MailService mailService
+            OneTimeTokenRepository tokenRepository, UserRepository userRepository, MailService mailService
     ) {
         this.tokenRepository = tokenRepository;
         this.userRepository = userRepository;
@@ -38,7 +39,7 @@ class EmailVerificationService {
     @Transactional
     void sendVerification(UUID userId, String email) {
         var rawToken = SecureToken.generate();
-        tokenRepository.insert(userId, SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
+        tokenRepository.insert(TOKEN_TABLE, userId, SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
         try {
             mailService.sendEmailConfirmation(email, rawToken);
         } catch (MailException e) {
@@ -48,8 +49,8 @@ class EmailVerificationService {
 
     @Transactional
     void confirmVerification(String rawToken) {
-        // Validated and burned in one statement — see EmailVerificationTokenRepository for why.
-        var token = tokenRepository.consumeValidToken(SecureToken.hash(rawToken))
+        // Validated and burned in one statement — see OneTimeTokenRepository for why.
+        var token = tokenRepository.consumeValidToken(TOKEN_TABLE, SecureToken.hash(rawToken))
                 .orElseThrow(ApiException::invalidOrExpiredVerificationToken);
         userRepository.markEmailVerified(token.userId());
         log.info("Email verified");

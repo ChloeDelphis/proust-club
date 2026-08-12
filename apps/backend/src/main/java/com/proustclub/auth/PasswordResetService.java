@@ -15,14 +15,15 @@ class PasswordResetService {
 
     private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
     private static final Duration TOKEN_TTL = Duration.ofMinutes(30);
+    private static final String TOKEN_TABLE = "password_reset_tokens";
 
-    private final PasswordResetTokenRepository tokenRepository;
+    private final OneTimeTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
 
     PasswordResetService(
-            PasswordResetTokenRepository tokenRepository, UserRepository userRepository,
+            OneTimeTokenRepository tokenRepository, UserRepository userRepository,
             PasswordEncoder passwordEncoder, MailService mailService
     ) {
         this.tokenRepository = tokenRepository;
@@ -40,10 +41,10 @@ class PasswordResetService {
         userRepository.findByEmail(normalizedEmail).ifPresent(user -> {
             // A fresh request supersedes any still-live token from an earlier one — a user only
             // ever has one valid reset link at a time.
-            tokenRepository.invalidateAllUnusedForUser(user.uuid());
+            tokenRepository.invalidateAllUnusedForUser(TOKEN_TABLE, user.uuid());
 
             var rawToken = SecureToken.generate();
-            tokenRepository.insert(user.uuid(), SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
+            tokenRepository.insert(TOKEN_TABLE, user.uuid(), SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
             mailService.sendPasswordResetEmail(user.email(), rawToken);
             log.info("Password reset requested");
         });
@@ -54,8 +55,8 @@ class PasswordResetService {
     // AuthenticationManager just to re-verify a password this method itself just wrote.
     @Transactional
     AuthUser confirmReset(String rawToken, String newPassword) {
-        // Validated and burned in one statement — see PasswordResetTokenRepository for why.
-        var token = tokenRepository.consumeValidToken(SecureToken.hash(rawToken))
+        // Validated and burned in one statement — see OneTimeTokenRepository for why.
+        var token = tokenRepository.consumeValidToken(TOKEN_TABLE, SecureToken.hash(rawToken))
                 .orElseThrow(ApiException::invalidOrExpiredResetToken);
 
         // Enforced by a foreign key with ON DELETE CASCADE, so this should never be empty in

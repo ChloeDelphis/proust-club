@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class EmailVerificationServiceTest {
 
     @Mock
-    EmailVerificationTokenRepository tokenRepository;
+    OneTimeTokenRepository tokenRepository;
 
     @Mock
     UserRepository userRepository;
@@ -43,7 +43,7 @@ class EmailVerificationServiceTest {
 
         service.sendVerification(uuid, "marcel@example.com");
 
-        verify(tokenRepository).insert(eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).insert(eq("email_verification_tokens"), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendEmailConfirmation(eq("marcel@example.com"), anyString());
     }
 
@@ -56,14 +56,14 @@ class EmailVerificationServiceTest {
 
         assertThatCode(() -> service.sendVerification(uuid, "marcel@example.com")).doesNotThrowAnyException();
 
-        verify(tokenRepository).insert(eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).insert(eq("email_verification_tokens"), eq(uuid), anyString(), any(Instant.class));
     }
 
     @Test
     void confirmVerificationMarksEmailVerified() {
         var uuid = UUID.randomUUID();
-        var token = new EmailVerificationToken(42L, uuid);
-        when(tokenRepository.consumeValidToken(anyString())).thenReturn(Optional.of(token));
+        var token = new OneTimeToken(42L, uuid);
+        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.of(token));
 
         service.confirmVerification("raw-token");
 
@@ -72,7 +72,7 @@ class EmailVerificationServiceTest {
 
     @Test
     void confirmVerificationRejectsUnknownToken() {
-        when(tokenRepository.consumeValidToken(anyString())).thenReturn(Optional.empty());
+        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.confirmVerification("garbage-token"))
                 .isInstanceOf(ApiException.class);
