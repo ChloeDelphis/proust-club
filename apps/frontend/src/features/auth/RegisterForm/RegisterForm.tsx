@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { RegisterFormProps } from './RegisterForm.types'
 import FormField from '../FormField/FormField'
+import { passwordLengthError } from '../passwordValidation'
 import styles from '../AuthForm.module.css'
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
@@ -22,8 +23,9 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
       setError('Adresse email invalide.')
       return
     }
-    if (password.length < 15) {
-      setError('Le mot de passe doit contenir au moins 15 caractères — une phrase de passe fonctionne très bien.')
+    const passwordError = passwordLengthError(password)
+    if (passwordError) {
+      setError(passwordError)
       return
     }
     setError('')

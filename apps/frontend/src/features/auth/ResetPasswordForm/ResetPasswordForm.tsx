@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ResetPasswordFormProps } from './ResetPasswordForm.types'
 import FormField from '../FormField/FormField'
+import { passwordLengthError } from '../passwordValidation'
 import styles from '../AuthForm.module.css'
 
 export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) {
@@ -9,8 +10,9 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (newPassword.length < 15) {
-      setError('Le mot de passe doit contenir au moins 15 caractères — une phrase de passe fonctionne très bien.')
+    const passwordError = passwordLengthError(newPassword)
+    if (passwordError) {
+      setError(passwordError)
       return
     }
     setError('')

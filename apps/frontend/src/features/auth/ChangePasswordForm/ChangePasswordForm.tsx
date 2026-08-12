@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ChangePasswordFormProps } from './ChangePasswordForm.types'
 import FormField from '../FormField/FormField'
+import { passwordLengthError } from '../passwordValidation'
 import styles from '../AuthForm.module.css'
 
 export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps) {
@@ -10,8 +11,9 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (newPassword.length < 15) {
-      setError('Le nouveau mot de passe doit contenir au moins 15 caractères — une phrase de passe fonctionne très bien.')
+    const passwordError = passwordLengthError(newPassword, 'Le nouveau mot de passe')
+    if (passwordError) {
+      setError(passwordError)
       return
     }
     setError('')

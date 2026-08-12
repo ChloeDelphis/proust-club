@@ -32,16 +32,17 @@ export default function AccountPage() {
     return <Navigate to="/login" replace />
   }
 
-  const isCurrentPasswordIncorrect = mutation.isError && mutation.error instanceof ApiError && mutation.error.status === 401
+  const errorMessage = !mutation.isError
+    ? null
+    : mutation.error instanceof ApiError && mutation.error.status === 401
+      ? 'Mot de passe actuel incorrect.'
+      : 'Le changement de mot de passe a échoué. Réessayez.'
 
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>Compte</h1>
       <ChangePasswordForm onSubmit={params => mutation.mutate(params)} />
-      {isCurrentPasswordIncorrect && <ErrorMessage message="Mot de passe actuel incorrect." />}
-      {mutation.isError && !isCurrentPasswordIncorrect && (
-        <ErrorMessage message="Le changement de mot de passe a échoué. Réessayez." />
-      )}
+      {errorMessage && <ErrorMessage message={errorMessage} />}
     </main>
   )
 }
