@@ -1,26 +1,39 @@
 import { useState } from 'react'
-import type { ResetPasswordFormProps } from './ResetPasswordForm.types'
+import type { ChangePasswordFormProps } from './ChangePasswordForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
 import styles from '../AuthForm.module.css'
 
-export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) {
+export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps) {
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const passwordError = passwordLengthError(newPassword)
+    const passwordError = passwordLengthError(newPassword, 'Le nouveau mot de passe')
     if (passwordError) {
       setError(passwordError)
       return
     }
     setError('')
-    onSubmit({ newPassword })
+    onSubmit({ currentPassword, newPassword })
+    // Cleared unconditionally, success or failure — a password field left filled in after a
+    // submit attempt is never useful, and this avoids threading mutation status back into the form.
+    setCurrentPassword('')
+    setNewPassword('')
   }
 
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
+      <FormField
+        label="Mot de passe actuel"
+        type="password"
+        value={currentPassword}
+        onChange={e => setCurrentPassword(e.target.value)}
+        autoComplete="current-password"
+        maxLength={128}
+      />
       <FormField
         label="Nouveau mot de passe"
         type="password"
@@ -30,7 +43,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
         maxLength={128}
       />
       <button className={styles.button} type="submit">
-        Réinitialiser le mot de passe
+        Changer le mot de passe
       </button>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </form>

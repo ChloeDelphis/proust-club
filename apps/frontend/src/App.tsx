@@ -5,6 +5,7 @@ import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
 import ForgotPasswordPage from './features/auth/ForgotPasswordPage'
 import ResetPasswordPage from './features/auth/ResetPasswordPage'
+import AccountPage from './features/auth/AccountPage'
 import MyQuotesPage from './features/quotes/MyQuotesPage/MyQuotesPage'
 import Header from './components/Header/Header'
 import ToastProvider from './components/Toast/ToastProvider'
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/account" element={<AccountPage />} />
             <Route path="/mes-citations" element={<MyQuotesPage />} />
           </Routes>
         </BrowserRouter>

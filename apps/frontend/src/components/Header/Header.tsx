@@ -23,6 +23,7 @@ export default function Header() {
       {isSuccess ? (
         <div className={styles.session}>
           <Link to="/mes-citations">Mes citations</Link>
+          <Link to="/account">Mon compte</Link>
           <span>Connecté en tant que {user.username}</span>
           <button className={styles.logoutButton} type="button" onClick={() => logoutMutation.mutate()}>
             Se déconnecter

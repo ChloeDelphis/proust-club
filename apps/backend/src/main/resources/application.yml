@@ -81,6 +81,10 @@ rate-limit:
     per-account:
       capacity: 3
       refill-period: 15m
+  password-change:
+    per-account:
+      capacity: 5
+      refill-period: 15m
 
 logging:
   level:

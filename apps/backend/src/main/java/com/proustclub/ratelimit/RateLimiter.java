@@ -24,6 +24,7 @@ public class RateLimiter {
     private final LoadingCache<String, Bucket> searchByIp;
     private final LoadingCache<String, Bucket> passwordResetByIp;
     private final LoadingCache<String, Bucket> passwordResetByAccount;
+    private final LoadingCache<String, Bucket> passwordChangeByAccount;
 
     RateLimiter(RateLimitProperties properties) {
         this.loginByIp = cacheFor(properties.login().perIp());
@@ -32,6 +33,7 @@ public class RateLimiter {
         this.searchByIp = cacheFor(properties.search().perIp());
         this.passwordResetByIp = cacheFor(properties.passwordReset().perIp());
         this.passwordResetByAccount = cacheFor(properties.passwordReset().perAccount());
+        this.passwordChangeByAccount = cacheFor(properties.passwordChange().perAccount());
     }
 
     public void checkLoginByIp(HttpServletRequest request) {
@@ -58,6 +60,10 @@ public class RateLimiter {
 
     public void checkPasswordResetByAccount(String email) {
         check(passwordResetByAccount, EmailNormalizer.normalize(email), "password-reset", "account");
+    }
+
+    public void checkPasswordChangeByAccount(String username) {
+        check(passwordChangeByAccount, username.trim().toLowerCase(Locale.ROOT), "password-change", "account");
     }
 
     private void check(LoadingCache<String, Bucket> buckets, String key, String endpoint, String keyType) {
