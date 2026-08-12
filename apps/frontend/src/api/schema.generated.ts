@@ -93,6 +93,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change password
+         * @description Changes the password of the currently authenticated user. Requires the current password to be re-supplied and re-verified — never a change on the session alone. Invalidates every other active session for the account; the current one stays open.
+         */
+        post: operations["changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/password-reset/request": {
         parameters: {
             query?: never;
@@ -460,6 +480,16 @@ export interface components {
              * @example USER
              */
             role?: string;
+        };
+        /** @description Password change for the currently authenticated user */
+        PasswordChangeRequest: {
+            /** @description Current password, re-verified before any change */
+            currentPassword: string;
+            /**
+             * @description New password (15-128 characters — length over composition rules; passphrases and spaces are welcome)
+             * @example Le temps retrouve enfin
+             */
+            newPassword: string;
         };
         /** @description Password reset request (forgot password) */
         PasswordResetRequestRequest: {
@@ -921,6 +951,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Password changed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid request body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not authenticated, or current password incorrect */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
                 };
             };
         };
