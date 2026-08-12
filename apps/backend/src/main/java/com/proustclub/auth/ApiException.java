@@ -27,4 +27,9 @@ class ApiException extends ErrorResponseException {
     static ApiException invalidOrExpiredResetToken() {
         return new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token.");
     }
+
+    // Same anti-enumeration reasoning as invalidOrExpiredResetToken().
+    static ApiException invalidOrExpiredVerificationToken() {
+        return new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired verification token.");
+    }
 }

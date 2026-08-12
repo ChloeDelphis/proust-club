@@ -31,6 +31,7 @@ const connectedUser: authApi.UserResponse = {
   username: 'marcel',
   email: 'marcel@example.com',
   role: 'USER',
+  emailVerified: true,
 }
 
 beforeEach(() => {

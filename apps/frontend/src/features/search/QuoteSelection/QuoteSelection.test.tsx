@@ -35,6 +35,7 @@ const connectedUser: authApi.UserResponse = {
   username: 'marcel',
   email: 'marcel@example.com',
   role: 'USER',
+  emailVerified: true,
 }
 
 // "hello world today" — boundaries at 0, 6, 12, 18. Highlight covers "world" (6-11).

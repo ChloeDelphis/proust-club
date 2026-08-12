@@ -9,6 +9,7 @@ export type UserResponse = {
   username: string
   email: string
   role: string
+  emailVerified: boolean
 }
 
 export type RegisterParams = operations['register']['requestBody']['content']['application/json']
@@ -16,6 +17,7 @@ export type LoginParams = operations['login']['requestBody']['content']['applica
 export type PasswordResetRequestParams = operations['requestReset']['requestBody']['content']['application/json']
 export type PasswordResetConfirmParams = operations['confirmReset']['requestBody']['content']['application/json']
 export type PasswordChangeParams = operations['changePassword']['requestBody']['content']['application/json']
+export type EmailVerificationConfirmParams = operations['confirm']['requestBody']['content']['application/json']
 
 export function register(params: RegisterParams, signal?: AbortSignal): Promise<UserResponse> {
   return apiFetch<UserResponse>('/api/auth/register', {
@@ -63,6 +65,15 @@ export function confirmPasswordReset(params: PasswordResetConfirmParams, signal?
 
 export function changePassword(params: PasswordChangeParams, signal?: AbortSignal): Promise<void> {
   return apiFetch<void>('/api/auth/password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+    signal,
+  })
+}
+
+export function confirmEmail(params: EmailVerificationConfirmParams, signal?: AbortSignal): Promise<void> {
+  return apiFetch<void>('/api/auth/email/confirm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),

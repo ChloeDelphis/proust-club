@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proustclub.TestcontainersConfiguration;
 import com.proustclub.auth.dto.LoginRequest;
 import com.proustclub.auth.dto.RegisterRequest;
+import com.proustclub.mail.MailService;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
@@ -14,10 +15,14 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,6 +39,9 @@ class AuthControllerTest {
 
     @Autowired
     DSLContext dsl;
+
+    @MockitoBean
+    MailService mailService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -53,8 +61,18 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.email").value("marcel@example.com"))
                 .andExpect(jsonPath("$.role").value("USER"))
                 .andExpect(jsonPath("$.uuid").exists())
+                .andExpect(jsonPath("$.emailVerified").value(false))
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
+    }
+
+    @Test
+    void registerSendsEmailConfirmation() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("emailconfirm", "emailconfirm@example.com", "hunter2222password")))
+                .andExpect(status().isCreated());
+
+        verify(mailService).sendEmailConfirmation(eq("emailconfirm@example.com"), anyString());
     }
 
     // Only the status is asserted, not the ProblemDetail body — see the comment on
@@ -284,7 +302,8 @@ class AuthControllerTest {
 
         mockMvc.perform(get("/api/auth/me").session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("marcel"));
+                .andExpect(jsonPath("$.username").value("marcel"))
+                .andExpect(jsonPath("$.emailVerified").value(false));
     }
 
     @Test

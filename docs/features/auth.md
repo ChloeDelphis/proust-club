@@ -12,6 +12,7 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 | POST | `/api/auth/login` | none | Authenticate, open a session |
 | POST | `/api/auth/logout` | session | Invalidate the current session |
 | GET | `/api/auth/me` | session | Return the current user, or 401 if none |
+| POST | `/api/auth/email/confirm` | none | Confirm an account's email address from a one-time token sent at registration |
 
 ---
 
@@ -32,7 +33,7 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 
 **UserResponse** (the only response shape returned by register/login/me)
 ```json
-{ "uuid": "...", "username": "marcel", "email": "marcel@example.com", "role": "USER" }
+{ "uuid": "...", "username": "marcel", "email": "marcel@example.com", "role": "USER", "emailVerified": false }
 ```
 `password`/`password_hash` never appear in any response, at any endpoint. The mapping from the internal `AuthUser` record (which does carry the hash) to `UserResponse` happens explicitly in `AuthService` — the controller never serializes an internal object directly.
 
@@ -68,6 +69,24 @@ CSRF protection stays enabled. The frontend must have a valid `XSRF-TOKEN` cooki
 
 ---
 
+## Email confirmation at registration
+
+`register()` still auto-logs in immediately — an unconfirmed account is fully usable, this is a deliberate product decision, not a placeholder. Confirming is entirely a side channel: a reminder banner (`EmailVerificationBanner`, mounted under `Header` in `App.tsx`, visible on every page) is the only visible effect of `emailVerified` being `false`.
+
+**Token model.** Shared with password reset via `OneTimeTokenRepository`/`SecureToken` (256-bit `SecureRandom`, SHA-256 hashed at rest, single-use — `UPDATE ... WHERE used_at IS NULL AND expires_at > now() RETURNING` burns the token and reads it in one round trip, closing the race a separate check-then-set would leave open). Email confirmation keeps its own physical table (`email_verification_tokens`, `V9__email_verification.sql`) rather than sharing rows with `password_reset_tokens` — a bug in one flow's queries still can't touch the other flow's data — but the query logic itself is generalized, parameterized by table name. TTL is 24h (vs. 30 minutes for password reset): confirming an email is a lower-stakes possession check than resetting a credential, so a longer window trades a small security margin for less friction if the user doesn't check their inbox right away.
+
+**Sending is best-effort.** `EmailVerificationService.sendVerification()` catches `MailException` and logs a warning rather than letting it propagate — deliberately asymmetric with `PasswordResetService.requestReset()`, which lets a mail failure fail the request. A transient SMTP hiccup must not make account creation itself unreliable, since the account is already fully usable without a confirmed email.
+
+**Confirming needs no session.** `POST /api/auth/email/confirm` is `permitAll` — the link may be opened on a different device/browser than the one used to register, so the token itself (not a cookie) is what proves the request is legitimate. Same anti-enumeration posture as password reset: `400` with a generic "invalid or expired" message, whether the token is unknown, expired, or already used.
+
+**Existing accounts.** `V9__email_verification.sql` adds `users.email_verified BOOLEAN NOT NULL DEFAULT TRUE`, then changes the column default to `FALSE` — Postgres backfills existing rows with the `TRUE` default at `ALTER TABLE` time (no table rewrite since PG 11), so every account created before this feature is already marked confirmed; only new registrations start unconfirmed.
+
+**Frontend.** `ConfirmEmailPage` (`/confirm-email?token=`) reads the token via `useSearchParams` and fires the confirmation through `useQuery` — not `useMutation` — specifically because `useQuery`'s dedup by `queryKey` is safe under React StrictMode's double-invoked effects for a "run this exactly once on mount" side effect; a `useEffect` + `useMutation` + guard-ref version of this page shipped a real bug where the page could get stuck on the loading state forever in dev (see `private/impl/confirmation-email-inscription-4-verification.md`). Since `confirmEmail()` resolves `void` (204 No Content) and TanStack Query treats a `queryFn` resolving to `undefined` as an error, the `queryFn` normalizes the result to `true` rather than changing `confirmEmail()`'s `Promise<void>` signature.
+
+**Out of scope for this iteration.** Resending a lost/expired confirmation email — tracked separately in `private/tickets/renvoi-email-confirmation.md`, deliberately not urgent since access is never blocked on confirmation.
+
+---
+
 ## Frontend
 
 ```
@@ -78,9 +97,9 @@ LoginForm / RegisterForm (fields + client-side validation)
   → POST /api/auth/login | /api/auth/register
 ```
 
-`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav. On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key.
+`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder. On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
 
-Routing (`react-router`, introduced with this feature): `/`, `/login`, `/register`.
+Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`.
 
 ---
 
@@ -93,5 +112,12 @@ Routing (`react-router`, introduced with this feature): `/`, `/login`, `/registe
 - Log back in with the same credentials → same logged-in state.
 - Log in with a wrong password → generic "Identifiants invalides" message.
 - Log in with an unknown username → same generic message (no hint that the username doesn't exist).
+- Register → confirmation email received (Mailhog in dev), reminder banner visible under the header on every page.
+- Click the confirmation link (valid, unused token) → `204`, "Votre adresse email a été confirmée." message, `users.email_verified` becomes `true`, banner disappears immediately if the confirming browser is logged in as that account.
+- Confirming works with no active session (e.g. link opened in a different browser/device than the one used to register).
+- Click the same confirmation link twice → second attempt shows a generic "invalid or expired" message, does not un-confirm or change anything.
+- Confirm with a token that was never issued → same generic error message (`400`).
+- Confirm with an empty/missing token → `400` (`@NotBlank` validation).
+- Account created before this feature shipped → `email_verified` already `true` (migration backfill), no banner, no email sent.
 - Reload the page while logged in → still shows as logged in (session persisted via cookie, restored via `GET /api/auth/me`).
 - `GET /api/auth/me` with no session → 401.

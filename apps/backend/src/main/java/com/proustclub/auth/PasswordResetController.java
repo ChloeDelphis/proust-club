@@ -86,6 +86,6 @@ class PasswordResetController {
         var newSessionId = httpRequest.getSession(false).getId();
         sessionInvalidator.invalidateOtherSessions(user.username(), newSessionId);
 
-        return new UserResponse(user.uuid(), user.username(), user.email(), user.role());
+        return new UserResponse(user.uuid(), user.username(), user.email(), user.role(), user.emailVerified());
     }
 }

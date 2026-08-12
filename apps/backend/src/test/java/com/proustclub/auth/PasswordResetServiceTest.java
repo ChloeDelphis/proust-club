@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class PasswordResetServiceTest {
 
     @Mock
-    PasswordResetTokenRepository tokenRepository;
+    OneTimeTokenRepository tokenRepository;
 
     @Mock
     UserRepository userRepository;
@@ -43,13 +43,13 @@ class PasswordResetServiceTest {
     @Test
     void requestResetInvalidatesPreviousTokensAndSendsEmailForKnownAccount() {
         var uuid = UUID.randomUUID();
-        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER");
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER", true);
         when(userRepository.findByEmail("marcel@example.com")).thenReturn(Optional.of(user));
 
         service.requestReset("marcel@example.com");
 
-        verify(tokenRepository).invalidateAllUnusedForUser(uuid);
-        verify(tokenRepository).insert(eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).invalidateAllUnusedForUser(eq("password_reset_tokens"), eq(uuid));
+        verify(tokenRepository).insert(eq("password_reset_tokens"), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendPasswordResetEmail(eq("marcel@example.com"), anyString());
     }
 
@@ -68,17 +68,17 @@ class PasswordResetServiceTest {
 
         service.requestReset("ghost@example.com");
 
-        verify(tokenRepository, never()).insert(any(), any(), any());
+        verify(tokenRepository, never()).insert(any(), any(), any(), any());
         verifyNoInteractions(mailService);
     }
 
     @Test
     void confirmResetBurnsTokenAndUpdatesPassword() {
         var uuid = UUID.randomUUID();
-        var token = new PasswordResetToken(42L, uuid);
-        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER");
+        var token = new OneTimeToken(42L, uuid);
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER", true);
 
-        when(tokenRepository.consumeValidToken(anyString())).thenReturn(Optional.of(token));
+        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.of(token));
         when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
         when(passwordEncoder.encode("new-password-long-enough")).thenReturn("new-hash");
 
@@ -91,7 +91,7 @@ class PasswordResetServiceTest {
 
     @Test
     void confirmResetRejectsUnknownToken() {
-        when(tokenRepository.consumeValidToken(anyString())).thenReturn(Optional.empty());
+        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.confirmReset("garbage-token", "new-password-long-enough"))
                 .isInstanceOf(ApiException.class);
