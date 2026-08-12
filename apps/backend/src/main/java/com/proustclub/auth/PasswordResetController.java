@@ -34,11 +34,16 @@ class PasswordResetController {
 
     private final PasswordResetService service;
     private final SessionPersister sessionPersister;
+    private final SessionInvalidator sessionInvalidator;
     private final RateLimiter rateLimiter;
 
-    PasswordResetController(PasswordResetService service, SessionPersister sessionPersister, RateLimiter rateLimiter) {
+    PasswordResetController(
+            PasswordResetService service, SessionPersister sessionPersister,
+            SessionInvalidator sessionInvalidator, RateLimiter rateLimiter
+    ) {
         this.service = service;
         this.sessionPersister = sessionPersister;
+        this.sessionInvalidator = sessionInvalidator;
         this.rateLimiter = rateLimiter;
     }
 
@@ -79,7 +84,7 @@ class PasswordResetController {
         // and RegisterSessionAuthenticationStrategy has by now registered this exact id as the
         // session to keep — everything else for this user gets swept.
         var newSessionId = httpRequest.getSession(false).getId();
-        service.invalidateOtherSessions(user.username(), newSessionId);
+        sessionInvalidator.invalidateOtherSessions(user.username(), newSessionId);
 
         return new UserResponse(user.uuid(), user.username(), user.email(), user.role());
     }
