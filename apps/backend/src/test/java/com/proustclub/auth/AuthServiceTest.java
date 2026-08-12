@@ -32,6 +32,9 @@ class AuthServiceTest {
     @Mock
     AuthenticationManager authenticationManager;
 
+    @Mock
+    EmailVerificationService emailVerificationService;
+
     @InjectMocks
     AuthService service;
 
@@ -51,8 +54,10 @@ class AuthServiceTest {
         assertThat(response.username()).isEqualTo("marcel");
         assertThat(response.email()).isEqualTo("marcel@example.com");
         assertThat(response.role()).isEqualTo("USER");
+        assertThat(response.emailVerified()).isFalse();
         verify(repository).insert(eq("marcel"), eq("marcel@example.com"), eq("hashed-value"));
         verify(repository, never()).insert(any(), any(), eq("hunter2222"));
+        verify(emailVerificationService).sendVerification(uuid, "marcel@example.com");
     }
 
     @Test
