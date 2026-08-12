@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router'
 import { confirmEmail } from '../../api/auth'
-import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
+import { useCurrentUser, CURRENT_USER_QUERY_KEY } from './useCurrentUser'
 import Spinner from '../../components/Spinner/Spinner'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
@@ -11,6 +11,17 @@ export default function ConfirmEmailPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
   const queryClient = useQueryClient()
+
+  // A confirmation link may be opened on a device that has never visited the app before (no
+  // XSRF-TOKEN cookie yet) — CsrfCookieFilter only ever writes that cookie in response to a GET,
+  // and apiFetch reads it synchronously when the confirm POST is built. Without waiting for a GET
+  // to land first, the very first visit races the two and the confirm POST goes out with no CSRF
+  // header, getting a 403 that reads to the user as "invalid or expired" even though the token
+  // was fine (found via /code-review, reproduced manually with cookies cleared). useCurrentUser()
+  // is the same GET /api/auth/me that Header already fires on every mount — reusing it here dedupes
+  // by queryKey instead of firing a second request, and its outcome (logged in or not) is
+  // irrelevant, only that it has completed.
+  const currentUser = useCurrentUser()
 
   // A query, not a mutation: confirming is a one-time side effect, but useQuery's built-in dedup
   // by queryKey is what makes "fire exactly once on mount" safe under React StrictMode's
@@ -27,7 +38,7 @@ export default function ConfirmEmailPage() {
       await confirmEmail({ token: token! })
       return true
     },
-    enabled: !!token,
+    enabled: !!token && currentUser.isFetched,
     retry: false,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -50,7 +61,7 @@ export default function ConfirmEmailPage() {
       {token && isPending && <Spinner />}
       {token && isSuccess && <p>Votre adresse email a été confirmée.</p>}
       {token && isError && <ErrorMessage message="Ce lien de confirmation est invalide ou a expiré." />}
-      {(!token || isSuccess) && (
+      {(!token || isSuccess || isError) && (
         <p className={styles.switch}>
           <Link to="/">Retour à l’accueil</Link>
         </p>
