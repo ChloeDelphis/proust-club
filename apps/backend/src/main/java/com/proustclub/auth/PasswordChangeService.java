@@ -2,9 +2,6 @@ package com.proustclub.auth;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,34 +13,26 @@ class PasswordChangeService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
+    private final AuthService authService;
     private final SessionInvalidator sessionInvalidator;
 
     PasswordChangeService(
             UserRepository userRepository, PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager, SessionInvalidator sessionInvalidator
+            AuthService authService, SessionInvalidator sessionInvalidator
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
+        this.authService = authService;
         this.sessionInvalidator = sessionInvalidator;
     }
 
     @Transactional
     void changePassword(String username, String currentPassword, String newPassword, String currentSessionId) {
-        // Re-verified through AuthenticationManager, same mechanism as login — never a change on
-        // the strength of the session alone (protects a shared/unattended device left logged in).
-        try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, currentPassword));
-        } catch (AuthenticationException e) {
-            log.warn("Password change rejected, current password incorrect for username: {}", username);
-            throw ApiException.invalidCredentials();
-        }
+        // Re-verified through the same AuthenticationManager round-trip as login — never a change
+        // on the strength of the session alone (protects a shared/unattended device left logged in).
+        authService.reauthenticate(username, currentPassword);
 
-        var user = userRepository.findByUsername(username)
-                .orElseThrow(ApiException::invalidCredentials);
-
-        userRepository.updatePasswordHash(user.uuid(), passwordEncoder.encode(newPassword));
+        userRepository.updatePasswordHash(username, passwordEncoder.encode(newPassword));
         log.info("Password changed: {}", username);
 
         // The session backing this very request stays open; every other active session for the

@@ -96,6 +96,6 @@ class PasswordResetServiceTest {
         assertThatThrownBy(() -> service.confirmReset("garbage-token", "new-password-long-enough"))
                 .isInstanceOf(ApiException.class);
 
-        verify(userRepository, never()).updatePasswordHash(any(), any());
+        verify(userRepository, never()).updatePasswordHash(any(UUID.class), any());
     }
 }

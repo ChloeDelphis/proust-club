@@ -1,6 +1,7 @@
 package com.proustclub.auth;
 
 import com.proustclub.auth.dto.PasswordChangeRequest;
+import com.proustclub.ratelimit.RateLimiter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 class PasswordChangeController {
 
     private final PasswordChangeService service;
+    private final RateLimiter rateLimiter;
 
-    PasswordChangeController(PasswordChangeService service) {
+    PasswordChangeController(PasswordChangeService service, RateLimiter rateLimiter) {
         this.service = service;
+        this.rateLimiter = rateLimiter;
     }
 
     @Operation(
@@ -38,6 +41,7 @@ class PasswordChangeController {
     @PostMapping("/api/auth/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changePassword(@Valid @RequestBody PasswordChangeRequest request, Authentication authentication, HttpServletRequest httpRequest) {
+        rateLimiter.checkPasswordChangeByAccount(authentication.getName());
         var currentSessionId = httpRequest.getSession(false).getId();
         service.changePassword(authentication.getName(), request.currentPassword(), request.newPassword(), currentSessionId);
     }

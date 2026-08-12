@@ -47,10 +47,18 @@ class AuthService {
 
     @Transactional(readOnly = true)
     Authentication authenticate(String username, String password) {
+        var authentication = reauthenticate(username, password);
+        log.info("User logged in: {}", username);
+        return authentication;
+    }
+
+    // Same AuthenticationManager round-trip as authenticate(), without the "User logged in" log —
+    // for callers re-verifying a password on an already-open session (e.g. PasswordChangeService),
+    // where no new login actually happens and that log line would be misleading.
+    @Transactional(readOnly = true)
+    Authentication reauthenticate(String username, String password) {
         try {
-            var authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
-            log.info("User logged in: {}", username);
-            return authentication;
+            return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         } catch (AuthenticationException e) {
             log.warn("Authentication failed for username: {}", username);
             throw ApiException.invalidCredentials();
