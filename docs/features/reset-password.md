@@ -146,7 +146,7 @@ ChangePasswordForm (current password + new password fields)
     on any other error: generic failure message
 ```
 
-Route: `/account` (English in code — routes/identifiers stay in English project-wide even though the UI text is French; the page title and Header link both read "Compte"/"Mon compte"). Reachable via a "Mon compte" link in `Header`, next to "Mes citations", shown only when connected. `AccountPage` uses the same ad hoc protection pattern as `MyQuotesPage` (`useCurrentUser()` + redirect to `/login` if not connected) rather than a shared component — noted as a candidate for promotion once truly needed, see `private/impl/changement-mot-de-passe-connecte-3-review.md`.
+Route: `/account` (English in code — routes/identifiers stay in English project-wide even though the UI text is French; the page title and Header link both read "Compte"/"Mon compte"). Reachable via a "Mon compte" link in `Header`, next to "Mes citations", shown only when connected. `AccountPage` uses the same ad hoc protection pattern as `MyQuotesPage` (`useCurrentUser()` + redirect to `/login` if not connected) rather than a shared component — noted as a candidate for promotion once truly needed.
 
 ### Manual verification — change password
 

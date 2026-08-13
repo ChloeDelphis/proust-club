@@ -19,8 +19,7 @@ spring:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
     # Mailhog (dev) accepts unauthenticated, unencrypted SMTP — a real prod provider will need
-    # username/password/starttls, to be set via env vars when that's configured (see
-    # private/tickets/prod-to-be-determined.md).
+    # username/password/starttls, to be set via env vars once prod deployment is configured.
     properties:
       mail:
         smtp:

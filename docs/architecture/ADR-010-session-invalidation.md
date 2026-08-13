@@ -43,7 +43,7 @@ sessionRegistry.getAllSessions(principal, false).stream()
 
 True instant invalidation would need a session store the server can actively evict from — i.e., Option A. Revisit if: the app moves to multiple instances (which would need Spring Session/Redis anyway, for reasons unrelated to this feature), or a future feature's threat model specifically requires real-time revocation.
 
-Also worth noting for the next consumer: `invalidateOtherSessions` lives on `PasswordResetService` today, with a single caller. The connected-password-change feature (`private/tickets/changement-mot-de-passe-connecte.md`) will need the exact same capability — that's the point at which this should be promoted into a shared, standalone piece of session infrastructure (the project's convention is to promote on the second real consumer, not in anticipation of one).
+`invalidateOtherSessions` has since been promoted into its own `SessionInvalidator`, shared by `PasswordResetService` and the connected-password-change flow — the project's convention of promoting shared logic at the second real consumer, not in anticipation of one.
 
 ## Date
 
