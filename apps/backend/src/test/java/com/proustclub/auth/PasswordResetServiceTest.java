@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mail.MailSendException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
@@ -13,10 +14,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -51,6 +54,21 @@ class PasswordResetServiceTest {
         verify(tokenRepository).invalidateAllUnusedForUser(eq("password_reset_tokens"), eq(uuid));
         verify(tokenRepository).insert(eq("password_reset_tokens"), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendPasswordResetEmail(eq("marcel@example.com"), anyString());
+    }
+
+    // Best-effort by design: a transient mail failure must not let a caller distinguish a known
+    // email (would otherwise surface as 500) from an unknown one (always 202) — see the comment
+    // on PasswordResetService.requestReset().
+    @Test
+    void requestResetSwallowsMailFailure() {
+        var uuid = UUID.randomUUID();
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER", true);
+        when(userRepository.findByEmail("marcel@example.com")).thenReturn(Optional.of(user));
+        doThrow(new MailSendException("smtp unreachable")).when(mailService).sendPasswordResetEmail(anyString(), anyString());
+
+        assertThatCode(() -> service.requestReset("marcel@example.com")).doesNotThrowAnyException();
+
+        verify(tokenRepository).insert(eq("password_reset_tokens"), eq(uuid), anyString(), any(Instant.class));
     }
 
     @Test

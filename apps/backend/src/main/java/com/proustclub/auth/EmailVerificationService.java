@@ -32,10 +32,10 @@ class EmailVerificationService {
 
     // Best-effort on purpose: a transient mail failure must never roll back account creation
     // (AuthService.register() calls this from within its own transaction) — an unconfirmed
-    // account is already fully usable, see the ticket's "no blocking" decision. Deliberately
-    // asymmetric with PasswordResetService.requestReset(), which lets a mail failure propagate:
-    // there, failure just means the user can retry the request; here, propagating would make
-    // signup itself unreliable on every transient SMTP hiccup.
+    // account is already fully usable, see the ticket's "no blocking" decision. Same posture as
+    // PasswordResetService.requestReset(), which swallows mail failures for a different but
+    // related reason: there, propagating would let a caller distinguish "account exists" from
+    // "no such account" during an SMTP outage, breaking anti-enumeration.
     @Transactional
     void sendVerification(UUID userId, String email) {
         var rawToken = SecureToken.generate();
