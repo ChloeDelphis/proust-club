@@ -13,6 +13,7 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 | POST | `/api/auth/logout` | session | Invalidate the current session |
 | GET | `/api/auth/me` | session | Return the current user, or 401 if none |
 | POST | `/api/auth/email/confirm` | none | Confirm an account's email address from a one-time token sent at registration |
+| POST | `/api/auth/email/confirm/resend` | session | Issue and send a fresh confirmation token, invalidating any still-valid prior one |
 
 ---
 
@@ -83,7 +84,9 @@ CSRF protection stays enabled. The frontend must have a valid `XSRF-TOKEN` cooki
 
 **Frontend.** `ConfirmEmailPage` (`/confirm-email?token=`) reads the token via `useSearchParams` and fires the confirmation through `useQuery` — not `useMutation` — specifically because `useQuery`'s dedup by `queryKey` is safe under React StrictMode's double-invoked effects for a "run this exactly once on mount" side effect; a `useEffect` + `useMutation` + guard-ref version of this page shipped a real bug where the page could get stuck on the loading state forever in dev (see `private/impl/confirmation-email-inscription-4-verification.md`). Since `confirmEmail()` resolves `void` (204 No Content) and TanStack Query treats a `queryFn` resolving to `undefined` as an error, the `queryFn` normalizes the result to `true` rather than changing `confirmEmail()`'s `Promise<void>` signature.
 
-**Out of scope for this iteration.** Resending a lost/expired confirmation email — tracked separately in `private/tickets/renvoi-email-confirmation.md`, deliberately not urgent since access is never blocked on confirmation.
+**Resending.** `POST /api/auth/email/confirm/resend` requires an active session (unlike `confirm`, which doesn't need one) — the caller has already proven account ownership, so there's no anti-enumeration reason to stay generic: an already-verified account gets a distinct `409` rather than a silent no-op. `EmailVerificationService.resendVerification()` invalidates any still-unused prior token (`invalidateAllUnusedForUser`, same call `PasswordResetService.requestReset()` makes before issuing a reset token) then calls the same `sendVerification()` used at registration — a user never has more than one live confirmation link at once. Rate-limited per account (`rate-limit.email-verification-resend`, no per-IP bucket — same reasoning as `password-change`: the endpoint already requires a session). Frontend: a "Renvoyer l'email de confirmation" button inside `EmailVerificationBanner` itself, `useMutation` + toast on success, `apiErrorMessage` (429 gets a dedicated message) on failure.
+
+**Known limitation, shared with password reset.** `invalidateAllUnusedForUser()` then `insert()` are two non-atomic statements with no DB constraint (e.g. a partial unique index `WHERE used_at IS NULL`) enforcing "at most one live token" — two concurrent resend requests (double-click, two tabs) can each leave a valid token. Low impact (no security hole, just the documented invariant not being fully enforced); tracked in `private/tickets/password-reset-token-race.md` (covers both `password_reset_tokens` and `email_verification_tokens`, same root cause in the shared `OneTimeTokenRepository`).
 
 ---
 
@@ -97,7 +100,7 @@ LoginForm / RegisterForm (fields + client-side validation)
   → POST /api/auth/login | /api/auth/register
 ```
 
-`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder. On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
+`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`.
 
@@ -119,5 +122,9 @@ Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/rese
 - Confirm with a token that was never issued → same generic error message (`400`).
 - Confirm with an empty/missing token → `400` (`@NotBlank` validation).
 - Account created before this feature shipped → `email_verified` already `true` (migration backfill), no banner, no email sent.
+- Click "Renvoyer l'email de confirmation" in the banner (logged in, unconfirmed) → `204`, new email received (Mailhog), toast "Email de confirmation renvoyé.", the previous link (if any) now fails with the generic "invalid or expired" message, the new link confirms successfully.
+- Call resend without a session → `401`.
+- Call resend on an already-verified account → `409` (backend contract; unreachable from the UI since the button/banner only render when `emailVerified` is `false`).
+- Click resend repeatedly past the per-account rate limit → `429`, dedicated "Trop de tentatives. Réessayez plus tard." message, button re-enabled after the request settles.
 - Reload the page while logged in → still shows as logged in (session persisted via cookie, restored via `GET /api/auth/me`).
 - `GET /api/auth/me` with no session → 401.
