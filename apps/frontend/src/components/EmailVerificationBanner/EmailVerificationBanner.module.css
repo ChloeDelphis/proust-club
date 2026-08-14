@@ -9,4 +9,25 @@
   border: 1px solid rgba(107, 63, 160, 0.25);
   border-radius: 4px;
   text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.resendButton {
+  font: inherit;
+  font-size: 0.8rem;
+  color: #6b3fa0;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.resendButton:disabled {
+  opacity: 0.6;
+  cursor: default;
 }

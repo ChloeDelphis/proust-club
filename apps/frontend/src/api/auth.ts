@@ -80,3 +80,7 @@ export function confirmEmail(params: EmailVerificationConfirmParams, signal?: Ab
     signal,
   })
 }
+
+export function resendEmailConfirmation(signal?: AbortSignal): Promise<void> {
+  return apiFetch<void>('/api/auth/email/confirm/resend', { method: 'POST', signal })
+}
