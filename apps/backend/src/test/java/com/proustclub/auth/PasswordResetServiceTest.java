@@ -44,14 +44,13 @@ class PasswordResetServiceTest {
     PasswordResetService service;
 
     @Test
-    void requestResetInvalidatesPreviousTokensAndSendsEmailForKnownAccount() {
+    void requestResetInsertsTokenAndSendsEmailForKnownAccount() {
         var uuid = UUID.randomUUID();
         var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER", true);
         when(userRepository.findByEmail("marcel@example.com")).thenReturn(Optional.of(user));
 
         service.requestReset("marcel@example.com");
 
-        verify(tokenRepository).invalidateAllUnusedForUser(eq("password_reset_tokens"), eq(uuid));
         verify(tokenRepository).insert(eq("password_reset_tokens"), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendPasswordResetEmail(eq("marcel@example.com"), anyString());
     }

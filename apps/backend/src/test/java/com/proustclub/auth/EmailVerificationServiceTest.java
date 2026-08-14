@@ -60,14 +60,13 @@ class EmailVerificationServiceTest {
     }
 
     @Test
-    void resendVerificationInvalidatesPriorTokenAndSendsANewOne() {
+    void resendVerificationInsertsANewTokenAndSendsIt() {
         var uuid = UUID.randomUUID();
         var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hash", "USER", false);
         when(userRepository.findByUsername("marcel")).thenReturn(Optional.of(user));
 
         service.resendVerification("marcel");
 
-        verify(tokenRepository).invalidateAllUnusedForUser("email_verification_tokens", uuid);
         verify(tokenRepository).insert(eq("email_verification_tokens"), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendEmailConfirmation(eq("marcel@example.com"), anyString());
     }
@@ -81,7 +80,7 @@ class EmailVerificationServiceTest {
         assertThatThrownBy(() -> service.resendVerification("marcel"))
                 .isInstanceOf(ApiException.class);
 
-        verify(tokenRepository, never()).invalidateAllUnusedForUser(anyString(), any());
+        verify(tokenRepository, never()).insert(anyString(), any(), anyString(), any());
         verify(mailService, never()).sendEmailConfirmation(anyString(), anyString());
     }
 

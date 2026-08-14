@@ -62,10 +62,8 @@ class EmailVerificationService {
             throw ApiException.emailAlreadyVerified();
         }
         // A user never has more than one live confirmation link at once, same policy as
-        // PasswordResetService.requestReset() — scoped to resend rather than folded into
-        // sendVerification() so registration (the other caller) doesn't pay for a guaranteed
-        // no-op invalidation query (no prior token exists yet on a brand-new account).
-        tokenRepository.invalidateAllUnusedForUser(TOKEN_TABLE, user.uuid());
+        // PasswordResetService.requestReset() — enforced atomically by insert() itself (upsert on
+        // the "one live token per user" partial unique index), see OneTimeTokenRepository.
         sendVerification(user.uuid(), user.email());
     }
 

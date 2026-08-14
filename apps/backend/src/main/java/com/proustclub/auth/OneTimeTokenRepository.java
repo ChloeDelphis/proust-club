@@ -21,11 +21,27 @@ class OneTimeTokenRepository {
         this.dsl = dsl;
     }
 
+    // Upsert rather than a plain insert: a partial unique index (see migration V10) allows at
+    // most one row per user with used_at IS NULL, so a still-live token from an earlier request
+    // is the ON CONFLICT target and gets overwritten in place instead of inserted alongside it.
+    // This is what actually guarantees "a user never has more than one live token at once" —
+    // doing it as two separate statements (invalidate, then insert) left a race window between
+    // concurrent requests where both could see no live token yet and both insert one.
     void insert(String table, UUID userId, String tokenHash, Instant expiresAt) {
+        var userIdField = DSL.field("user_id", UUID.class);
+        var tokenHashField = DSL.field("token_hash", String.class);
+        var expiresAtField = DSL.field("expires_at", Instant.class);
+        var usedAtField = DSL.field("used_at", Instant.class);
+
         dsl.insertInto(DSL.table(table))
-                .set(DSL.field("user_id", UUID.class), userId)
-                .set(DSL.field("token_hash", String.class), tokenHash)
-                .set(DSL.field("expires_at", Instant.class), expiresAt)
+                .set(userIdField, userId)
+                .set(tokenHashField, tokenHash)
+                .set(expiresAtField, expiresAt)
+                .onConflict(userIdField)
+                .where(usedAtField.isNull())
+                .doUpdate()
+                .set(tokenHashField, tokenHash)
+                .set(expiresAtField, expiresAt)
                 .execute();
     }
 
@@ -44,15 +60,5 @@ class OneTimeTokenRepository {
                 .and(DSL.field("expires_at", Instant.class).gt(Instant.now()))
                 .returning(idField, userIdField)
                 .fetchOptional(r -> new OneTimeToken(r.get(idField), r.get(userIdField)));
-    }
-
-    // Called before issuing a fresh token so a user never has more than one live link at once —
-    // avoids confusion over which email is the real one and shrinks the attack surface.
-    void invalidateAllUnusedForUser(String table, UUID userId) {
-        dsl.update(DSL.table(table))
-                .set(DSL.field("used_at", Instant.class), Instant.now())
-                .where(DSL.field("user_id", UUID.class).eq(userId))
-                .and(DSL.field("used_at", Instant.class).isNull())
-                .execute();
     }
 }

@@ -46,9 +46,9 @@ class PasswordResetService {
 
         userRepository.findByEmail(normalizedEmail).ifPresent(user -> {
             // A fresh request supersedes any still-live token from an earlier one — a user only
-            // ever has one valid reset link at a time.
-            tokenRepository.invalidateAllUnusedForUser(TOKEN_TABLE, user.uuid());
-
+            // ever has one valid reset link at a time. Enforced atomically by insert() itself
+            // (upsert on the "one live token per user" partial unique index), see
+            // OneTimeTokenRepository for why this can't be a separate invalidate-then-insert.
             var rawToken = SecureToken.generate();
             tokenRepository.insert(TOKEN_TABLE, user.uuid(), SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
             try {
