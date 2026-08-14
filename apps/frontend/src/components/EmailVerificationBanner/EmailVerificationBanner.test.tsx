@@ -71,6 +71,32 @@ describe('EmailVerificationBanner', () => {
     expect(await screen.findByText('Email de confirmation renvoyé.')).toBeInTheDocument()
   })
 
+  it('affiche un message dédié en cas de 409 (déjà confirmé ailleurs)', async () => {
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue({ ...mockUser, emailVerified: false })
+    vi.mocked(authApi.resendEmailConfirmation).mockRejectedValue(new ApiError(409))
+
+    render(<EmailVerificationBanner />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: "Renvoyer l'email de confirmation" }))
+
+    expect(await screen.findByText('Votre adresse email est déjà confirmée.')).toBeInTheDocument()
+  })
+
+  it('rafraîchit l’utilisateur courant après un 409 pour que le bandeau se corrige tout seul', async () => {
+    vi.mocked(authApi.getCurrentUser)
+      .mockResolvedValueOnce({ ...mockUser, emailVerified: false })
+      .mockResolvedValueOnce(mockUser)
+    vi.mocked(authApi.resendEmailConfirmation).mockRejectedValue(new ApiError(409))
+
+    render(<EmailVerificationBanner />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: "Renvoyer l'email de confirmation" }))
+
+    // The 409 triggers a refetch of the current user, which now comes back verified — the
+    // banner (which only renders while emailVerified is false) self-corrects and disappears.
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+  })
+
   it('affiche un message dédié en cas de dépassement du rate limit', async () => {
     vi.mocked(authApi.getCurrentUser).mockResolvedValue({ ...mockUser, emailVerified: false })
     vi.mocked(authApi.resendEmailConfirmation).mockRejectedValue(new ApiError(429))
