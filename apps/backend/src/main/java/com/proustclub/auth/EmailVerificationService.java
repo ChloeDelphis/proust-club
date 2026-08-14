@@ -43,7 +43,10 @@ class EmailVerificationService {
         try {
             mailService.sendEmailConfirmation(email, rawToken);
         } catch (MailException e) {
-            log.warn("Failed to send email confirmation", e);
+            // Exception class only, not the throwable itself: MailSendException/SendFailedException
+            // routinely embed the rejected recipient address in their message (SMTP bounces echo it
+            // back) — logging the full exception would leak the email, which CLAUDE.md forbids.
+            log.warn("Failed to send email confirmation ({})", e.getClass().getSimpleName());
         }
     }
 
