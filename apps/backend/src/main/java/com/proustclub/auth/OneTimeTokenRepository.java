@@ -31,14 +31,13 @@ class OneTimeTokenRepository {
         var userIdField = DSL.field("user_id", UUID.class);
         var tokenHashField = DSL.field("token_hash", String.class);
         var expiresAtField = DSL.field("expires_at", Instant.class);
-        var usedAtField = DSL.field("used_at", Instant.class);
 
         dsl.insertInto(DSL.table(table))
                 .set(userIdField, userId)
                 .set(tokenHashField, tokenHash)
                 .set(expiresAtField, expiresAt)
                 .onConflict(userIdField)
-                .where(usedAtField.isNull())
+                .where(DSL.field("used_at", Instant.class).isNull())
                 .doUpdate()
                 .set(tokenHashField, tokenHash)
                 .set(expiresAtField, expiresAt)
