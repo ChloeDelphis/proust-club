@@ -32,4 +32,8 @@ class ApiException extends ErrorResponseException {
     static ApiException invalidOrExpiredVerificationToken() {
         return new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired verification token.");
     }
+
+    static ApiException emailAlreadyVerified() {
+        return new ApiException(HttpStatus.CONFLICT, "Email already verified.");
+    }
 }

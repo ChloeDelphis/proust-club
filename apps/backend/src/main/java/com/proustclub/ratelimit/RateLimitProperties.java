@@ -7,7 +7,7 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "rate-limit")
 record RateLimitProperties(
         IpAndAccountLimit login, IpLimit register, IpLimit search,
-        IpAndAccountLimit passwordReset, AccountLimit passwordChange
+        IpAndAccountLimit passwordReset, AccountLimit passwordChange, AccountLimit emailVerificationResend
 ) {
 
     record IpAndAccountLimit(Limit perIp, Limit perAccount) {}

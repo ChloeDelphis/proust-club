@@ -42,3 +42,7 @@ rate-limit:
     per-account:
       capacity: 100000
       refill-period: 1m
+  email-verification-resend:
+    per-account:
+      capacity: 100000
+      refill-period: 1m

@@ -38,6 +38,11 @@ class EmailVerificationService {
     // "no such account" during an SMTP outage, breaking anti-enumeration.
     @Transactional
     void sendVerification(UUID userId, String email) {
+        // A no-op at registration (no prior token exists yet) but required for resendVerification()
+        // below, which calls this same method — a user never has more than one live confirmation
+        // link at once, same policy as PasswordResetService.requestReset().
+        tokenRepository.invalidateAllUnusedForUser(TOKEN_TABLE, userId);
+
         var rawToken = SecureToken.generate();
         tokenRepository.insert(TOKEN_TABLE, userId, SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
         try {
@@ -48,6 +53,20 @@ class EmailVerificationService {
             // back) — logging the full exception would leak the email, which CLAUDE.md forbids.
             log.warn("Failed to send email confirmation ({})", e.getClass().getSimpleName());
         }
+    }
+
+    // Guards on the user's current state rather than silently no-op'ing on an already-verified
+    // account: unlike PasswordResetService.requestReset(), this endpoint is authenticated (the
+    // caller already proved they own the account), so there's no anti-enumeration reason to stay
+    // generic — a clear 409 is more useful than a silent success that resends nothing.
+    @Transactional
+    void resendVerification(String username) {
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + username));
+        if (user.emailVerified()) {
+            throw ApiException.emailAlreadyVerified();
+        }
+        sendVerification(user.uuid(), user.email());
     }
 
     @Transactional
