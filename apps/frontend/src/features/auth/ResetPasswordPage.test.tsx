@@ -85,4 +85,15 @@ describe('ResetPasswordPage', () => {
 
     expect(await screen.findByText('Ce lien de réinitialisation est invalide ou a expiré.')).toBeInTheDocument()
   })
+
+  it("affiche un message générique pour une erreur qui n'est pas un token invalide", async () => {
+    vi.mocked(authApi.confirmPasswordReset).mockRejectedValue(new ApiError(500))
+
+    render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
+
+    await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
+    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+
+    expect(await screen.findByText('Une erreur est survenue. Réessayez.')).toBeInTheDocument()
+  })
 })
