@@ -3,6 +3,7 @@ package com.proustclub.auth;
 import com.proustclub.mail.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,12 @@ class PasswordResetService {
     }
 
     // Never throws and never reveals whether the email matched an account — the controller
-    // always returns the same generic response regardless of what happens in here.
+    // always returns the same generic response regardless of what happens in here. Mail send
+    // failures are swallowed rather than left to propagate: an uncaught MailException here would
+    // roll back the transaction and surface as a 500 only for a *known* email (an unknown email
+    // never reaches mailService at all), which would let a caller distinguish "account exists" from
+    // "no such account" during any SMTP outage — defeating the anti-enumeration guarantee this
+    // method exists to provide. Same best-effort posture as EmailVerificationService.sendVerification().
     @Transactional
     void requestReset(String email) {
         var normalizedEmail = EmailNormalizer.normalize(email);
@@ -45,7 +51,14 @@ class PasswordResetService {
 
             var rawToken = SecureToken.generate();
             tokenRepository.insert(TOKEN_TABLE, user.uuid(), SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
-            mailService.sendPasswordResetEmail(user.email(), rawToken);
+            try {
+                mailService.sendPasswordResetEmail(user.email(), rawToken);
+            } catch (MailException e) {
+                // Exception class only, not the throwable itself: MailSendException/SendFailedException
+                // routinely embed the rejected recipient address in their message (SMTP bounces echo it
+                // back) — logging the full exception would leak the email, which CLAUDE.md forbids.
+                log.warn("Failed to send password reset email ({})", e.getClass().getSimpleName());
+            }
             log.info("Password reset requested");
         });
     }

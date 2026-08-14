@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 @Schema(description = "Password reset confirmation")
 public record PasswordResetConfirmRequest(
         @Schema(description = "Reset token received by email")
-        @NotBlank
+        @NotBlank @Size(max = 200)
         String token,
 
         @Schema(description = "New password (15-128 characters — length over composition rules; passphrases and spaces are welcome)", example = "Les madeleines de Combray")

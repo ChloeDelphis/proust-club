@@ -32,10 +32,10 @@ class EmailVerificationService {
 
     // Best-effort on purpose: a transient mail failure must never roll back account creation
     // (AuthService.register() calls this from within its own transaction) — an unconfirmed
-    // account is already fully usable, see the ticket's "no blocking" decision. Deliberately
-    // asymmetric with PasswordResetService.requestReset(), which lets a mail failure propagate:
-    // there, failure just means the user can retry the request; here, propagating would make
-    // signup itself unreliable on every transient SMTP hiccup.
+    // account is already fully usable, see the ticket's "no blocking" decision. Same posture as
+    // PasswordResetService.requestReset(), which swallows mail failures for a different but
+    // related reason: there, propagating would let a caller distinguish "account exists" from
+    // "no such account" during an SMTP outage, breaking anti-enumeration.
     @Transactional
     void sendVerification(UUID userId, String email) {
         var rawToken = SecureToken.generate();
@@ -43,7 +43,10 @@ class EmailVerificationService {
         try {
             mailService.sendEmailConfirmation(email, rawToken);
         } catch (MailException e) {
-            log.warn("Failed to send email confirmation", e);
+            // Exception class only, not the throwable itself: MailSendException/SendFailedException
+            // routinely embed the rejected recipient address in their message (SMTP bounces echo it
+            // back) — logging the full exception would leak the email, which CLAUDE.md forbids.
+            log.warn("Failed to send email confirmation ({})", e.getClass().getSimpleName());
         }
     }
 

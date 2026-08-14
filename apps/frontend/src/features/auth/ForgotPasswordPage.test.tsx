@@ -50,7 +50,18 @@ describe('ForgotPasswordPage', () => {
     expect(await screen.findByText(/vient d’être envoyé/)).toBeInTheDocument()
   })
 
-  it("affiche un message d'erreur si la requête échoue", async () => {
+  it("affiche un message générique si la requête échoue", async () => {
+    vi.mocked(authApi.requestPasswordReset).mockRejectedValue(new ApiError(500))
+
+    render(<ForgotPasswordPage />, { wrapper })
+
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
+    await userEvent.click(screen.getByRole('button', { name: 'Envoyer le lien de réinitialisation' }))
+
+    expect(await screen.findByText('Une erreur est survenue. Réessayez.')).toBeInTheDocument()
+  })
+
+  it("affiche un message dédié si le backend rejette le format de l'email (400)", async () => {
     vi.mocked(authApi.requestPasswordReset).mockRejectedValue(new ApiError(400))
 
     render(<ForgotPasswordPage />, { wrapper })
@@ -59,5 +70,16 @@ describe('ForgotPasswordPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Envoyer le lien de réinitialisation' }))
 
     expect(await screen.findByText('Adresse email invalide.')).toBeInTheDocument()
+  })
+
+  it('affiche un message dédié en cas de rate limiting (429)', async () => {
+    vi.mocked(authApi.requestPasswordReset).mockRejectedValue(new ApiError(429))
+
+    render(<ForgotPasswordPage />, { wrapper })
+
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
+    await userEvent.click(screen.getByRole('button', { name: 'Envoyer le lien de réinitialisation' }))
+
+    expect(await screen.findByText('Trop de tentatives. Réessayez plus tard.')).toBeInTheDocument()
   })
 })

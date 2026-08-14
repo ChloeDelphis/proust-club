@@ -143,7 +143,7 @@ class PasswordResetControllerTest {
     }
 
     // A password rejected by validation must not consume the token — the user gets to correct a
-    // typo and resubmit the same link, see private/impl/password-reset-1-analyse.md.
+    // typo and resubmit the same link.
     @Test
     void confirmResetInvalidNewPasswordDoesNotBurnTheToken() throws Exception {
         register("retrytoken", "retrytoken@example.com", "old-password-long-enough");
