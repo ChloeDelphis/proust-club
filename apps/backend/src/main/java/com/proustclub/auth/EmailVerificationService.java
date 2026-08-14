@@ -38,11 +38,6 @@ class EmailVerificationService {
     // "no such account" during an SMTP outage, breaking anti-enumeration.
     @Transactional
     void sendVerification(UUID userId, String email) {
-        // A no-op at registration (no prior token exists yet) but required for resendVerification()
-        // below, which calls this same method — a user never has more than one live confirmation
-        // link at once, same policy as PasswordResetService.requestReset().
-        tokenRepository.invalidateAllUnusedForUser(TOKEN_TABLE, userId);
-
         var rawToken = SecureToken.generate();
         tokenRepository.insert(TOKEN_TABLE, userId, SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
         try {
@@ -66,6 +61,11 @@ class EmailVerificationService {
         if (user.emailVerified()) {
             throw ApiException.emailAlreadyVerified();
         }
+        // A user never has more than one live confirmation link at once, same policy as
+        // PasswordResetService.requestReset() — scoped to resend rather than folded into
+        // sendVerification() so registration (the other caller) doesn't pay for a guaranteed
+        // no-op invalidation query (no prior token exists yet on a brand-new account).
+        tokenRepository.invalidateAllUnusedForUser(TOKEN_TABLE, user.uuid());
         sendVerification(user.uuid(), user.email());
     }
 

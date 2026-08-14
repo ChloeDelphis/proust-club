@@ -106,8 +106,7 @@ class EmailVerificationControllerTest {
 
     @Test
     void resendIssuesFreshTokenAndInvalidatesThePreviousOne() throws Exception {
-        MvcResult registerResult = register("resendfresh", "resendfresh@example.com", "hunter2222password");
-        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+        MockHttpSession session = registerAndGetSession("resendfresh", "resendfresh@example.com", "hunter2222password");
         String firstToken = capturedToken("resendfresh@example.com");
 
         mockMvc.perform(resend(session)).andExpect(status().isNoContent());
@@ -128,8 +127,7 @@ class EmailVerificationControllerTest {
 
     @Test
     void resendForAnAlreadyVerifiedAccountReturnsConflict() throws Exception {
-        MvcResult registerResult = register("resendverified", "resendverified@example.com", "hunter2222password");
-        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+        MockHttpSession session = registerAndGetSession("resendverified", "resendverified@example.com", "hunter2222password");
         mockMvc.perform(confirm(capturedToken("resendverified@example.com"))).andExpect(status().isNoContent());
 
         mockMvc.perform(resend(session)).andExpect(status().isConflict());
@@ -137,6 +135,10 @@ class EmailVerificationControllerTest {
 
     private MockHttpServletRequestBuilder resend(MockHttpSession session) {
         return post("/api/auth/email/confirm/resend").with(csrf()).session(session);
+    }
+
+    private MockHttpSession registerAndGetSession(String username, String email, String password) throws Exception {
+        return (MockHttpSession) register(username, email, password).getRequest().getSession(false);
     }
 
     private MvcResult register(String username, String email, String password) throws Exception {
