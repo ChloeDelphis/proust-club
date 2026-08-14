@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ForgotPasswordFormProps } from './ForgotPasswordForm.types'
 import FormField from '../FormField/FormField'
+import { emailFormatError } from '../emailValidation'
 import styles from '../AuthForm.module.css'
 
 export default function ForgotPasswordForm({ onSubmit }: ForgotPasswordFormProps) {
@@ -10,8 +11,9 @@ export default function ForgotPasswordForm({ onSubmit }: ForgotPasswordFormProps
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmedEmail = email.trim()
-    if (!trimmedEmail.includes('@')) {
-      setError('Adresse email invalide.')
+    const emailError = emailFormatError(trimmedEmail)
+    if (emailError) {
+      setError(emailError)
       return
     }
     setError('')

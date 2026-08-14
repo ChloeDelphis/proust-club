@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { RegisterFormProps } from './RegisterForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
+import { emailFormatError } from '../emailValidation'
 import styles from '../AuthForm.module.css'
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
@@ -19,8 +20,9 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
       setError('Le nom d’utilisateur doit contenir au moins 3 caractères.')
       return
     }
-    if (!trimmedEmail.includes('@')) {
-      setError('Adresse email invalide.')
+    const emailError = emailFormatError(trimmedEmail)
+    if (emailError) {
+      setError(emailError)
       return
     }
     const passwordError = passwordLengthError(password)
