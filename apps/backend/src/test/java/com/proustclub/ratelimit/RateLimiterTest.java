@@ -84,6 +84,17 @@ class RateLimiterTest {
                 .isInstanceOf(RateLimitExceededException.class);
     }
 
+    @Test
+    void emailVerificationResendAccountBucketIsIndependentOfPasswordChangeAccountBucket() {
+        var limiter = newLimiter(1, Duration.ofMinutes(1));
+
+        limiter.checkPasswordChangeByAccount("marcel");
+        limiter.checkEmailVerificationResendByAccount("marcel"); // separate bucket, does not throw
+
+        assertThatThrownBy(() -> limiter.checkEmailVerificationResendByAccount("marcel"))
+                .isInstanceOf(RateLimitExceededException.class);
+    }
+
     private static RateLimiter newLimiter(int capacity, Duration refillPeriod) {
         var limit = new RateLimitProperties.Limit(capacity, refillPeriod);
         var properties = new RateLimitProperties(
@@ -91,6 +102,7 @@ class RateLimiterTest {
                 new RateLimitProperties.IpLimit(limit),
                 new RateLimitProperties.IpLimit(limit),
                 new RateLimitProperties.IpAndAccountLimit(limit, limit),
+                new RateLimitProperties.AccountLimit(limit),
                 new RateLimitProperties.AccountLimit(limit)
         );
         return new RateLimiter(properties);

@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -24,6 +25,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -100,6 +102,41 @@ class EmailVerificationControllerTest {
         // No .session(...) attached — confirming must work from a browser that never registered.
         mockMvc.perform(confirm(capturedToken("nosessionneeded@example.com")))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void resendIssuesFreshTokenAndInvalidatesThePreviousOne() throws Exception {
+        MvcResult registerResult = register("resendfresh", "resendfresh@example.com", "hunter2222password");
+        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+        String firstToken = capturedToken("resendfresh@example.com");
+
+        mockMvc.perform(resend(session)).andExpect(status().isNoContent());
+
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mailService, times(2)).sendEmailConfirmation(eq("resendfresh@example.com"), tokenCaptor.capture());
+        String secondToken = tokenCaptor.getAllValues().get(1);
+
+        mockMvc.perform(confirm(firstToken)).andExpect(status().isBadRequest());
+        mockMvc.perform(confirm(secondToken)).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void resendWithoutSessionReturnsUnauthorized() throws Exception {
+        mockMvc.perform(post("/api/auth/email/confirm/resend").with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void resendForAnAlreadyVerifiedAccountReturnsConflict() throws Exception {
+        MvcResult registerResult = register("resendverified", "resendverified@example.com", "hunter2222password");
+        MockHttpSession session = (MockHttpSession) registerResult.getRequest().getSession(false);
+        mockMvc.perform(confirm(capturedToken("resendverified@example.com"))).andExpect(status().isNoContent());
+
+        mockMvc.perform(resend(session)).andExpect(status().isConflict());
+    }
+
+    private MockHttpServletRequestBuilder resend(MockHttpSession session) {
+        return post("/api/auth/email/confirm/resend").with(csrf()).session(session);
     }
 
     private MvcResult register(String username, String email, String password) throws Exception {
