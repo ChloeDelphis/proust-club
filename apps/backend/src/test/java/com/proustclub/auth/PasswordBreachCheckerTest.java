@@ -26,6 +26,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 // what would have caught the original baseUrl bug: a stub still requires an absolute URI to reach.
 // The real end-to-end integration (real API, real account creation) was verified manually instead —
 // browser, Swagger UI, and the Postman collection run via Newman — see -4-verification.md.
+//
+// Class-level @Timeout: every test here does real socket I/O (loopback stub or a deliberately
+// unreachable host) — per CLAUDE.md's "Tests de câblage" convention, always bounded by an explicit
+// timeout so a sandboxed/locked-down runner that silently stalls rather than fast-refuses can't
+// hang the build indefinitely. Found missing on two of the three tests by /code-review.
+@Timeout(5)
 class PasswordBreachCheckerTest {
 
     // Validates the *actual* fail-open mechanism for a real HIBP outage — found by /code-review,
@@ -35,12 +41,9 @@ class PasswordBreachCheckerTest {
     // chance to run for this failure mode. Not testable through PasswordBreachChecker itself (its
     // baseUrl is fixed to the real API in production), so this drives the underlying Spring
     // Security class directly, pointed at a host guaranteed not to resolve. Same short connect
-    // timeout as production PasswordBreachChecker, plus a hard @Timeout backstop — found by
-    // /code-review: in a sandboxed/firewalled runner where outbound DNS/TCP is silently dropped
-    // rather than fast-refused, an unbounded attempt could hang for the OS-level default instead
-    // of failing fast.
+    // timeout as production PasswordBreachChecker — the class-level @Timeout above is the backstop
+    // for a sandboxed runner where outbound DNS/TCP is silently dropped rather than fast-refused.
     @Test
-    @Timeout(5)
     void hibpDelegateFailsOpenOnConnectionFailureRatherThanThrowing() {
         var httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
         var requestFactory = new JdkClientHttpRequestFactory(httpClient);
