@@ -26,6 +26,7 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 - `username`: 3–50 characters
 - `email`: valid email format, max 255 characters
 - `password`: 15–128 characters. Length over composition rules — no uppercase/digit/symbol requirement, passphrases and spaces are welcome (current NIST guidance: 15+ characters for a password used as the sole factor, since there's no MFA here). The upper bound is a sanity limit on hashing cost, not an algorithm quirk — Argon2id's cost scales with input size, so an unbounded password is a cheap way to make the server do expensive work
+- `password` must not be identical (case-insensitive) to `username` or to the normalized `email` — `400` if it is. Strict equality only, not a substring check: a passphrase that merely contains the username (e.g. `"Marcel se souvient de Combray"` for user `marcel`) stays accepted, since a "contains" rule would fight the passphrase-friendly design above. Enforced in `AuthService.register()`, mirrored client-side in `RegisterForm` for immediate feedback — the backend check is the only one that actually matters. Scoped to registration only for now; `PasswordChangeService`/`PasswordResetService` don't enforce this yet (tracked separately, see `private/tickets/mot-de-passe-distinct-identifiants-autres-flows.md`).
 
 **LoginRequest**
 ```json
@@ -111,6 +112,9 @@ Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/rese
 - Register with a new username/email → redirected to `/`, header shows "Connecté en tant que ⟨username⟩".
 - Register with an already-used username → error message, no redirect.
 - Register with an already-used email → same.
+- Register with a password identical to the username (any case) → `400`, dedicated message, no account created.
+- Register with a password identical to the email (any case) → same.
+- Register with a password that merely contains the username as a substring → succeeds (non-regression for the "strict equality, not substring" decision).
 - Log out → header reverts to login/register links.
 - Log back in with the same credentials → same logged-in state.
 - Log in with a wrong password → generic "Identifiants invalides" message.
