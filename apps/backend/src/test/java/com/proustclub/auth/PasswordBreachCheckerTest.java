@@ -3,17 +3,12 @@ package com.proustclub.auth;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
-import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
-import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.util.HexFormat;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,22 +33,18 @@ class PasswordBreachCheckerTest {
     // confirmed by decompiling spring-security-web 7.1.0: HaveIBeenPwnedRestApiPasswordChecker's
     // own check() already swallows RestClientException (connection failure, timeout, HIBP 4xx/5xx)
     // and returns "not compromised" — AuthService's own catch(RuntimeException) never gets a
-    // chance to run for this failure mode. Not testable through PasswordBreachChecker itself (its
-    // baseUrl is fixed to the real API in production), so this drives the underlying Spring
-    // Security class directly, pointed at a host guaranteed not to resolve. Same short connect
-    // timeout as production PasswordBreachChecker — the class-level @Timeout above is the backstop
-    // for a sandboxed runner where outbound DNS/TCP is silently dropped rather than fast-refused.
+    // chance to run for this failure mode. Goes through PasswordBreachChecker's own baseUrl-
+    // overriding constructor (same one the two stub tests below use), pointed at a host guaranteed
+    // not to resolve — found by /code-review: an earlier version of this test hand-built a separate
+    // HaveIBeenPwnedRestApiPasswordChecker instead, so it never actually exercised
+    // PasswordBreachChecker's own construction/timeout wiring, only a parallel reimplementation of
+    // it. The class-level @Timeout above is the backstop for a sandboxed runner where outbound
+    // DNS/TCP is silently dropped rather than fast-refused.
     @Test
     void hibpDelegateFailsOpenOnConnectionFailureRatherThanThrowing() {
-        var httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
-        var requestFactory = new JdkClientHttpRequestFactory(httpClient);
-        requestFactory.setReadTimeout(Duration.ofSeconds(2));
+        var checker = new PasswordBreachChecker("https://unreachable.invalid/range/");
 
-        var unreachable = new HaveIBeenPwnedRestApiPasswordChecker();
-        unreachable.setRestClient(
-                RestClient.builder().baseUrl("https://unreachable.invalid/range/").requestFactory(requestFactory).build());
-
-        assertThat(unreachable.check("password123").isCompromised()).isFalse();
+        assertThat(checker.isCompromised("password123")).isFalse();
     }
 
     @Test
