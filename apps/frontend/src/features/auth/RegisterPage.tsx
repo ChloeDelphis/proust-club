@@ -20,16 +20,15 @@ export default function RegisterPage() {
     },
   })
 
-  // 400 only reaches the server if RegisterForm's own client-side check (mirroring the backend
-  // rule) was somehow bypassed — kept distinct from the generic message so it stays accurate if
-  // that ever happens, rather than pointing the user at the wrong problem.
+  // 400 is deliberately left out of the map: several distinct backend validation failures share
+  // that status (blank/invalid fields, password too short, password matching the identifier), and
+  // the frontend never reads the ProblemDetail body — only the status — so a specific message here
+  // would risk misdiagnosing the real cause. RegisterForm's own client-side checks already cover
+  // the common cases with an accurate message before any request is sent.
   const errorMessage = mutation.isError
     && apiErrorMessage(
       mutation.error,
-      {
-        409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).',
-        400: 'Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.',
-      },
+      { 409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).' },
       'Impossible de créer ce compte. Réessayez.',
     )
 

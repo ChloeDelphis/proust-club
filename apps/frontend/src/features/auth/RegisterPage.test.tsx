@@ -95,9 +95,10 @@ describe('RegisterPage', () => {
     expect(authApi.register).not.toHaveBeenCalled()
   })
 
-  // Residual server-side case (client check bypassed or stale) — the 400 must map to the specific
-  // message, not the generic 409 one, so the user isn't pointed at the wrong problem.
-  it('affiche le message dédié si le backend rejette le mot de passe (400)', async () => {
+  // Residual server-side 400 (client check bypassed or stale) falls back to the generic message —
+  // several distinct backend validation failures share status 400, and the frontend never reads
+  // the ProblemDetail body, so a specific message here would risk misdiagnosing the real cause.
+  it('affiche le message générique si le backend rejette la requête (400)', async () => {
     vi.mocked(authApi.register).mockRejectedValue(new ApiError(400))
 
     render(<RegisterPage />, { wrapper })
@@ -107,8 +108,6 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
 
-    expect(
-      await screen.findByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Impossible de créer ce compte. Réessayez.')).toBeInTheDocument()
   })
 })
