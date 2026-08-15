@@ -24,7 +24,6 @@ The project combines literary exploration with modern software engineering, prov
 
 ### Planned
 
-- Collections
 - Community features (sharing, discovery)
 
 ---
