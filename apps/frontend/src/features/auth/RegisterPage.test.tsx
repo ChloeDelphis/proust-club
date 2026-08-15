@@ -80,4 +80,35 @@ describe('RegisterPage', () => {
       await screen.findByText('Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).'),
     ).toBeInTheDocument()
   })
+
+  it('bloque la soumission si le mot de passe est identique au nom d’utilisateur, sans appeler l’API', async () => {
+    render(<RegisterPage />, { wrapper })
+
+    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcelproustcombray')
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
+    await userEvent.type(screen.getByLabelText('Mot de passe'), 'marcelproustcombray')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
+
+    expect(
+      screen.getByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.'),
+    ).toBeInTheDocument()
+    expect(authApi.register).not.toHaveBeenCalled()
+  })
+
+  // Residual server-side case (client check bypassed or stale) — the 400 must map to the specific
+  // message, not the generic 409 one, so the user isn't pointed at the wrong problem.
+  it('affiche le message dédié si le backend rejette le mot de passe (400)', async () => {
+    vi.mocked(authApi.register).mockRejectedValue(new ApiError(400))
+
+    render(<RegisterPage />, { wrapper })
+
+    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
+    await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
+
+    expect(
+      await screen.findByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.'),
+    ).toBeInTheDocument()
+  })
 })

@@ -3,6 +3,7 @@ import type { RegisterFormProps } from './RegisterForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
 import { emailFormatError } from '../emailValidation'
+import { passwordMatchesIdentifierError } from '../passwordIdentifierValidation'
 import styles from '../AuthForm.module.css'
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
@@ -28,6 +29,11 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
     const passwordError = passwordLengthError(password)
     if (passwordError) {
       setError(passwordError)
+      return
+    }
+    const identifierError = passwordMatchesIdentifierError(password, trimmedUsername, trimmedEmail)
+    if (identifierError) {
+      setError(identifierError)
       return
     }
     setError('')
