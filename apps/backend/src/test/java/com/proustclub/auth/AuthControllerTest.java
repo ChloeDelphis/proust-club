@@ -8,6 +8,7 @@ import com.proustclub.mail.MailService;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -43,7 +45,18 @@ class AuthControllerTest {
     @MockitoBean
     MailService mailService;
 
+    // Replaces the real PasswordBreachChecker bean so no test in this class ever makes a real
+    // network call. Stubbed "not compromised" by default so every existing register test keeps
+    // working unchanged — individual tests below override this stub.
+    @MockitoBean
+    PasswordBreachChecker passwordBreachChecker;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void stubPasswordAsNotCompromisedByDefault() {
+        when(passwordBreachChecker.isCompromised(anyString())).thenReturn(false);
+    }
 
     @AfterEach
     void tearDown() {
@@ -178,6 +191,30 @@ class AuthControllerTest {
     void registerPasswordContainingUsernameIsAccepted() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcel@example.com", "Marcel se souvient de Combray")))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void registerCompromisedPasswordReturnsUnprocessableEntity() throws Exception {
+        when(passwordBreachChecker.isCompromised("hunter2222password")).thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
+                .andExpect(status().isUnprocessableEntity());
+
+        Integer userCount = dsl.selectCount().from(DSL.table("users")).fetchOne(0, Integer.class);
+        assertThat(userCount).isZero();
+    }
+
+    // Fail-open: a HIBP outage/timeout must never block registration, since this is a
+    // defense-in-depth check, not a hard dependency — see AuthService.checkPasswordNotCompromised.
+    @Test
+    void registerFailsOpenWhenCompromisedPasswordCheckerErrors() throws Exception {
+        when(passwordBreachChecker.isCompromised("hunter2222password"))
+                .thenThrow(new RuntimeException("HIBP unreachable"));
+
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
                 .andExpect(status().isCreated());
     }
 

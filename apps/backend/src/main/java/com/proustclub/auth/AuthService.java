@@ -21,15 +21,39 @@ class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordBreachChecker passwordBreachChecker;
 
     AuthService(
             UserRepository repository, PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager, EmailVerificationService emailVerificationService
+            AuthenticationManager authenticationManager, EmailVerificationService emailVerificationService,
+            PasswordBreachChecker passwordBreachChecker
     ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.emailVerificationService = emailVerificationService;
+        this.passwordBreachChecker = passwordBreachChecker;
+    }
+
+    // Not @Transactional, and deliberately called from the controller before register() rather
+    // than from inside it: register() runs inside a single DB transaction, and this makes an
+    // external HTTP call (PasswordBreachChecker) — holding a DB connection open for the duration
+    // of that call would be wasteful. Splitting register() itself into a non-transactional wrapper
+    // calling an internal @Transactional method wouldn't work either: calling this.someMethod()
+    // from within the same class bypasses Spring's proxy-based AOP, so @Transactional on that
+    // inner method would silently do nothing.
+    void checkPasswordNotCompromised(String password) {
+        try {
+            if (passwordBreachChecker.isCompromised(password)) {
+                throw ApiException.passwordCompromised();
+            }
+        } catch (ApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            // Fail open: HIBP is a defense-in-depth check, not a hard dependency for registration.
+            // Never log the password itself.
+            log.warn("Compromised password check failed, allowing registration to proceed", e);
+        }
     }
 
     @Transactional
