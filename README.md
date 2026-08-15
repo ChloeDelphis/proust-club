@@ -17,14 +17,15 @@ The project combines literary exploration with modern software engineering, prov
 - Search passages by text
 - Read passages in context
 - Highlight matching fragments
+- Create an account and sign in (email confirmation, password reset)
+- Save personal quotes with an optional comment and tags
+- Browse, filter and manage your saved quotes
+- Personal reading timeline (bookmarks positioned by volume and page)
 
 ### Planned
 
-- Personal annotations
-- Personal tags
-- Bookmarks
-- Reading timeline
 - Collections
+- Community features (sharing, discovery)
 
 ---
 
