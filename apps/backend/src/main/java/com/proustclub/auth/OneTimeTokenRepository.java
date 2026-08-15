@@ -31,7 +31,12 @@ class OneTimeTokenRepository {
         var userIdField = DSL.field("user_id", UUID.class);
         var tokenHashField = DSL.field("token_hash", String.class);
         var expiresAtField = DSL.field("expires_at", Instant.class);
+        var createdAtField = DSL.field("created_at", Instant.class);
+        var now = Instant.now();
 
+        // created_at has a DEFAULT NOW() for the plain-insert path, but a DO UPDATE bypasses
+        // column defaults entirely — set it explicitly so a row that gets overwritten in place
+        // still reflects when its (now current) token was actually issued, not the superseded one.
         dsl.insertInto(DSL.table(table))
                 .set(userIdField, userId)
                 .set(tokenHashField, tokenHash)
@@ -41,6 +46,7 @@ class OneTimeTokenRepository {
                 .doUpdate()
                 .set(tokenHashField, tokenHash)
                 .set(expiresAtField, expiresAt)
+                .set(createdAtField, now)
                 .execute();
     }
 
