@@ -161,7 +161,7 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // Non-regression for the "strict equality, not substring" decision (private/tickets/mot-de-passe-distinct-identifiants.md):
+    // Non-regression for the "strict equality, not substring" decision:
     // a passphrase that merely contains the username must stay accepted — the project actively
     // encourages long passphrases over composed passwords (RegisterRequest.password), and a
     // "contains" check would reject legitimate ones whenever the username is a common word.
