@@ -2,6 +2,7 @@ package com.proustclub.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proustclub.TestcontainersConfiguration;
+import com.proustclub.auth.PasswordBreachCheckerTestConfig;
 import com.proustclub.auth.dto.RegisterRequest;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // (ProblemDetailSecurityHandlers, see ADR-004). Not
 // tied to one feature, hence its own package-neutral home rather than living inside a feature's
 // controller test.
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, PasswordBreachCheckerTestConfig.class})
 @SpringBootTest
 @AutoConfigureMockMvc
 class ErrorHandlingIntegrationTest {

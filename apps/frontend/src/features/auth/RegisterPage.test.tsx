@@ -81,6 +81,19 @@ describe('RegisterPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('affiche une erreur si le mot de passe est trop commun (breach-check)', async () => {
+    vi.mocked(authApi.register).mockRejectedValue(new ApiError(422))
+
+    render(<RegisterPage />, { wrapper })
+
+    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
+    await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
+    await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
+
+    expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
+  })
+
   it('bloque la soumission si le mot de passe est identique au nom d’utilisateur, sans appeler l’API', async () => {
     render(<RegisterPage />, { wrapper })
 

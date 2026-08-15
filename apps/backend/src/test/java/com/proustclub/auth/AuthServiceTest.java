@@ -35,6 +35,9 @@ class AuthServiceTest {
     @Mock
     EmailVerificationService emailVerificationService;
 
+    @Mock
+    PasswordBreachChecker passwordBreachChecker;
+
     @InjectMocks
     AuthService service;
 
@@ -82,5 +85,28 @@ class AuthServiceTest {
                 .isInstanceOf(ApiException.class);
 
         verify(repository, never()).insert(any(), any(), any());
+    }
+
+    @Test
+    void checkPasswordNotCompromisedRejectsCompromisedPassword() {
+        when(passwordBreachChecker.isCompromised("hunter2222")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.checkPasswordNotCompromised("hunter2222"))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void checkPasswordNotCompromisedAllowsSafePassword() {
+        when(passwordBreachChecker.isCompromised("hunter2222")).thenReturn(false);
+
+        service.checkPasswordNotCompromised("hunter2222");
+    }
+
+    @Test
+    void checkPasswordNotCompromisedFailsOpenWhenCheckerErrors() {
+        when(passwordBreachChecker.isCompromised("hunter2222"))
+                .thenThrow(new RuntimeException("HIBP unreachable"));
+
+        service.checkPasswordNotCompromised("hunter2222");
     }
 }

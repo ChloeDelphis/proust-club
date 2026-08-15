@@ -40,4 +40,12 @@ class ApiException extends ErrorResponseException {
     static ApiException emailAlreadyVerified() {
         return new ApiException(HttpStatus.CONFLICT, "Email already verified.");
     }
+
+    // 422, not 400: the frontend deliberately excludes 400 from any specific error mapping (several
+    // distinct causes share that status, and the client never reads this detail — only the status,
+    // see RegisterPage.tsx), so this needed its own status to surface a precise, actionable message
+    // instead of falling into the generic "something went wrong" fallback.
+    static ApiException passwordCompromised() {
+        return new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Password found in a known data breach.");
+    }
 }

@@ -25,11 +25,18 @@ export default function RegisterPage() {
   // the frontend never reads the ProblemDetail body — only the status — so a specific message here
   // would risk misdiagnosing the real cause. RegisterForm's own client-side checks already cover
   // the common cases with an accurate message before any request is sent.
+  //
+  // 422 is its own status (distinct from the 400s above) specifically so the breach-check failure
+  // can get an accurate, non-alarming message here — "found in a data breach" would be scary and
+  // confusing to a non-technical user, so this reframes it as commonness instead.
   const errorMessage = !mutation.isError
     ? null
     : apiErrorMessage(
         mutation.error,
-        { 409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).' },
+        {
+          409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).',
+          422: 'Ce mot de passe est trop commun. Choisissez-en un autre.',
+        },
         'Impossible de créer ce compte. Réessayez.',
       )
 
