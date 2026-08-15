@@ -31,12 +31,21 @@ class PasswordBreachChecker {
     private static final String HIBP_API_URL = "https://api.pwnedpasswords.com/range/";
 
     PasswordBreachChecker() {
+        this(HIBP_API_URL);
+    }
+
+    // Package-private, baseUrl-overriding constructor — exists only so PasswordBreachCheckerTest
+    // can point this at a local HTTP stub instead of the real HIBP API, to test the actual
+    // RestClient wiring (the thing that broke once already) without a network dependency. Spring
+    // resolves the no-arg constructor above by default when a component has more than one
+    // constructor and none is annotated @Autowired — no annotation needed here.
+    PasswordBreachChecker(String baseUrl) {
         var httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
         var requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(Duration.ofSeconds(2));
 
         this.delegate = new HaveIBeenPwnedRestApiPasswordChecker();
-        this.delegate.setRestClient(RestClient.builder().baseUrl(HIBP_API_URL).requestFactory(requestFactory).build());
+        this.delegate.setRestClient(RestClient.builder().baseUrl(baseUrl).requestFactory(requestFactory).build());
     }
 
     // Sends only the first 5 characters of the password's SHA-1 hash to the HIBP API
