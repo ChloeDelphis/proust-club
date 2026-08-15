@@ -2,6 +2,7 @@ package com.proustclub.ratelimit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proustclub.TestcontainersConfiguration;
+import com.proustclub.auth.PasswordBreachCheckerTestConfig;
 import com.proustclub.auth.dto.LoginRequest;
 import com.proustclub.auth.dto.RegisterRequest;
 import org.jooq.DSLContext;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Own dedicated Spring context: @TestPropertySource with tiny capacities lets this class exceed
 // limits deterministically in a handful of requests, without affecting AuthControllerTest /
 // SearchControllerTest (which run with the generous src/test/resources/application.yml override).
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, PasswordBreachCheckerTestConfig.class})
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
