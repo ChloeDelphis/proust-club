@@ -2,14 +2,18 @@ package com.proustclub.auth;
 
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.security.web.authentication.password.HaveIBeenPwnedRestApiPasswordChecker;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.HexFormat;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,11 +34,21 @@ class PasswordBreachCheckerTest {
     // and returns "not compromised" — AuthService's own catch(RuntimeException) never gets a
     // chance to run for this failure mode. Not testable through PasswordBreachChecker itself (its
     // baseUrl is fixed to the real API in production), so this drives the underlying Spring
-    // Security class directly, pointed at a host guaranteed not to resolve.
+    // Security class directly, pointed at a host guaranteed not to resolve. Same short connect
+    // timeout as production PasswordBreachChecker, plus a hard @Timeout backstop — found by
+    // /code-review: in a sandboxed/firewalled runner where outbound DNS/TCP is silently dropped
+    // rather than fast-refused, an unbounded attempt could hang for the OS-level default instead
+    // of failing fast.
     @Test
+    @Timeout(5)
     void hibpDelegateFailsOpenOnConnectionFailureRatherThanThrowing() {
+        var httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+        var requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(2));
+
         var unreachable = new HaveIBeenPwnedRestApiPasswordChecker();
-        unreachable.setRestClient(RestClient.builder().baseUrl("https://unreachable.invalid/range/").build());
+        unreachable.setRestClient(
+                RestClient.builder().baseUrl("https://unreachable.invalid/range/").requestFactory(requestFactory).build());
 
         assertThat(unreachable.check("password123").isCompromised()).isFalse();
     }
