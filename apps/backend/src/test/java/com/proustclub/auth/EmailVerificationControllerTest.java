@@ -119,6 +119,21 @@ class EmailVerificationControllerTest {
         mockMvc.perform(confirm(secondToken)).andExpect(status().isNoContent());
     }
 
+    // Exercises the actual DB mechanism (upsert on the partial unique index from migration V10)
+    // rather than just the observable request/response behavior covered above.
+    @Test
+    void resendLeavesExactlyOneLiveTokenInTheDatabase() throws Exception {
+        MockHttpSession session = registerAndGetSession("resendlive", "resendlive@example.com", "hunter2222password");
+
+        mockMvc.perform(resend(session)).andExpect(status().isNoContent());
+
+        var liveTokenCount = dsl.selectCount()
+                .from(DSL.table("email_verification_tokens"))
+                .where(DSL.field("used_at", Instant.class).isNull())
+                .fetchOne(0, int.class);
+        assertThat(liveTokenCount).isEqualTo(1);
+    }
+
     @Test
     void resendWithoutSessionReturnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/auth/email/confirm/resend").with(csrf()))

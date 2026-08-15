@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -108,6 +109,31 @@ class PasswordResetControllerTest {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("confirmreset", "old-password-long-enough")))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // Exercises the actual DB mechanism (upsert on the partial unique index from migration V10),
+    // not just the observable request/response behavior — a second request must overwrite the
+    // still-live token from the first rather than leave two rows behind.
+    @Test
+    void requestingResetTwiceLeavesExactlyOneLiveTokenAndInvalidatesTheFirst() throws Exception {
+        register("tworequests", "tworequests@example.com", "old-password-long-enough");
+
+        mockMvc.perform(requestReset("tworequests@example.com")).andExpect(status().isAccepted());
+        mockMvc.perform(requestReset("tworequests@example.com")).andExpect(status().isAccepted());
+
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mailService, times(2)).sendPasswordResetEmail(eq("tworequests@example.com"), tokenCaptor.capture());
+        var firstToken = tokenCaptor.getAllValues().get(0);
+        var secondToken = tokenCaptor.getAllValues().get(1);
+
+        var liveTokenCount = dsl.selectCount()
+                .from(DSL.table("password_reset_tokens"))
+                .where(DSL.field("used_at", Instant.class).isNull())
+                .fetchOne(0, int.class);
+        assertThat(liveTokenCount).isEqualTo(1);
+
+        mockMvc.perform(confirmReset(firstToken, "new-password-long-enough")).andExpect(status().isBadRequest());
+        mockMvc.perform(confirmReset(secondToken, "new-password-long-enough")).andExpect(status().isOk());
     }
 
     @Test
