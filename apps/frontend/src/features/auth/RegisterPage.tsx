@@ -23,16 +23,15 @@ export default function RegisterPage() {
   // 400 only reaches the server if RegisterForm's own client-side check (mirroring the backend
   // rule) was somehow bypassed — kept distinct from the generic message so it stays accurate if
   // that ever happens, rather than pointing the user at the wrong problem.
-  const errorMessage = !mutation.isError
-    ? null
-    : apiErrorMessage(
-        mutation.error,
-        {
-          409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).',
-          400: 'Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.',
-        },
-        'Impossible de créer ce compte. Réessayez.',
-      )
+  const errorMessage = mutation.isError
+    && apiErrorMessage(
+      mutation.error,
+      {
+        409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).',
+        400: 'Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.',
+      },
+      'Impossible de créer ce compte. Réessayez.',
+    )
 
   return (
     <main className={styles.root}>
