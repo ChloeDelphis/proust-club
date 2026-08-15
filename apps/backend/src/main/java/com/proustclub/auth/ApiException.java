@@ -18,6 +18,10 @@ class ApiException extends ErrorResponseException {
         return new ApiException(HttpStatus.CONFLICT, "Email already exists.");
     }
 
+    static ApiException passwordMatchesIdentifier() {
+        return new ApiException(HttpStatus.BAD_REQUEST, "Password must not match the username or email.");
+    }
+
     static ApiException invalidCredentials() {
         return new ApiException(HttpStatus.UNAUTHORIZED, "Invalid username or password.");
     }

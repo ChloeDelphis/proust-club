@@ -36,6 +36,11 @@ class AuthService {
     UserResponse register(RegisterRequest request) {
         var normalizedEmail = EmailNormalizer.normalize(request.email());
 
+        if (request.password().equalsIgnoreCase(request.username())
+                || request.password().equalsIgnoreCase(normalizedEmail)) {
+            throw ApiException.passwordMatchesIdentifier();
+        }
+
         if (repository.existsByUsername(request.username())) {
             throw ApiException.usernameAlreadyExists();
         }

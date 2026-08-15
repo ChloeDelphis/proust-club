@@ -141,6 +141,38 @@ class AuthControllerTest {
     }
 
     @Test
+    void registerPasswordMatchingUsernameReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcelproustcombray", "marcel@example.com", "marcelproustcombray")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registerPasswordMatchingEmailReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcel", "marcelproust@example.com", "marcelproust@example.com")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registerPasswordMatchingUsernameCaseInsensitiveReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("MarcelProustCombray", "marcel@example.com", "marcelproustcombray")))
+                .andExpect(status().isBadRequest());
+    }
+
+    // Non-regression for the "strict equality, not substring" decision (private/tickets/mot-de-passe-distinct-identifiants.md):
+    // a passphrase that merely contains the username must stay accepted — the project actively
+    // encourages long passphrases over composed passwords (RegisterRequest.password), and a
+    // "contains" check would reject legitimate ones whenever the username is a common word.
+    @Test
+    void registerPasswordContainingUsernameIsAccepted() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcel", "marcel@example.com", "Marcel se souvient de Combray")))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     void registerWithoutCsrfTokenIsForbidden() throws Exception {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
