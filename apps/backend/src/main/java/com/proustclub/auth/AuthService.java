@@ -43,16 +43,18 @@ class AuthService {
     // from within the same class bypasses Spring's proxy-based AOP, so @Transactional on that
     // inner method would silently do nothing.
     void checkPasswordNotCompromised(String password) {
+        boolean compromised;
         try {
-            if (passwordBreachChecker.isCompromised(password)) {
-                throw ApiException.passwordCompromised();
-            }
-        } catch (ApiException e) {
-            throw e;
+            compromised = passwordBreachChecker.isCompromised(password);
         } catch (RuntimeException e) {
             // Fail open: HIBP is a defense-in-depth check, not a hard dependency for registration.
-            // Never log the password itself.
+            // Never log the password itself. The throw below is deliberately outside this try block
+            // so it can never be swallowed by this catch, regardless of clause order.
             log.warn("Compromised password check failed, allowing registration to proceed", e);
+            return;
+        }
+        if (compromised) {
+            throw ApiException.passwordCompromised();
         }
     }
 
