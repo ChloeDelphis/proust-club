@@ -47,9 +47,14 @@ class AuthService {
         try {
             compromised = passwordBreachChecker.isCompromised(password);
         } catch (RuntimeException e) {
-            // Fail open: HIBP is a defense-in-depth check, not a hard dependency for registration.
-            // Never log the password itself. The throw below is deliberately outside this try block
-            // so it can never be swallowed by this catch, regardless of clause order.
+            // Secondary safety net, not the primary fail-open path: PasswordBreachChecker's
+            // delegate (HaveIBeenPwnedRestApiPasswordChecker.check()) already swallows
+            // RestClientException internally (timeout, connection failure, HIBP 4xx/5xx) and
+            // returns "not compromised" — confirmed by decompiling spring-security-web 7.1.0 — so
+            // this catch only ever fires for something outside that (a bug here, an unexpected
+            // NPE, a future Spring Security behavior change). Kept anyway as a second layer: fail
+            // open, never log the password itself. The throw below is deliberately outside this
+            // try block so it can never be swallowed by this catch, regardless of clause order.
             log.warn("Compromised password check failed, allowing registration to proceed", e);
             return;
         }

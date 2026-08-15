@@ -41,6 +41,14 @@ class PasswordBreachChecker {
 
     // Sends only the first 5 characters of the password's SHA-1 hash to the HIBP API
     // (k-anonymity model), never the password or the full hash.
+    //
+    // check() itself already swallows RestClientException (timeout, connection failure, HIBP
+    // 4xx/5xx) internally and returns "not compromised" — this is the actual fail-open mechanism
+    // for a real HIBP outage, not AuthService's own catch block (which only ever fires for
+    // something this delegate doesn't already handle, e.g. a bug here). Confirmed by decompiling
+    // HaveIBeenPwnedRestApiPasswordChecker.getLeakedPasswordsForPrefix in spring-security-web
+    // 7.1.0: its entire RestClient call is wrapped in try/catch(RestClientException), which logs
+    // internally (Log.error, this class's own logger) and returns Collections.emptyList().
     boolean isCompromised(String password) {
         return delegate.check(password).isCompromised();
     }
