@@ -25,12 +25,13 @@ export default function RegisterPage() {
   // the frontend never reads the ProblemDetail body — only the status — so a specific message here
   // would risk misdiagnosing the real cause. RegisterForm's own client-side checks already cover
   // the common cases with an accurate message before any request is sent.
-  const errorMessage = mutation.isError
-    && apiErrorMessage(
-      mutation.error,
-      { 409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).' },
-      'Impossible de créer ce compte. Réessayez.',
-    )
+  const errorMessage = !mutation.isError
+    ? null
+    : apiErrorMessage(
+        mutation.error,
+        { 409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).' },
+        'Impossible de créer ce compte. Réessayez.',
+      )
 
   return (
     <main className={styles.root}>

@@ -36,7 +36,7 @@ class AuthService {
     UserResponse register(RegisterRequest request) {
         var normalizedEmail = EmailNormalizer.normalize(request.email());
 
-        if (request.password().equalsIgnoreCase(request.username())
+        if (request.password().equalsIgnoreCase(request.username().trim())
                 || request.password().equalsIgnoreCase(normalizedEmail)) {
             throw ApiException.passwordMatchesIdentifier();
         }

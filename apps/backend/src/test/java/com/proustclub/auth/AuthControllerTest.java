@@ -161,6 +161,15 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // Direct API callers (Swagger, scripts) skip RegisterForm's client-side trim — the backend
+    // check itself must not be bypassable by padding the username with insignificant whitespace.
+    @Test
+    void registerPasswordMatchingWhitespacePaddedUsernameReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("  marcelproustcombray  ", "marcel@example.com", "marcelproustcombray")))
+                .andExpect(status().isBadRequest());
+    }
+
     // Non-regression for the "strict equality, not substring" decision:
     // a passphrase that merely contains the username must stay accepted — the project actively
     // encourages long passphrases over composed passwords (RegisterRequest.password), and a
