@@ -8,14 +8,14 @@ import org.springframework.web.client.RestClient;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
-// Deliberately does NOT implement Spring Security's CompromisedPasswordChecker interface, and
-// builds HaveIBeenPwnedRestApiPasswordChecker directly rather than exposing it as a
-// CompromisedPasswordChecker @Bean. If a bean of that exact type existed in the context, Spring
-// Security's InitializeUserDetailsBeanManagerConfigurer auto-wires it into the default
-// DaoAuthenticationProvider for every authentication — silently extending this check to login()
-// (not just register(), the only flow this ticket scoped it to) and bypassing the fail-open
-// behavior below entirely. Confirmed by decompiling spring-security-config 7.1.0; not documented
-// anywhere found. This wrapper is the only way to use the HIBP checker without that side effect.
+// See ADR-011 for the full reasoning. Deliberately does NOT implement Spring Security's
+// CompromisedPasswordChecker interface, and builds HaveIBeenPwnedRestApiPasswordChecker directly
+// rather than exposing it as a CompromisedPasswordChecker @Bean. If a bean of that exact type
+// existed in the context, Spring Security's InitializeUserDetailsBeanManagerConfigurer auto-wires
+// it into the default DaoAuthenticationProvider for every authentication — silently extending
+// this check to login() (not just register(), the only flow this ticket scoped it to) and
+// bypassing the fail-open behavior below entirely. Confirmed by decompiling
+// spring-security-config 7.1.0; not documented anywhere found.
 @Component
 class PasswordBreachChecker {
 
