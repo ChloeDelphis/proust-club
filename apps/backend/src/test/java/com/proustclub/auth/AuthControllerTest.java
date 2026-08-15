@@ -301,8 +301,8 @@ class AuthControllerTest {
         assertThat(sessionAfterLogin.getId()).isNotEqualTo(sessionIdAfterRegister);
     }
 
-    // A real bug found and fixed 2026-08-06 lived here (see private/impl/csrf-rotation-bug-1-analyse.md):
-    // CsrfCookieFilter used to resolve the deferred CSRF token BEFORE the controller ran, so the
+    // A real bug found and fixed 2026-08-06 lived here: CsrfCookieFilter used to resolve the
+    // deferred CSRF token BEFORE the controller ran, so the
     // token rotated by CsrfAuthenticationStrategy during register's auto-login (see SecurityConfig)
     // never actually got written to a Set-Cookie — the client was left with a deleted CSRF cookie
     // and no valid replacement, so the very next mutating request was rejected 403 before reaching

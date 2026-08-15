@@ -13,8 +13,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-// Regression guard for a real bug found 2026-08-06 (see private/impl/csrf-rotation-bug-1-analyse.md):
-// resolving the deferred CSRF token only before filterChain.doFilter() meant a token rotated
+// Regression guard for a real bug found 2026-08-06: resolving the deferred CSRF token only
+// before filterChain.doFilter() meant a token rotated
 // mid-request by CsrfAuthenticationStrategy (login/register auto-authenticating, see
 // SecurityConfig) never got its cookie written — the client was left with a deleted CSRF cookie
 // and no valid replacement. A full MockMvc round-trip test for this proved as order-dependent

@@ -3,8 +3,8 @@ import type { TimelineQuote } from '../../../api/quote'
 // A group always holds exactly one quote today — every consumer of this shape (TimelineBar,
 // QuoteHoverPreview, QuoteDetailModal) still reads `quotes[0]` and stays single-quote-only.
 // The array is a deliberately cheap hook for later, not a finished contract: a future
-// clustering pass (private/tickets/timeline-clustering-signets.md) can start merging entries
-// here without changing this function's signature, but the rendering layer would still need
+// clustering pass can start merging entries here without changing this function's signature,
+// but the rendering layer would still need
 // real work (plural aria-labels, a multi-quote preview/modal) — this shape saves that one
 // rewrite, not the whole feature.
 export interface TimelineGroup {

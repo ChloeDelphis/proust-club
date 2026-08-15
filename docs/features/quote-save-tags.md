@@ -130,7 +130,7 @@ Only one paragraph can be mid-selection at a time across a page of results. `Sel
 
 ### Known limitation
 
-Cursor snapping precision needs more work — placing/repositioning a marker exactly where intended isn't always reliable yet. Not refined further in this iteration; see `private/tickets/precision-repere-selection.md`.
+Cursor snapping precision needs more work — placing/repositioning a marker exactly where intended isn't always reliable yet. Not refined further in this iteration.
 
 ---
 
@@ -158,7 +158,7 @@ Selecting a different tag (or "Tous") resets `page` to `0` via a single wrapped 
 
 `src/features/quotes/QuoteTagEditor/`, the first frontend consumer of `POST/DELETE /api/quotes/{id}/tags[/{tagId}]` — both endpoints existed since this feature's initial build but had no UI caller until the timeline detail modal (`QuoteDetailModal`, see `docs/features/timeline-personnelle.md`) needed one. Live editing, not a staged batch: every add or remove calls the API immediately (`useMutation` + `queryClient.invalidateQueries({ queryKey: ['quotes'] })`, the same pattern already used by `TagFilterBar`'s rename/delete) — unlike `TagPickerPopup`, there's no "Terminer" step to collect changes before sending them, because the quote this component edits already exists server-side (nothing to defer until a later creation call). The search/create-if-missing matching logic (`useTagSearch`, `src/hooks/`) is shared with `TagPickerPopup` — both search an existing tag list and offer to create one that doesn't match, `QuoteTagEditor` additionally excluding tags already attached to the quote from its suggestions.
 
-The personal comment field lives directly in `QuoteDetailModal` (no dedicated sub-component — a single `<textarea>`, one consumer). Saved when the modal **closes** (cross, backdrop click, or Escape — Base UI routes all three through one `onOpenChange` handler), not on blur: closing is the natural "done editing" signal for a field inside a modal, unlike inline editing outside one. Trimmed at save time, and skipped entirely if the trimmed value didn't actually change (no gratuitous `PATCH`). The draft resets from the server value whenever the modal opens on a *different* quote, and also — this needs an explicit check, not just a quote-id comparison — when it **reopens on the same quote**, since `QuoteDetailModal` stays mounted across opens/closes (only the Dialog's `open` prop toggles); without resetting `renderedQuoteId` back to `null` on close too, a stale local draft from before closing would stick around instead of the value actually on the server (found and fixed during manual verification of this feature, see `private/impl/timeline-modale-actions_bilan.md`).
+The personal comment field lives directly in `QuoteDetailModal` (no dedicated sub-component — a single `<textarea>`, one consumer). Saved when the modal **closes** (cross, backdrop click, or Escape — Base UI routes all three through one `onOpenChange` handler), not on blur: closing is the natural "done editing" signal for a field inside a modal, unlike inline editing outside one. Trimmed at save time, and skipped entirely if the trimmed value didn't actually change (no gratuitous `PATCH`). The draft resets from the server value whenever the modal opens on a *different* quote, and also — this needs an explicit check, not just a quote-id comparison — when it **reopens on the same quote**, since `QuoteDetailModal` stays mounted across opens/closes (only the Dialog's `open` prop toggles); without resetting `renderedQuoteId` back to `null` on close too, a stale local draft from before closing would stick around instead of the value actually on the server (found and fixed during manual verification of this feature).
 
 ---
 
@@ -202,7 +202,7 @@ The personal comment field lives directly in `QuoteDetailModal` (no dedicated su
 
 **Not manually re-verified** (already covered deterministically by `QuoteSelection.test.tsx`, which drives the same phases with controlled offsets rather than pixel coordinates): dropping the second marker on the first one's boundary is a no-op; repositioning an already-placed marker and having it swap start/end roles when it crosses the other one; "Annuler" resetting to idle.
 
-**Known issue, not yet refined**: cursor snapping precision when placing/repositioning a marker needs more work — see `private/tickets/precision-repere-selection.md`.
+**Known issue, not yet refined**: cursor snapping precision when placing/repositioning a marker needs more work.
 
 ### Frontend (`/mes-citations` — `MyQuotesPage`)
 
