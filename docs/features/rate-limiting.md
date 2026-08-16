@@ -1,6 +1,6 @@
 # Rate limiting — Technical Design
 
-Token-bucket throttling on `POST /api/auth/register`, `POST /api/auth/login`, and `GET /api/search`, backed by Bucket4j with local in-memory storage. See [ADR-003](../architecture/ADR-003-rate-limiting.md) for the reasoning behind the library choice, the local-vs-distributed storage decision, and why login uses two independent buckets instead of one combined key.
+Token-bucket throttling across most auth endpoints and `GET /api/search`, backed by Bucket4j with local in-memory storage. See [ADR-003](../architecture/ADR-003-rate-limiting.md) for the reasoning behind the library choice, the local-vs-distributed storage decision, and why login uses two independent buckets instead of one combined key.
 
 ---
 
@@ -12,6 +12,13 @@ Token-bucket throttling on `POST /api/auth/register`, `POST /api/auth/login`, an
 | `POST /api/auth/login` | per submitted username (normalized) | 5 attempts / 5 minutes |
 | `POST /api/auth/register` | per client IP | 5 creations / hour |
 | `GET /api/search` | per client IP | 60 requests / minute |
+| `POST /api/auth/password-reset/request` | per client IP | 5 requests / hour |
+| `POST /api/auth/password-reset/request` | per submitted email (normalized) | 3 requests / 15 minutes |
+| `POST /api/auth/password-reset/confirm` | per client IP | 5 attempts / hour |
+| `POST /api/auth/password` (change password) | per account (authenticated) | 5 attempts / 15 minutes |
+| `POST /api/auth/email/confirm/resend` | per account (authenticated) | 3 requests / 15 minutes |
+
+`password-reset/confirm` has no account bucket (the account isn't known until the token is resolved) and `password` (change) / `email/confirm/resend` have no IP bucket (both already require an authenticated session, so an anonymous IP-based bucket adds nothing a session cookie doesn't already gate) — same "no bucket that adds nothing" reasoning applied per endpoint, not a uniform IP+account pair everywhere. `password-reset/confirm` specifically got a bucket once it started being able to trigger a real outbound HTTP call (the compromised-password check, see [ADR-011](../architecture/ADR-011-compromised-password-check.md)) — before that it only did cheap local DB work and needed none.
 
 Configurable under `rate-limit.*` in `application.yml` — never hardcoded scattered across controllers:
 
@@ -24,6 +31,15 @@ rate-limit:
     per-ip: { capacity: 5, refill-period: 1h }
   search:
     per-ip: { capacity: 60, refill-period: 1m }
+  password-reset:
+    per-ip:      { capacity: 5, refill-period: 1h }
+    per-account: { capacity: 3, refill-period: 15m }
+  password-reset-confirm:
+    per-ip: { capacity: 5, refill-period: 1h }
+  password-change:
+    per-account: { capacity: 5, refill-period: 15m }
+  email-verification-resend:
+    per-account: { capacity: 3, refill-period: 15m }
 ```
 
 Login checks **both** buckets before attempting authentication — either one being exhausted rejects the request. This is deliberate: a single IP-only limit lets an attacker distribute attempts across many IPs against one account; a single combined `ip+username` key lets one IP try many different accounts without ever tripping a per-IP limit. Two independent buckets close both gaps. The account bucket is keyed by the submitted username whether or not that account exists, so its behavior never reveals account existence.
@@ -73,4 +89,5 @@ WARN rate_limit_exceeded endpoint=login keyType=ip
 - Same for login (per-IP) and search.
 - Attempt login against the same username from several different source IPs → the account-level limit trips even though no single IP limit does.
 - Log in successfully, then keep searching past the search limit from the same IP → still `429` (an authenticated session is not exempt).
+- Make more than the configured number of `password-reset/confirm` attempts from the same IP within the window (regardless of token validity) → `429` with `Retry-After`.
 - Wait past the refill window → requests succeed again without restarting the app.
