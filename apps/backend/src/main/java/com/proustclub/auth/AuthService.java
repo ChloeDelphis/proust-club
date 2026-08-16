@@ -41,7 +41,9 @@ class AuthService {
     // of that call would be wasteful. Splitting register() itself into a non-transactional wrapper
     // calling an internal @Transactional method wouldn't work either: calling this.someMethod()
     // from within the same class bypasses Spring's proxy-based AOP, so @Transactional on that
-    // inner method would silently do nothing.
+    // inner method would silently do nothing. checkNoCheapConflicts() below follows the same
+    // pattern, and is called first by the controller so a request that's already invalid never
+    // pays for this HTTP round-trip.
     void checkPasswordNotCompromised(String password) {
         boolean compromised;
         try {
@@ -63,21 +65,23 @@ class AuthService {
         }
     }
 
+    // Not @Transactional, deliberately called from the controller before checkPasswordNotCompromised()
+    // — same reasoning as that method's comment above: a request that's already invalid on these
+    // cheap, local criteria (in-memory comparison, indexed SELECTs) shouldn't pay for the HIBP
+    // network round-trip first. register() re-runs the same checks inside its own transaction
+    // regardless (see below) — that's not new work caused by this pre-check, it was already
+    // required to close the TOCTOU race on username/email uniqueness.
+    void checkNoCheapConflicts(RegisterRequest request) {
+        var normalizedEmail = EmailNormalizer.normalize(request.email());
+        requirePasswordDistinctFromIdentifiers(request.password(), request.username(), normalizedEmail);
+        requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
+    }
+
     @Transactional
     UserResponse register(RegisterRequest request) {
         var normalizedEmail = EmailNormalizer.normalize(request.email());
-
-        if (request.password().equalsIgnoreCase(request.username().trim())
-                || request.password().equalsIgnoreCase(normalizedEmail)) {
-            throw ApiException.passwordMatchesIdentifier();
-        }
-
-        if (repository.existsByUsername(request.username())) {
-            throw ApiException.usernameAlreadyExists();
-        }
-        if (repository.existsByEmail(normalizedEmail)) {
-            throw ApiException.emailAlreadyExists();
-        }
+        requirePasswordDistinctFromIdentifiers(request.password(), request.username(), normalizedEmail);
+        requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
 
         var passwordHash = passwordEncoder.encode(request.password());
         var uuid = repository.insert(request.username(), normalizedEmail, passwordHash);
@@ -86,6 +90,21 @@ class AuthService {
         emailVerificationService.sendVerification(uuid, normalizedEmail);
 
         return new UserResponse(uuid, request.username(), normalizedEmail, "USER", false);
+    }
+
+    private void requirePasswordDistinctFromIdentifiers(String password, String username, String normalizedEmail) {
+        if (password.equalsIgnoreCase(username.trim()) || password.equalsIgnoreCase(normalizedEmail)) {
+            throw ApiException.passwordMatchesIdentifier();
+        }
+    }
+
+    private void requireUsernameAndEmailAvailable(String username, String normalizedEmail) {
+        if (repository.existsByUsername(username)) {
+            throw ApiException.usernameAlreadyExists();
+        }
+        if (repository.existsByEmail(normalizedEmail)) {
+            throw ApiException.emailAlreadyExists();
+        }
     }
 
     @Transactional(readOnly = true)

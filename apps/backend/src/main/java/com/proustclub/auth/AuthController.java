@@ -62,6 +62,7 @@ class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     UserResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         rateLimiter.checkRegisterByIp(httpRequest);
+        service.checkNoCheapConflicts(request);
         service.checkPasswordNotCompromised(request.password());
         var created = service.register(request);
         var authentication = service.authenticate(request.username(), request.password());
