@@ -71,17 +71,16 @@ class AuthService {
     // network round-trip first. register() re-runs the same checks inside its own transaction
     // regardless (see below) — that's not new work caused by this pre-check, it was already
     // required to close the TOCTOU race on username/email uniqueness.
-    void checkNoCheapConflicts(RegisterRequest request) {
+    String checkNoCheapConflicts(RegisterRequest request) {
         var normalizedEmail = EmailNormalizer.normalize(request.email());
         requirePasswordDistinctFromIdentifiers(request.password(), request.username(), normalizedEmail);
         requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
+        return normalizedEmail;
     }
 
     @Transactional
     UserResponse register(RegisterRequest request) {
-        var normalizedEmail = EmailNormalizer.normalize(request.email());
-        requirePasswordDistinctFromIdentifiers(request.password(), request.username(), normalizedEmail);
-        requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
+        var normalizedEmail = checkNoCheapConflicts(request);
 
         var passwordHash = passwordEncoder.encode(request.password());
         var uuid = repository.insert(request.username(), normalizedEmail, passwordHash);
