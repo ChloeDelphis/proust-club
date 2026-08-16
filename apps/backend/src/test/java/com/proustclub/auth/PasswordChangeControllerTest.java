@@ -7,6 +7,7 @@ import com.proustclub.auth.dto.RegisterRequest;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,17 +15,23 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import({TestcontainersConfiguration.class, PasswordBreachCheckerTestConfig.class})
+@Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 class PasswordChangeControllerTest {
@@ -35,7 +42,17 @@ class PasswordChangeControllerTest {
     @Autowired
     DSLContext dsl;
 
+    // Local @MockitoBean rather than PasswordBreachCheckerTestConfig — per-test control over
+    // compromised/not-compromised is needed here, same reasoning as AuthControllerTest.
+    @MockitoBean
+    PasswordBreachChecker passwordBreachChecker;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void stubPasswordAsNotCompromisedByDefault() {
+        when(passwordBreachChecker.isCompromised(anyString())).thenReturn(false);
+    }
 
     @AfterEach
     void tearDown() {
@@ -72,6 +89,34 @@ class PasswordChangeControllerTest {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("wrongcurrent", "old-password-long-enough")))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void changePasswordWithCompromisedNewPasswordReturnsUnprocessableEntity() throws Exception {
+        MockHttpSession session = registerAndGetSession("compromisednew", "compromisednew@example.com", "old-password-long-enough");
+        when(passwordBreachChecker.isCompromised("compromised-new-password")).thenReturn(true);
+
+        mockMvc.perform(changePassword(session, "old-password-long-enough", "compromised-new-password"))
+                .andExpect(status().isUnprocessableEntity());
+
+        mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("compromisednew", "old-password-long-enough")))
+                .andExpect(status().isOk());
+    }
+
+    // Verifies the ordering decided in phase 0: a wrong current password should never pay for the
+    // HIBP round trip.
+    @Test
+    void changePasswordWithIncorrectCurrentPasswordNeverCallsBreachChecker() throws Exception {
+        MockHttpSession session = registerAndGetSession("skipbreachcheck", "skipbreachcheck@example.com", "old-password-long-enough");
+        // register() itself already called the breach checker once, on the registration password
+        // — reset so this assertion is scoped to changePassword() alone.
+        clearInvocations(passwordBreachChecker);
+
+        mockMvc.perform(changePassword(session, "not-the-current-password", "new-password-long-enough"))
+                .andExpect(status().isUnauthorized());
+
+        verify(passwordBreachChecker, never()).isCompromised(anyString());
     }
 
     @Test

@@ -8,6 +8,7 @@ import com.proustclub.mail.MailService;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,13 +30,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import({TestcontainersConfiguration.class, PasswordBreachCheckerTestConfig.class})
+@Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 class PasswordResetControllerTest {
@@ -49,7 +51,17 @@ class PasswordResetControllerTest {
     @MockitoBean
     MailService mailService;
 
+    // Local @MockitoBean rather than PasswordBreachCheckerTestConfig — per-test control over
+    // compromised/not-compromised is needed here, same reasoning as AuthControllerTest.
+    @MockitoBean
+    PasswordBreachChecker passwordBreachChecker;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @BeforeEach
+    void stubPasswordAsNotCompromisedByDefault() {
+        when(passwordBreachChecker.isCompromised(anyString())).thenReturn(false);
+    }
 
     @AfterEach
     void tearDown() {
@@ -140,6 +152,23 @@ class PasswordResetControllerTest {
     void confirmResetWithUnknownTokenReturnsBadRequest() throws Exception {
         mockMvc.perform(confirmReset("garbage-token-that-was-never-issued", "new-password-long-enough"))
                 .andExpect(status().isBadRequest());
+
+        verify(passwordBreachChecker, never()).isCompromised(anyString());
+    }
+
+    // A password rejected by the breach check must not consume the token — same guarantee as
+    // confirmResetInvalidNewPasswordDoesNotBurnTheToken, decided in phase 0 (decision 3).
+    @Test
+    void confirmResetWithCompromisedNewPasswordDoesNotBurnTheTokenOrChangeThePassword() throws Exception {
+        register("compromisedreset", "compromisedreset@example.com", "old-password-long-enough");
+        mockMvc.perform(requestReset("compromisedreset@example.com")).andExpect(status().isAccepted());
+        var token = capturedToken("compromisedreset@example.com");
+        when(passwordBreachChecker.isCompromised("compromised-reset-password")).thenReturn(true);
+
+        mockMvc.perform(confirmReset(token, "compromised-reset-password"))
+                .andExpect(status().isUnprocessableEntity());
+
+        mockMvc.perform(confirmReset(token, "new-password-long-enough")).andExpect(status().isOk());
     }
 
     @Test
