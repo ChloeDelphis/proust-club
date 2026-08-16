@@ -30,20 +30,26 @@ function lastTextNode(root: Node): Text | null {
  * (`startContainer`/`startOffset` or `endContainer`/`endOffset`). Usually `node` is a text node
  * directly, but a boundary right at the edge of an element (e.g. the very start of the paragraph,
  * or right after a `<mark>`) can report the parent element with `nodeOffset` indexing into its
- * `childNodes` instead — resolved here by descending into the child at that index (start of its
- * first text node) or, past the last child, the end of the element's last text node.
+ * `childNodes` instead. Resolved by searching outward from that child index for the nearest text:
+ * forward first (the child at `nodeOffset` itself, or the next sibling with text — the common
+ * case), then backward (the end of the nearest preceding sibling's text) if nothing follows. An
+ * empty/childless element at the boundary (e.g. a decorative icon span) contributes zero
+ * characters either way, so either direction lands on the same, correct offset.
  */
 export function characterOffsetForRangeBoundary(container: Node, node: Node, nodeOffset: number): number | null {
   if (node.nodeType === Node.TEXT_NODE) {
     return characterOffsetForTextNode(container, node, nodeOffset)
   }
 
-  const child = node.childNodes[nodeOffset]
-  const text = child ? firstTextNode(child) : null
-  if (text) return characterOffsetForTextNode(container, text, 0)
+  for (let i = nodeOffset; i < node.childNodes.length; i++) {
+    const text = firstTextNode(node.childNodes[i])
+    if (text) return characterOffsetForTextNode(container, text, 0)
+  }
 
-  const fallback = lastTextNode(node)
-  if (fallback) return characterOffsetForTextNode(container, fallback, fallback.textContent?.length ?? 0)
+  for (let i = nodeOffset - 1; i >= 0; i--) {
+    const text = lastTextNode(node.childNodes[i])
+    if (text) return characterOffsetForTextNode(container, text, text.textContent?.length ?? 0)
+  }
 
   return null
 }
