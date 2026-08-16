@@ -88,6 +88,52 @@ class AuthServiceTest {
     }
 
     @Test
+    void checkNoCheapConflictsRejectsPasswordMatchingUsername() {
+        var request = new RegisterRequest("marcel", "marcel@example.com", "marcel");
+
+        assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
+                .isInstanceOf(ApiException.class);
+
+        verify(repository, never()).existsByUsername(any());
+    }
+
+    @Test
+    void checkNoCheapConflictsRejectsPasswordMatchingEmail() {
+        var request = new RegisterRequest("marcel", "marcel@example.com", "marcel@example.com");
+
+        assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void checkNoCheapConflictsRejectsDuplicateUsername() {
+        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
+        when(repository.existsByUsername("marcel")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void checkNoCheapConflictsRejectsDuplicateEmail() {
+        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
+        when(repository.existsByUsername("marcel")).thenReturn(false);
+        when(repository.existsByEmail("marcel@example.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void checkNoCheapConflictsAllowsValidRequest() {
+        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
+        when(repository.existsByUsername("marcel")).thenReturn(false);
+        when(repository.existsByEmail("marcel@example.com")).thenReturn(false);
+
+        service.checkNoCheapConflicts(request);
+    }
+
+    @Test
     void checkPasswordNotCompromisedRejectsCompromisedPassword() {
         when(passwordBreachChecker.isCompromised("hunter2222")).thenReturn(true);
 
