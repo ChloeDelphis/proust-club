@@ -1,15 +1,12 @@
-import { useRef, useState } from 'react'
-import { useClickOutside } from '../../../hooks/useClickOutside'
+import { useState } from 'react'
+import { Dialog } from '@base-ui/react/dialog'
 import { useTags } from '../../../hooks/useTags'
 import { useTagSearch } from '../../../hooks/useTagSearch'
 import Spinner from '../../../components/Spinner/Spinner'
 import type { TagPickerPopupProps } from './TagPickerPopup.types'
 import styles from './TagPickerPopup.module.css'
 
-export default function TagPickerPopup({ onFinish, onDismiss }: TagPickerPopupProps) {
-  const popupRef = useRef<HTMLDivElement>(null)
-  useClickOutside(popupRef, onDismiss)
-
+export default function TagPickerPopup({ onSave, onCancel }: TagPickerPopupProps) {
   const { data: tags, isPending } = useTags()
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
@@ -32,63 +29,64 @@ export default function TagPickerPopup({ onFinish, onDismiss }: TagPickerPopupPr
   }
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.root} ref={popupRef} role="dialog" aria-label="Choisir des tags">
-        <button type="button" className={styles.closeButton} onClick={onDismiss} aria-label="Fermer">
-          ×
-        </button>
+    <Dialog.Root open onOpenChange={open => { if (!open) onCancel() }}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={styles.backdrop} data-testid="tag-picker-backdrop" />
+        <Dialog.Popup className={styles.popup} aria-label="Choisir des tags">
+          <Dialog.Close className={styles.closeButton} aria-label="Fermer">×</Dialog.Close>
 
-        {selectedNames.size > 0 && (
-          <ul className={styles.selectedList}>
-            {Array.from(selectedNames).map(name => (
-              <li key={name} className={styles.selectedChip}>
-                {name}
-                <button type="button" onClick={() => toggleTag(name)} aria-label={`Retirer ${name}`}>
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+          {selectedNames.size > 0 && (
+            <ul className={styles.selectedList}>
+              {Array.from(selectedNames).map(name => (
+                <li key={name} className={styles.selectedChip}>
+                  {name}
+                  <button type="button" onClick={() => toggleTag(name)} aria-label={`Retirer ${name}`}>
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
-        <input
-          type="text"
-          value={search}
-          onChange={event => setSearch(event.target.value)}
-          placeholder="Chercher un tag..."
-          className={styles.searchInput}
-          aria-label="Chercher un tag"
-        />
+          <input
+            type="text"
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            placeholder="Chercher un tag..."
+            className={styles.searchInput}
+            aria-label="Chercher un tag"
+          />
 
-        {isPending ? (
-          <Spinner />
-        ) : (
-          <ul className={styles.tagList}>
-            {filteredTags.map(tag => (
-              <li key={tag.id}>
-                <label className={styles.tagOption}>
-                  <input type="checkbox" checked={selectedNames.has(tag.name)} onChange={() => toggleTag(tag.name)} />
-                  {tag.name}
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
+          {isPending ? (
+            <Spinner />
+          ) : (
+            <ul className={styles.tagList}>
+              {filteredTags.map(tag => (
+                <li key={tag.id}>
+                  <label className={styles.tagOption}>
+                    <input type="checkbox" checked={selectedNames.has(tag.name)} onChange={() => toggleTag(tag.name)} />
+                    {tag.name}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
 
-        {canCreate && (
-          <button type="button" className={styles.createButton} onClick={createFromSearch}>
-            Créer « {search.trim()} »
+          {canCreate && (
+            <button type="button" className={styles.createButton} onClick={createFromSearch}>
+              Créer « {search.trim()} »
+            </button>
+          )}
+
+          <button
+            type="button"
+            className={styles.saveButton}
+            onClick={() => onSave(Array.from(selectedNames))}
+          >
+            Enregistrer
           </button>
-        )}
-
-        <button
-          type="button"
-          className={styles.finishButton}
-          onClick={() => onFinish(Array.from(selectedNames))}
-        >
-          Terminer
-        </button>
-      </div>
-    </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 }

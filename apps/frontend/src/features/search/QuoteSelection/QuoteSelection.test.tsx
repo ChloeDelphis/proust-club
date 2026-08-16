@@ -6,28 +6,22 @@ import QuoteSelection from './QuoteSelection'
 import * as authApi from '../../../api/auth'
 import * as tagApi from '../../../api/tag'
 import * as quoteApi from '../../../api/quote'
-import * as cursorOffset from './cursorOffset'
+import * as selectionRangeOffset from '../selectionRangeOffset'
 import { ApiError } from '../../../api/client'
 import ToastProvider from '../../../components/Toast/ToastProvider'
-import { SelectionContext } from '../SelectionContext'
-import type { SelectionContextValue } from '../SelectionContext'
 
 vi.mock('../../../api/auth')
 vi.mock('../../../api/tag')
 vi.mock('../../../api/quote')
-vi.mock('./cursorOffset')
+vi.mock('../selectionRangeOffset')
 
-function makeWrapper(selectionValue: SelectionContextValue) {
-  return function Wrapper({ children }: { children: ReactNode }) {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    return (
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <SelectionContext.Provider value={selectionValue}>{children}</SelectionContext.Provider>
-        </ToastProvider>
-      </QueryClientProvider>
-    )
-  }
+function wrapper({ children }: { children: ReactNode }) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{children}</ToastProvider>
+    </QueryClientProvider>
+  )
 }
 
 const connectedUser: authApi.UserResponse = {
@@ -38,28 +32,37 @@ const connectedUser: authApi.UserResponse = {
   emailVerified: true,
 }
 
-// "hello world today" — boundaries at 0, 6, 12, 18. Highlight covers "world" (6-11).
+// "hello world today" — word boundaries at 0, 6, 12, 18. Highlight covers "world" (6-11).
 const TEXT = 'hello world today'
 const HIGHLIGHT = { start: 6, end: 11 }
 const PARAGRAPH_ID = 42
 
-function renderConnected({ disabled = false }: { disabled?: boolean } = {}) {
-  const startSelection = vi.fn()
-  const endSelection = vi.fn()
-  render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, {
-    wrapper: makeWrapper({
-      activeParagraphId: disabled ? PARAGRAPH_ID + 1 : null,
-      startSelection,
-      endSelection,
-    }),
-  })
-  return { startSelection, endSelection }
+// The DOM boundary of Range -> character-offset conversion is mocked out (same philosophy as the
+// old cursorOffset.ts: neither jsdom's Selection API nor real drag gestures are meaningfully
+// testable here), so a fake Range object is enough — only `getSelectionOffsets`'s mocked return
+// value is actually read by the component. Word-boundary extension and whitespace trimming below
+// it are real, unmocked logic.
+const fakeRange = {} as Range
+
+function fakeSelection(collapsed: boolean): Selection {
+  return {
+    isCollapsed: collapsed,
+    rangeCount: collapsed ? 0 : 1,
+    getRangeAt: () => fakeRange,
+    removeAllRanges: vi.fn(),
+  } as unknown as Selection
 }
 
-function moveAndClickAt(offset: number) {
-  vi.mocked(cursorOffset.getOffsetFromPoint).mockReturnValue(offset)
-  const paragraph = screen.getByText(/hello/).closest('p')!
-  return { paragraph }
+function setSelection(rawOffsets: { start: number; end: number } | null) {
+  if (rawOffsets === null) {
+    vi.spyOn(window, 'getSelection').mockReturnValue(fakeSelection(true))
+  } else {
+    vi.mocked(selectionRangeOffset.getSelectionOffsets).mockReturnValue(rawOffsets)
+    vi.spyOn(window, 'getSelection').mockReturnValue(fakeSelection(false))
+  }
+  act(() => {
+    document.dispatchEvent(new Event('selectionchange'))
+  })
 }
 
 beforeEach(() => {
@@ -69,191 +72,135 @@ beforeEach(() => {
 })
 
 describe('QuoteSelection — not connected', () => {
-  it('shows the plain highlighted text and no button', async () => {
+  it('shows the plain highlighted text and no contextual menu, even with a selection', async () => {
     vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
-
-    renderConnected()
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
 
     expect(await screen.findByText('world')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Sauvegarder une citation' })).not.toBeInTheDocument()
+    setSelection({ start: 0, end: 5 })
+
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
   })
 })
 
 describe('QuoteSelection — connected', () => {
-  it('shows the save button, disabled when another selection is active', async () => {
-    renderConnected({ disabled: true })
+  it('shows no contextual menu while there is no selection', async () => {
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
 
-    const button = await screen.findByRole('button', { name: 'Sauvegarder une citation' })
-    expect(button).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
   })
 
-  it('enters placing mode and calls startSelection with its paragraph id when clicking the save button', async () => {
-    const { startSelection } = renderConnected()
+  it('shows the contextual menu once a selection inside the paragraph stabilizes', async () => {
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
+    setSelection({ start: 8, end: 9 }) // mid-"world"
 
-    expect(startSelection).toHaveBeenCalledWith(PARAGRAPH_ID)
-    expect(screen.getByRole('button', { name: 'Annuler' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
   })
 
-  it('places both markers and shows "Valider la sélection"', async () => {
-    renderConnected()
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
+  it('hides the menu again once the selection is cleared', async () => {
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
 
-    const { paragraph } = moveAndClickAt(0)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-    // still placing the second marker — markers are plain (non-interactive) previews at this point
-    expect(screen.getByText('début')).toBeInTheDocument()
+    setSelection({ start: 8, end: 9 })
+    await screen.findByRole('button', { name: 'Sauvegarder' })
 
-    vi.mocked(cursorOffset.getOffsetFromPoint).mockReturnValue(12)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
+    setSelection(null)
 
-    // both placed — markers become interactive buttons (repositionable) and validation is available
-    expect(screen.getByRole('button', { name: 'Valider la sélection' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'début' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'fin' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
   })
 
-  it('ignores dropping the second marker on the same boundary as the first', async () => {
-    renderConnected()
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
+  it('ignores a selection outside this paragraph (getSelectionOffsets returns null)', async () => {
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
 
-    const { paragraph } = moveAndClickAt(6)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
+    vi.mocked(selectionRangeOffset.getSelectionOffsets).mockReturnValue(null)
+    vi.spyOn(window, 'getSelection').mockReturnValue(fakeSelection(false))
+    act(() => document.dispatchEvent(new Event('selectionchange')))
 
-    // second marker dropped on the exact same boundary — should be a no-op
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-
-    expect(screen.queryByRole('button', { name: 'Valider la sélection' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
   })
 
-  it('lets a placed marker be repositioned, swapping roles if it crosses the other one', async () => {
-    renderConnected()
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
-
-    // place début at 0, fin at 12
-    let { paragraph } = moveAndClickAt(0)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-    vi.mocked(cursorOffset.getOffsetFromPoint).mockReturnValue(12)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-
-    // grab "début" (currently at 0) and drop it past "fin" (12), at 18 — roles should swap
-    await userEvent.click(screen.getByRole('button', { name: 'début' }))
-    vi.mocked(cursorOffset.getOffsetFromPoint).mockReturnValue(18)
-    ;({ paragraph } = { paragraph: screen.getByText(/hello/).closest('p')! })
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-
-    expect(screen.getByRole('button', { name: 'Valider la sélection' })).toBeInTheDocument()
-    // the marker still at offset 12 is now labelled "début" since 12 < 18
-    expect(screen.getByRole('button', { name: 'début' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'fin' })).toBeInTheDocument()
-  })
-
-  it('cancel resets to idle and calls endSelection', async () => {
-    const { endSelection } = renderConnected()
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
-
-    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }))
-
-    expect(endSelection).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('button', { name: 'Sauvegarder une citation' })).toBeInTheDocument()
-  })
-
-  it('validating opens the tag popup, and Terminer saves the quote with the checked tags', async () => {
+  it('clicking Sauvegarder opens the tag panel with the word-extended, trimmed selection', async () => {
     vi.mocked(tagApi.listTags).mockResolvedValue([{ id: 1, name: 'Combray' }])
     vi.mocked(quoteApi.createQuote).mockResolvedValue({
       id: 1,
       paragraphId: PARAGRAPH_ID,
-      startOffset: 0,
+      startOffset: 6,
       endOffset: 11,
-      selectedText: 'hello world',
+      selectedText: 'world',
       comment: null,
       tags: [],
-      createdAt: '2026-08-05T00:00:00Z',
+      createdAt: '2026-08-16T00:00:00Z',
     })
-    const { endSelection } = renderConnected()
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
 
-    const { paragraph } = moveAndClickAt(0)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-    vi.mocked(cursorOffset.getOffsetFromPoint).mockReturnValue(12)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
+    // raw selection lands mid-word on both ends; the trailing edge also lands in the
+    // whitespace after "world" — extension snaps outward to [6, 12), then trimming drops
+    // the trailing space back down to [6, 11), i.e. exactly "world".
+    setSelection({ start: 8, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
 
-    await userEvent.click(screen.getByRole('button', { name: 'Valider la sélection' }))
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Combray' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Terminer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(quoteApi.createQuote).toHaveBeenCalledWith({
       paragraphId: PARAGRAPH_ID,
-      startOffset: 0,
+      startOffset: 6,
       endOffset: 11,
-      selectedText: 'hello world',
+      selectedText: 'world',
       tagNames: ['Combray'],
     })
     expect(await screen.findByText('Citation enregistrée.')).toBeInTheDocument()
-    expect(endSelection).toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Sauvegarder une citation' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('dismissing the popup via the × saves the quote without any tag', async () => {
-    vi.mocked(quoteApi.createQuote).mockResolvedValue({
-      id: 1,
-      paragraphId: PARAGRAPH_ID,
-      startOffset: 0,
-      endOffset: 11,
-      selectedText: 'hello world',
-      comment: null,
-      tags: [],
-      createdAt: '2026-08-05T00:00:00Z',
-    })
-    renderConnected()
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
+  it('cancelling the tag panel (Escape) saves nothing', async () => {
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
 
-    const { paragraph } = moveAndClickAt(0)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-    vi.mocked(cursorOffset.getOffsetFromPoint).mockReturnValue(12)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
+    setSelection({ start: 8, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    await screen.findByRole('dialog')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Valider la sélection' }))
+    await userEvent.keyboard('{Escape}')
+
+    expect(quoteApi.createQuote).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
+  })
+
+  it('closing the tag panel via the × saves nothing', async () => {
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
+
+    setSelection({ start: 8, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
     await screen.findByRole('dialog')
 
     await userEvent.click(screen.getByRole('button', { name: 'Fermer' }))
 
-    expect(quoteApi.createQuote).toHaveBeenCalledWith(
-      expect.objectContaining({ tagNames: [] }),
-    )
+    expect(quoteApi.createQuote).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('shows an error toast and returns to "ready" if saving fails', async () => {
+  it('shows an error toast and returns to the contextual menu if saving fails', async () => {
     vi.mocked(quoteApi.createQuote).mockRejectedValue(new Error('HTTP 500'))
-    renderConnected()
-    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder une citation' }))
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
 
-    const { paragraph } = moveAndClickAt(0)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-    vi.mocked(cursorOffset.getOffsetFromPoint).mockReturnValue(12)
-    act(() => paragraph.dispatchEvent(new MouseEvent('mousemove', { bubbles: true })))
-    await userEvent.click(paragraph)
-
-    await userEvent.click(screen.getByRole('button', { name: 'Valider la sélection' }))
+    setSelection({ start: 8, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
     await screen.findByRole('dialog')
-    await userEvent.click(screen.getByRole('button', { name: 'Terminer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(await screen.findByText("La citation n'a pas pu être enregistrée.")).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Valider la sélection' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
   })
 })

@@ -1,197 +1,126 @@
-import { useMemo, useRef, useState } from 'react'
-import type { MouseEvent, ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useToast } from '../../../components/Toast/useToast'
 import { createQuote } from '../../../api/quote'
 import type { CreateQuoteParams } from '../../../api/quote'
-import { deriveMarkerLabels, getWordBoundaries, snapToNearestBoundary, trimSelection } from '../selectionOffsets'
-import { buildParagraphSegments } from '../paragraphSegments'
-import type { ParagraphSegment, SelectionMarkers } from '../paragraphSegments'
-import { getOffsetFromPoint } from './cursorOffset'
-import { useSelectionContext } from '../useSelectionContext'
+import { getWordBoundaries, snapSelectionOutward, trimSelection } from '../selectionOffsets'
+import { getSelectionOffsets } from '../selectionRangeOffset'
+import { buildHighlightSegments } from '../paragraphSegments'
 import TagPickerPopup from '../TagPickerPopup/TagPickerPopup'
 import type { QuoteSelectionProps, Phase } from './QuoteSelection.types'
 import styles from './QuoteSelection.module.css'
 
-function markerLabel(role: 'start' | 'end'): string {
-  return role === 'start' ? 'début' : 'fin'
-}
-
-function renderSegments(segments: ParagraphSegment[], onMarkerClick?: (role: 'start' | 'end') => void): ReactNode {
-  return segments.map((segment, index) => {
-    if (segment.type === 'text') {
-      return segment.highlighted ? (
-        <mark key={index} className={styles.mark}>{segment.text}</mark>
-      ) : (
-        <span key={index}>{segment.text}</span>
-      )
-    }
-
-    if (onMarkerClick) {
-      return (
-        <button
-          key={index}
-          type="button"
-          className={styles.marker}
-          onClick={event => {
-            event.stopPropagation()
-            onMarkerClick(segment.role)
-          }}
-        >
-          {markerLabel(segment.role)}
-        </button>
-      )
-    }
-
-    return (
-      <span key={index} className={styles.markerPreview} aria-hidden="true">
-        {markerLabel(segment.role)}
-      </span>
-    )
-  })
-}
-
 export default function QuoteSelection({ paragraphId, text, highlightRange }: QuoteSelectionProps) {
   const { isSuccess: isConnected } = useCurrentUser()
   const showToast = useToast()
-  const { activeParagraphId, startSelection, endSelection } = useSelectionContext()
-  const disabled = activeParagraphId !== null && activeParagraphId !== paragraphId
   const containerRef = useRef<HTMLParagraphElement>(null)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
 
   const boundaries = useMemo(() => getWordBoundaries(text), [text])
+  const segments = useMemo(() => buildHighlightSegments(text, highlightRange), [text, highlightRange])
 
   const createQuoteMutation = useMutation({
     mutationFn: (params: CreateQuoteParams) => createQuote(params),
   })
 
-  const markers: SelectionMarkers = useMemo(() => {
-    if (phase.kind === 'idle') return { start: null, end: null }
-    if (phase.kind === 'ready' || phase.kind === 'tagPopup') return { start: phase.a, end: phase.b }
+  // Native selection is unique per document — restricting this to a single paragraph, and only
+  // ever having one active at a time across the whole results page, both fall out for free from
+  // checking that the Range is fully contained in this instance's own container. No shared
+  // context needed to coordinate across paragraphs (unlike the old repositionable-markers UI).
+  // Not gated on `isConnected`: tracking the selection is harmless for an anonymous visitor too
+  // (only rendering the contextual menu below is gated on it), and not gating here avoids this
+  // effect's setup racing against `useCurrentUser`'s query resolving.
+  useEffect(() => {
+    function handleSelectionChange() {
+      const container = containerRef.current
+      const selection = window.getSelection()
 
-    if (phase.settled === null) {
-      return { start: phase.live, end: null }
-    }
-    const live = phase.live ?? phase.settled
-    return deriveMarkerLabels(phase.settled, live)
-  }, [phase])
+      // A single functional update, so the tag panel (once open) is never yanked away by a
+      // selectionchange firing while it's up — the original text selection is deliberately left
+      // intact behind it (see the "Sauvegarder" button's onMouseDown below), so it can still
+      // report a live, non-collapsed selection at that point.
+      setPhase(current => {
+        if (current.kind === 'tagPanel') return current
 
-  const segments = useMemo(
-    () => buildParagraphSegments(text, highlightRange, markers),
-    [text, highlightRange, markers],
-  )
+        if (!container || !selection || selection.isCollapsed || selection.rangeCount === 0) {
+          return current.kind === 'selected' ? { kind: 'idle' } : current
+        }
 
-  function handleMouseMove(event: MouseEvent<HTMLParagraphElement>) {
-    if (phase.kind !== 'placing' || !containerRef.current) return
-    const rawOffset = getOffsetFromPoint(containerRef.current, event.clientX, event.clientY)
-    if (rawOffset === null) return
-    const snapped = snapToNearestBoundary(rawOffset, boundaries)
-    if (snapped === phase.live) return // cursor still within the same snapped zone — nothing changed
-    setPhase({ kind: 'placing', settled: phase.settled, live: snapped })
-  }
+        const offsets = getSelectionOffsets(container, selection.getRangeAt(0))
+        if (!offsets) return current.kind === 'selected' ? { kind: 'idle' } : current
 
-  function handleContainerClick() {
-    if (phase.kind !== 'placing' || phase.live === null) return
-    const offset = phase.live
+        const extended = snapSelectionOutward(offsets.start, offsets.end, boundaries)
+        const trimmed = trimSelection(text, extended.start, extended.end)
+        if (trimmed.start >= trimmed.end) return current.kind === 'selected' ? { kind: 'idle' } : current
 
-    if (phase.settled === null) {
-      setPhase({ kind: 'placing', settled: offset, live: null })
-      return
-    }
-
-    if (offset === phase.settled) {
-      return // no-op: dropping the second marker on the first one's boundary (empty selection)
+        return { kind: 'selected', start: trimmed.start, end: trimmed.end }
+      })
     }
 
-    const { start, end } = deriveMarkerLabels(phase.settled, offset)
-    setPhase({ kind: 'ready', a: start, b: end })
+    document.addEventListener('selectionchange', handleSelectionChange)
+    return () => document.removeEventListener('selectionchange', handleSelectionChange)
+  }, [text, boundaries])
+
+  function handleSaveClick() {
+    if (phase.kind !== 'selected') return
+    setPhase({ kind: 'tagPanel', start: phase.start, end: phase.end })
   }
 
-  function handleMarkerClick(role: 'start' | 'end') {
-    if (phase.kind !== 'ready') return
-    const own = role === 'start' ? phase.a : phase.b
-    const other = role === 'start' ? phase.b : phase.a
-    setPhase({ kind: 'placing', settled: other, live: own })
-  }
-
-  function handleStart() {
-    startSelection(paragraphId)
-    setPhase({ kind: 'placing', settled: null, live: null })
-  }
-
-  function handleValidate() {
-    if (phase.kind !== 'ready') return
-    setPhase({ kind: 'tagPopup', a: phase.a, b: phase.b })
-  }
-
-  function handleCancel() {
-    setPhase({ kind: 'idle' })
-    endSelection()
-  }
-
-  function saveQuote(rawStart: number, rawEnd: number, tagNames: string[]) {
-    const { start, end } = trimSelection(text, rawStart, rawEnd)
+  function handleSave(tagNames: string[]) {
+    if (phase.kind !== 'tagPanel') return
+    const { start, end } = phase
     createQuoteMutation.mutate(
       { paragraphId, startOffset: start, endOffset: end, selectedText: text.slice(start, end), tagNames },
       {
         onSuccess: () => {
           showToast('Citation enregistrée.')
+          window.getSelection()?.removeAllRanges()
           setPhase({ kind: 'idle' })
-          endSelection()
         },
         onError: () => {
           showToast("La citation n'a pas pu être enregistrée.")
-          setPhase({ kind: 'ready', a: rawStart, b: rawEnd })
+          setPhase({ kind: 'selected', start, end })
         },
       },
     )
   }
 
-  function handleFinishPopup(tagNames: string[]) {
-    if (phase.kind !== 'tagPopup') return
-    saveQuote(phase.a, phase.b, tagNames)
-  }
-
-  function handleDismissPopup() {
-    if (phase.kind !== 'tagPopup') return
-    saveQuote(phase.a, phase.b, [])
+  function handleCancelPanel() {
+    if (phase.kind !== 'tagPanel') return
+    window.getSelection()?.removeAllRanges()
+    setPhase({ kind: 'idle' })
   }
 
   return (
     <div className={styles.root}>
-      <p
-        ref={containerRef}
-        className={phase.kind !== 'idle' ? `${styles.text} ${styles.isSelecting}` : styles.text}
-        onMouseMove={handleMouseMove}
-        onClick={handleContainerClick}
-      >
-        {renderSegments(segments, phase.kind === 'ready' ? handleMarkerClick : undefined)}
+      <p ref={containerRef} className={styles.text}>
+        {segments.map((segment, index) =>
+          segment.highlighted ? (
+            <mark key={index} className={styles.mark}>{segment.text}</mark>
+          ) : (
+            <span key={index}>{segment.text}</span>
+          ),
+        )}
       </p>
 
-      {isConnected && phase.kind !== 'tagPopup' && (
-        <div className={styles.controls}>
-          {phase.kind === 'idle' && (
-            <button type="button" onClick={handleStart} disabled={disabled}>
-              Sauvegarder une citation
-            </button>
-          )}
-          {(phase.kind === 'placing' || phase.kind === 'ready') && (
-            <>
-              <button type="button" onClick={handleCancel}>
-                Annuler
-              </button>
-              {phase.kind === 'ready' && (
-                <button type="button" onClick={handleValidate}>
-                  Valider la sélection
-                </button>
-              )}
-            </>
-          )}
+      {isConnected && phase.kind === 'selected' && (
+        <div className={styles.contextualMenu}>
+          <button
+            type="button"
+            // Without this, the button's own mousedown collapses the native selection before the
+            // click fires (default browser behavior for a mousedown outside the selected text) —
+            // that would both hide the highlight and flip `phase` back to idle via the
+            // selectionchange handler above, before handleSaveClick ever runs.
+            onMouseDown={event => event.preventDefault()}
+            onClick={handleSaveClick}
+          >
+            Sauvegarder
+          </button>
         </div>
       )}
 
-      {phase.kind === 'tagPopup' && <TagPickerPopup onFinish={handleFinishPopup} onDismiss={handleDismissPopup} />}
+      {phase.kind === 'tagPanel' && <TagPickerPopup onSave={handleSave} onCancel={handleCancelPanel} />}
     </div>
   )
 }

@@ -1,39 +1,21 @@
-export type TextSegment = { type: 'text'; text: string; highlighted: boolean }
-export type MarkerSegment = { type: 'marker'; role: 'start' | 'end' }
-export type ParagraphSegment = TextSegment | MarkerSegment
-
-export type SelectionMarkers = { start: number | null; end: number | null }
+export type TextSegment = { text: string; highlighted: boolean }
 
 /**
- * Interleaves the paragraph's search-match highlight with the "début"/"fin" selection markers
- * (if placed), producing a left-to-right sequence of text runs and marker points to render.
- * Cut points always include the highlight boundaries, so a text run is either fully highlighted
- * or fully plain, never partially overlapping.
+ * Splits `text` into up to three runs around `highlightRange` (the search-match highlight):
+ * before, the highlighted match, and after. Each run is rendered as its own DOM node (plain
+ * `<span>` or `<mark>`), so a native text selection spanning the highlight naturally lands on
+ * separate text nodes — exactly the DOM shape `selectionRangeOffset.ts` is built to walk through.
  */
-export function buildParagraphSegments(
-  text: string,
-  highlightRange: { start: number; end: number },
-  markers: SelectionMarkers,
-): ParagraphSegment[] {
-  const cutPoints = new Set<number>([0, text.length, highlightRange.start, highlightRange.end])
-  if (markers.start !== null) cutPoints.add(markers.start)
-  if (markers.end !== null) cutPoints.add(markers.end)
-  const sorted = Array.from(cutPoints).sort((a, b) => a - b)
-
-  const segments: ParagraphSegment[] = []
-  for (let i = 0; i < sorted.length; i++) {
-    const offset = sorted[i]
-    if (offset === markers.start) segments.push({ type: 'marker', role: 'start' })
-    if (offset === markers.end) segments.push({ type: 'marker', role: 'end' })
-
-    const next = sorted[i + 1]
-    if (next !== undefined && next > offset) {
-      segments.push({
-        type: 'text',
-        text: text.slice(offset, next),
-        highlighted: offset >= highlightRange.start && next <= highlightRange.end,
-      })
-    }
+export function buildHighlightSegments(text: string, highlightRange: { start: number; end: number }): TextSegment[] {
+  const segments: TextSegment[] = []
+  if (highlightRange.start > 0) {
+    segments.push({ text: text.slice(0, highlightRange.start), highlighted: false })
+  }
+  if (highlightRange.end > highlightRange.start) {
+    segments.push({ text: text.slice(highlightRange.start, highlightRange.end), highlighted: true })
+  }
+  if (highlightRange.end < text.length) {
+    segments.push({ text: text.slice(highlightRange.end), highlighted: false })
   }
   return segments
 }
