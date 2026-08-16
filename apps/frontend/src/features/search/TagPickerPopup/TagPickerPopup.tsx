@@ -29,11 +29,17 @@ export default function TagPickerPopup({ onSave, onCancel, isSaving }: TagPicker
   }
 
   return (
-    <Dialog.Root open onOpenChange={open => { if (!open) onCancel() }}>
+    // While a save is in flight, every dismiss path (Escape, backdrop, ×) is ignored rather than
+    // routed to onCancel: the request has already been sent and can't actually be aborted, so
+    // "cancelling" here would only desync the UI from a save that's still going to complete —
+    // resetting to idle now, then having the response arrive afterwards, either saves a citation
+    // the user believes they cancelled (on success) or resurrects the "Sauvegarder" menu out of
+    // nowhere for a selection the user already dismissed (on error).
+    <Dialog.Root open onOpenChange={open => { if (!open && !isSaving) onCancel() }}>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} data-testid="tag-picker-backdrop" />
         <Dialog.Popup className={styles.popup} aria-label="Choisir des tags">
-          <Dialog.Close className={styles.closeButton} aria-label="Fermer">×</Dialog.Close>
+          <Dialog.Close className={styles.closeButton} aria-label="Fermer" disabled={isSaving}>×</Dialog.Close>
 
           {selectedNames.size > 0 && (
             <ul className={styles.selectedList}>

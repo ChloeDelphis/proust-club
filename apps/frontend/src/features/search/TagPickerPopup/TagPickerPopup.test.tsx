@@ -148,6 +148,33 @@ describe('TagPickerPopup', () => {
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
   })
 
+  it('ignores Escape while a save is already in flight, instead of cancelling a request that cannot be aborted', async () => {
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={onCancel} isSaving={true} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it('ignores a backdrop click while a save is already in flight', async () => {
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={onCancel} isSaving={true} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.click(screen.getByTestId('tag-picker-backdrop'))
+
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it('disables the close button while a save is already in flight', async () => {
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={true} />, { wrapper })
+    await screen.findByText('Combray')
+
+    expect(screen.getByRole('button', { name: 'Fermer' })).toBeDisabled()
+  })
+
   it('checking a tag and pressing Escape still cancels without saving it', async () => {
     const onSave = vi.fn()
     const onCancel = vi.fn()
