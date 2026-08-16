@@ -135,6 +135,32 @@ describe('QuoteSelection — connected', () => {
     expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
   })
 
+  it('does not reach backward across a whitespace gap when only one end lands inside a word', async () => {
+    vi.mocked(quoteApi.createQuote).mockResolvedValue({
+      id: 1,
+      paragraphId: PARAGRAPH_ID,
+      startOffset: 6,
+      endOffset: 11,
+      selectedText: 'world',
+      comment: null,
+      tags: [],
+      createdAt: '2026-08-16T00:00:00Z',
+    })
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
+
+    // Raw start (5) is the space right after "hello" — not inside any word — while the end (9)
+    // lands mid-"world". Only the end should extend; the start must stay put rather than reaching
+    // backward across the gap into "hello", which the user's selection never touched at all.
+    setSelection({ start: 5, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(quoteApi.createQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ startOffset: 6, endOffset: 11, selectedText: 'world' }),
+    )
+  })
+
   it('clicking Sauvegarder opens the tag panel with the word-extended, trimmed selection', async () => {
     vi.mocked(tagApi.listTags).mockResolvedValue([{ id: 1, name: 'Combray' }])
     vi.mocked(quoteApi.createQuote).mockResolvedValue({

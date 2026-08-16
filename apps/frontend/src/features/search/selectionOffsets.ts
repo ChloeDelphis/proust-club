@@ -3,38 +3,24 @@ function isSpace(char: string): boolean {
 }
 
 /**
- * Valid marker positions within `text`: start of text, end of text, and the start of every
- * word that follows a run of whitespace. A single boundary per gap (not one on each side of
- * the whitespace run) — trimming leading/trailing whitespace off the final selection is handled
- * separately by `trimSelection`, so the exact boundary chosen within a gap doesn't matter here.
+ * Extends a raw `[start, end)` range outward to the edges of the words it touches — never
+ * inward, so a word the user visibly selected is never cut off. A side is only extended when the
+ * raw offset actually sits inside a word (the character right at that edge is non-whitespace);
+ * an offset that already sits on whitespace — including a selection confined entirely to a gap
+ * between two words — is left untouched on that side, since there's no word there to extend to.
+ * This is a plain character scan rather than a snap against a precomputed boundary list: a coarse
+ * "nearest word-start" lookup can't distinguish "inside a word" from "in the gap right after it",
+ * and would otherwise reach backward across an entire untouched word from a gap position.
  */
-export function getWordBoundaries(text: string): number[] {
-  const boundaries = [0]
-  for (let i = 1; i < text.length; i++) {
-    if (isSpace(text[i - 1]) && !isSpace(text[i])) {
-      boundaries.push(i)
-    }
-  }
-  boundaries.push(text.length)
-  return boundaries
-}
-
-/**
- * Extends a raw `[start, end)` range outward to the nearest word boundaries — never inward, so a
- * word the user visibly selected is never cut off. `boundaries` always includes 0 and the text's
- * full length (see `getWordBoundaries`), so this never runs off either end.
- */
-export function snapSelectionOutward(start: number, end: number, boundaries: number[]): { start: number; end: number } {
-  let snappedStart = boundaries[0]
-  for (const boundary of boundaries) {
-    if (boundary > start) break
-    snappedStart = boundary
+export function snapSelectionOutward(text: string, start: number, end: number): { start: number; end: number } {
+  let snappedStart = start
+  if (start < text.length && !isSpace(text[start])) {
+    while (snappedStart > 0 && !isSpace(text[snappedStart - 1])) snappedStart--
   }
 
-  let snappedEnd = boundaries[boundaries.length - 1]
-  for (let i = boundaries.length - 1; i >= 0; i--) {
-    if (boundaries[i] < end) break
-    snappedEnd = boundaries[i]
+  let snappedEnd = end
+  if (end > 0 && !isSpace(text[end - 1])) {
+    while (snappedEnd < text.length && !isSpace(text[snappedEnd])) snappedEnd++
   }
 
   return { start: snappedStart, end: snappedEnd }

@@ -4,7 +4,7 @@ import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useToast } from '../../../components/Toast/useToast'
 import { createQuote } from '../../../api/quote'
 import type { CreateQuoteParams } from '../../../api/quote'
-import { getWordBoundaries, snapSelectionOutward, trimSelection } from '../selectionOffsets'
+import { snapSelectionOutward, trimSelection } from '../selectionOffsets'
 import { getSelectionOffsets } from '../selectionRangeOffset'
 import { buildHighlightSegments } from '../paragraphSegments'
 import TagPickerPopup from '../TagPickerPopup/TagPickerPopup'
@@ -17,7 +17,6 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
   const containerRef = useRef<HTMLParagraphElement>(null)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
 
-  const boundaries = useMemo(() => getWordBoundaries(text), [text])
   const segments = useMemo(() => buildHighlightSegments(text, highlightRange), [text, highlightRange])
 
   const createQuoteMutation = useMutation({
@@ -49,13 +48,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
         const offsets = getSelectionOffsets(container, selection.getRangeAt(0))
         if (!offsets) return toIdle
 
-        // A selection confined to whitespace (e.g. the single gap between two words) touches no
-        // word at all — extending it outward would silently pull in an entire adjacent word the
-        // user never selected. Checked on the raw offsets, before any word-boundary snapping.
-        const rawTrimmed = trimSelection(text, offsets.start, offsets.end)
-        if (rawTrimmed.start >= rawTrimmed.end) return toIdle
-
-        const extended = snapSelectionOutward(offsets.start, offsets.end, boundaries)
+        const extended = snapSelectionOutward(text, offsets.start, offsets.end)
         const trimmed = trimSelection(text, extended.start, extended.end)
         if (trimmed.start >= trimmed.end) return toIdle
 
@@ -65,7 +58,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
 
     document.addEventListener('selectionchange', handleSelectionChange)
     return () => document.removeEventListener('selectionchange', handleSelectionChange)
-  }, [text, boundaries])
+  }, [text])
 
   function handleSaveClick() {
     if (phase.kind !== 'selected') return
