@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { Navigate } from 'react-router'
 import { changePassword } from '../../api/auth'
-import { apiErrorMessage } from './apiErrorMessage'
+import { apiErrorMessage, PASSWORD_COMPROMISED_MESSAGE } from './apiErrorMessage'
 import { useCurrentUser } from './useCurrentUser'
 import { useToast } from '../../components/Toast/useToast'
 import ChangePasswordForm from './ChangePasswordForm/ChangePasswordForm'
@@ -38,7 +38,7 @@ export default function AccountPage() {
         mutation.error,
         {
           401: 'Mot de passe actuel incorrect.',
-          422: 'Ce mot de passe est trop commun. Choisissez-en un autre.',
+          422: PASSWORD_COMPROMISED_MESSAGE,
         },
         'Le changement de mot de passe a échoué. Réessayez.',
       )
