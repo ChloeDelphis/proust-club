@@ -52,6 +52,17 @@ describe('characterOffsetForRangeBoundary', () => {
     expect(characterOffsetForRangeBoundary(container, container, emptyIndex + 1)).toBe(6)
   })
 
+  it('resolves a boundary reported directly on a leaf <mark>/<span> element, not its text child', () => {
+    // Real browser behavior for a double-click word selection, or a drag starting exactly on a
+    // highlight edge: the boundary lands on the wrapping element (offset 0 or 1 into its
+    // childNodes) rather than on its single Text child directly.
+    const { container } = buildParagraph()
+    const mark = container.querySelector('mark')!
+
+    expect(characterOffsetForRangeBoundary(container, mark, 0)).toBe(6) // start of "world"
+    expect(characterOffsetForRangeBoundary(container, mark, 1)).toBe(11) // end of "world"
+  })
+
   it('returns null for a node not present in the container', () => {
     const { container } = buildParagraph()
     const foreign = document.createTextNode('nope')

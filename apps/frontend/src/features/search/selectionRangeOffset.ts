@@ -10,11 +10,19 @@ function characterOffsetForTextNode(container: Node, node: Node, nodeOffset: num
   return null
 }
 
+// TreeWalker.nextNode() only ever returns descendants of its root, never the root itself — so
+// these need an explicit check for `root` already being the text node we're looking for. That's
+// not a rare case here: every segment QuoteSelection renders is a <span>/<mark> wrapping exactly
+// one bare Text child, so `root` (a child pulled from `node.childNodes` by the caller) is that
+// Text node itself whenever a Range boundary lands right at a segment's edge (e.g. a double-click
+// word selection, or a drag starting exactly on a highlight boundary).
 function firstTextNode(root: Node): Text | null {
+  if (root.nodeType === Node.TEXT_NODE) return root as Text
   return document.createTreeWalker(root, NodeFilter.SHOW_TEXT).nextNode() as Text | null
 }
 
 function lastTextNode(root: Node): Text | null {
+  if (root.nodeType === Node.TEXT_NODE) return root as Text
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   let last: Text | null = null
   let current = walker.nextNode()
