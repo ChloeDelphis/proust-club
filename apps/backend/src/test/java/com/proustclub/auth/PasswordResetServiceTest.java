@@ -40,6 +40,9 @@ class PasswordResetServiceTest {
     @Mock
     MailService mailService;
 
+    @Mock
+    AuthService authService;
+
     @InjectMocks
     PasswordResetService service;
 
@@ -114,5 +117,23 @@ class PasswordResetServiceTest {
                 .isInstanceOf(ApiException.class);
 
         verify(userRepository, never()).updatePasswordHash(any(UUID.class), any());
+    }
+
+    @Test
+    void checkNewPasswordNotCompromisedIfTokenLooksValidSkipsBreachCheckOnDeadToken() {
+        when(tokenRepository.existsValidToken(eq("password_reset_tokens"), anyString())).thenReturn(false);
+
+        service.checkNewPasswordNotCompromisedIfTokenLooksValid("raw-token", "new-password-long-enough");
+
+        verify(authService, never()).checkPasswordNotCompromised(any());
+    }
+
+    @Test
+    void checkNewPasswordNotCompromisedIfTokenLooksValidPropagatesCompromisedPasswordException() {
+        when(tokenRepository.existsValidToken(eq("password_reset_tokens"), anyString())).thenReturn(true);
+        doThrow(ApiException.passwordCompromised()).when(authService).checkPasswordNotCompromised("compromised-password");
+
+        assertThatThrownBy(() -> service.checkNewPasswordNotCompromisedIfTokenLooksValid("raw-token", "compromised-password"))
+                .isInstanceOf(ApiException.class);
     }
 }

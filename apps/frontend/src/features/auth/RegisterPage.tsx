@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { register } from '../../api/auth'
 import type { RegisterParams } from '../../api/auth'
 import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
-import { apiErrorMessage } from './apiErrorMessage'
+import { apiErrorMessage, PASSWORD_COMPROMISED_MESSAGE } from './apiErrorMessage'
 import RegisterForm from './RegisterForm/RegisterForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
@@ -35,7 +35,7 @@ export default function RegisterPage() {
         mutation.error,
         {
           409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).',
-          422: 'Ce mot de passe est trop commun. Choisissez-en un autre.',
+          422: PASSWORD_COMPROMISED_MESSAGE,
         },
         'Impossible de créer ce compte. Réessayez.',
       )

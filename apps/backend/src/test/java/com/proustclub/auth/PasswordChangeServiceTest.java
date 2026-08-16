@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -34,25 +35,45 @@ class PasswordChangeServiceTest {
     PasswordChangeService service;
 
     @Test
-    void changePasswordUpdatesHashAndInvalidatesOtherSessionsWhenCurrentPasswordIsCorrect() {
+    void verifyCurrentPasswordDelegatesToAuthServiceReauthenticate() {
         when(authService.reauthenticate("marcel", "old-password-long-enough")).thenReturn(mock(Authentication.class));
-        when(passwordEncoder.encode("new-password-long-enough")).thenReturn("new-hash");
 
-        service.changePassword("marcel", "old-password-long-enough", "new-password-long-enough", "current-session");
+        service.verifyCurrentPassword("marcel", "old-password-long-enough");
 
-        verify(userRepository).updatePasswordHash("marcel", "new-hash");
-        verify(sessionInvalidator).invalidateOtherSessions("marcel", "current-session");
+        verify(authService).reauthenticate("marcel", "old-password-long-enough");
     }
 
     @Test
-    void changePasswordRejectsIncorrectCurrentPassword() {
+    void verifyCurrentPasswordPropagatesInvalidCredentials() {
         when(authService.reauthenticate("marcel", "wrong-password")).thenThrow(ApiException.invalidCredentials());
 
-        assertThatThrownBy(() ->
-                service.changePassword("marcel", "wrong-password", "new-password-long-enough", "current-session"))
+        assertThatThrownBy(() -> service.verifyCurrentPassword("marcel", "wrong-password"))
                 .isInstanceOf(ApiException.class);
+    }
 
-        verify(userRepository, never()).updatePasswordHash(any(String.class), any());
-        verify(sessionInvalidator, never()).invalidateOtherSessions(any(), any());
+    @Test
+    void checkNewPasswordNotCompromisedDelegatesToAuthService() {
+        service.checkNewPasswordNotCompromised("new-password-long-enough");
+
+        verify(authService).checkPasswordNotCompromised("new-password-long-enough");
+    }
+
+    @Test
+    void checkNewPasswordNotCompromisedPropagatesCompromisedPasswordException() {
+        doThrow(ApiException.passwordCompromised()).when(authService).checkPasswordNotCompromised("compromised-password");
+
+        assertThatThrownBy(() -> service.checkNewPasswordNotCompromised("compromised-password"))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void changePasswordUpdatesHashAndInvalidatesOtherSessions() {
+        when(passwordEncoder.encode("new-password-long-enough")).thenReturn("new-hash");
+
+        service.changePassword("marcel", "new-password-long-enough", "current-session");
+
+        verify(userRepository).updatePasswordHash("marcel", "new-hash");
+        verify(sessionInvalidator).invalidateOtherSessions("marcel", "current-session");
+        verify(authService, never()).reauthenticate(any(), any());
     }
 }

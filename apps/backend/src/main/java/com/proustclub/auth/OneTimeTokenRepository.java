@@ -1,5 +1,6 @@
 package com.proustclub.auth;
 
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
@@ -50,6 +51,25 @@ class OneTimeTokenRepository {
                 .execute();
     }
 
+    // Shared by existsValidToken() and consumeValidToken() below — both need to agree on exactly
+    // what "still valid" means, and a definition duplicated between a SELECT and an UPDATE would
+    // silently drift if it ever changed (e.g. a future revoked_at column).
+    private Condition validAndUnusedCondition(String tokenHash) {
+        return DSL.field("token_hash", String.class).eq(tokenHash)
+                .and(DSL.field("used_at", Instant.class).isNull())
+                .and(DSL.field("expires_at", Instant.class).gt(Instant.now()));
+    }
+
+    // Read-only, no side effect — deliberately not consumeValidToken(). Lets a caller decide
+    // whether a subsequent expensive step (e.g. an external HTTP call) is worth paying for before
+    // touching the token at all. Does not weaken consumeValidToken()'s atomicity below: the only
+    // state-changing statement stays that single UPDATE, executed unconditionally after this,
+    // regardless of what this peek observed — two concurrent callers can both see "valid" here
+    // and still only one of them will ever win the UPDATE.
+    boolean existsValidToken(String table, String tokenHash) {
+        return dsl.fetchExists(dsl.selectOne().from(DSL.table(table)).where(validAndUnusedCondition(tokenHash)));
+    }
+
     // Validate-and-burn in a single statement rather than a SELECT followed by an UPDATE — one
     // DB round trip instead of two, and closes the race window a separate check-then-set would
     // leave open between two concurrent confirm attempts presenting the same token: whichever
@@ -60,9 +80,7 @@ class OneTimeTokenRepository {
 
         return dsl.update(DSL.table(table))
                 .set(DSL.field("used_at", Instant.class), Instant.now())
-                .where(DSL.field("token_hash", String.class).eq(tokenHash))
-                .and(DSL.field("used_at", Instant.class).isNull())
-                .and(DSL.field("expires_at", Instant.class).gt(Instant.now()))
+                .where(validAndUnusedCondition(tokenHash))
                 .returning(idField, userIdField)
                 .fetchOptional(r -> new OneTimeToken(r.get(idField), r.get(userIdField)));
     }

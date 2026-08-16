@@ -26,12 +26,23 @@ class PasswordChangeService {
         this.sessionInvalidator = sessionInvalidator;
     }
 
-    @Transactional
-    void changePassword(String username, String currentPassword, String newPassword, String currentSessionId) {
-        // Re-verified through the same AuthenticationManager round-trip as login — never a change
-        // on the strength of the session alone (protects a shared/unattended device left logged in).
+    // Not @Transactional, deliberately called from the controller before checkNewPasswordNotCompromised()
+    // — a wrong current password should never pay for the HIBP round-trip that follows. Re-verified
+    // through the same AuthenticationManager round-trip as login — never a change on the strength
+    // of the session alone (protects a shared/unattended device left logged in).
+    void verifyCurrentPassword(String username, String currentPassword) {
         authService.reauthenticate(username, currentPassword);
+    }
 
+    // Not @Transactional — makes an external HTTP call (PasswordBreachChecker), same reasoning as
+    // AuthService.checkNoCheapConflicts()/checkPasswordNotCompromised() for register(). Called from
+    // the controller after verifyCurrentPassword() and before changePassword().
+    void checkNewPasswordNotCompromised(String newPassword) {
+        authService.checkPasswordNotCompromised(newPassword);
+    }
+
+    @Transactional
+    void changePassword(String username, String newPassword, String currentSessionId) {
         userRepository.updatePasswordHash(username, passwordEncoder.encode(newPassword));
         log.info("Password changed: {}", username);
 

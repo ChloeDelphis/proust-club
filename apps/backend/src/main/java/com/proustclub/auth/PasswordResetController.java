@@ -70,8 +70,11 @@ class PasswordResetController {
     )
     @ApiResponse(responseCode = "200", description = "Password changed, session opened", content = @Content(schema = @Schema(implementation = UserResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body, or invalid/expired token", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "New password found in a known data breach", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/password-reset/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse confirmReset(@Valid @RequestBody PasswordResetConfirmRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+        rateLimiter.checkPasswordResetConfirmByIp(httpRequest);
+        service.checkNewPasswordNotCompromisedIfTokenLooksValid(request.token(), request.newPassword());
         var user = service.confirmReset(request.token(), request.newPassword());
 
         // Built directly from the user this method just updated — no need to round-trip through

@@ -80,6 +80,10 @@ rate-limit:
     per-account:
       capacity: 3
       refill-period: 15m
+  password-reset-confirm:
+    per-ip:
+      capacity: 5
+      refill-period: 1h
   password-change:
     per-account:
       capacity: 5

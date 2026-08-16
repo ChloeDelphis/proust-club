@@ -39,6 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "rate-limit.register.per-ip.refill-period=1h",
         "rate-limit.search.per-ip.capacity=2",
         "rate-limit.search.per-ip.refill-period=1h",
+        "rate-limit.password-reset-confirm.per-ip.capacity=2",
+        "rate-limit.password-reset-confirm.per-ip.refill-period=1h",
 })
 class RateLimitControllerTest {
 
@@ -128,6 +130,19 @@ class RateLimitControllerTest {
                 .andExpect(status().isTooManyRequests());
     }
 
+    // Garbage tokens are enough: the rate limit must trip before the token is ever looked up, so
+    // this doesn't need a real one — same reasoning as loginExceedingIpLimitReturns429 using wrong
+    // passwords rather than a real account takeover.
+    @Test
+    void passwordResetConfirmExceedingIpLimitReturns429() throws Exception {
+        mockMvc.perform(confirmResetFrom("9.9.6.1", "garbage-token-1")).andExpect(status().isBadRequest());
+        mockMvc.perform(confirmResetFrom("9.9.6.1", "garbage-token-2")).andExpect(status().isBadRequest());
+
+        mockMvc.perform(confirmResetFrom("9.9.6.1", "garbage-token-3"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"));
+    }
+
     private MockHttpServletRequestBuilder registerFrom(String ip, String username, String email) throws Exception {
         return post("/api/auth/register").with(csrf()).with(remoteAddr(ip))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -138,6 +153,12 @@ class RateLimitControllerTest {
         return post("/api/auth/login").with(csrf()).with(remoteAddr(ip))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(new LoginRequest(username, password)));
+    }
+
+    private MockHttpServletRequestBuilder confirmResetFrom(String ip, String token) {
+        return post("/api/auth/password-reset/confirm").with(csrf()).with(remoteAddr(ip))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\",\"newPassword\":\"new-password-long-enough\"}");
     }
 
     private MockHttpServletRequestBuilder searchFrom(String ip) {

@@ -38,11 +38,14 @@ class PasswordChangeController {
     @ApiResponse(responseCode = "204", description = "Password changed")
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Not authenticated, or current password incorrect", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "New password found in a known data breach", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping("/api/auth/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changePassword(@Valid @RequestBody PasswordChangeRequest request, Authentication authentication, HttpServletRequest httpRequest) {
         rateLimiter.checkPasswordChangeByAccount(authentication.getName());
         var currentSessionId = httpRequest.getSession(false).getId();
-        service.changePassword(authentication.getName(), request.currentPassword(), request.newPassword(), currentSessionId);
+        service.verifyCurrentPassword(authentication.getName(), request.currentPassword());
+        service.checkNewPasswordNotCompromised(request.newPassword());
+        service.changePassword(authentication.getName(), request.newPassword(), currentSessionId);
     }
 }

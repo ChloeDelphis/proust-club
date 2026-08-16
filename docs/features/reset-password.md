@@ -38,7 +38,7 @@ Changing a password for an already-logged-in user (with the current password, no
 ```json
 { "token": "lCXCmUgFVwG7foD6O0jgNq1jQOt86aoF8CI9Nipo8f8", "newPassword": "Le cote de chez Swann" }
 ```
-- `newPassword`: same constraints as registration (15–128 characters, see [Auth](auth.md)).
+- `newPassword`: same constraints as registration (15–128 characters, see [Auth](auth.md)), and — like registration — rejected with `422` if it's found in a known data breach (see [ADR-011](../architecture/ADR-011-compromised-password-check.md)). This check runs *before* the token is consumed: a rejected password never burns the reset link, see "Token lifecycle" below.
 
 **Response** — `UserResponse`, same shape as register/login/me (see [Auth](auth.md)). Confirming a reset opens a session, same as auto-login after registration.
 
@@ -50,7 +50,7 @@ Changing a password for an already-logged-in user (with the current password, no
 - Stored **hashed** (SHA-256, not Argon2id) in a dedicated `password_reset_tokens` table (`user_id`, `token_hash`, `expires_at`, `used_at`). SHA-256 rather than Argon2id: the token is already 256 bits of random entropy and short-lived/single-use, so a fast hash is enough — Argon2id's deliberate slowness defends against guessing a human-chosen password, which doesn't apply here.
 - Valid for **30 minutes**.
 - A user only ever has one live token: requesting a new reset atomically overwrites any earlier unused token for that account in place (`OneTimeTokenRepository.insert()` is an upsert on a partial unique index `WHERE used_at IS NULL`, not a separate invalidate-then-insert — closes a race between two concurrent requests, e.g. a double click, that could otherwise both slip past a check for "no live token yet").
-- **Validated and burned in a single atomic `UPDATE ... RETURNING`** (`PasswordResetTokenRepository.consumeValidToken`), not a separate check-then-set — this closes a race window between two concurrent confirm attempts presenting the same token, and means the token is spent the instant a confirm attempt reaches the service, whether or not that attempt goes on to succeed. It's spent *after* the new password has already passed `@Size(min=15, max=128)` validation on the request DTO though, so a syntactically invalid password (a typo) doesn't burn the link — only a confirm attempt with a well-formed password does.
+- **Validated and burned in a single atomic `UPDATE ... RETURNING`** (`OneTimeTokenRepository.consumeValidToken`), not a separate check-then-set — this closes a race window between two concurrent confirm attempts presenting the same token. The token is spent only once both the request shape (`@Size(min=15, max=128)`) *and* the breach check have passed — a syntactically invalid password (a typo) or one rejected as compromised (`422`) never burns the link, so the same token can be retried with a corrected password. To decide whether the breach check is even worth its HTTP round trip, `confirmReset()` first calls a read-only peek (`OneTimeTokenRepository.existsValidToken()`, same WHERE-clause shape as `consumeValidToken()` but no side effect) — this is purely an optimization to skip the external call on a token that's already dead; the peek is never the source of truth on validity, `consumeValidToken()`'s atomic `UPDATE` still is.
 - The generic error `Invalid or expired reset token.` (400) never distinguishes "expired" from "already used" from "never existed."
 
 ---
@@ -77,7 +77,7 @@ Same invariant as the rest of the API: CSRF stays active on both endpoints even 
 
 ## Rate limiting
 
-`POST /api/auth/password-reset/request` is rate-limited by IP and by account (normalized email) — see [Rate limiting](rate-limiting.md). `POST /confirm` is not separately rate-limited: a wrong/expired token there is a dead end regardless (the token itself is the only thing being brute-forced, and it's 256 bits of entropy).
+`POST /api/auth/password-reset/request` is rate-limited by IP and by account (normalized email) — see [Rate limiting](rate-limiting.md). `POST /confirm` is rate-limited **by IP only** (no account bucket — the account isn't known until the token is resolved), added specifically because `confirm` can now trigger a real outbound HTTP call to the breach-check API (HaveIBeenPwned) on any request presenting a still-live token; before that, this endpoint only ever did cheap local DB work and needed no limit of its own (a wrong/expired token there was — and still is — a dead end regardless, the token itself being 256 bits of entropy).
 
 ---
 
@@ -157,6 +157,8 @@ Route: `/account` (English in code — routes/identifiers stay in English projec
 - Log in from a second session, change the password from the first → the second session's next request is rejected (`401`), the first stays valid.
 - Log in with the old password after a successful change → `401`. Log in with the new password → `200`.
 - Exceed 5 change attempts for the same account within 15 minutes → `429` with a `Retry-After` header.
+- Change with a new password found in a known data breach (correct current password) → `422`, current password stays valid (log in with it succeeds), password not written to the DB.
+- An incorrect current password never triggers the breach-check network call (order: current-password re-verification first, breach check second).
 
 ---
 
@@ -174,3 +176,6 @@ Route: `/account` (English in code — routes/identifiers stay in English projec
 - Submit a new password shorter than 15 characters → client-side validation blocks submission (no request sent); if bypassed, server also rejects with 400 and the token is **not** consumed (verify the same token still works with a valid password afterward).
 - Visit `/reset-password` with no `token` query parameter → "invalid link" message, no form shown.
 - Log in on a second device/browser, then complete a reset from a first device → the second device's session is rejected (401, `ProblemDetail`) on its next request; the reset itself stays logged in.
+- Submit the reset form with a new password found in a known data breach, on a still-valid token → `422`, and the token is **not** consumed — verify the same token still works with a valid password immediately afterward.
+- A token that's already invalid/expired never triggers the breach-check network call for whatever password was submitted alongside it (skipped by the read-only peek).
+- Exceed 5 confirm attempts from the same IP within 1 hour (regardless of token validity) → `429` with a `Retry-After` header.

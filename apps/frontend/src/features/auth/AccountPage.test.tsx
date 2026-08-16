@@ -90,6 +90,18 @@ describe('connected', () => {
     expect(await screen.findByText('Mot de passe actuel incorrect.')).toBeInTheDocument()
   })
 
+  it('shows a dedicated message when the new password is compromised (breach-check)', async () => {
+    vi.mocked(authApi.changePassword).mockRejectedValue(new ApiError(422))
+
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
+    await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
+    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+
+    expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
+  })
+
   it('shows a generic message on an unexpected server error', async () => {
     vi.mocked(authApi.changePassword).mockRejectedValue(new ApiError(500))
 
