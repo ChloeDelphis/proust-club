@@ -24,6 +24,7 @@ public class RateLimiter {
     private final LoadingCache<String, Bucket> searchByIp;
     private final LoadingCache<String, Bucket> passwordResetByIp;
     private final LoadingCache<String, Bucket> passwordResetByAccount;
+    private final LoadingCache<String, Bucket> passwordResetConfirmByIp;
     private final LoadingCache<String, Bucket> passwordChangeByAccount;
     private final LoadingCache<String, Bucket> emailVerificationResendByAccount;
 
@@ -34,6 +35,7 @@ public class RateLimiter {
         this.searchByIp = cacheFor(properties.search().perIp());
         this.passwordResetByIp = cacheFor(properties.passwordReset().perIp());
         this.passwordResetByAccount = cacheFor(properties.passwordReset().perAccount());
+        this.passwordResetConfirmByIp = cacheFor(properties.passwordResetConfirm().perIp());
         this.passwordChangeByAccount = cacheFor(properties.passwordChange().perAccount());
         this.emailVerificationResendByAccount = cacheFor(properties.emailVerificationResend().perAccount());
     }
@@ -62,6 +64,15 @@ public class RateLimiter {
 
     public void checkPasswordResetByAccount(String email) {
         check(passwordResetByAccount, EmailNormalizer.normalize(email), "password-reset", "account");
+    }
+
+    // IP only, no account bucket: the account isn't known until the token itself has been
+    // resolved, same reasoning as register()'s IP-only limit. This exists specifically because
+    // confirmReset() can now trigger a real outbound HIBP call (breach check) on any request
+    // presenting a still-live token — previously this endpoint only ever did cheap DB work, so it
+    // had no rate limit at all.
+    public void checkPasswordResetConfirmByIp(HttpServletRequest request) {
+        check(passwordResetConfirmByIp, ClientIp.resolve(request), "password-reset-confirm", "ip");
     }
 
     public void checkPasswordChangeByAccount(String username) {

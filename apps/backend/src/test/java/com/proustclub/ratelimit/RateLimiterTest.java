@@ -85,6 +85,17 @@ class RateLimiterTest {
     }
 
     @Test
+    void passwordResetConfirmIpBucketIsIndependentOfPasswordResetRequestIpBucket() {
+        var limiter = newLimiter(1, Duration.ofMinutes(1));
+
+        limiter.checkPasswordResetByIp(requestFrom("1.1.1.1"));
+        limiter.checkPasswordResetConfirmByIp(requestFrom("1.1.1.1")); // separate bucket, does not throw
+
+        assertThatThrownBy(() -> limiter.checkPasswordResetConfirmByIp(requestFrom("1.1.1.1")))
+                .isInstanceOf(RateLimitExceededException.class);
+    }
+
+    @Test
     void emailVerificationResendAccountBucketIsIndependentOfPasswordChangeAccountBucket() {
         var limiter = newLimiter(1, Duration.ofMinutes(1));
 
@@ -102,6 +113,7 @@ class RateLimiterTest {
                 new RateLimitProperties.IpLimit(limit),
                 new RateLimitProperties.IpLimit(limit),
                 new RateLimitProperties.IpAndAccountLimit(limit, limit),
+                new RateLimitProperties.IpLimit(limit),
                 new RateLimitProperties.AccountLimit(limit),
                 new RateLimitProperties.AccountLimit(limit)
         );

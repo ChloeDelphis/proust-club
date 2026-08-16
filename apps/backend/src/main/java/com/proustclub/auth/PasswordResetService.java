@@ -65,21 +65,22 @@ class PasswordResetService {
         });
     }
 
-    // Non-transactional, read-only peek — lets the controller skip the HIBP round trip entirely
-    // on a token that's already invalid/expired, without weakening consumeValidToken()'s atomicity
-    // (see OneTimeTokenRepository.existsValidToken). confirmReset() below still revalidates and
-    // consumes the token atomically regardless of what this peek observed — this is purely an
-    // optimization to avoid spending an HIBP call on a token that's already dead.
-    boolean tokenLooksValid(String rawToken) {
-        return tokenRepository.existsValidToken(TOKEN_TABLE, SecureToken.hash(rawToken));
-    }
-
     // Not @Transactional — makes an external HTTP call (PasswordBreachChecker), same reasoning as
-    // AuthService.checkPasswordNotCompromised() for register(). Called from the controller after
-    // tokenLooksValid() and before confirmReset(), so the token is never burned on a password that
-    // gets rejected here.
-    void checkNewPasswordNotCompromised(String newPassword) {
-        authService.checkPasswordNotCompromised(newPassword);
+    // AuthService.checkPasswordNotCompromised() for register(). Called from the controller before
+    // confirmReset(), so the token is never burned on a password that gets rejected here.
+    //
+    // Gated on a read-only peek (OneTimeTokenRepository.existsValidToken) rather than called
+    // unconditionally: this endpoint is unauthenticated, so without the peek any request with a
+    // made-up token would still pay for a real HIBP round trip. confirmReset() below still
+    // revalidates and consumes the token atomically regardless of what this peek observed — the
+    // peek is purely an optimization to avoid spending an HIBP call on a token that's already dead,
+    // never the actual source of truth on token validity. The decision lives here (not in the
+    // controller) so PasswordResetController stays a flat sequence of service calls, like every
+    // other controller in this package.
+    void checkNewPasswordNotCompromisedIfTokenLooksValid(String rawToken, String newPassword) {
+        if (tokenRepository.existsValidToken(TOKEN_TABLE, SecureToken.hash(rawToken))) {
+            authService.checkPasswordNotCompromised(newPassword);
+        }
     }
 
     // Returns the updated user so the caller can open a new session (auto-login, same intent as

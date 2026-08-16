@@ -120,24 +120,20 @@ class PasswordResetServiceTest {
     }
 
     @Test
-    void tokenLooksValidDelegatesToRepositoryExistsValidToken() {
+    void checkNewPasswordNotCompromisedIfTokenLooksValidSkipsBreachCheckOnDeadToken() {
+        when(tokenRepository.existsValidToken(eq("password_reset_tokens"), anyString())).thenReturn(false);
+
+        service.checkNewPasswordNotCompromisedIfTokenLooksValid("raw-token", "new-password-long-enough");
+
+        verify(authService, never()).checkPasswordNotCompromised(any());
+    }
+
+    @Test
+    void checkNewPasswordNotCompromisedIfTokenLooksValidPropagatesCompromisedPasswordException() {
         when(tokenRepository.existsValidToken(eq("password_reset_tokens"), anyString())).thenReturn(true);
-
-        assertThat(service.tokenLooksValid("raw-token")).isTrue();
-    }
-
-    @Test
-    void checkNewPasswordNotCompromisedDelegatesToAuthService() {
-        service.checkNewPasswordNotCompromised("new-password-long-enough");
-
-        verify(authService).checkPasswordNotCompromised("new-password-long-enough");
-    }
-
-    @Test
-    void checkNewPasswordNotCompromisedPropagatesCompromisedPasswordException() {
         doThrow(ApiException.passwordCompromised()).when(authService).checkPasswordNotCompromised("compromised-password");
 
-        assertThatThrownBy(() -> service.checkNewPasswordNotCompromised("compromised-password"))
+        assertThatThrownBy(() -> service.checkNewPasswordNotCompromisedIfTokenLooksValid("raw-token", "compromised-password"))
                 .isInstanceOf(ApiException.class);
     }
 }
