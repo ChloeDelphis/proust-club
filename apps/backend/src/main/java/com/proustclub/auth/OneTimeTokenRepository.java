@@ -50,6 +50,21 @@ class OneTimeTokenRepository {
                 .execute();
     }
 
+    // Read-only, no side effect — deliberately not consumeValidToken(). Lets a caller decide
+    // whether a subsequent expensive step (e.g. an external HTTP call) is worth paying for before
+    // touching the token at all. Does not weaken consumeValidToken()'s atomicity below: the only
+    // state-changing statement stays that single UPDATE, executed unconditionally after this,
+    // regardless of what this peek observed — two concurrent callers can both see "valid" here
+    // and still only one of them will ever win the UPDATE.
+    boolean existsValidToken(String table, String tokenHash) {
+        return dsl.fetchExists(
+                dsl.selectOne().from(DSL.table(table))
+                        .where(DSL.field("token_hash", String.class).eq(tokenHash))
+                        .and(DSL.field("used_at", Instant.class).isNull())
+                        .and(DSL.field("expires_at", Instant.class).gt(Instant.now()))
+        );
+    }
+
     // Validate-and-burn in a single statement rather than a SELECT followed by an UPDATE — one
     // DB round trip instead of two, and closes the race window a separate check-then-set would
     // leave open between two concurrent confirm attempts presenting the same token: whichever

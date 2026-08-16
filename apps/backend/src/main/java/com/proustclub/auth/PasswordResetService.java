@@ -22,15 +22,17 @@ class PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final AuthService authService;
 
     PasswordResetService(
             OneTimeTokenRepository tokenRepository, UserRepository userRepository,
-            PasswordEncoder passwordEncoder, MailService mailService
+            PasswordEncoder passwordEncoder, MailService mailService, AuthService authService
     ) {
         this.tokenRepository = tokenRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
+        this.authService = authService;
     }
 
     // Never throws and never reveals whether the email matched an account — the controller
@@ -61,6 +63,23 @@ class PasswordResetService {
             }
             log.info("Password reset requested");
         });
+    }
+
+    // Non-transactional, read-only peek — lets the controller skip the HIBP round trip entirely
+    // on a token that's already invalid/expired, without weakening consumeValidToken()'s atomicity
+    // (see OneTimeTokenRepository.existsValidToken). confirmReset() below still revalidates and
+    // consumes the token atomically regardless of what this peek observed — this is purely an
+    // optimization to avoid spending an HIBP call on a token that's already dead.
+    boolean tokenLooksValid(String rawToken) {
+        return tokenRepository.existsValidToken(TOKEN_TABLE, SecureToken.hash(rawToken));
+    }
+
+    // Not @Transactional — makes an external HTTP call (PasswordBreachChecker), same reasoning as
+    // AuthService.checkPasswordNotCompromised() for register(). Called from the controller after
+    // tokenLooksValid() and before confirmReset(), so the token is never burned on a password that
+    // gets rejected here.
+    void checkNewPasswordNotCompromised(String newPassword) {
+        authService.checkPasswordNotCompromised(newPassword);
     }
 
     // Returns the updated user so the caller can open a new session (auto-login, same intent as
