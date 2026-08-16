@@ -32,7 +32,7 @@ const connectedUser: authApi.UserResponse = {
   emailVerified: true,
 }
 
-// "hello world today" — word boundaries at 0, 6, 12, 18. Highlight covers "world" (6-11).
+// "hello world today" (length 17). Highlight covers "world" (6-11).
 const TEXT = 'hello world today'
 const HIGHLIGHT = { start: 6, end: 11 }
 const PARAGRAPH_ID = 42
@@ -240,5 +240,44 @@ describe('QuoteSelection — connected', () => {
     expect(await screen.findByText("La citation n'a pas pu être enregistrée.")).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
+  })
+
+  it('does not clear the document selection if a save resolves after this instance has unmounted', async () => {
+    let resolveSave: (response: quoteApi.QuoteSelectionResponse) => void = () => {}
+    vi.mocked(quoteApi.createQuote).mockImplementation(
+      () => new Promise(resolve => { resolveSave = resolve }),
+    )
+    const { unmount } = render(
+      <QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />,
+      { wrapper },
+    )
+    await screen.findByText('world')
+
+    setSelection({ start: 8, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    // e.g. the search query or page changed while this paragraph's save was still in flight —
+    // its QuoteSelection instance unmounts before the request resolves.
+    const removeAllRanges = vi.fn()
+    vi.spyOn(window, 'getSelection').mockReturnValue({ removeAllRanges } as unknown as Selection)
+    unmount()
+
+    await act(async () => {
+      resolveSave({
+        id: 1,
+        paragraphId: PARAGRAPH_ID,
+        startOffset: 6,
+        endOffset: 11,
+        selectedText: 'world',
+        comment: null,
+        tags: [],
+        createdAt: '2026-08-16T00:00:00Z',
+      })
+    })
+
+    // A selection possibly in progress elsewhere on the page (a different, still-mounted
+    // paragraph) must survive — this instance has nothing left to clean up.
+    expect(removeAllRanges).not.toHaveBeenCalled()
   })
 })

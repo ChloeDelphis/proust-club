@@ -17,6 +17,15 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
   const containerRef = useRef<HTMLParagraphElement>(null)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
 
+  // A slow save can resolve after this instance has unmounted (e.g. the user changed the search
+  // query or page while it was in flight) — `createQuoteMutation`'s callbacks are plain functions,
+  // not tied to this component's lifecycle, so `onSuccess` would still run. Guards the one call
+  // in that path with a real, observable side effect outside React (`removeAllRanges` acts on the
+  // whole document's selection, not just this paragraph's): React's own `setPhase` calls need no
+  // such guard, since React already silently no-ops a state update on an unmounted component.
+  const isMountedRef = useRef(true)
+  useEffect(() => () => { isMountedRef.current = false }, [])
+
   const segments = useMemo(() => buildHighlightSegments(text, highlightRange), [text, highlightRange])
 
   const createQuoteMutation = useMutation({
@@ -69,7 +78,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
   // "Sauvegarder" button's onMouseDown below) — leaving idle without clearing it would strand a
   // visible highlight with no menu to act on it.
   function resetToIdle() {
-    window.getSelection()?.removeAllRanges()
+    if (isMountedRef.current) window.getSelection()?.removeAllRanges()
     setPhase({ kind: 'idle' })
   }
 
