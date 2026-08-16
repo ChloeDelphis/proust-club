@@ -3,4 +3,6 @@ export interface TagPickerPopupProps {
   onSave: (tagNames: string[]) => void
   /** Closed via the ×, a click outside, or Escape — cancel entirely, nothing is saved. */
   onCancel: () => void
+  /** The save request triggered by a previous "Enregistrer" click is still in flight. */
+  isSaving: boolean
 }

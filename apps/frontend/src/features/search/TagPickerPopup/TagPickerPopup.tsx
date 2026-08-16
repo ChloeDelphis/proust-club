@@ -6,7 +6,7 @@ import Spinner from '../../../components/Spinner/Spinner'
 import type { TagPickerPopupProps } from './TagPickerPopup.types'
 import styles from './TagPickerPopup.module.css'
 
-export default function TagPickerPopup({ onSave, onCancel }: TagPickerPopupProps) {
+export default function TagPickerPopup({ onSave, onCancel, isSaving }: TagPickerPopupProps) {
   const { data: tags, isPending } = useTags()
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
@@ -81,6 +81,7 @@ export default function TagPickerPopup({ onSave, onCancel }: TagPickerPopupProps
           <button
             type="button"
             className={styles.saveButton}
+            disabled={isSaving}
             onClick={() => onSave(Array.from(selectedNames))}
           >
             Enregistrer
