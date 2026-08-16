@@ -19,18 +19,25 @@ export function getWordBoundaries(text: string): number[] {
   return boundaries
 }
 
-export function snapToNearestBoundary(rawOffset: number, boundaries: number[]): number {
-  return boundaries.reduce((closest, boundary) =>
-    Math.abs(boundary - rawOffset) < Math.abs(closest - rawOffset) ? boundary : closest
-  )
-}
-
 /**
- * Marker roles are never stored, only derived from the numeric order of the two placed offsets —
- * dragging a marker past the other one "swaps" start/end for free, with no explicit swap logic.
+ * Extends a raw `[start, end)` range outward to the nearest word boundaries — never inward, so a
+ * word the user visibly selected is never cut off. `boundaries` always includes 0 and the text's
+ * full length (see `getWordBoundaries`), so this never runs off either end.
  */
-export function deriveMarkerLabels(a: number, b: number): { start: number; end: number } {
-  return a <= b ? { start: a, end: b } : { start: b, end: a }
+export function snapSelectionOutward(start: number, end: number, boundaries: number[]): { start: number; end: number } {
+  let snappedStart = boundaries[0]
+  for (const boundary of boundaries) {
+    if (boundary > start) break
+    snappedStart = boundary
+  }
+
+  let snappedEnd = boundaries[boundaries.length - 1]
+  for (let i = boundaries.length - 1; i >= 0; i--) {
+    if (boundaries[i] < end) break
+    snappedEnd = boundaries[i]
+  }
+
+  return { start: snappedStart, end: snappedEnd }
 }
 
 /** Excludes leading/trailing whitespace from a [start, end) range without changing what it points at. */

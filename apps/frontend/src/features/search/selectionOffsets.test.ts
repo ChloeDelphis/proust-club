@@ -1,4 +1,4 @@
-import { deriveMarkerLabels, getWordBoundaries, snapToNearestBoundary, trimSelection } from './selectionOffsets'
+import { getWordBoundaries, snapSelectionOutward, trimSelection } from './selectionOffsets'
 
 describe('getWordBoundaries', () => {
   it('includes the start and end of the text', () => {
@@ -20,35 +20,29 @@ describe('getWordBoundaries', () => {
   })
 })
 
-describe('snapToNearestBoundary', () => {
-  const boundaries = [0, 6, 11]
+describe('snapSelectionOutward', () => {
+  // "hello world today" -> boundaries at 0, 6, 12, 18
+  const boundaries = [0, 6, 12, 18]
 
-  it('snaps to the closest boundary', () => {
-    expect(snapToNearestBoundary(1, boundaries)).toBe(0)
-    expect(snapToNearestBoundary(4, boundaries)).toBe(6)
-    expect(snapToNearestBoundary(10, boundaries)).toBe(11)
+  it('leaves a range already aligned to boundaries untouched', () => {
+    expect(snapSelectionOutward(6, 12, boundaries)).toEqual({ start: 6, end: 12 })
   })
 
-  it('snaps to the lower boundary on an exact tie', () => {
-    expect(snapToNearestBoundary(3, boundaries)).toBe(0)
+  it('extends both ends outward when they land inside a word', () => {
+    // "hel|lo wor|ld today" -> extends to "hello world"
+    expect(snapSelectionOutward(3, 9, boundaries)).toEqual({ start: 0, end: 12 })
   })
 
-  it('returns the boundary itself when the offset already matches one', () => {
-    expect(snapToNearestBoundary(6, boundaries)).toBe(6)
-  })
-})
-
-describe('deriveMarkerLabels', () => {
-  it('keeps the order when the first offset is already the smaller one', () => {
-    expect(deriveMarkerLabels(3, 8)).toEqual({ start: 3, end: 8 })
+  it('extends only the end when the start is already on a boundary', () => {
+    expect(snapSelectionOutward(6, 9, boundaries)).toEqual({ start: 6, end: 12 })
   })
 
-  it('swaps the roles when the first offset is the larger one', () => {
-    expect(deriveMarkerLabels(8, 3)).toEqual({ start: 3, end: 8 })
+  it('extends only the start when the end is already on a boundary', () => {
+    expect(snapSelectionOutward(3, 12, boundaries)).toEqual({ start: 0, end: 12 })
   })
 
-  it('treats equal offsets as a zero-length range without erroring', () => {
-    expect(deriveMarkerLabels(5, 5)).toEqual({ start: 5, end: 5 })
+  it('never extends past the start or end of the text', () => {
+    expect(snapSelectionOutward(0, 18, boundaries)).toEqual({ start: 0, end: 18 })
   })
 })
 
