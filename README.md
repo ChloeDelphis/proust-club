@@ -30,7 +30,7 @@ The project combines literary exploration with modern software engineering, prov
 
 ## Getting Started
 
-**1. Start the database**
+**1. Start PostgreSQL and Mailhog**
 
 ```bash
 docker compose up -d
