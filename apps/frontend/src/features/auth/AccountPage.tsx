@@ -34,7 +34,14 @@ export default function AccountPage() {
 
   const errorMessage = !mutation.isError
     ? null
-    : apiErrorMessage(mutation.error, { 401: 'Mot de passe actuel incorrect.' }, 'Le changement de mot de passe a échoué. Réessayez.')
+    : apiErrorMessage(
+        mutation.error,
+        {
+          401: 'Mot de passe actuel incorrect.',
+          422: 'Ce mot de passe est trop commun. Choisissez-en un autre.',
+        },
+        'Le changement de mot de passe a échoué. Réessayez.',
+      )
 
   return (
     <main className={styles.root}>

@@ -37,10 +37,20 @@ export default function ResetPasswordPage() {
   }
 
   // 400 means the token itself is invalid/expired — anything else (500, network) is a real
-  // server-side failure, not a problem with the link, and shouldn't be reported as one.
+  // server-side failure, not a problem with the link, and shouldn't be reported as one. 422 means
+  // the token is still live — the same link works again with a different password (see
+  // PasswordResetService.tokenLooksValid()/checkNewPasswordNotCompromised(), the token is never
+  // burned on this failure).
   const errorMessage = !mutation.isError
     ? null
-    : apiErrorMessage(mutation.error, { 400: 'Ce lien de réinitialisation est invalide ou a expiré.' }, 'Une erreur est survenue. Réessayez.')
+    : apiErrorMessage(
+        mutation.error,
+        {
+          400: 'Ce lien de réinitialisation est invalide ou a expiré.',
+          422: 'Ce mot de passe est trop commun. Choisissez-en un autre.',
+        },
+        'Une erreur est survenue. Réessayez.',
+      )
 
   return (
     <main className={styles.root}>
