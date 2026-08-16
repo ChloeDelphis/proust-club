@@ -123,6 +123,18 @@ describe('QuoteSelection — connected', () => {
     expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
   })
 
+  it('ignores a selection confined to whitespace, rather than snapping it out to an adjacent word', async () => {
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
+
+    // "hello world today" — index 5 is the single space between "hello" and "world". Extending
+    // this outward to the nearest word boundaries would silently produce "hello", a word the
+    // user never touched — the selection should be treated as empty instead.
+    setSelection({ start: 5, end: 6 })
+
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
+  })
+
   it('clicking Sauvegarder opens the tag panel with the word-extended, trimmed selection', async () => {
     vi.mocked(tagApi.listTags).mockResolvedValue([{ id: 1, name: 'Combray' }])
     vi.mocked(quoteApi.createQuote).mockResolvedValue({

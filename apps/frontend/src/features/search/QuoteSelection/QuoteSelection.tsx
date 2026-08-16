@@ -49,6 +49,12 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
         const offsets = getSelectionOffsets(container, selection.getRangeAt(0))
         if (!offsets) return toIdle
 
+        // A selection confined to whitespace (e.g. the single gap between two words) touches no
+        // word at all — extending it outward would silently pull in an entire adjacent word the
+        // user never selected. Checked on the raw offsets, before any word-boundary snapping.
+        const rawTrimmed = trimSelection(text, offsets.start, offsets.end)
+        if (rawTrimmed.start >= rawTrimmed.end) return toIdle
+
         const extended = snapSelectionOutward(offsets.start, offsets.end, boundaries)
         const trimmed = trimSelection(text, extended.start, extended.end)
         if (trimmed.start >= trimmed.end) return toIdle
@@ -125,7 +131,9 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
         </div>
       )}
 
-      {phase.kind === 'tagPanel' && <TagPickerPopup onSave={handleSave} onCancel={handleCancelPanel} />}
+      {phase.kind === 'tagPanel' && (
+        <TagPickerPopup onSave={handleSave} onCancel={handleCancelPanel} isSaving={createQuoteMutation.isPending} />
+      )}
     </div>
   )
 }
