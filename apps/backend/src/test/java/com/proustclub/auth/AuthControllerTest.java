@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -192,6 +193,30 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcel@example.com", "Marcel se souvient de Combray")))
                 .andExpect(status().isCreated());
+    }
+
+    // Proves the reordering from breach-check-avant-verifications-bon-marche: a request invalid on
+    // a cheap, local criterion must never reach the external HIBP call.
+    @Test
+    void registerPasswordMatchingUsernameDoesNotCallBreachChecker() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcelproustcombray", "marcel@example.com", "marcelproustcombray")))
+                .andExpect(status().isBadRequest());
+
+        verify(passwordBreachChecker, never()).isCompromised(anyString());
+    }
+
+    @Test
+    void registerDuplicateUsernameDoesNotCallBreachCheckerForSecondRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcel", "other@example.com", "differentpassword")))
+                .andExpect(status().isConflict());
+
+        verify(passwordBreachChecker, never()).isCompromised("differentpassword");
     }
 
     @Test
