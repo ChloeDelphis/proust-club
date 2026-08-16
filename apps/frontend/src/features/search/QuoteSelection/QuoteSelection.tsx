@@ -42,17 +42,16 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
       // report a live, non-collapsed selection at that point.
       setPhase(current => {
         if (current.kind === 'tagPanel') return current
+        const toIdle: Phase = current.kind === 'selected' ? { kind: 'idle' } : current
 
-        if (!container || !selection || selection.isCollapsed || selection.rangeCount === 0) {
-          return current.kind === 'selected' ? { kind: 'idle' } : current
-        }
+        if (!container || !selection || selection.isCollapsed || selection.rangeCount === 0) return toIdle
 
         const offsets = getSelectionOffsets(container, selection.getRangeAt(0))
-        if (!offsets) return current.kind === 'selected' ? { kind: 'idle' } : current
+        if (!offsets) return toIdle
 
         const extended = snapSelectionOutward(offsets.start, offsets.end, boundaries)
         const trimmed = trimSelection(text, extended.start, extended.end)
-        if (trimmed.start >= trimmed.end) return current.kind === 'selected' ? { kind: 'idle' } : current
+        if (trimmed.start >= trimmed.end) return toIdle
 
         return { kind: 'selected', start: trimmed.start, end: trimmed.end }
       })
@@ -67,6 +66,14 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
     setPhase({ kind: 'tagPanel', start: phase.start, end: phase.end })
   }
 
+  // The native selection is deliberately left intact while the tag panel is open (see the
+  // "Sauvegarder" button's onMouseDown below) — leaving idle without clearing it would strand a
+  // visible highlight with no menu to act on it.
+  function resetToIdle() {
+    window.getSelection()?.removeAllRanges()
+    setPhase({ kind: 'idle' })
+  }
+
   function handleSave(tagNames: string[]) {
     if (phase.kind !== 'tagPanel') return
     const { start, end } = phase
@@ -75,8 +82,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
       {
         onSuccess: () => {
           showToast('Citation enregistrée.')
-          window.getSelection()?.removeAllRanges()
-          setPhase({ kind: 'idle' })
+          resetToIdle()
         },
         onError: () => {
           showToast("La citation n'a pas pu être enregistrée.")
@@ -88,8 +94,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
 
   function handleCancelPanel() {
     if (phase.kind !== 'tagPanel') return
-    window.getSelection()?.removeAllRanges()
-    setPhase({ kind: 'idle' })
+    resetToIdle()
   }
 
   return (

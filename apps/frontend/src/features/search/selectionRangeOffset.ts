@@ -51,14 +51,19 @@ export function characterOffsetForRangeBoundary(container: Node, node: Node, nod
 /**
  * Converts a native selection `Range` into `[start, end)` character offsets within `container`'s
  * text, or `null` if the range isn't fully contained in `container` (e.g. it spans into a
- * different paragraph) or a boundary can't be resolved to a text position.
+ * different paragraph) or the start boundary can't be resolved to a text position.
+ *
+ * Only the start boundary is walked through the DOM; `end` is derived as `start + range.toString()
+ * .length` instead of a second independent walk from the container's beginning. This runs on
+ * every `selectionchange` event (continuously while a drag gesture is in progress), so avoiding a
+ * second full traversal matters — `range.toString()` is exactly the selected text (the rendered
+ * `<mark>` wrapping around the search-match run adds no characters of its own).
  */
 export function getSelectionOffsets(container: HTMLElement, range: Range): { start: number; end: number } | null {
   if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null
 
   const start = characterOffsetForRangeBoundary(container, range.startContainer, range.startOffset)
-  const end = characterOffsetForRangeBoundary(container, range.endContainer, range.endOffset)
-  if (start === null || end === null) return null
+  if (start === null) return null
 
-  return { start, end }
+  return { start, end: start + range.toString().length }
 }
