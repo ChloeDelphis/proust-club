@@ -24,14 +24,14 @@ beforeEach(() => {
 
 describe('TagPickerPopup', () => {
   it('lists the existing tags', async () => {
-    render(<TagPickerPopup onFinish={vi.fn()} onDismiss={vi.fn()} />, { wrapper })
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
 
     expect(await screen.findByText('Combray')).toBeInTheDocument()
     expect(screen.getByText('Jalousie')).toBeInTheDocument()
   })
 
   it('filters the list as the user types', async () => {
-    render(<TagPickerPopup onFinish={vi.fn()} onDismiss={vi.fn()} />, { wrapper })
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
     await userEvent.type(screen.getByRole('textbox', { name: 'Chercher un tag' }), 'comb')
@@ -40,29 +40,29 @@ describe('TagPickerPopup', () => {
     expect(screen.queryByText('Jalousie')).not.toBeInTheDocument()
   })
 
-  it('calls onFinish with the checked tag names', async () => {
-    const onFinish = vi.fn()
-    render(<TagPickerPopup onFinish={onFinish} onDismiss={vi.fn()} />, { wrapper })
+  it('calls onSave with the checked tag names', async () => {
+    const onSave = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Combray' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Terminer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    expect(onFinish).toHaveBeenCalledWith(['Combray'])
+    expect(onSave).toHaveBeenCalledWith(['Combray'])
   })
 
-  it('calls onFinish with an empty array when nothing is checked', async () => {
-    const onFinish = vi.fn()
-    render(<TagPickerPopup onFinish={onFinish} onDismiss={vi.fn()} />, { wrapper })
+  it('calls onSave with an empty array when nothing is checked', async () => {
+    const onSave = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Terminer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    expect(onFinish).toHaveBeenCalledWith([])
+    expect(onSave).toHaveBeenCalledWith([])
   })
 
   it('offers to create a new tag when the search matches nothing existing', async () => {
-    render(<TagPickerPopup onFinish={vi.fn()} onDismiss={vi.fn()} />, { wrapper })
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
     await userEvent.type(screen.getByRole('textbox', { name: 'Chercher un tag' }), 'Guermantes')
@@ -71,7 +71,7 @@ describe('TagPickerPopup', () => {
   })
 
   it('does not offer to create a tag that already exists (case-insensitive)', async () => {
-    render(<TagPickerPopup onFinish={vi.fn()} onDismiss={vi.fn()} />, { wrapper })
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
     await userEvent.type(screen.getByRole('textbox', { name: 'Chercher un tag' }), 'combray')
@@ -79,55 +79,112 @@ describe('TagPickerPopup', () => {
     expect(screen.queryByRole('button', { name: /Créer/ })).not.toBeInTheDocument()
   })
 
-  it('adds a newly created tag to the selection and includes it on Terminer', async () => {
-    const onFinish = vi.fn()
-    render(<TagPickerPopup onFinish={onFinish} onDismiss={vi.fn()} />, { wrapper })
+  it('adds a newly created tag to the selection and includes it on Enregistrer', async () => {
+    const onSave = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
     await userEvent.type(screen.getByRole('textbox', { name: 'Chercher un tag' }), 'Guermantes')
     await userEvent.click(screen.getByRole('button', { name: 'Créer « Guermantes »' }))
     expect(screen.getByText('Guermantes')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Terminer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    expect(onFinish).toHaveBeenCalledWith(['Guermantes'])
+    expect(onSave).toHaveBeenCalledWith(['Guermantes'])
   })
 
   it('removes a selected chip when its × is clicked', async () => {
-    const onFinish = vi.fn()
-    render(<TagPickerPopup onFinish={onFinish} onDismiss={vi.fn()} />, { wrapper })
+    const onSave = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Combray' }))
     await userEvent.click(screen.getByRole('button', { name: 'Retirer Combray' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Terminer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    expect(onFinish).toHaveBeenCalledWith([])
+    expect(onSave).toHaveBeenCalledWith([])
   })
 
-  it('calls onDismiss when the close button is clicked', async () => {
-    const onDismiss = vi.fn()
-    render(<TagPickerPopup onFinish={vi.fn()} onDismiss={onDismiss} />, { wrapper })
+  it('calls onCancel, not onSave, when the close button is clicked', async () => {
+    const onSave = vi.fn()
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={onCancel} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
     await userEvent.click(screen.getByRole('button', { name: 'Fermer' }))
 
-    expect(onDismiss).toHaveBeenCalledTimes(1)
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
   })
 
-  it('calls onDismiss when clicking outside the popup', async () => {
-    const onDismiss = vi.fn()
-    render(
-      <div>
-        <button type="button">outside</button>
-        <TagPickerPopup onFinish={vi.fn()} onDismiss={onDismiss} />
-      </div>,
-      { wrapper },
-    )
+  it('calls onCancel, not onSave, when clicking the backdrop outside the popup', async () => {
+    const onSave = vi.fn()
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={onCancel} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
-    await userEvent.click(screen.getByText('outside'))
+    await userEvent.click(screen.getByTestId('tag-picker-backdrop'))
 
-    expect(onDismiss).toHaveBeenCalledTimes(1)
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('calls onCancel, not onSave, when Escape is pressed', async () => {
+    const onSave = vi.fn()
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={onCancel} isSaving={false} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('disables Enregistrer while a save is already in flight', async () => {
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={true} />, { wrapper })
+    await screen.findByText('Combray')
+
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
+  })
+
+  it('ignores Escape while a save is already in flight, instead of cancelling a request that cannot be aborted', async () => {
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={onCancel} isSaving={true} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it('ignores a backdrop click while a save is already in flight', async () => {
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={onCancel} isSaving={true} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.click(screen.getByTestId('tag-picker-backdrop'))
+
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it('disables the close button while a save is already in flight', async () => {
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={true} />, { wrapper })
+    await screen.findByText('Combray')
+
+    expect(screen.getByRole('button', { name: 'Fermer' })).toBeDisabled()
+  })
+
+  it('checking a tag and pressing Escape still cancels without saving it', async () => {
+    const onSave = vi.fn()
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={onCancel} isSaving={false} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Combray' }))
+    await userEvent.keyboard('{Escape}')
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
   })
 })

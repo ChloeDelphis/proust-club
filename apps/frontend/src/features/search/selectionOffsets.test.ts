@@ -1,54 +1,40 @@
-import { deriveMarkerLabels, getWordBoundaries, snapToNearestBoundary, trimSelection } from './selectionOffsets'
+import { snapSelectionOutward, trimSelection } from './selectionOffsets'
 
-describe('getWordBoundaries', () => {
-  it('includes the start and end of the text', () => {
-    expect(getWordBoundaries('hello')).toEqual([0, 5])
+describe('snapSelectionOutward', () => {
+  // "hello world today" (length 17): h0 e1 l2 l3 o4 ' '5 w6 o7 r8 l9 d10 ' '11 t12 o13 d14 a15 y16
+  const text = 'hello world today'
+
+  it('leaves a range already aligned to word edges untouched', () => {
+    expect(snapSelectionOutward(text, 6, 11)).toEqual({ start: 6, end: 11 })
   })
 
-  it('adds one boundary per word gap', () => {
-    // "hello world" -> h(0)ello world(11)
-    //                            ^6 = start of "world"
-    expect(getWordBoundaries('hello world')).toEqual([0, 6, 11])
+  it('extends both ends outward when they land inside a word', () => {
+    // "hel|lo wor|ld today" -> extends to "hello world"
+    expect(snapSelectionOutward(text, 3, 8)).toEqual({ start: 0, end: 11 })
   })
 
-  it('collapses a run of multiple spaces into a single boundary', () => {
-    expect(getWordBoundaries('hello   world')).toEqual([0, 8, 13])
+  it('extends only the end when the start is already on a word edge', () => {
+    expect(snapSelectionOutward(text, 6, 8)).toEqual({ start: 6, end: 11 })
   })
 
-  it('does not add an extra boundary for punctuation glued to a word', () => {
-    expect(getWordBoundaries('Longtemps, je me suis couché.')).toEqual([0, 11, 14, 17, 22, 29])
-  })
-})
-
-describe('snapToNearestBoundary', () => {
-  const boundaries = [0, 6, 11]
-
-  it('snaps to the closest boundary', () => {
-    expect(snapToNearestBoundary(1, boundaries)).toBe(0)
-    expect(snapToNearestBoundary(4, boundaries)).toBe(6)
-    expect(snapToNearestBoundary(10, boundaries)).toBe(11)
+  it('extends only the start when the end is already on a word edge', () => {
+    expect(snapSelectionOutward(text, 3, 11)).toEqual({ start: 0, end: 11 })
   })
 
-  it('snaps to the lower boundary on an exact tie', () => {
-    expect(snapToNearestBoundary(3, boundaries)).toBe(0)
+  it('never extends past the start or end of the text', () => {
+    expect(snapSelectionOutward(text, 0, 17)).toEqual({ start: 0, end: 17 })
   })
 
-  it('returns the boundary itself when the offset already matches one', () => {
-    expect(snapToNearestBoundary(6, boundaries)).toBe(6)
-  })
-})
-
-describe('deriveMarkerLabels', () => {
-  it('keeps the order when the first offset is already the smaller one', () => {
-    expect(deriveMarkerLabels(3, 8)).toEqual({ start: 3, end: 8 })
+  it('leaves a selection confined to whitespace untouched on both sides', () => {
+    // Offset 5 is the single space between "hello" and "world" — neither edge sits inside a word.
+    expect(snapSelectionOutward(text, 5, 6)).toEqual({ start: 5, end: 6 })
   })
 
-  it('swaps the roles when the first offset is the larger one', () => {
-    expect(deriveMarkerLabels(8, 3)).toEqual({ start: 3, end: 8 })
-  })
-
-  it('treats equal offsets as a zero-length range without erroring', () => {
-    expect(deriveMarkerLabels(5, 5)).toEqual({ start: 5, end: 5 })
+  it('does not reach backward across a whitespace gap into the previous word', () => {
+    // Regression: a raw start that lands in the gap right after "hello" (offset 5, not inside any
+    // word) must not snap backward to "hello"'s own start just because it's the nearest earlier
+    // boundary — only the end (inside "world") should extend, forward, to "world"'s edges.
+    expect(snapSelectionOutward(text, 5, 8)).toEqual({ start: 5, end: 11 })
   })
 })
 
