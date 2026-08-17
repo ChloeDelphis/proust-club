@@ -195,14 +195,13 @@ The personal comment field lives directly in `QuoteDetailModal` (no dedicated su
 
 ### Frontend (search results — `QuoteSelection`)
 
-- As a connected user, search for a phrase, click "Sauvegarder une citation", place "début" and "fin" by clicking between words, click "Valider la sélection", check a tag and create a new one, click "Terminer" → citation saved with the exact selected text (leading/trailing whitespace trimmed) and both tags, confirmed via `GET /api/quotes`.
-- Same flow, but close the tag popup via × instead of "Terminer" → citation still saved, with `tags: []`, even if a tag had been checked before closing.
-- As an anonymous visitor, no "Sauvegarder une citation" button appears on any result.
-- With a selection in progress on one paragraph, the "Sauvegarder une citation" button on every other visible result is disabled.
+Verified end-to-end in a real headless browser (Playwright, driving an actual native mouse drag-select against the running dev servers — not just simulated offsets), as `marcel_qa`, then confirmed server-side via `GET /api/quotes`:
 
-**Not manually re-verified** (already covered deterministically by `QuoteSelection.test.tsx`, which drives the same phases with controlled offsets rather than pixel coordinates): dropping the second marker on the first one's boundary is a no-op; repositioning an already-placed marker and having it swap start/end roles when it crosses the other one; "Annuler" resetting to idle.
+- Search for "madeleine", drag-select across the highlighted `<mark>` (which covers only "Madeleine", the search term) → the contextual menu ("Sauvegarder") appears at a fixed position, independent of where the selection is on screen. Click it → tag panel opens, create a new tag, click "Enregistrer" → citation saved. The saved `selectedText` was `"Madeleines"` (offsets 422–432), not just `"Madeleine"` — the word-boundary extension correctly pulled in the trailing "s" that sits *outside* the `<mark>`, and the backend's revalidation (`text.substring(start, end) == selectedText`) accepted it, confirming the offsets are genuinely correct against the real paragraph text, not just self-consistent in the frontend.
+- Same flow, but press Escape instead of clicking "Enregistrer" (after checking a tag first) → dialog closes, contextual menu does not reappear, and `GET /api/quotes` confirms nothing was saved — including the checked tag, which is discarded along with the citation. This is the behavior change from the old mechanism (closing used to save without tags; now closing any way other than "Enregistrer" saves nothing at all).
+- A stray `401` on `/api/auth/me` appears in the browser console before login — pre-existing, expected (every page load probes session state; unrelated to this feature).
 
-**Known issue, not yet refined**: cursor snapping precision when placing/repositioning a marker needs more work.
+**Not manually re-verified** (already covered deterministically by `QuoteSelection.test.tsx`/`TagPickerPopup.test.tsx`/`selectionOffsets.test.ts`/`selectionRangeOffset.test.ts`): no contextual menu for an anonymous visitor even with a selection; a selection confined to whitespace being treated as empty; a selection crossing into a different paragraph being ignored; the tag panel surviving a `selectionchange` firing while open; disabling "Enregistrer" and every dismiss path while a save is in flight; not clearing the document's selection if a save resolves after the component has unmounted.
 
 ### Frontend (`/mes-citations` — `MyQuotesPage`)
 
