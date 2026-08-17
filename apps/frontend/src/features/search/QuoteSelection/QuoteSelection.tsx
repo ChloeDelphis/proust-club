@@ -24,7 +24,14 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
   // whole document's selection, not just this paragraph's): React's own `setPhase` calls need no
   // such guard, since React already silently no-ops a state update on an unmounted component.
   const isMountedRef = useRef(true)
-  useEffect(() => () => { isMountedRef.current = false }, [])
+  useEffect(() => {
+    // Sets it back to `true` on setup, not just `false` on cleanup: React 18 StrictMode's dev-only
+    // mount→cleanup→mount double-invoke would otherwise run the cleanup once and leave this stuck
+    // at `false` for the component's entire real lifetime — the same class of bug already hit and
+    // documented in ConfirmEmailPage.tsx.
+    isMountedRef.current = true
+    return () => { isMountedRef.current = false }
+  }, [])
 
   const segments = useMemo(() => buildHighlightSegments(text, highlightRange), [text, highlightRange])
 
