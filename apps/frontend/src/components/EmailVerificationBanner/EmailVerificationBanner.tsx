@@ -40,7 +40,7 @@ export default function EmailVerificationBanner() {
         mutation.error,
         {
           409: t('emailVerificationBanner.errorAlreadyConfirmed'),
-          429: t('emailVerificationBanner.errorTooManyAttempts'),
+          429: t('common.tooManyAttemptsError'),
         },
         t('emailVerificationBanner.errorGeneric'),
       )

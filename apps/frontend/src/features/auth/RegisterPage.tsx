@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router'
 import { register } from '../../api/auth'
 import type { RegisterParams } from '../../api/auth'
 import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
-import { apiErrorMessage, passwordCompromisedMessage } from './apiErrorMessage'
+import { apiErrorMessage } from './apiErrorMessage'
 import RegisterForm from './RegisterForm/RegisterForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
@@ -37,7 +37,7 @@ export default function RegisterPage() {
         mutation.error,
         {
           409: t('registerPage.identifierTakenError'),
-          422: passwordCompromisedMessage(),
+          422: t('auth.passwordCompromisedError'),
         },
         t('registerPage.genericError'),
       )

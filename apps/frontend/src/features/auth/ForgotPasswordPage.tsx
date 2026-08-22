@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
     ? null
     : apiErrorMessage(
         mutation.error,
-        { 429: t('forgotPasswordPage.tooManyAttemptsError'), 400: t('emailValidation.formatError') },
+        { 429: t('common.tooManyAttemptsError'), 400: t('emailValidation.formatError') },
         t('forgotPasswordPage.genericError'),
       )
 

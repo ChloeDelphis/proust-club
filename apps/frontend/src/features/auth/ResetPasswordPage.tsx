@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { confirmPasswordReset } from '../../api/auth'
-import { apiErrorMessage, passwordCompromisedMessage } from './apiErrorMessage'
+import { apiErrorMessage } from './apiErrorMessage'
 import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
 import { useToast } from '../../components/Toast/useToast'
 import ResetPasswordForm from './ResetPasswordForm/ResetPasswordForm'
@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
         mutation.error,
         {
           400: t('resetPasswordPage.expiredLinkError'),
-          422: passwordCompromisedMessage(),
+          422: t('auth.passwordCompromisedError'),
         },
         t('forgotPasswordPage.genericError'),
       )

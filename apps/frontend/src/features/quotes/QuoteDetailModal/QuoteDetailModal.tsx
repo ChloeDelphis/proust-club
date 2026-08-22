@@ -76,16 +76,11 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
               <QuoteTagEditor quoteId={quote.id} tags={quote.tags} />
 
               <p className={styles.meta}>
-                {volumeTitle
-                  ? t('quoteDetailModal.metaWithVolume', {
-                      volumeTitle,
-                      page: quote.pageNumber,
-                      date: dateFormatter.format(new Date(quote.createdAt)),
-                    })
-                  : t('quoteDetailModal.meta', {
-                      page: quote.pageNumber,
-                      date: dateFormatter.format(new Date(quote.createdAt)),
-                    })}
+                {t('quoteDetailModal.meta', {
+                  volumePrefix: volumeTitle ? `${volumeTitle} — ` : '',
+                  page: quote.pageNumber,
+                  date: dateFormatter.format(new Date(quote.createdAt)),
+                })}
               </p>
             </>
           )}

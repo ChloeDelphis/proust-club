@@ -12,7 +12,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const passwordError = passwordLengthError(newPassword)
+    const passwordError = passwordLengthError(newPassword, t('passwordValidation.defaultLabel'))
     if (passwordError) {
       setError(passwordError)
       return

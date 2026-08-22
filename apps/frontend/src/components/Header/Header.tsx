@@ -33,7 +33,7 @@ export default function Header() {
         </div>
       ) : (
         <nav className={styles.nav}>
-          <Link to="/login">{t('header.login')}</Link>
+          <Link to="/login">{t('loginForm.submitButton')}</Link>
           <Link to="/register">{t('header.register')}</Link>
         </nav>
       )}

@@ -51,7 +51,7 @@ export default function MyQuotesPage() {
   if (isPending) {
     content = <Spinner />
   } else if (isError) {
-    content = <ErrorMessage message={t('myQuotesPage.error')} />
+    content = <ErrorMessage message={t('common.genericError')} />
   } else if (data.results.length === 0) {
     content = (
       <EmptyState

@@ -1,4 +1,8 @@
 {
+  "common": {
+    "genericError": "Une erreur est survenue. Veuillez réessayer.",
+    "tooManyAttemptsError": "Trop de tentatives. Réessayez plus tard."
+  },
   "components": {
     "spinner": {
       "loadingLabel": "Chargement"
@@ -15,26 +19,23 @@
     "accountLink": "Mon compte",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
-    "login": "Se connecter",
     "register": "Créer un compte"
   },
   "emailVerificationBanner": {
     "resentToast": "Email de confirmation renvoyé.",
     "errorAlreadyConfirmed": "Votre adresse email est déjà confirmée.",
-    "errorTooManyAttempts": "Trop de tentatives. Réessayez plus tard.",
     "errorGeneric": "Le renvoi a échoué. Réessayez.",
     "message": "Confirmez votre adresse email pour finaliser votre inscription — consultez votre boîte de réception.",
     "resendButton": "Renvoyer l'email de confirmation"
-  },
-  "searchPage": {
-    "error": "Une erreur est survenue. Veuillez réessayer.",
-    "emptyState": "Aucun résultat pour « {{query}} »."
   },
   "searchForm": {
     "tooShortError": "Saisissez au moins 2 caractères.",
     "placeholder": "Rechercher dans Proust…",
     "ariaLabel": "Rechercher un passage",
     "submitButton": "Chercher"
+  },
+  "searchPage": {
+    "emptyState": "Aucun résultat pour « {{query}} »."
   },
   "resultList": {
     "resultCount_one": "{{count}} résultat",
@@ -102,7 +103,6 @@
     "submitButton": "Envoyer le lien de réinitialisation"
   },
   "forgotPasswordPage": {
-    "tooManyAttemptsError": "Trop de tentatives. Réessayez plus tard.",
     "genericError": "Une erreur est survenue. Réessayez.",
     "title": "Mot de passe oublié",
     "successMessage": "Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé. Vérifiez votre boîte de réception.",
@@ -126,7 +126,6 @@
     "backHomeLink": "Retour à l’accueil"
   },
   "myQuotesPage": {
-    "error": "Une erreur est survenue. Veuillez réessayer.",
     "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
     "emptyStateNoTagMatch": "Aucune citation avec ce tag."
   },
@@ -140,8 +139,7 @@
     "ariaLabel": "Citation",
     "commentPlaceholder": "Ajouter un commentaire personnel...",
     "commentAriaLabel": "Commentaire personnel",
-    "metaWithVolume": "{{volumeTitle}} — page {{page}} · {{date}}",
-    "meta": "page {{page}} · {{date}}"
+    "meta": "{{volumePrefix}}page {{page}} · {{date}}"
   },
   "quoteTagEditor": {
     "addErrorToast": "Le tag n'a pas pu être ajouté.",

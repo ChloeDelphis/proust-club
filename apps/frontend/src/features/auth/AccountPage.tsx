@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router'
 import { changePassword } from '../../api/auth'
-import { apiErrorMessage, passwordCompromisedMessage } from './apiErrorMessage'
+import { apiErrorMessage } from './apiErrorMessage'
 import { useCurrentUser } from './useCurrentUser'
 import { useToast } from '../../components/Toast/useToast'
 import ChangePasswordForm from './ChangePasswordForm/ChangePasswordForm'
@@ -40,7 +40,7 @@ export default function AccountPage() {
         mutation.error,
         {
           401: t('accountPage.wrongCurrentPasswordError'),
-          422: passwordCompromisedMessage(),
+          422: t('auth.passwordCompromisedError'),
         },
         t('accountPage.genericError'),
       )

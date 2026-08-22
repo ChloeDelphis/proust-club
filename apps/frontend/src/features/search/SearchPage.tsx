@@ -37,7 +37,7 @@ export default function SearchPage() {
     if (isPending) {
       content = <Spinner />
     } else if (isError) {
-      content = <ErrorMessage message={t('searchPage.error')} />
+      content = <ErrorMessage message={t('common.genericError')} />
     } else if (data.results.length === 0) {
       content = <EmptyState message={t('searchPage.emptyState', { query })} />
     } else {

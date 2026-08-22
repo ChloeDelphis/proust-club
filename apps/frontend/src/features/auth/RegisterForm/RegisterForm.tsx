@@ -28,7 +28,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
       setError(emailError)
       return
     }
-    const passwordError = passwordLengthError(password)
+    const passwordError = passwordLengthError(password, t('passwordValidation.defaultLabel'))
     if (passwordError) {
       setError(passwordError)
       return
