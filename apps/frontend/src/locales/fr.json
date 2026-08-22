@@ -91,6 +91,7 @@
   "changePasswordForm": {
     "currentPasswordLabel": "Mot de passe actuel",
     "newPasswordLabel": "Nouveau mot de passe",
+    "newPasswordSubject": "Le nouveau mot de passe",
     "submitButton": "Changer le mot de passe"
   },
   "accountPage": {

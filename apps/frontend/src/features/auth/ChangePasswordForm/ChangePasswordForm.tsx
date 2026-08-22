@@ -13,7 +13,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const passwordError = passwordLengthError(newPassword, t('changePasswordForm.newPasswordLabel'))
+    const passwordError = passwordLengthError(newPassword, t('changePasswordForm.newPasswordSubject'))
     if (passwordError) {
       setError(passwordError)
       return
