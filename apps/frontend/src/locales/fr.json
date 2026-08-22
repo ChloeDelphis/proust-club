@@ -1,0 +1,171 @@
+{
+  "components": {
+    "spinner": {
+      "loadingLabel": "Chargement"
+    },
+    "pagination": {
+      "ariaLabel": "Pagination",
+      "previous": "← Précédent",
+      "next": "Suivant →"
+    }
+  },
+  "header": {
+    "brand": "Proust Club",
+    "myQuotesLink": "Mes citations",
+    "accountLink": "Mon compte",
+    "loggedInAs": "Connecté en tant que {{username}}",
+    "logout": "Se déconnecter",
+    "login": "Se connecter",
+    "register": "Créer un compte"
+  },
+  "emailVerificationBanner": {
+    "resentToast": "Email de confirmation renvoyé.",
+    "errorAlreadyConfirmed": "Votre adresse email est déjà confirmée.",
+    "errorTooManyAttempts": "Trop de tentatives. Réessayez plus tard.",
+    "errorGeneric": "Le renvoi a échoué. Réessayez.",
+    "message": "Confirmez votre adresse email pour finaliser votre inscription — consultez votre boîte de réception.",
+    "resendButton": "Renvoyer l'email de confirmation"
+  },
+  "searchPage": {
+    "error": "Une erreur est survenue. Veuillez réessayer.",
+    "emptyState": "Aucun résultat pour « {{query}} »."
+  },
+  "searchForm": {
+    "tooShortError": "Saisissez au moins 2 caractères.",
+    "placeholder": "Rechercher dans Proust…",
+    "ariaLabel": "Rechercher un passage",
+    "submitButton": "Chercher"
+  },
+  "resultList": {
+    "resultCount_one": "{{count}} résultat",
+    "resultCount_other": "{{count}} résultats"
+  },
+  "quoteSelection": {
+    "savedToast": "Citation enregistrée.",
+    "saveErrorToast": "La citation n'a pas pu être enregistrée.",
+    "saveButton": "Sauvegarder"
+  },
+  "tagPicker": {
+    "ariaLabel": "Choisir des tags",
+    "close": "Fermer",
+    "removeTag": "Retirer {{name}}",
+    "searchPlaceholder": "Chercher un tag...",
+    "searchAriaLabel": "Chercher un tag",
+    "createButton": "Créer « {{name}} »",
+    "saveButton": "Enregistrer"
+  },
+  "auth": {
+    "passwordCompromisedError": "Ce mot de passe est trop commun. Choisissez-en un autre."
+  },
+  "emailValidation": {
+    "formatError": "Adresse email invalide."
+  },
+  "passwordIdentifierValidation": {
+    "matchesIdentifierError": "Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email."
+  },
+  "passwordValidation": {
+    "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — une phrase de passe fonctionne très bien.",
+    "defaultLabel": "Le mot de passe"
+  },
+  "loginForm": {
+    "missingFieldsError": "Renseignez votre nom d’utilisateur et votre mot de passe.",
+    "usernameLabel": "Nom d’utilisateur",
+    "passwordLabel": "Mot de passe",
+    "submitButton": "Se connecter"
+  },
+  "loginPage": {
+    "invalidCredentialsError": "Identifiants invalides.",
+    "forgotPasswordLink": "Mot de passe oublié ?",
+    "noAccountPrompt": "Pas encore de compte ?"
+  },
+  "registerForm": {
+    "usernameTooShortError": "Le nom d’utilisateur doit contenir au moins 3 caractères.",
+    "emailLabel": "Email"
+  },
+  "registerPage": {
+    "identifierTakenError": "Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).",
+    "genericError": "Impossible de créer ce compte. Réessayez.",
+    "alreadyAccountPrompt": "Déjà un compte ?"
+  },
+  "changePasswordForm": {
+    "currentPasswordLabel": "Mot de passe actuel",
+    "newPasswordLabel": "Nouveau mot de passe",
+    "submitButton": "Changer le mot de passe"
+  },
+  "accountPage": {
+    "passwordChangedToast": "Mot de passe changé.",
+    "wrongCurrentPasswordError": "Mot de passe actuel incorrect.",
+    "genericError": "Le changement de mot de passe a échoué. Réessayez.",
+    "title": "Compte"
+  },
+  "forgotPasswordForm": {
+    "submitButton": "Envoyer le lien de réinitialisation"
+  },
+  "forgotPasswordPage": {
+    "tooManyAttemptsError": "Trop de tentatives. Réessayez plus tard.",
+    "genericError": "Une erreur est survenue. Réessayez.",
+    "title": "Mot de passe oublié",
+    "successMessage": "Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé. Vérifiez votre boîte de réception.",
+    "backToLoginLink": "Retour à la connexion"
+  },
+  "resetPasswordForm": {
+    "submitButton": "Réinitialiser le mot de passe"
+  },
+  "resetPasswordPage": {
+    "successToast": "Mot de passe réinitialisé.",
+    "title": "Réinitialiser le mot de passe",
+    "invalidLinkError": "Ce lien de réinitialisation est invalide.",
+    "requestNewLinkLink": "Demander un nouveau lien",
+    "expiredLinkError": "Ce lien de réinitialisation est invalide ou a expiré."
+  },
+  "confirmEmailPage": {
+    "title": "Confirmation de l’email",
+    "invalidLinkError": "Ce lien de confirmation est invalide.",
+    "successMessage": "Votre adresse email a été confirmée.",
+    "expiredLinkError": "Ce lien de confirmation est invalide ou a expiré.",
+    "backHomeLink": "Retour à l’accueil"
+  },
+  "myQuotesPage": {
+    "error": "Une erreur est survenue. Veuillez réessayer.",
+    "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
+    "emptyStateNoTagMatch": "Aucune citation avec ce tag."
+  },
+  "quoteCard": {
+    "deleteErrorToast": "La citation n'a pas pu être supprimée.",
+    "deleteConfirm": "Supprimer cette citation ?",
+    "deleteButton": "Supprimer"
+  },
+  "quoteDetailModal": {
+    "commentSaveErrorToast": "Le commentaire n'a pas pu être enregistré.",
+    "ariaLabel": "Citation",
+    "commentPlaceholder": "Ajouter un commentaire personnel...",
+    "commentAriaLabel": "Commentaire personnel",
+    "metaWithVolume": "{{volumeTitle}} — page {{page}} · {{date}}",
+    "meta": "page {{page}} · {{date}}"
+  },
+  "quoteTagEditor": {
+    "addErrorToast": "Le tag n'a pas pu être ajouté.",
+    "removeErrorToast": "Le tag n'a pas pu être retiré.",
+    "addPlaceholder": "Ajouter un tag...",
+    "addAriaLabel": "Ajouter un tag"
+  },
+  "tagFilterBar": {
+    "duplicateNameError": "Ce nom de tag est déjà utilisé.",
+    "renameErrorToast": "Le tag n'a pas pu être renommé.",
+    "deleteErrorToast": "Le tag n'a pas pu être supprimé.",
+    "deleteConfirm": "Supprimer ce tag ?",
+    "ariaLabel": "Filtrer par tag",
+    "allFilter": "Tous",
+    "renameTag": "Renommer {{name}}",
+    "deleteTag": "Supprimer {{name}}"
+  },
+  "timelineBar": {
+    "loadError": "La frise n'a pas pu être chargée.",
+    "ariaLabel": "Frise de mes citations",
+    "volumeFilterAriaLabel": "Filtrer par tome",
+    "allVolumesFilter": "Tous les tomes",
+    "trackAriaLabel": "Positions des citations sauvegardées dans l'œuvre",
+    "zoomOnVolume": "Zoomer sur {{title}}",
+    "bookmarkAriaLabel": "Citation page {{page}}"
+  }
+}

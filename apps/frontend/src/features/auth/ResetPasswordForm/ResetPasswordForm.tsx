@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ResetPasswordFormProps } from './ResetPasswordForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
 import styles from '../AuthForm.module.css'
 
 export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) {
+  const { t } = useTranslation()
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState('')
 
@@ -22,7 +24,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
       <FormField
-        label="Nouveau mot de passe"
+        label={t('changePasswordForm.newPasswordLabel')}
         type="password"
         value={newPassword}
         onChange={e => setNewPassword(e.target.value)}
@@ -30,7 +32,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
         maxLength={128}
       />
       <button className={styles.button} type="submit">
-        Réinitialiser le mot de passe
+        {t('resetPasswordForm.submitButton')}
       </button>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </form>

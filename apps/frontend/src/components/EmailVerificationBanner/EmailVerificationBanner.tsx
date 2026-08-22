@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../api/client'
 import { resendEmailConfirmation } from '../../api/auth'
 import { apiErrorMessage } from '../../features/auth/apiErrorMessage'
@@ -8,6 +9,7 @@ import ErrorMessage from '../ErrorMessage/ErrorMessage'
 import styles from './EmailVerificationBanner.module.css'
 
 export default function EmailVerificationBanner() {
+  const { t } = useTranslation()
   const { data: user, isSuccess } = useCurrentUser()
   const showToast = useToast()
   const queryClient = useQueryClient()
@@ -15,7 +17,7 @@ export default function EmailVerificationBanner() {
   const mutation = useMutation({
     mutationFn: () => resendEmailConfirmation(),
     onSuccess: () => {
-      showToast('Email de confirmation renvoyé.')
+      showToast(t('emailVerificationBanner.resentToast'))
     },
     onError: error => {
       // A 409 means the account was actually confirmed elsewhere (e.g. the link was opened in
@@ -37,22 +39,22 @@ export default function EmailVerificationBanner() {
     : apiErrorMessage(
         mutation.error,
         {
-          409: 'Votre adresse email est déjà confirmée.',
-          429: 'Trop de tentatives. Réessayez plus tard.',
+          409: t('emailVerificationBanner.errorAlreadyConfirmed'),
+          429: t('emailVerificationBanner.errorTooManyAttempts'),
         },
-        'Le renvoi a échoué. Réessayez.',
+        t('emailVerificationBanner.errorGeneric'),
       )
 
   return (
     <div className={styles.root} role="status">
-      <span>Confirmez votre adresse email pour finaliser votre inscription — consultez votre boîte de réception.</span>
+      <span>{t('emailVerificationBanner.message')}</span>
       <button
         type="button"
         className={styles.resendButton}
         disabled={mutation.isPending}
         onClick={() => mutation.mutate()}
       >
-        Renvoyer l'email de confirmation
+        {t('emailVerificationBanner.resendButton')}
       </button>
       {errorMessage && <ErrorMessage message={errorMessage} />}
     </div>

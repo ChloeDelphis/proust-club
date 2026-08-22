@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './SearchForm.module.css'
 
 interface SearchFormProps {
@@ -6,6 +7,7 @@ interface SearchFormProps {
 }
 
 export default function SearchForm({ onSubmit }: SearchFormProps) {
+  const { t } = useTranslation()
   const [value, setValue] = useState('')
   const [error, setError] = useState('')
 
@@ -13,7 +15,7 @@ export default function SearchForm({ onSubmit }: SearchFormProps) {
     e.preventDefault()
     const trimmed = value.trim()
     if (trimmed.length < 2) {
-      setError('Saisissez au moins 2 caractères.')
+      setError(t('searchForm.tooShortError'))
       return
     }
     setError('')
@@ -28,12 +30,12 @@ export default function SearchForm({ onSubmit }: SearchFormProps) {
           type="search"
           value={value}
           onChange={e => setValue(e.target.value)}
-          placeholder="Rechercher dans Proust…"
-          aria-label="Rechercher un passage"
+          placeholder={t('searchForm.placeholder')}
+          aria-label={t('searchForm.ariaLabel')}
           maxLength={500}
         />
         <button className={styles.button} type="submit">
-          Chercher
+          {t('searchForm.submitButton')}
         </button>
       </div>
       {error && <p className={styles.error} role="alert">{error}</p>}

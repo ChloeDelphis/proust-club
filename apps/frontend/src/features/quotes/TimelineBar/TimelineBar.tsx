@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { getQuoteTimeline } from '../../../api/quote'
 import type { TimelineVolume } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
@@ -37,6 +38,7 @@ function activateOnEnterOrSpace(onActivate: () => void) {
 }
 
 export default function TimelineBar({ activeTagId }: TimelineBarProps) {
+  const { t } = useTranslation()
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
   const [hoveredQuoteId, setHoveredQuoteId] = useState<number | null>(null)
   // Stores an id, not the quote object itself, so the modal re-derives fresh data from the query
@@ -72,17 +74,17 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
   }, [data, selectedVolume, range])
 
   if (isPending) return <Spinner />
-  if (isError) return <ErrorMessage message="La frise n'a pas pu être chargée." />
+  if (isError) return <ErrorMessage message={t('timelineBar.loadError')} />
   if (data.volumes.length === 0) return null
 
   const hoveredGroup = groups.find(g => g.quotes[0].id === hoveredQuoteId)
   const openQuote = openQuoteId !== null ? (data.quotes.find(q => q.id === openQuoteId) ?? null) : null
 
   return (
-    <section className={styles.root} aria-label="Frise de mes citations">
-      <nav className={styles.volumeFilters} aria-label="Filtrer par tome">
+    <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
+      <nav className={styles.volumeFilters} aria-label={t('timelineBar.volumeFilterAriaLabel')}>
         <FilterButton active={selectedVolumeId === null} onClick={() => setSelectedVolumeId(null)}>
-          Tous les tomes
+          {t('timelineBar.allVolumesFilter')}
         </FilterButton>
         {data.volumes.map(volume => (
           <FilterButton key={volume.id} active={selectedVolumeId === volume.id} onClick={() => setSelectedVolumeId(volume.id)}>
@@ -96,7 +98,7 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
         viewBox={`0 0 ${VIEWBOX_WIDTH} 200`}
         preserveAspectRatio="none"
         role="img"
-        aria-label="Positions des citations sauvegardées dans l'œuvre"
+        aria-label={t('timelineBar.trackAriaLabel')}
       >
         {!selectedVolume && data.volumes.map(volume => {
           const x1 = percentToX(pageToPercent(volume.minPage, range))
@@ -111,7 +113,7 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
               className={styles.volumeZone}
               role="button"
               tabIndex={0}
-              aria-label={`Zoomer sur ${volume.title}`}
+              aria-label={t('timelineBar.zoomOnVolume', { title: volume.title })}
               onClick={() => setSelectedVolumeId(volume.id)}
               onKeyDown={activateOnEnterOrSpace(() => setSelectedVolumeId(volume.id))}
             />
@@ -137,7 +139,7 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
               className={styles.bookmark}
               role="button"
               tabIndex={0}
-              aria-label={`Citation page ${quote.pageNumber}`}
+              aria-label={t('timelineBar.bookmarkAriaLabel', { page: quote.pageNumber })}
               onClick={() => setOpenQuoteId(quote.id)}
               onKeyDown={activateOnEnterOrSpace(() => setOpenQuoteId(quote.id))}
               onMouseEnter={() => setHoveredQuoteId(quote.id)}

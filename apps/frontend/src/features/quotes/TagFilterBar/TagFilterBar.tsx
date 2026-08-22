@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { deleteTag, renameTag } from '../../../api/tag'
 import { ApiError } from '../../../api/client'
 import { useTags } from '../../../hooks/useTags'
@@ -10,6 +11,7 @@ import type { TagFilterBarProps } from './TagFilterBar.types'
 import styles from './TagFilterBar.module.css'
 
 export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
   const { data: tags } = useTags()
@@ -30,8 +32,8 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     onError: error => {
       showToast(
         error instanceof ApiError && error.status === 409
-          ? 'Ce nom de tag est déjà utilisé.'
-          : "Le tag n'a pas pu être renommé.",
+          ? t('tagFilterBar.duplicateNameError')
+          : t('tagFilterBar.renameErrorToast'),
       )
     },
   })
@@ -48,7 +50,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
       if (wasActiveFilter) onSelectTag(null)
     },
     onError: () => {
-      showToast("Le tag n'a pas pu être supprimé.")
+      showToast(t('tagFilterBar.deleteErrorToast'))
     },
   })
 
@@ -86,7 +88,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
   }
 
   function handleDelete(id: number) {
-    if (!window.confirm('Supprimer ce tag ?')) return
+    if (!window.confirm(t('tagFilterBar.deleteConfirm'))) return
     deleteMutation.mutate(id)
   }
 
@@ -94,9 +96,9 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
   if (tagList.length === 0) return null
 
   return (
-    <nav className={styles.root} aria-label="Filtrer par tag">
+    <nav className={styles.root} aria-label={t('tagFilterBar.ariaLabel')}>
       <FilterButton active={activeTagId === null} onClick={() => onSelectTag(null)}>
-        Tous
+        {t('tagFilterBar.allFilter')}
       </FilterButton>
       <ul className={styles.list}>
         {tagList.map(tag => (
@@ -107,7 +109,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
                 className={styles.editInput}
                 value={editingValue}
                 autoFocus
-                aria-label={`Renommer ${tag.name}`}
+                aria-label={t('tagFilterBar.renameTag', { name: tag.name })}
                 onChange={event => setEditingValue(event.target.value)}
                 onBlur={() => handleBlur(tag.id)}
                 onKeyDown={event => handleKeyDown(event, tag.id)}
@@ -121,7 +123,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
                   type="button"
                   className={styles.iconButton}
                   onClick={() => startEditing(tag.id, tag.name)}
-                  aria-label={`Renommer ${tag.name}`}
+                  aria-label={t('tagFilterBar.renameTag', { name: tag.name })}
                 >
                   ✎
                 </button>
@@ -129,7 +131,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
                   type="button"
                   className={styles.iconButton}
                   onClick={() => handleDelete(tag.id)}
-                  aria-label={`Supprimer ${tag.name}`}
+                  aria-label={t('tagFilterBar.deleteTag', { name: tag.name })}
                 >
                   ×
                 </button>

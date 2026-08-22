@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router'
 import { confirmEmail } from '../../api/auth'
 import { useCurrentUser, CURRENT_USER_QUERY_KEY } from './useCurrentUser'
@@ -8,6 +9,7 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
 
 export default function ConfirmEmailPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token')
   const queryClient = useQueryClient()
@@ -56,14 +58,14 @@ export default function ConfirmEmailPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>Confirmation de l’email</h1>
-      {!token && <ErrorMessage message="Ce lien de confirmation est invalide." />}
+      <h1 className={styles.title}>{t('confirmEmailPage.title')}</h1>
+      {!token && <ErrorMessage message={t('confirmEmailPage.invalidLinkError')} />}
       {token && isPending && <Spinner />}
-      {token && isSuccess && <p>Votre adresse email a été confirmée.</p>}
-      {token && isError && <ErrorMessage message="Ce lien de confirmation est invalide ou a expiré." />}
+      {token && isSuccess && <p>{t('confirmEmailPage.successMessage')}</p>}
+      {token && isError && <ErrorMessage message={t('confirmEmailPage.expiredLinkError')} />}
       {(!token || isSuccess || isError) && (
         <p className={styles.switch}>
-          <Link to="/">Retour à l’accueil</Link>
+          <Link to="/">{t('confirmEmailPage.backHomeLink')}</Link>
         </p>
       )}
     </main>

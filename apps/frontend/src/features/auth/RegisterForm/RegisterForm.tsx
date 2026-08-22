@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { RegisterFormProps } from './RegisterForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
@@ -7,6 +8,7 @@ import { passwordMatchesIdentifierError } from '../passwordIdentifierValidation'
 import styles from '../AuthForm.module.css'
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +20,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
     const trimmedEmail = email.trim()
 
     if (trimmedUsername.length < 3) {
-      setError('Le nom d’utilisateur doit contenir au moins 3 caractères.')
+      setError(t('registerForm.usernameTooShortError'))
       return
     }
     const emailError = emailFormatError(trimmedEmail)
@@ -43,7 +45,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
       <FormField
-        label="Nom d’utilisateur"
+        label={t('loginForm.usernameLabel')}
         type="text"
         value={username}
         onChange={e => setUsername(e.target.value)}
@@ -51,7 +53,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         maxLength={50}
       />
       <FormField
-        label="Email"
+        label={t('registerForm.emailLabel')}
         type="email"
         value={email}
         onChange={e => setEmail(e.target.value)}
@@ -59,7 +61,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         maxLength={255}
       />
       <FormField
-        label="Mot de passe"
+        label={t('loginForm.passwordLabel')}
         type="password"
         value={password}
         onChange={e => setPassword(e.target.value)}
@@ -67,7 +69,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         maxLength={128}
       />
       <button className={styles.button} type="submit">
-        Créer un compte
+        {t('header.register')}
       </button>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </form>

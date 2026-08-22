@@ -1,17 +1,19 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ChangePasswordFormProps } from './ChangePasswordForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
 import styles from '../AuthForm.module.css'
 
 export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps) {
+  const { t } = useTranslation()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const passwordError = passwordLengthError(newPassword, 'Le nouveau mot de passe')
+    const passwordError = passwordLengthError(newPassword, t('changePasswordForm.newPasswordLabel'))
     if (passwordError) {
       setError(passwordError)
       return
@@ -27,7 +29,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
       <FormField
-        label="Mot de passe actuel"
+        label={t('changePasswordForm.currentPasswordLabel')}
         type="password"
         value={currentPassword}
         onChange={e => setCurrentPassword(e.target.value)}
@@ -35,7 +37,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
         maxLength={128}
       />
       <FormField
-        label="Nouveau mot de passe"
+        label={t('changePasswordForm.newPasswordLabel')}
         type="password"
         value={newPassword}
         onChange={e => setNewPassword(e.target.value)}
@@ -43,7 +45,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
         maxLength={128}
       />
       <button className={styles.button} type="submit">
-        Changer le mot de passe
+        {t('changePasswordForm.submitButton')}
       </button>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </form>

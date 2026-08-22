@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Dialog } from '@base-ui/react/dialog'
 import { updateQuoteComment } from '../../../api/quote'
 import { useToast } from '../../../components/Toast/useToast'
@@ -11,6 +12,7 @@ const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 
 const COMMENT_MAX_LENGTH = 2000
 
 export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteDetailModalProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
 
@@ -35,7 +37,7 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
-      showToast("Le commentaire n'a pas pu être enregistré.")
+      showToast(t('quoteDetailModal.commentSaveErrorToast'))
     },
   })
 
@@ -56,8 +58,8 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
     <Dialog.Root open={quote !== null} onOpenChange={open => { if (!open) handleClose() }}>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} />
-        <Dialog.Popup className={styles.popup} aria-label="Citation">
-          <Dialog.Close className={styles.closeButton} aria-label="Fermer">×</Dialog.Close>
+        <Dialog.Popup className={styles.popup} aria-label={t('quoteDetailModal.ariaLabel')}>
+          <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')}>×</Dialog.Close>
           {quote && (
             <>
               <p className={styles.text}>{quote.selectedText}</p>
@@ -67,14 +69,23 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
                 value={commentDraft}
                 onChange={event => setCommentDraft(event.target.value)}
                 maxLength={COMMENT_MAX_LENGTH}
-                placeholder="Ajouter un commentaire personnel..."
-                aria-label="Commentaire personnel"
+                placeholder={t('quoteDetailModal.commentPlaceholder')}
+                aria-label={t('quoteDetailModal.commentAriaLabel')}
               />
 
               <QuoteTagEditor quoteId={quote.id} tags={quote.tags} />
 
               <p className={styles.meta}>
-                {volumeTitle && `${volumeTitle} — `}page {quote.pageNumber} · {dateFormatter.format(new Date(quote.createdAt))}
+                {volumeTitle
+                  ? t('quoteDetailModal.metaWithVolume', {
+                      volumeTitle,
+                      page: quote.pageNumber,
+                      date: dateFormatter.format(new Date(quote.createdAt)),
+                    })
+                  : t('quoteDetailModal.meta', {
+                      page: quote.pageNumber,
+                      date: dateFormatter.format(new Date(quote.createdAt)),
+                    })}
               </p>
             </>
           )}

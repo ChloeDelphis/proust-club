@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { requestPasswordReset } from '../../api/auth'
 import type { PasswordResetRequestParams } from '../../api/auth'
@@ -8,6 +9,7 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const mutation = useMutation({
     mutationFn: (params: PasswordResetRequestParams) => requestPasswordReset(params),
   })
@@ -19,18 +21,15 @@ export default function ForgotPasswordPage() {
     ? null
     : apiErrorMessage(
         mutation.error,
-        { 429: 'Trop de tentatives. Réessayez plus tard.', 400: 'Adresse email invalide.' },
-        'Une erreur est survenue. Réessayez.',
+        { 429: t('forgotPasswordPage.tooManyAttemptsError'), 400: t('emailValidation.formatError') },
+        t('forgotPasswordPage.genericError'),
       )
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>Mot de passe oublié</h1>
+      <h1 className={styles.title}>{t('forgotPasswordPage.title')}</h1>
       {mutation.isSuccess ? (
-        <p>
-          Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé.
-          Vérifiez votre boîte de réception.
-        </p>
+        <p>{t('forgotPasswordPage.successMessage')}</p>
       ) : (
         <>
           <ForgotPasswordForm onSubmit={params => mutation.mutate(params)} />
@@ -38,7 +37,7 @@ export default function ForgotPasswordPage() {
         </>
       )}
       <p className={styles.switch}>
-        <Link to="/login">Retour à la connexion</Link>
+        <Link to="/login">{t('forgotPasswordPage.backToLoginLink')}</Link>
       </p>
     </main>
   )

@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ForgotPasswordFormProps } from './ForgotPasswordForm.types'
 import FormField from '../FormField/FormField'
 import { emailFormatError } from '../emailValidation'
 import styles from '../AuthForm.module.css'
 
 export default function ForgotPasswordForm({ onSubmit }: ForgotPasswordFormProps) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
 
@@ -23,7 +25,7 @@ export default function ForgotPasswordForm({ onSubmit }: ForgotPasswordFormProps
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
       <FormField
-        label="Email"
+        label={t('registerForm.emailLabel')}
         type="email"
         value={email}
         onChange={e => setEmail(e.target.value)}
@@ -31,7 +33,7 @@ export default function ForgotPasswordForm({ onSubmit }: ForgotPasswordFormProps
         maxLength={255}
       />
       <button className={styles.button} type="submit">
-        Envoyer le lien de réinitialisation
+        {t('forgotPasswordForm.submitButton')}
       </button>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </form>

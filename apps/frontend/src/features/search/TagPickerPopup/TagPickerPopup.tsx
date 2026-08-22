@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Dialog } from '@base-ui/react/dialog'
+import { useTranslation } from 'react-i18next'
 import { useTags } from '../../../hooks/useTags'
 import { useTagSearch } from '../../../hooks/useTagSearch'
 import Spinner from '../../../components/Spinner/Spinner'
@@ -7,6 +8,7 @@ import type { TagPickerPopupProps } from './TagPickerPopup.types'
 import styles from './TagPickerPopup.module.css'
 
 export default function TagPickerPopup({ onSave, onCancel, isSaving }: TagPickerPopupProps) {
+  const { t } = useTranslation()
   const { data: tags, isPending } = useTags()
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
@@ -38,15 +40,15 @@ export default function TagPickerPopup({ onSave, onCancel, isSaving }: TagPicker
     <Dialog.Root open onOpenChange={open => { if (!open && !isSaving) onCancel() }}>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} data-testid="tag-picker-backdrop" />
-        <Dialog.Popup className={styles.popup} aria-label="Choisir des tags">
-          <Dialog.Close className={styles.closeButton} aria-label="Fermer" disabled={isSaving}>×</Dialog.Close>
+        <Dialog.Popup className={styles.popup} aria-label={t('tagPicker.ariaLabel')}>
+          <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')} disabled={isSaving}>×</Dialog.Close>
 
           {selectedNames.size > 0 && (
             <ul className={styles.selectedList}>
               {Array.from(selectedNames).map(name => (
                 <li key={name} className={styles.selectedChip}>
                   {name}
-                  <button type="button" onClick={() => toggleTag(name)} aria-label={`Retirer ${name}`}>
+                  <button type="button" onClick={() => toggleTag(name)} aria-label={t('tagPicker.removeTag', { name })}>
                     ×
                   </button>
                 </li>
@@ -58,9 +60,9 @@ export default function TagPickerPopup({ onSave, onCancel, isSaving }: TagPicker
             type="text"
             value={search}
             onChange={event => setSearch(event.target.value)}
-            placeholder="Chercher un tag..."
+            placeholder={t('tagPicker.searchPlaceholder')}
             className={styles.searchInput}
-            aria-label="Chercher un tag"
+            aria-label={t('tagPicker.searchAriaLabel')}
           />
 
           {isPending ? (
@@ -80,7 +82,7 @@ export default function TagPickerPopup({ onSave, onCancel, isSaving }: TagPicker
 
           {canCreate && (
             <button type="button" className={styles.createButton} onClick={createFromSearch}>
-              Créer « {search.trim()} »
+              {t('tagPicker.createButton', { name: search.trim() })}
             </button>
           )}
 
@@ -90,7 +92,7 @@ export default function TagPickerPopup({ onSave, onCancel, isSaving }: TagPicker
             disabled={isSaving}
             onClick={() => onSave(Array.from(selectedNames))}
           >
-            Enregistrer
+            {t('tagPicker.saveButton')}
           </button>
         </Dialog.Popup>
       </Dialog.Portal>

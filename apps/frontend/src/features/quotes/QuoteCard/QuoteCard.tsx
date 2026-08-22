@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { deleteQuote } from '../../../api/quote'
 import { useToast } from '../../../components/Toast/useToast'
 import type { QuoteCardProps } from './QuoteCard.types'
@@ -7,6 +8,7 @@ import styles from './QuoteCard.module.css'
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
 export default function QuoteCard({ quote }: QuoteCardProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
 
@@ -16,12 +18,12 @@ export default function QuoteCard({ quote }: QuoteCardProps) {
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
-      showToast("La citation n'a pas pu être supprimée.")
+      showToast(t('quoteCard.deleteErrorToast'))
     },
   })
 
   function handleDelete() {
-    if (!window.confirm('Supprimer cette citation ?')) return
+    if (!window.confirm(t('quoteCard.deleteConfirm'))) return
     deleteMutation.mutate(quote.id)
   }
 
@@ -43,7 +45,7 @@ export default function QuoteCard({ quote }: QuoteCardProps) {
           onClick={handleDelete}
           disabled={deleteMutation.isPending}
         >
-          Supprimer
+          {t('quoteCard.deleteButton')}
         </button>
       </footer>
     </article>

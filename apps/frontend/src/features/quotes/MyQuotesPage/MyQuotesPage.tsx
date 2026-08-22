@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { listQuotes } from '../../../api/quote'
@@ -16,6 +17,7 @@ import styles from './MyQuotesPage.module.css'
 const PAGE_SIZE = 10
 
 export default function MyQuotesPage() {
+  const { t } = useTranslation()
   const { isPending: isUserPending, isSuccess: isConnected } = useCurrentUser()
   const [tagId, setTagId] = useState<number | null>(null)
   const [page, setPage] = useState(0)
@@ -49,11 +51,11 @@ export default function MyQuotesPage() {
   if (isPending) {
     content = <Spinner />
   } else if (isError) {
-    content = <ErrorMessage message="Une erreur est survenue. Veuillez réessayer." />
+    content = <ErrorMessage message={t('myQuotesPage.error')} />
   } else if (data.results.length === 0) {
     content = (
       <EmptyState
-        message={tagId === null ? 'Aucune citation sauvegardée pour le moment.' : 'Aucune citation avec ce tag.'}
+        message={tagId === null ? t('myQuotesPage.emptyStateNoQuotes') : t('myQuotesPage.emptyStateNoTagMatch')}
       />
     )
   } else {
@@ -73,7 +75,7 @@ export default function MyQuotesPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>Mes citations</h1>
+      <h1 className={styles.title}>{t('header.myQuotesLink')}</h1>
       <TimelineBar activeTagId={tagId} />
       <TagFilterBar activeTagId={tagId} onSelectTag={handleSelectTag} />
       {content}

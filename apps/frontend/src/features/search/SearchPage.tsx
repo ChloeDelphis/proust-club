@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { searchParagraphs } from '../../api/search'
 import SearchForm from './SearchForm/SearchForm'
 import ResultList from './ResultList/ResultList'
@@ -12,6 +13,7 @@ import styles from './SearchPage.module.css'
 const PAGE_SIZE = 10
 
 export default function SearchPage() {
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
 
@@ -35,9 +37,9 @@ export default function SearchPage() {
     if (isPending) {
       content = <Spinner />
     } else if (isError) {
-      content = <ErrorMessage message="Une erreur est survenue. Veuillez réessayer." />
+      content = <ErrorMessage message={t('searchPage.error')} />
     } else if (data.results.length === 0) {
-      content = <EmptyState message={`Aucun résultat pour « ${query} ».`} />
+      content = <EmptyState message={t('searchPage.emptyState', { query })} />
     } else {
       content = (
         <ResultList
@@ -54,7 +56,7 @@ export default function SearchPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>Proust Club</h1>
+      <h1 className={styles.title}>{t('header.brand')}</h1>
       <SearchForm onSubmit={handleSearch} />
       {content}
     </main>

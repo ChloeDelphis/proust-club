@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router'
 import { login } from '../../api/auth'
 import type { LoginParams } from '../../api/auth'
@@ -8,6 +9,7 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -21,14 +23,14 @@ export default function LoginPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>Se connecter</h1>
+      <h1 className={styles.title}>{t('loginForm.submitButton')}</h1>
       <LoginForm onSubmit={params => mutation.mutate(params)} />
-      {mutation.isError && <ErrorMessage message="Identifiants invalides." />}
+      {mutation.isError && <ErrorMessage message={t('loginPage.invalidCredentialsError')} />}
       <p className={styles.switch}>
-        <Link to="/forgot-password">Mot de passe oublié ?</Link>
+        <Link to="/forgot-password">{t('loginPage.forgotPasswordLink')}</Link>
       </p>
       <p className={styles.switch}>
-        Pas encore de compte ? <Link to="/register">Créer un compte</Link>
+        {t('loginPage.noAccountPrompt')} <Link to="/register">{t('header.register')}</Link>
       </p>
     </main>
   )

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useToast } from '../../../components/Toast/useToast'
 import { createQuote } from '../../../api/quote'
@@ -12,6 +13,7 @@ import type { QuoteSelectionProps, Phase } from './QuoteSelection.types'
 import styles from './QuoteSelection.module.css'
 
 export default function QuoteSelection({ paragraphId, text, highlightRange }: QuoteSelectionProps) {
+  const { t } = useTranslation()
   const { isSuccess: isConnected } = useCurrentUser()
   const showToast = useToast()
   const containerRef = useRef<HTMLParagraphElement>(null)
@@ -96,11 +98,11 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
       { paragraphId, startOffset: start, endOffset: end, selectedText: text.slice(start, end), tagNames },
       {
         onSuccess: () => {
-          showToast('Citation enregistrée.')
+          showToast(t('quoteSelection.savedToast'))
           resetToIdle()
         },
         onError: () => {
-          showToast("La citation n'a pas pu être enregistrée.")
+          showToast(t('quoteSelection.saveErrorToast'))
           setPhase({ kind: 'selected', start, end })
         },
       },
@@ -135,7 +137,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
             onMouseDown={event => event.preventDefault()}
             onClick={handleSaveClick}
           >
-            Sauvegarder
+            {t('quoteSelection.saveButton')}
           </button>
         </div>
       )}

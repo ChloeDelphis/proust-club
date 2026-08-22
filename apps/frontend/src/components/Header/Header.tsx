@@ -1,10 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 import { logout } from '../../api/auth'
 import { useCurrentUser } from '../../features/auth/useCurrentUser'
 import styles from './Header.module.css'
 
 export default function Header() {
+  const { t } = useTranslation()
   const { data: user, isSuccess } = useCurrentUser()
   const queryClient = useQueryClient()
 
@@ -19,20 +21,20 @@ export default function Header() {
 
   return (
     <header className={styles.root}>
-      <Link className={styles.brand} to="/">Proust Club</Link>
+      <Link className={styles.brand} to="/">{t('header.brand')}</Link>
       {isSuccess ? (
         <div className={styles.session}>
-          <Link to="/mes-citations">Mes citations</Link>
-          <Link to="/account">Mon compte</Link>
-          <span>Connecté en tant que {user.username}</span>
+          <Link to="/mes-citations">{t('header.myQuotesLink')}</Link>
+          <Link to="/account">{t('header.accountLink')}</Link>
+          <span>{t('header.loggedInAs', { username: user.username })}</span>
           <button className={styles.logoutButton} type="button" onClick={() => logoutMutation.mutate()}>
-            Se déconnecter
+            {t('header.logout')}
           </button>
         </div>
       ) : (
         <nav className={styles.nav}>
-          <Link to="/login">Se connecter</Link>
-          <Link to="/register">Créer un compte</Link>
+          <Link to="/login">{t('header.login')}</Link>
+          <Link to="/register">{t('header.register')}</Link>
         </nav>
       )}
     </header>

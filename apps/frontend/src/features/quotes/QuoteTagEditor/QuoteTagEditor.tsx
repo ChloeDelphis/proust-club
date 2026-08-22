@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { addTagToQuote, removeTagFromQuote } from '../../../api/quote'
 import { useTags } from '../../../hooks/useTags'
 import { useTagSearch } from '../../../hooks/useTagSearch'
@@ -12,6 +13,7 @@ import styles from './QuoteTagEditor.module.css'
 // step to collect a batch) — this quote already exists server-side, so there's nothing to defer
 // until a later creation call.
 export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
   const { data: allTags, isPending } = useTags()
@@ -24,7 +26,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
       setSearch('')
     },
     onError: () => {
-      showToast("Le tag n'a pas pu être ajouté.")
+      showToast(t('quoteTagEditor.addErrorToast'))
     },
   })
 
@@ -34,7 +36,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
-      showToast("Le tag n'a pas pu être retiré.")
+      showToast(t('quoteTagEditor.removeErrorToast'))
     },
   })
 
@@ -56,7 +58,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
                 type="button"
                 className={styles.removeButton}
                 onClick={() => removeMutation.mutate(tag.id)}
-                aria-label={`Retirer ${tag.name}`}
+                aria-label={t('tagPicker.removeTag', { name: tag.name })}
               >
                 ×
               </button>
@@ -69,9 +71,9 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
         type="text"
         value={search}
         onChange={event => setSearch(event.target.value)}
-        placeholder="Ajouter un tag..."
+        placeholder={t('quoteTagEditor.addPlaceholder')}
         className={styles.searchInput}
-        aria-label="Ajouter un tag"
+        aria-label={t('quoteTagEditor.addAriaLabel')}
       />
 
       {isPending ? (
@@ -92,7 +94,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
 
       {canCreate && (
         <button type="button" className={styles.createButton} onClick={() => addMutation.mutate(search.trim())}>
-          Créer « {search.trim()} »
+          {t('tagPicker.createButton', { name: search.trim() })}
         </button>
       )}
     </div>

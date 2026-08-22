@@ -1,14 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router'
 import { register } from '../../api/auth'
 import type { RegisterParams } from '../../api/auth'
 import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
-import { apiErrorMessage, PASSWORD_COMPROMISED_MESSAGE } from './apiErrorMessage'
+import { apiErrorMessage, passwordCompromisedMessage } from './apiErrorMessage'
 import RegisterForm from './RegisterForm/RegisterForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
 
 export default function RegisterPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -34,19 +36,19 @@ export default function RegisterPage() {
     : apiErrorMessage(
         mutation.error,
         {
-          409: 'Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).',
-          422: PASSWORD_COMPROMISED_MESSAGE,
+          409: t('registerPage.identifierTakenError'),
+          422: passwordCompromisedMessage(),
         },
-        'Impossible de créer ce compte. Réessayez.',
+        t('registerPage.genericError'),
       )
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>Créer un compte</h1>
+      <h1 className={styles.title}>{t('header.register')}</h1>
       <RegisterForm onSubmit={params => mutation.mutate(params)} />
       {errorMessage && <ErrorMessage message={errorMessage} />}
       <p className={styles.switch}>
-        Déjà un compte ? <Link to="/login">Se connecter</Link>
+        {t('registerPage.alreadyAccountPrompt')} <Link to="/login">{t('loginForm.submitButton')}</Link>
       </p>
     </main>
   )

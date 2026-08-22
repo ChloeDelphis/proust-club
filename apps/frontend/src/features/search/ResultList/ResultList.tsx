@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { SearchHit } from '../../../api/search'
 import ParagraphCard from '../ParagraphCard/ParagraphCard'
 import Pagination from '../../../components/Pagination/Pagination'
@@ -13,10 +14,11 @@ interface ResultListProps {
 }
 
 export default function ResultList({ results, total, page, size, isFetching, onPageChange }: ResultListProps) {
+  const { t } = useTranslation()
   return (
     <section className={isFetching ? `${styles.root} ${styles.isFetching}` : styles.root}>
       <p className={styles.count}>
-        {total} résultat{total > 1 ? 's' : ''}
+        {t('resultList.resultCount', { count: total })}
       </p>
       <ul className={styles.list}>
         {results.map(hit => (
