@@ -75,7 +75,7 @@ export default function MyQuotesPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>{t('header.myQuotesLink')}</h1>
+      <h1 className={styles.title}>{t('myQuotesPage.title')}</h1>
       <TimelineBar activeTagId={tagId} />
       <TagFilterBar activeTagId={tagId} onSelectTag={handleSelectTag} />
       {content}

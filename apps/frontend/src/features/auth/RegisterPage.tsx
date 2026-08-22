@@ -44,11 +44,11 @@ export default function RegisterPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>{t('header.register')}</h1>
+      <h1 className={styles.title}>{t('registerPage.title')}</h1>
       <RegisterForm onSubmit={params => mutation.mutate(params)} />
       {errorMessage && <ErrorMessage message={errorMessage} />}
       <p className={styles.switch}>
-        {t('registerPage.alreadyAccountPrompt')} <Link to="/login">{t('loginForm.submitButton')}</Link>
+        {t('registerPage.alreadyAccountPrompt')} <Link to="/login">{t('registerPage.loginLink')}</Link>
       </p>
     </main>
   )

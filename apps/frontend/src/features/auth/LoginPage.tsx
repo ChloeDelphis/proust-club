@@ -23,14 +23,14 @@ export default function LoginPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>{t('loginForm.submitButton')}</h1>
+      <h1 className={styles.title}>{t('loginPage.title')}</h1>
       <LoginForm onSubmit={params => mutation.mutate(params)} />
       {mutation.isError && <ErrorMessage message={t('loginPage.invalidCredentialsError')} />}
       <p className={styles.switch}>
         <Link to="/forgot-password">{t('loginPage.forgotPasswordLink')}</Link>
       </p>
       <p className={styles.switch}>
-        {t('loginPage.noAccountPrompt')} <Link to="/register">{t('header.register')}</Link>
+        {t('loginPage.noAccountPrompt')} <Link to="/register">{t('loginPage.registerLink')}</Link>
       </p>
     </main>
   )

@@ -69,7 +69,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         maxLength={128}
       />
       <button className={styles.button} type="submit">
-        {t('header.register')}
+        {t('registerForm.submitButton')}
       </button>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </form>

@@ -19,6 +19,7 @@
     "accountLink": "Mon compte",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
+    "login": "Se connecter",
     "register": "Créer un compte"
   },
   "emailVerificationBanner": {
@@ -75,18 +76,23 @@
     "submitButton": "Se connecter"
   },
   "loginPage": {
+    "title": "Se connecter",
     "invalidCredentialsError": "Identifiants invalides.",
     "forgotPasswordLink": "Mot de passe oublié ?",
-    "noAccountPrompt": "Pas encore de compte ?"
+    "noAccountPrompt": "Pas encore de compte ?",
+    "registerLink": "Créer un compte"
   },
   "registerForm": {
     "usernameTooShortError": "Le nom d’utilisateur doit contenir au moins 3 caractères.",
-    "emailLabel": "Email"
+    "emailLabel": "Email",
+    "submitButton": "Créer un compte"
   },
   "registerPage": {
+    "title": "Créer un compte",
     "identifierTakenError": "Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).",
     "genericError": "Impossible de créer ce compte. Réessayez.",
-    "alreadyAccountPrompt": "Déjà un compte ?"
+    "alreadyAccountPrompt": "Déjà un compte ?",
+    "loginLink": "Se connecter"
   },
   "changePasswordForm": {
     "currentPasswordLabel": "Mot de passe actuel",
@@ -127,6 +133,7 @@
     "backHomeLink": "Retour à l’accueil"
   },
   "myQuotesPage": {
+    "title": "Mes citations",
     "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
     "emptyStateNoTagMatch": "Aucune citation avec ce tag."
   },
