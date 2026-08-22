@@ -56,7 +56,7 @@ export default function SearchPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>{t('header.brand')}</h1>
+      <h1 className={styles.title}>{t('searchPage.title')}</h1>
       <SearchForm onSubmit={handleSearch} />
       {content}
     </main>

@@ -36,6 +36,7 @@
     "submitButton": "Chercher"
   },
   "searchPage": {
+    "title": "Proust Club",
     "emptyState": "Aucun résultat pour « {{query}} »."
   },
   "resultList": {
@@ -123,7 +124,8 @@
     "title": "Réinitialiser le mot de passe",
     "invalidLinkError": "Ce lien de réinitialisation est invalide.",
     "requestNewLinkLink": "Demander un nouveau lien",
-    "expiredLinkError": "Ce lien de réinitialisation est invalide ou a expiré."
+    "expiredLinkError": "Ce lien de réinitialisation est invalide ou a expiré.",
+    "genericError": "Une erreur est survenue. Réessayez."
   },
   "confirmEmailPage": {
     "title": "Confirmation de l’email",

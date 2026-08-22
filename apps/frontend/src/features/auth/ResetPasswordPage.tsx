@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
           400: t('resetPasswordPage.expiredLinkError'),
           422: t('auth.passwordCompromisedError'),
         },
-        t('forgotPasswordPage.genericError'),
+        t('resetPasswordPage.genericError'),
       )
 
   return (
