@@ -52,11 +52,11 @@ describe('LoginPage', () => {
 
     render(<LoginPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222')
     await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
 
-    expect(authApi.login).toHaveBeenCalledWith({ username: 'marcel', password: 'hunter2222' })
+    expect(authApi.login).toHaveBeenCalledWith({ email: 'marcel@example.com', password: 'hunter2222' })
     expect(await screen.findByText('Page de recherche')).toBeInTheDocument()
   })
 
@@ -65,7 +65,7 @@ describe('LoginPage', () => {
 
     render(<LoginPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'wrong')
     await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
 

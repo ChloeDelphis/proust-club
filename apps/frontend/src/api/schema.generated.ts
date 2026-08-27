@@ -563,10 +563,11 @@ export interface components {
         /** @description Login request */
         LoginRequest: {
             /**
-             * @description Username
-             * @example marcel
+             * Format: email
+             * @description Account email address
+             * @example marcel@example.com
              */
-            username: string;
+            email: string;
             /**
              * @description Password
              * @example hunter2222
@@ -1000,6 +1001,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description Password found in a known data breach */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     changePassword: {
@@ -1033,6 +1043,15 @@ export interface operations {
             };
             /** @description Not authenticated, or current password incorrect */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description New password found in a known data breach */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1106,6 +1125,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description New password found in a known data breach */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     logout: {
@@ -1148,7 +1176,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserResponse"];
                 };
             };
-            /** @description Invalid username or password */
+            /** @description Invalid email or password */
             401: {
                 headers: {
                     [name: string]: unknown;

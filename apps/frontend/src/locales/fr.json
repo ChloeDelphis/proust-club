@@ -71,7 +71,7 @@
     "defaultLabel": "Le mot de passe"
   },
   "loginForm": {
-    "missingFieldsError": "Renseignez votre nom d’utilisateur et votre mot de passe.",
+    "missingFieldsError": "Renseignez votre adresse email et votre mot de passe.",
     "usernameLabel": "Nom d’utilisateur",
     "passwordLabel": "Mot de passe",
     "submitButton": "Se connecter"
