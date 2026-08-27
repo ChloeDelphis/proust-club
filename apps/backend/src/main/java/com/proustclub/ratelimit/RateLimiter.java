@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Locale;
+import java.util.UUID;
 
 @Component
 public class RateLimiter {
@@ -44,10 +44,13 @@ public class RateLimiter {
         check(loginByIp, ClientIp.resolve(request), "login", "ip");
     }
 
-    public void checkLoginByAccount(String username) {
+    public void checkLoginByAccount(String email) {
         // Normalized here, not by the caller: this is the one place the account-bucket key is
-        // derived, so the rule can't drift out of sync between call sites.
-        check(loginByAccount, username.trim().toLowerCase(Locale.ROOT), "login", "account");
+        // derived, so the rule can't drift out of sync between call sites. Keyed by the raw login
+        // input (email), not a resolved account id — this is the entry the attacker controls, and
+        // it must be limited even when it matches no account (same reasoning as
+        // checkPasswordResetByAccount below).
+        check(loginByAccount, EmailNormalizer.normalize(email), "login", "account");
     }
 
     public void checkRegisterByIp(HttpServletRequest request) {
@@ -75,12 +78,15 @@ public class RateLimiter {
         check(passwordResetConfirmByIp, ClientIp.resolve(request), "password-reset-confirm", "ip");
     }
 
-    public void checkPasswordChangeByAccount(String username) {
-        check(passwordChangeByAccount, username.trim().toLowerCase(Locale.ROOT), "password-change", "account");
+    // Keyed by the stable userId, not the login credential — these two actions are already
+    // authenticated (the account is already resolved, unlike login/password-reset), so there's no
+    // reason to depend on authentication.getName() (the email) for identity here. See ADR-013.
+    public void checkPasswordChangeByAccount(UUID userId) {
+        check(passwordChangeByAccount, userId.toString(), "password-change", "account");
     }
 
-    public void checkEmailVerificationResendByAccount(String username) {
-        check(emailVerificationResendByAccount, username.trim().toLowerCase(Locale.ROOT), "email-verification-resend", "account");
+    public void checkEmailVerificationResendByAccount(UUID userId) {
+        check(emailVerificationResendByAccount, userId.toString(), "email-verification-resend", "account");
     }
 
     private void check(LoadingCache<String, Bucket> buckets, String key, String endpoint, String keyType) {

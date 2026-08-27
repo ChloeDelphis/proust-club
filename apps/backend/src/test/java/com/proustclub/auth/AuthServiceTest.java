@@ -7,17 +7,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.ErrorResponseException;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -154,5 +160,44 @@ class AuthServiceTest {
                 .thenThrow(new RuntimeException("HIBP unreachable"));
 
         service.checkPasswordNotCompromised("hunter2222");
+    }
+
+    @Test
+    void reauthenticateNormalizesTheEmailBeforeDelegatingToAuthenticationManager() {
+        var authentication = mock(Authentication.class);
+        when(authenticationManager.authenticate(new UsernamePasswordAuthenticationToken("marcel@example.com", "hunter2222")))
+                .thenReturn(authentication);
+
+        var result = service.reauthenticate("  Marcel@Example.com  ", "hunter2222");
+
+        assertThat(result).isSameAs(authentication);
+    }
+
+    @Test
+    void reauthenticateNeverLooksUpTheRepositoryItself() {
+        // The whole point of delegating straight to AuthenticationManager is that resolution
+        // happens exclusively inside AuthUserDetailsService, reached through it — never as a
+        // manual pre-check here, which would bypass DaoAuthenticationProvider's timing-attack
+        // mitigation for an unknown email (see ADR-013). This guards against that regression
+        // creeping back in, independently of the structural integration test on AuthController.
+        when(authenticationManager.authenticate(any()))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
+
+        assertThatThrownBy(() -> service.reauthenticate("marcel@example.com", "wrong-password"))
+                .isInstanceOf(ApiException.class);
+
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void currentUserResolvesByUuid() {
+        var uuid = UUID.randomUUID();
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(
+                new AuthUser(uuid, "marcel", "marcel@example.com", "hash", "USER", true)));
+
+        var response = service.currentUser(uuid);
+
+        assertThat(response.uuid()).isEqualTo(uuid);
+        assertThat(response.username()).isEqualTo("marcel");
     }
 }

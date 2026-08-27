@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 class AuthService {
 
@@ -107,28 +109,38 @@ class AuthService {
     }
 
     @Transactional(readOnly = true)
-    Authentication authenticate(String username, String password) {
-        var authentication = reauthenticate(username, password);
-        log.info("User logged in: {}", username);
+    Authentication authenticate(String email, String password) {
+        var authentication = reauthenticate(email, password);
+        log.info("User logged in");
         return authentication;
     }
 
     // Same AuthenticationManager round-trip as authenticate(), without the "User logged in" log —
     // for callers re-verifying a password on an already-open session (e.g. PasswordChangeService),
     // where no new login actually happens and that log line would be misleading.
+    //
+    // Normalizes here, not by the caller: this is the one place the login credential enters
+    // AuthenticationManager, so every caller (register()'s auto-login, AuthController.login(),
+    // PasswordChangeService's reauthentication) gets the same normalization without having to
+    // remember to apply it themselves. Deliberately does its own manual findByEmail() lookup —
+    // resolution happens entirely inside AuthUserDetailsService, reached through
+    // AuthenticationManager, so an unknown email pays the exact same DaoAuthenticationProvider
+    // timing-attack mitigation as a wrong password (see ADR-013).
     @Transactional(readOnly = true)
-    Authentication reauthenticate(String username, String password) {
+    Authentication reauthenticate(String email, String password) {
+        var normalizedEmail = EmailNormalizer.normalize(email);
         try {
-            return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(normalizedEmail, password));
         } catch (AuthenticationException e) {
-            log.warn("Authentication failed for username: {}", username);
+            // Never the raw identifier — even normalized, it's still an email (see ADR-013).
+            log.warn("Authentication failed");
             throw ApiException.invalidCredentials();
         }
     }
 
     @Transactional(readOnly = true)
-    UserResponse currentUser(String username) {
-        var user = repository.findByUsername(username)
+    UserResponse currentUser(UUID userId) {
+        var user = repository.findByUuid(userId)
                 .orElseThrow(ApiException::invalidCredentials);
         return new UserResponse(user.uuid(), user.username(), user.email(), user.role(), user.emailVerified());
     }

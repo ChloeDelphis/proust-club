@@ -17,13 +17,16 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -51,6 +54,11 @@ class AuthControllerTest {
     // working unchanged — individual tests below override this stub.
     @MockitoBean
     PasswordBreachChecker passwordBreachChecker;
+
+    // Spies the real bean rather than mocking it — the point of the structural anti-enumeration
+    // test below is to observe how many times the real query path is actually hit, not to stub it.
+    @MockitoSpyBean
+    UserRepository userRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -268,7 +276,19 @@ class AuthControllerTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("marcel", "hunter2222password")))
+                        .content(loginJson("marcel@example.com", "hunter2222password")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("marcel"));
+    }
+
+    @Test
+    void loginIsCaseInsensitiveOnEmail() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("Marcel@Example.com", "hunter2222password")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("marcel"));
     }
@@ -281,35 +301,60 @@ class AuthControllerTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("marcel", "wrong-password")))
+                        .content(loginJson("marcel@example.com", "wrong-password")))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void loginWithUnknownUsernameReturnsUnauthorized() throws Exception {
+    void loginWithUnknownEmailReturnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("ghost", "whatever1")))
+                        .content(loginJson("ghost@example.com", "whatever1")))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void unknownUsernameAndWrongPasswordReturnIdenticalBody() throws Exception {
+    void unknownEmailAndWrongPasswordReturnIdenticalBody() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("identicalbody", "identicalbody@example.com", "hunter2222password")))
                 .andExpect(status().isCreated());
 
         MvcResult wrongPassword = mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("identicalbody", "wrong-password-xyz")))
+                        .content(loginJson("identicalbody@example.com", "wrong-password-xyz")))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
 
         MvcResult unknownUser = mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("ghost-user-xyz", "whatever-password")))
+                        .content(loginJson("ghost-user-xyz@example.com", "whatever-password")))
                 .andExpect(status().isUnauthorized())
                 .andReturn();
 
         assertThat(wrongPassword.getResponse().getContentAsString())
                 .isEqualTo(unknownUser.getResponse().getContentAsString());
+    }
+
+    // Structural anti-enumeration guard, deliberately not a wall-clock timing test (noisy, flaky
+    // either direction) — see ADR-013. Proves findByEmail() is reached exactly once in both cases,
+    // exclusively through AuthUserDetailsService via AuthenticationManager: no manual pre-lookup
+    // in AuthController/AuthService could ever short-circuit DaoAuthenticationProvider's own
+    // timing-attack mitigation for an unknown email.
+    @Test
+    void unknownEmailAndWrongPasswordHitTheRepositoryTheExactSameNumberOfTimes() throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("repocount", "repocount@example.com", "hunter2222password")))
+                .andExpect(status().isCreated());
+        clearInvocations(userRepository);
+
+        mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("repocount@example.com", "wrong-password")))
+                .andExpect(status().isUnauthorized());
+        verify(userRepository, times(1)).findByEmail("repocount@example.com");
+
+        clearInvocations(userRepository);
+
+        mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("ghost-repocount@example.com", "whatever-password")))
+                .andExpect(status().isUnauthorized());
+        verify(userRepository, times(1)).findByEmail("ghost-repocount@example.com");
     }
 
     @Test
@@ -319,7 +364,7 @@ class AuthControllerTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("loginnopass", "hunter2222password")))
+                        .content(loginJson("loginnopass@example.com", "hunter2222password")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.password").doesNotExist())
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
@@ -332,7 +377,7 @@ class AuthControllerTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("csrflogin", "hunter2222password")))
+                        .content(loginJson("csrflogin@example.com", "hunter2222password")))
                 .andExpect(status().isForbidden());
     }
 
@@ -361,7 +406,7 @@ class AuthControllerTest {
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login").with(csrf()).session(sessionAfterRegister)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("sessionrotation", "hunter2222password")))
+                        .content(loginJson("sessionrotation@example.com", "hunter2222password")))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -429,7 +474,7 @@ class AuthControllerTest {
         return objectMapper.writeValueAsString(new RegisterRequest(username, email, password));
     }
 
-    private String loginJson(String username, String password) throws Exception {
-        return objectMapper.writeValueAsString(new LoginRequest(username, password));
+    private String loginJson(String email, String password) throws Exception {
+        return objectMapper.writeValueAsString(new LoginRequest(email, password));
     }
 }

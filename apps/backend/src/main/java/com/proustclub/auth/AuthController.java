@@ -65,21 +65,22 @@ class AuthController {
         service.checkNoCheapConflicts(request);
         service.checkPasswordNotCompromised(request.password());
         var created = service.register(request);
-        var authentication = service.authenticate(request.username(), request.password());
+        var authentication = service.authenticate(request.email(), request.password());
         sessionPersister.persist(authentication, httpRequest, httpResponse);
         return created;
     }
 
     @Operation(summary = "Log in", description = "Authenticates and opens a session.")
     @ApiResponse(responseCode = "200", description = "Session opened", content = @Content(schema = @Schema(implementation = UserResponse.class)))
-    @ApiResponse(responseCode = "401", description = "Invalid username or password", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/login", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         rateLimiter.checkLoginByIp(httpRequest);
-        rateLimiter.checkLoginByAccount(request.username());
-        var authentication = service.authenticate(request.username(), request.password());
+        rateLimiter.checkLoginByAccount(request.email());
+        var authentication = service.authenticate(request.email(), request.password());
         sessionPersister.persist(authentication, httpRequest, httpResponse);
-        return service.currentUser(authentication.getName());
+        var userId = ((ProustClubPrincipal) authentication.getPrincipal()).getUserId();
+        return service.currentUser(userId);
     }
 
     @Operation(summary = "Log out", description = "Invalidates the current session.")
@@ -88,7 +89,9 @@ class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        log.info("User logged out: {}", authentication.getName());
+        // getDisplayUsername(), never getName() — the latter is the email under this project's
+        // model (see ADR-013), and CLAUDE.md forbids logging emails unnecessarily.
+        log.info("User logged out: {}", ((ProustClubPrincipal) authentication.getPrincipal()).getDisplayUsername());
         logoutHandlers.forEach(handler -> handler.logout(httpRequest, httpResponse, authentication));
     }
 
@@ -97,6 +100,6 @@ class AuthController {
     @ApiResponse(responseCode = "401", description = "No active session")
     @GetMapping(value = "/api/auth/me", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse me(Authentication authentication) {
-        return service.currentUser(authentication.getName());
+        return service.currentUser(((ProustClubPrincipal) authentication.getPrincipal()).getUserId());
     }
 }

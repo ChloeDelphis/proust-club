@@ -23,7 +23,7 @@ class ApiException extends ErrorResponseException {
     }
 
     static ApiException invalidCredentials() {
-        return new ApiException(HttpStatus.UNAUTHORIZED, "Invalid username or password.");
+        return new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
     }
 
     // Deliberately generic — never distinguishes "expired" from "already used" from "never

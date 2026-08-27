@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.time.Duration;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -47,40 +48,41 @@ class RateLimiterTest {
         var limiter = newLimiter(1, Duration.ofMinutes(1));
 
         limiter.checkLoginByIp(requestFrom("1.1.1.1"));
-        limiter.checkLoginByAccount("marcel"); // separate bucket, does not throw
+        limiter.checkLoginByAccount("marcel@example.com"); // separate bucket, does not throw
     }
 
     @Test
     void sameAccountFromDifferentIpsStillHitsTheAccountLimit() {
         var limiter = newLimiter(1, Duration.ofMinutes(1));
 
-        limiter.checkLoginByAccount("marcel");
+        limiter.checkLoginByAccount("marcel@example.com");
 
-        assertThatThrownBy(() -> limiter.checkLoginByAccount("marcel"))
+        assertThatThrownBy(() -> limiter.checkLoginByAccount("marcel@example.com"))
                 .isInstanceOf(RateLimitExceededException.class);
     }
 
     @Test
-    void unknownUsernameFollowsTheExactSameLogicAsARealOne() {
+    void unknownEmailFollowsTheExactSameLogicAsARealOne() {
         var limiter = newLimiter(1, Duration.ofMinutes(1));
 
         // No special-casing: a bucket is created for whatever string is submitted, whether or
         // not it happens to be a real account — otherwise bucket existence itself would leak
         // account existence.
-        limiter.checkLoginByAccount("ghost-user-that-does-not-exist");
+        limiter.checkLoginByAccount("ghost@example.com");
 
-        assertThatThrownBy(() -> limiter.checkLoginByAccount("ghost-user-that-does-not-exist"))
+        assertThatThrownBy(() -> limiter.checkLoginByAccount("ghost@example.com"))
                 .isInstanceOf(RateLimitExceededException.class);
     }
 
     @Test
     void passwordChangeAccountBucketIsIndependentOfLoginAccountBucket() {
         var limiter = newLimiter(1, Duration.ofMinutes(1));
+        var userId = UUID.randomUUID();
 
-        limiter.checkLoginByAccount("marcel");
-        limiter.checkPasswordChangeByAccount("marcel"); // separate bucket, does not throw
+        limiter.checkLoginByAccount("marcel@example.com");
+        limiter.checkPasswordChangeByAccount(userId); // separate bucket, does not throw
 
-        assertThatThrownBy(() -> limiter.checkPasswordChangeByAccount("marcel"))
+        assertThatThrownBy(() -> limiter.checkPasswordChangeByAccount(userId))
                 .isInstanceOf(RateLimitExceededException.class);
     }
 
@@ -98,11 +100,12 @@ class RateLimiterTest {
     @Test
     void emailVerificationResendAccountBucketIsIndependentOfPasswordChangeAccountBucket() {
         var limiter = newLimiter(1, Duration.ofMinutes(1));
+        var userId = UUID.randomUUID();
 
-        limiter.checkPasswordChangeByAccount("marcel");
-        limiter.checkEmailVerificationResendByAccount("marcel"); // separate bucket, does not throw
+        limiter.checkPasswordChangeByAccount(userId);
+        limiter.checkEmailVerificationResendByAccount(userId); // separate bucket, does not throw
 
-        assertThatThrownBy(() -> limiter.checkEmailVerificationResendByAccount("marcel"))
+        assertThatThrownBy(() -> limiter.checkEmailVerificationResendByAccount(userId))
                 .isInstanceOf(RateLimitExceededException.class);
     }
 

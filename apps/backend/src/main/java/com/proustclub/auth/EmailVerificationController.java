@@ -53,7 +53,8 @@ class EmailVerificationController {
     @PostMapping("/api/auth/email/confirm/resend")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void resend(Authentication authentication) {
-        rateLimiter.checkEmailVerificationResendByAccount(authentication.getName());
-        service.resendVerification(authentication.getName());
+        var userId = ((ProustClubPrincipal) authentication.getPrincipal()).getUserId();
+        rateLimiter.checkEmailVerificationResendByAccount(userId);
+        service.resendVerification(userId);
     }
 }

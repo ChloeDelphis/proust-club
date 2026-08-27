@@ -42,10 +42,13 @@ class PasswordChangeController {
     @PostMapping("/api/auth/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changePassword(@Valid @RequestBody PasswordChangeRequest request, Authentication authentication, HttpServletRequest httpRequest) {
-        rateLimiter.checkPasswordChangeByAccount(authentication.getName());
+        var userId = ((ProustClubPrincipal) authentication.getPrincipal()).getUserId();
+        rateLimiter.checkPasswordChangeByAccount(userId);
         var currentSessionId = httpRequest.getSession(false).getId();
+        // authentication.getName() is the email — exactly what AuthService.reauthenticate() needs
+        // to feed back into AuthenticationManager (see ADR-013).
         service.verifyCurrentPassword(authentication.getName(), request.currentPassword());
         service.checkNewPasswordNotCompromised(request.newPassword());
-        service.changePassword(authentication.getName(), request.newPassword(), currentSessionId);
+        service.changePassword(userId, request.newPassword(), currentSessionId);
     }
 }

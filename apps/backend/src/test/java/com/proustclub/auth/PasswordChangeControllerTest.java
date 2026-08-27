@@ -71,11 +71,11 @@ class PasswordChangeControllerTest {
                 .andExpect(jsonPath("$.username").value("changepwd"));
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("changepwd", "new-password-long-enough")))
+                        .content(loginJson("changepwd@example.com", "new-password-long-enough")))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("changepwd", "old-password-long-enough")))
+                        .content(loginJson("changepwd@example.com", "old-password-long-enough")))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -87,7 +87,7 @@ class PasswordChangeControllerTest {
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("wrongcurrent", "old-password-long-enough")))
+                        .content(loginJson("wrongcurrent@example.com", "old-password-long-enough")))
                 .andExpect(status().isOk());
     }
 
@@ -100,7 +100,7 @@ class PasswordChangeControllerTest {
                 .andExpect(status().isUnprocessableEntity());
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("compromisednew", "old-password-long-enough")))
+                        .content(loginJson("compromisednew@example.com", "old-password-long-enough")))
                 .andExpect(status().isOk());
     }
 
@@ -143,7 +143,7 @@ class PasswordChangeControllerTest {
         MockHttpSession sessionA = (MockHttpSession) registerResult.getRequest().getSession(false);
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("sweepsessions", "old-password-long-enough")))
+                        .content(loginJson("sweepsessions@example.com", "old-password-long-enough")))
                 .andExpect(status().isOk())
                 .andReturn();
         MockHttpSession sessionB = (MockHttpSession) loginResult.getRequest().getSession(false);
@@ -180,7 +180,7 @@ class PasswordChangeControllerTest {
         return objectMapper.writeValueAsString(new RegisterRequest(username, email, password));
     }
 
-    private String loginJson(String username, String password) throws Exception {
-        return objectMapper.writeValueAsString(new LoginRequest(username, password));
+    private String loginJson(String email, String password) throws Exception {
+        return objectMapper.writeValueAsString(new LoginRequest(email, password));
     }
 }
