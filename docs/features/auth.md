@@ -121,7 +121,11 @@ Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/rese
 - Log out → header reverts to login/register links.
 - Log back in with the same credentials → same logged-in state.
 - Log in with a wrong password → generic "Identifiants invalides" message.
-- Log in with an unknown username → same generic message (no hint that the username doesn't exist).
+- Log in with an unknown email → same generic message (no hint that the email doesn't exist). Verified end-to-end against the real server: both cases return byte-identical `401` bodies — done 2026-08-27.
+- Log in with the registration email in a different case (e.g. `Marcel@Example.com`) → succeeds, same account (case-insensitive, same normalization as registration). Verified end-to-end — done 2026-08-27.
+- Log in with a malformed email (e.g. `not-an-email`) → `400`, rejected by `@Email` validation before any authentication attempt. Verified end-to-end (curl + `LoginPage.test.tsx`) — done 2026-08-27.
+- Change password, then check a second concurrent session for the same account (e.g. logged in on two tabs/devices) → the other session is invalidated (`401 Session has expired`) on its next request; the session that performed the change stays open. Verified end-to-end against the real server, two real sessions — done 2026-08-27.
+- Confirm a password reset while another session for the same account is active → that other session is invalidated the same way; the new session opened by the reset stays open. Verified end-to-end against the real server (real Mailhog token) — done 2026-08-27.
 - Register → confirmation email received (Mailhog in dev), reminder banner visible under the header on every page.
 - Click the confirmation link (valid, unused token) → `204`, "Votre adresse email a été confirmée." message, `users.email_verified` becomes `true`, banner disappears immediately if the confirming browser is logged in as that account.
 - Confirming works with no active session (e.g. link opened in a different browser/device than the one used to register).
