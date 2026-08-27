@@ -31,8 +31,9 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 
 **LoginRequest**
 ```json
-{ "username": "marcel", "password": "hunter2222" }
+{ "email": "marcel@example.com", "password": "hunter2222" }
 ```
+- `email`: valid email format, max 255 characters, normalized the same way as registration (trim + lowercase — see `EmailNormalizer`) before being checked
 
 **UserResponse** (the only response shape returned by register/login/me)
 ```json
@@ -42,21 +43,31 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 
 ---
 
-## Why login uses username, not email
+## Why login uses email, and how the session identity model works
 
-`users.username` is the non-nullable, application-facing identifier (see `data-model.md`). Email stays unique for contact/identity purposes but is not the login key for the MVP — one identifier for authentication keeps the login flow and error messages simple.
+`email` is the login credential — a better UX bet than `username` for a mainstream product, since a user is far more likely to remember the address they registered with than an app-specific handle. `username` stays exactly as before: required, unique, the public display identity (`Header`'s "Connecté en tant que ⟨username⟩", etc.) — nothing about it changed, only what you type to log in.
+
+Three previously-conflated things are now explicit, separate concepts — see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md) for the full comparison of options and why:
+
+- **`email`** — the login credential (what authenticates you)
+- **`username`** — the public identity (what other people/the UI see)
+- **`users.uuid`** — the stable technical identity (what the system uses internally: session equality, rate-limit bucket keys, `user_id` foreign keys)
+
+The session principal is a dedicated class, `ProustClubPrincipal` (`auth/ProustClubPrincipal.java`), replacing Spring Security's own `User`. Its `getUsername()` — Spring's vocabulary for "the string used to authenticate," not necessarily the app's `username` field — returns the normalized email, since that's the actual credential; `getUserId()` and `getDisplayUsername()` are separate, explicit accessors for the other two concepts. `equals()`/`hashCode()` are based on `userId` alone, deliberately — neither `username` nor `email` is trusted as the system's notion of identity, only the immutable database key is. `CurrentUser` (`auth/CurrentUser.java`) is the single place every controller in this package resolves the current principal from `Authentication`, rather than each one casting independently.
 
 ---
 
 ## Session establishment
 
-There is no `formLogin()` — see [ADR-002](../architecture/ADR-002-session-based-api-auth.md) for why. `AuthController` calls `AuthenticationManager.authenticate(...)` directly, then persists the resulting `Authentication` into the HTTP session via `SecurityContextRepository`. `register()` reuses the exact same path with the credentials just used to create the account — auto-login is not a separate mechanism, it is `login()` called internally.
+There is no `formLogin()` — see [ADR-002](../architecture/ADR-002-session-based-api-auth.md) for why. `AuthController` calls `AuthenticationManager.authenticate(...)` directly, then persists the resulting `Authentication` into the HTTP session via `SecurityContextRepository`. `register()` reuses the exact same path with the credentials just used to create the account — auto-login is not a separate mechanism, it is `login()` called internally, now passing the registration email through the same normalization as a real login.
+
+`PasswordResetService.confirmReset()`'s auto-login is the one path that never goes through `AuthenticationManager` (the new password was just written, re-verifying it would be pointless) — it builds a `ProustClubPrincipal` directly from the updated user and must call `eraseCredentials()` on it itself before the session is persisted, since that's normally `ProviderManager`'s job and this path bypasses `ProviderManager` entirely.
 
 ---
 
 ## No user enumeration
 
-Login failures — unknown username or wrong password — return the same 401 with the same generic message ("Invalid username or password"). The two cases are never distinguished in the response.
+Login failures — unknown email or wrong password — return the same 401 with the same generic message ("Invalid email or password"). The two cases are never distinguished in the response, and this is structural, not just a matching error message: `AuthService.authenticate()`/`reauthenticate()` never look the account up themselves — resolution happens exclusively inside `AuthUserDetailsService`, reached through `AuthenticationManager`, so an unknown email pays the exact same `DaoAuthenticationProvider` timing-attack mitigation (a dummy password-encoder comparison) as a wrong password on a real account. A prior design that did a manual lookup before calling `AuthenticationManager` would skip that mitigation and leak a timing difference — see ADR-013.
 
 ---
 

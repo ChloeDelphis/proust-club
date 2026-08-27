@@ -1,0 +1,39 @@
+# ADR-013: Authentication identifiers and stable session identity
+
+## Decision
+
+**Three previously-conflated concepts become explicit and separate: `email` is the login credential, `username` is the public display identity, and `users.uuid` is the sole stable technical identity.** A dedicated session principal, `ProustClubPrincipal` (`auth/ProustClubPrincipal.java`), replaces Spring Security's own `User` — its `equals()`/`hashCode()` are based on `userId` alone, never on `username` or `email`.
+
+## Context
+
+Login previously used `username` as the credential, and the session principal was a plain `org.springframework.security.core.userdetails.User` built from it — meaning `Authentication.getName()` (and Spring Security's own notion of session identity) was the `username` string throughout the codebase (`CurrentUser`, `SessionInvalidator`, rate-limit bucket keys).
+
+Switching the login credential to `email` (better UX — a user is far more likely to remember their email than an app-specific username) forced a decision on what the session principal's identity should be built from, since the old approach (principal = login credential) can't just be re-pointed at `email` without consequence.
+
+**Option A — Translate at the door.** Resolve `email` → `username` with a manual `UserRepository.findByEmail()` lookup in the controller/service, before calling `AuthenticationManager` with the resolved `username`. Smallest diff (2-3 files); everything downstream of login stays untouched.
+
+Rejected: **verified by decompiling the exact `spring-security-core-7.1.0.jar` this project pins**, `DaoAuthenticationProvider.retrieveUser()` catches `UsernameNotFoundException` and calls `mitigateAgainstTimingAttack()` — a dummy password-encoder comparison run specifically so an unknown account costs the same wall-clock time as a wrong password on a real one — before rethrowing. A manual lookup performed *before* `AuthenticationManager` is ever called skips this entirely: an unknown email would return instantly (no password hashing paid), a known email with a wrong password would pay the real Argon2id cost — a measurable, exploitable timing side-channel reintroduced by construction.
+
+**Option B — Make email the session identity.** Resolve by email inside `AuthenticationManager` (closing the Option A timing gap), and let the principal's identity — `getUsername()`, `equals()`/`hashCode()` — be the email itself.
+
+Rejected: this only relocates the exact problem the login-credential change was already being scrutinized for. `CurrentUser`, `SessionInvalidator` (`SessionRegistry` equality), and the account-scoped rate-limit buckets would all become keyed on email — a field with no "change email" feature today, but nothing structurally preventing one tomorrow. Coupling session/security internals to a field that could become mutable is exactly the risk already flagged for the login-credential change itself; Option B would just move it one layer deeper instead of resolving it.
+
+**Option C (chosen) — Email authenticates, `userId` is the identity.** Email enters `AuthenticationManager` directly (closing the Option A timing gap, same as B), but the principal built by `AuthUserDetailsService` carries the database `uuid` as an explicit, separate field (`getUserId()`), and that's what `equals()`/`hashCode()` use — not `username`, not `email`.
+
+## Why C
+
+- **Closes the timing-attack gap** the same way B does: resolution happens exclusively inside `AuthUserDetailsService`, reached through `AuthenticationManager`, so `DaoAuthenticationProvider`'s mitigation always applies. Verified with a structural test (`AuthControllerTest.unknownEmailAndWrongPasswordHitTheRepositoryTheExactSameNumberOfTimes`, a `@MockitoSpyBean` asserting `findByEmail()` is reached exactly once in both cases) rather than a wall-clock timing test — timing tests are inherently noisy (false-red or false-green depending on machine load), a structural guarantee that the mitigation is *reachable* is the actual property that matters.
+- **Consecrates neither mutable field as identity**, unlike A (which leaves `username` as the de facto session identity) or B (which would make `email` that identity instead). `users.uuid` already is the one thing in this schema explicitly designed to never change.
+- **`SessionInvalidator` never fabricates a lookup object.** An earlier version of this design considered a "minimal" `ProustClubPrincipal` (only `userId` populated) purely to serve as an O(1) `SessionRegistry.getAllSessions()` lookup key — rejected: `UserDetails.getUsername()` can never return `null`, and a placeholder value would be a structurally meaningless object masquerading as a user. Both actual callers already hold a **real** principal at the point they need one — `PasswordChangeController` has the current session's own principal in `Authentication`; `PasswordResetController` has the one it just built for the reset's auto-login — so `SessionInvalidator.invalidateOtherSessions(ProustClubPrincipal, String)` takes that real object directly and calls `SessionRegistry.getAllSessions()` in O(1), no scan, no fabricated object. `equals()`/`hashCode()` on `userId` alone is what makes this sound: any real principal for a given user retrieves that user's *entire* session set, not just the sessions the specific passed-in instance happens to have registered.
+- **Removes a DB round-trip.** `CurrentUser.resolveUuid()` reads `userId` straight off the already-deserialized session principal — the old `username`-keyed design needed a `findByUsername()` lookup on every request that needed the caller's identity.
+- **Consistent with existing project posture on logging.** `getUsername()` on `ProustClubPrincipal` returns the email (the actual credential — Spring's `UserDetails` contract is "the string used to authenticate," not necessarily a literal username), so `Authentication.getName()` is the email. Every one of the 7 call sites that previously read `authentication.getName()` was audited; the two that must never log it were fixed (`AuthController.logout()` now logs `getDisplayUsername()`; `AuthService.reauthenticate()`'s failure log no longer includes the identifier at all) — consistent with the existing `CLAUDE.md` rule against logging emails unnecessarily. One call site (`PasswordChangeController`, re-feeding the current session's email back into `AuthService.reauthenticate()`) turns out to need exactly `getName()` as-is — a case where the corrected contract made the call site *more* correct than before, not just different.
+
+## Tradeoff accepted
+
+Wider blast radius than Option A would have been: `AuthUserDetailsService`, `ProustClubPrincipal` (new class), `CurrentUser`, `SessionInvalidator`, `AuthService`, `AuthController`, `PasswordChangeController`/`Service`, `EmailVerificationController`/`Service`, and `RateLimiter` all changed, instead of 2-3 files. Judged worth it: the alternative was consecrating either `username` or `email` as the session's notion of identity while already having identified that as a real risk — fixing the login-credential shape without fixing the deeper session-identity question would have left the exact same problem one layer down, discoverable again the next time someone asked "why does `authentication.getName()` mean what it means."
+
+Also accepted: `RateLimiter.checkPasswordChangeByAccount`/`checkEmailVerificationResendByAccount` are now keyed by `userId` (stable) instead of `username`/`email`, while `checkLoginByAccount` stays keyed by the raw, unresolved `email` input (the entry an attacker controls, mirroring the existing `checkPasswordResetByAccount(String email)` precedent) — two different keying strategies for account-scoped buckets, justified by two different threat models (an unauthenticated attacker probing accounts vs. an already-authenticated user's own action), not an inconsistency.
+
+## Date
+
+2026-08-27
