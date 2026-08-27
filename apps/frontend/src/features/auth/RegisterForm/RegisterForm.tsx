@@ -45,7 +45,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
       <FormField
-        label={t('loginForm.usernameLabel')}
+        label={t('registerForm.usernameLabel')}
         type="text"
         value={username}
         onChange={e => setUsername(e.target.value)}
