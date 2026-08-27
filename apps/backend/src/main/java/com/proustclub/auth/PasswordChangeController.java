@@ -23,10 +23,12 @@ class PasswordChangeController {
 
     private final PasswordChangeService service;
     private final RateLimiter rateLimiter;
+    private final CurrentUser currentUser;
 
-    PasswordChangeController(PasswordChangeService service, RateLimiter rateLimiter) {
+    PasswordChangeController(PasswordChangeService service, RateLimiter rateLimiter, CurrentUser currentUser) {
         this.service = service;
         this.rateLimiter = rateLimiter;
+        this.currentUser = currentUser;
     }
 
     @Operation(
@@ -42,7 +44,7 @@ class PasswordChangeController {
     @PostMapping("/api/auth/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changePassword(@Valid @RequestBody PasswordChangeRequest request, Authentication authentication, HttpServletRequest httpRequest) {
-        var userId = ((ProustClubPrincipal) authentication.getPrincipal()).getUserId();
+        var userId = currentUser.resolveUuid(authentication);
         rateLimiter.checkPasswordChangeByAccount(userId);
         var currentSessionId = httpRequest.getSession(false).getId();
         // authentication.getName() is the email — exactly what AuthService.reauthenticate() needs

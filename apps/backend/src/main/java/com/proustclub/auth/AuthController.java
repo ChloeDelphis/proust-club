@@ -40,17 +40,20 @@ class AuthController {
     private final SessionPersister sessionPersister;
     private final List<LogoutHandler> logoutHandlers;
     private final RateLimiter rateLimiter;
+    private final CurrentUser currentUser;
 
     AuthController(
             AuthService service,
             SessionPersister sessionPersister,
             List<LogoutHandler> logoutHandlers,
-            RateLimiter rateLimiter
+            RateLimiter rateLimiter,
+            CurrentUser currentUser
     ) {
         this.service = service;
         this.sessionPersister = sessionPersister;
         this.logoutHandlers = logoutHandlers;
         this.rateLimiter = rateLimiter;
+        this.currentUser = currentUser;
     }
 
     @Operation(summary = "Create an account", description = "Creates a new account and immediately opens a session (auto-login).")
@@ -79,8 +82,7 @@ class AuthController {
         rateLimiter.checkLoginByAccount(request.email());
         var authentication = service.authenticate(request.email(), request.password());
         sessionPersister.persist(authentication, httpRequest, httpResponse);
-        var userId = ((ProustClubPrincipal) authentication.getPrincipal()).getUserId();
-        return service.currentUser(userId);
+        return service.currentUser(currentUser.resolveUuid(authentication));
     }
 
     @Operation(summary = "Log out", description = "Invalidates the current session.")
@@ -100,6 +102,6 @@ class AuthController {
     @ApiResponse(responseCode = "401", description = "No active session")
     @GetMapping(value = "/api/auth/me", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse me(Authentication authentication) {
-        return service.currentUser(((ProustClubPrincipal) authentication.getPrincipal()).getUserId());
+        return service.currentUser(currentUser.resolveUuid(authentication));
     }
 }

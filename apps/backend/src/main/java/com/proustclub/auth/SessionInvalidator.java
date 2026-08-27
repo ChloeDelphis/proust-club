@@ -27,9 +27,7 @@ class SessionInvalidator {
         // the email — a placeholder value here would be a structurally meaningless object. Instead,
         // look up the real, already-registered principal for this user and use it.
         sessionRegistry.getAllPrincipals().stream()
-                .filter(ProustClubPrincipal.class::isInstance)
-                .map(ProustClubPrincipal.class::cast)
-                .filter(principal -> principal.getUserId().equals(userId))
+                .filter(principal -> principal instanceof ProustClubPrincipal p && p.getUserId().equals(userId))
                 .flatMap(principal -> sessionRegistry.getAllSessions(principal, false).stream())
                 .filter(session -> !session.getSessionId().equals(currentSessionId))
                 .forEach(SessionInformation::expireNow);

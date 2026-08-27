@@ -22,10 +22,12 @@ class EmailVerificationController {
 
     private final EmailVerificationService service;
     private final RateLimiter rateLimiter;
+    private final CurrentUser currentUser;
 
-    EmailVerificationController(EmailVerificationService service, RateLimiter rateLimiter) {
+    EmailVerificationController(EmailVerificationService service, RateLimiter rateLimiter, CurrentUser currentUser) {
         this.service = service;
         this.rateLimiter = rateLimiter;
+        this.currentUser = currentUser;
     }
 
     @Operation(
@@ -53,7 +55,7 @@ class EmailVerificationController {
     @PostMapping("/api/auth/email/confirm/resend")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void resend(Authentication authentication) {
-        var userId = ((ProustClubPrincipal) authentication.getPrincipal()).getUserId();
+        var userId = currentUser.resolveUuid(authentication);
         rateLimiter.checkEmailVerificationResendByAccount(userId);
         service.resendVerification(userId);
     }
