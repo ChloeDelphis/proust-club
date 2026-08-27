@@ -47,6 +47,17 @@ describe('LoginPage', () => {
     expect(authApi.login).not.toHaveBeenCalled()
   })
 
+  it('refuse un email mal formé sans déclencher de requête', async () => {
+    render(<LoginPage />, { wrapper })
+
+    await userEvent.type(screen.getByLabelText('Email'), 'not-an-email')
+    await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222')
+    await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
+
+    expect(await screen.findByText('Adresse email invalide.')).toBeInTheDocument()
+    expect(authApi.login).not.toHaveBeenCalled()
+  })
+
   it('transmet les bons paramètres et redirige après connexion', async () => {
     vi.mocked(authApi.login).mockResolvedValue(mockUser)
 

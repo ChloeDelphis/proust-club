@@ -306,6 +306,13 @@ class AuthControllerTest {
     }
 
     @Test
+    void loginInvalidEmailFormatReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("not-an-email", "whatever1")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void loginWithUnknownEmailReturnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("ghost@example.com", "whatever1")))
