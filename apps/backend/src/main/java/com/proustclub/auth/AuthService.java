@@ -122,8 +122,8 @@ class AuthService {
     // Normalizes here, not by the caller: this is the one place the login credential enters
     // AuthenticationManager, so every caller (register()'s auto-login, AuthController.login(),
     // PasswordChangeService's reauthentication) gets the same normalization without having to
-    // remember to apply it themselves. Deliberately does its own manual findByEmail() lookup —
-    // resolution happens entirely inside AuthUserDetailsService, reached through
+    // remember to apply it themselves. Deliberately does NOT do a manual findByEmail() lookup of
+    // its own — resolution happens entirely inside AuthUserDetailsService, reached through
     // AuthenticationManager, so an unknown email pays the exact same DaoAuthenticationProvider
     // timing-attack mitigation as a wrong password (see ADR-013).
     @Transactional(readOnly = true)

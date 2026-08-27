@@ -93,7 +93,7 @@ class AuthController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // getDisplayUsername(), never getName() — the latter is the email under this project's
         // model (see ADR-013), and CLAUDE.md forbids logging emails unnecessarily.
-        log.info("User logged out: {}", ((ProustClubPrincipal) authentication.getPrincipal()).getDisplayUsername());
+        log.info("User logged out: {}", currentUser.resolvePrincipal(authentication).getDisplayUsername());
         logoutHandlers.forEach(handler -> handler.logout(httpRequest, httpResponse, authentication));
     }
 
