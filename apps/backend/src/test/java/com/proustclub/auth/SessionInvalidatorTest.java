@@ -14,8 +14,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,24 +32,26 @@ class SessionInvalidatorTest {
         var principal = new ProustClubPrincipal(USER_ID, "marcel", "marcel@example.com", "hash", "USER");
         var current = new SessionInformation(principal, "current-session", new Date());
         var other = new SessionInformation(principal, "other-session", new Date());
-        when(sessionRegistry.getAllPrincipals()).thenReturn(List.of(principal));
         when(sessionRegistry.getAllSessions(eq(principal), eq(false))).thenReturn(List.of(current, other));
 
-        sessionInvalidator.invalidateOtherSessions(USER_ID, "current-session");
+        sessionInvalidator.invalidateOtherSessions(principal, "current-session");
 
         assertThat(current.isExpired()).isFalse();
         assertThat(other.isExpired()).isTrue();
     }
 
+    // The passed-in principal need not be the exact instance that registered a given session —
+    // equals()/hashCode() on userId alone means any ProustClubPrincipal for this user retrieves
+    // the full session set, including ones from other logins/devices (see ProustClubPrincipal).
     @Test
-    void invalidateOtherSessionsIgnoresPrincipalsForOtherUsers() {
-        var thisUser = new ProustClubPrincipal(USER_ID, "marcel", "marcel@example.com", "hash", "USER");
-        var otherUser = new ProustClubPrincipal(UUID.randomUUID(), "swann", "swann@example.com", "hash", "USER");
-        when(sessionRegistry.getAllPrincipals()).thenReturn(List.of(thisUser, otherUser));
-        when(sessionRegistry.getAllSessions(eq(thisUser), eq(false))).thenReturn(List.of());
+    void invalidateOtherSessionsWorksWithAnyEqualPrincipalInstance() {
+        var registeredAtLogin = new ProustClubPrincipal(USER_ID, "marcel", "marcel@example.com", "old-hash", "USER");
+        var passedInLater = new ProustClubPrincipal(USER_ID, "marcel", "marcel@example.com", null, "USER");
+        var other = new SessionInformation(registeredAtLogin, "other-session", new Date());
+        when(sessionRegistry.getAllSessions(eq(passedInLater), eq(false))).thenReturn(List.of(other));
 
-        sessionInvalidator.invalidateOtherSessions(USER_ID, "current-session");
+        sessionInvalidator.invalidateOtherSessions(passedInLater, "current-session");
 
-        verify(sessionRegistry, never()).getAllSessions(eq(otherUser), eq(false));
+        assertThat(other.isExpired()).isTrue();
     }
 }

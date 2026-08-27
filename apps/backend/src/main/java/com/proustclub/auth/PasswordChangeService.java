@@ -6,8 +6,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
 class PasswordChangeService {
 
@@ -44,12 +42,13 @@ class PasswordChangeService {
     }
 
     @Transactional
-    void changePassword(UUID userId, String newPassword, String currentSessionId) {
-        userRepository.updatePasswordHash(userId, passwordEncoder.encode(newPassword));
-        log.info("Password changed: {}", userId);
+    void changePassword(ProustClubPrincipal principal, String newPassword, String currentSessionId) {
+        userRepository.updatePasswordHash(principal.getUserId(), passwordEncoder.encode(newPassword));
+        log.info("Password changed: {}", principal.getUserId());
 
         // The session backing this very request stays open; every other active session for the
-        // account is swept, same policy as the "forgot password" reset flow.
-        sessionInvalidator.invalidateOtherSessions(userId, currentSessionId);
+        // account is swept, same policy as the "forgot password" reset flow. Passes the real
+        // current-session principal straight through — see SessionInvalidator for why.
+        sessionInvalidator.invalidateOtherSessions(principal, currentSessionId);
     }
 }

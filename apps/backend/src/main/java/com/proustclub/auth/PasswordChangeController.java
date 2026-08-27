@@ -23,12 +23,10 @@ class PasswordChangeController {
 
     private final PasswordChangeService service;
     private final RateLimiter rateLimiter;
-    private final CurrentUser currentUser;
 
-    PasswordChangeController(PasswordChangeService service, RateLimiter rateLimiter, CurrentUser currentUser) {
+    PasswordChangeController(PasswordChangeService service, RateLimiter rateLimiter) {
         this.service = service;
         this.rateLimiter = rateLimiter;
-        this.currentUser = currentUser;
     }
 
     @Operation(
@@ -44,13 +42,16 @@ class PasswordChangeController {
     @PostMapping("/api/auth/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changePassword(@Valid @RequestBody PasswordChangeRequest request, Authentication authentication, HttpServletRequest httpRequest) {
-        var userId = currentUser.resolveUuid(authentication);
-        rateLimiter.checkPasswordChangeByAccount(userId);
+        // The real, already-registered principal for this very session — needed as-is by
+        // changePassword() below (SessionInvalidator takes a real principal, never just a UUID
+        // used as a fabricated lookup key, see ADR-013).
+        var principal = (ProustClubPrincipal) authentication.getPrincipal();
+        rateLimiter.checkPasswordChangeByAccount(principal.getUserId());
         var currentSessionId = httpRequest.getSession(false).getId();
         // authentication.getName() is the email — exactly what AuthService.reauthenticate() needs
         // to feed back into AuthenticationManager (see ADR-013).
         service.verifyCurrentPassword(authentication.getName(), request.currentPassword());
         service.checkNewPasswordNotCompromised(request.newPassword());
-        service.changePassword(userId, request.newPassword(), currentSessionId);
+        service.changePassword(principal, request.newPassword(), currentSessionId);
     }
 }

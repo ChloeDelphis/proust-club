@@ -4,8 +4,6 @@ import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-
 // Shared by every flow that must invalidate a user's other active sessions while keeping the
 // one just established or still in use (password reset confirmation, password change) — see
 // docs/architecture/ADR-010-session-invalidation.md and ADR-013 (session identity).
@@ -18,17 +16,14 @@ class SessionInvalidator {
         this.sessionRegistry = sessionRegistry;
     }
 
-    void invalidateOtherSessions(UUID userId, String currentSessionId) {
-        // SessionRegistryImpl keys its principals map by equals()/hashCode() — ProustClubPrincipal
-        // bases both on userId alone, so every login for this account collapses onto the same
-        // registered entry regardless of which instance registered it (see ProustClubPrincipal).
-        // We can't build a lookalike throwaway principal the way the old User-based code did:
-        // UserDetails.getUsername() can never return null, and this principal's getUsername() is
-        // the email — a placeholder value here would be a structurally meaningless object. Instead,
-        // look up the real, already-registered principal for this user and use it.
-        sessionRegistry.getAllPrincipals().stream()
-                .filter(principal -> principal instanceof ProustClubPrincipal p && p.getUserId().equals(userId))
-                .flatMap(principal -> sessionRegistry.getAllSessions(principal, false).stream())
+    // Takes a real, already-meaningful principal — never a fabricated lookup key. Both callers
+    // already have one on hand: PasswordChangeController passes the current session's own
+    // principal, PasswordResetController passes the one it just built (and is about to register)
+    // for the new session. SessionRegistryImpl keys its principals map by equals()/hashCode(),
+    // and ProustClubPrincipal bases both on userId alone — so this single O(1) lookup returns
+    // every session for this user, not just the one the passed-in principal came from.
+    void invalidateOtherSessions(ProustClubPrincipal principal, String currentSessionId) {
+        sessionRegistry.getAllSessions(principal, false).stream()
                 .filter(session -> !session.getSessionId().equals(currentSessionId))
                 .forEach(SessionInformation::expireNow);
     }

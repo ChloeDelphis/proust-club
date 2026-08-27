@@ -91,7 +91,7 @@ class PasswordResetController {
         // and RegisterSessionAuthenticationStrategy has by now registered this exact id as the
         // session to keep — everything else for this user gets swept.
         var newSessionId = httpRequest.getSession(false).getId();
-        sessionInvalidator.invalidateOtherSessions(user.uuid(), newSessionId);
+        sessionInvalidator.invalidateOtherSessions(principal, newSessionId);
 
         return new UserResponse(user.uuid(), user.username(), user.email(), user.role(), user.emailVerified());
     }

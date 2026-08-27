@@ -73,11 +73,12 @@ class PasswordChangeServiceTest {
     @Test
     void changePasswordUpdatesHashAndInvalidatesOtherSessions() {
         when(passwordEncoder.encode("new-password-long-enough")).thenReturn("new-hash");
+        var principal = new ProustClubPrincipal(USER_ID, "marcel", "marcel@example.com", "old-hash", "USER");
 
-        service.changePassword(USER_ID, "new-password-long-enough", "current-session");
+        service.changePassword(principal, "new-password-long-enough", "current-session");
 
         verify(userRepository).updatePasswordHash(USER_ID, "new-hash");
-        verify(sessionInvalidator).invalidateOtherSessions(USER_ID, "current-session");
+        verify(sessionInvalidator).invalidateOtherSessions(principal, "current-session");
         verify(authService, never()).reauthenticate(any(), any());
     }
 }
