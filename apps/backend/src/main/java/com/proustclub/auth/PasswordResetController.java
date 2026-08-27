@@ -79,15 +79,19 @@ class PasswordResetController {
 
         // Built directly from the user this method just updated — no need to round-trip through
         // AuthenticationManager to re-verify a password confirmReset() itself just wrote.
-        var userDetails = AuthUserDetailsService.toUserDetails(user);
-        var authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        var principal = AuthUserDetailsService.toUserDetails(user);
+        var authentication = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+        // This path never goes through ProviderManager, so nothing calls eraseCredentials()
+        // automatically for us — do it ourselves, right before the principal (which still carries
+        // the password hash at this point) gets persisted into the session.
+        principal.eraseCredentials();
         sessionPersister.persist(authentication, httpRequest, httpResponse);
 
         // Read after persist(): ChangeSessionIdAuthenticationStrategy may have rotated the id,
         // and RegisterSessionAuthenticationStrategy has by now registered this exact id as the
         // session to keep — everything else for this user gets swept.
         var newSessionId = httpRequest.getSession(false).getId();
-        sessionInvalidator.invalidateOtherSessions(user.username(), newSessionId);
+        sessionInvalidator.invalidateOtherSessions(principal, newSessionId);
 
         return new UserResponse(user.uuid(), user.username(), user.email(), user.role(), user.emailVerified());
     }

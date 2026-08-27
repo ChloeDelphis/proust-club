@@ -9,7 +9,7 @@ Token-bucket throttling across most auth endpoints and `GET /api/search`, backed
 | Endpoint | Bucket(s) | Default limit |
 |---|---|---|
 | `POST /api/auth/login` | per client IP | 10 attempts / minute |
-| `POST /api/auth/login` | per submitted username (normalized) | 5 attempts / 5 minutes |
+| `POST /api/auth/login` | per submitted email (normalized) | 5 attempts / 5 minutes |
 | `POST /api/auth/register` | per client IP | 5 creations / hour |
 | `GET /api/search` | per client IP | 60 requests / minute |
 | `POST /api/auth/password-reset/request` | per client IP | 5 requests / hour |
@@ -42,13 +42,15 @@ rate-limit:
     per-account: { capacity: 3, refill-period: 15m }
 ```
 
-Login checks **both** buckets before attempting authentication — either one being exhausted rejects the request. This is deliberate: a single IP-only limit lets an attacker distribute attempts across many IPs against one account; a single combined `ip+username` key lets one IP try many different accounts without ever tripping a per-IP limit. Two independent buckets close both gaps. The account bucket is keyed by the submitted username whether or not that account exists, so its behavior never reveals account existence.
+Login checks **both** buckets before attempting authentication — either one being exhausted rejects the request. This is deliberate: a single IP-only limit lets an attacker distribute attempts across many IPs against one account; a single combined `ip+email` key lets one IP try many different accounts without ever tripping a per-IP limit. Two independent buckets close both gaps. The account bucket is keyed by the submitted, normalized email whether or not that account exists, so its behavior never reveals account existence — same reasoning as `password-reset`'s account bucket, see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md).
+
+The `password-change`/`email-verification-resend` account buckets are keyed differently — by `userId`, not by any credential — since both endpoints are already authenticated by the time the bucket is checked; there's no "unresolved input" to key on, and the stable database id is a better key than a value that could change (see ADR-013).
 
 ---
 
 ## Storage
 
-`RateLimiter` (`com.proustclub.ratelimit`) holds one Caffeine `LoadingCache<String, Bucket>` per bucket group above. Each cache is bounded (`maximumSize`) and self-evicting (`expireAfterAccess`, twice the bucket's refill period) — an unbounded map keyed by arbitrary client-supplied values (IP, username) would itself be a memory-exhaustion vector.
+`RateLimiter` (`com.proustclub.ratelimit`) holds one Caffeine `LoadingCache<String, Bucket>` per bucket group above. Each cache is bounded (`maximumSize`) and self-evicting (`expireAfterAccess`, twice the bucket's refill period) — an unbounded map keyed by arbitrary client-supplied values (IP, email) would itself be a memory-exhaustion vector.
 
 ---
 
@@ -72,7 +74,7 @@ Only on exceeding a limit, never per consumed token (that itself would be a log-
 WARN rate_limit_exceeded endpoint=login keyType=ip
 ```
 
-`endpoint`/`keyType` only — never the IP/username value beyond what the existing logging policy already allows, never the password.
+`endpoint`/`keyType` only — never the IP/email value beyond what the existing logging policy already allows, never the password.
 
 ---
 
@@ -87,7 +89,7 @@ WARN rate_limit_exceeded endpoint=login keyType=ip
 
 - Make more than the configured number of registrations from the same machine within the window → `429` with `Retry-After`.
 - Same for login (per-IP) and search.
-- Attempt login against the same username from several different source IPs → the account-level limit trips even though no single IP limit does.
+- Attempt login against the same email from several different source IPs → the account-level limit trips even though no single IP limit does.
 - Log in successfully, then keep searching past the search limit from the same IP → still `429` (an authenticated session is not exempt).
 - Make more than the configured number of `password-reset/confirm` attempts from the same IP within the window (regardless of token validity) → `429` with `Retry-After`.
 - Wait past the refill window → requests succeed again without restarting the app.

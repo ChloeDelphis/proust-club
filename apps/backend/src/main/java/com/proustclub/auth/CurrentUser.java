@@ -8,17 +8,17 @@ import java.util.UUID;
 @Component
 public class CurrentUser {
 
-    private final UserRepository repository;
-
-    CurrentUser(UserRepository repository) {
-        this.repository = repository;
+    // The session principal carries the stable identity directly (see ProustClubPrincipal, ADR-013)
+    // — no DB round-trip needed. Other feature packages that need the owning user's UUID resolve
+    // it through here.
+    public UUID resolveUuid(Authentication authentication) {
+        return resolvePrincipal(authentication).getUserId();
     }
 
-    // The session principal only carries the username (see AuthUserDetailsService); other
-    // feature packages that need the owning user's UUID resolve it through here.
-    public UUID resolveUuid(Authentication authentication) {
-        return repository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + authentication.getName()))
-                .uuid();
+    // Package-private: callers within auth/ that need more than just the UUID (the display
+    // username, or the whole principal to pass to SessionInvalidator) go through here too, rather
+    // than each casting authentication.getPrincipal() independently.
+    ProustClubPrincipal resolvePrincipal(Authentication authentication) {
+        return (ProustClubPrincipal) authentication.getPrincipal();
     }
 }

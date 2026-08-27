@@ -55,9 +55,9 @@ class EmailVerificationService {
     // caller already proved they own the account), so there's no anti-enumeration reason to stay
     // generic — a clear 409 is more useful than a silent success that resends nothing.
     @Transactional
-    void resendVerification(String username) {
-        var user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + username));
+    void resendVerification(UUID userId) {
+        var user = userRepository.findByUuid(userId)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + userId));
         if (user.emailVerified()) {
             throw ApiException.emailAlreadyVerified();
         }

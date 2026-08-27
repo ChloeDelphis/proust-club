@@ -104,12 +104,12 @@ class RateLimitControllerTest {
         mockMvc.perform(registerFrom("9.9.4.1", "ratelimit5", "ratelimit5@example.com"))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(loginFrom("9.9.4.2", "ratelimit5", "wrong-password-a"))
+        mockMvc.perform(loginFrom("9.9.4.2", "ratelimit5@example.com", "wrong-password-a"))
                 .andExpect(status().isUnauthorized());
-        mockMvc.perform(loginFrom("9.9.4.2", "ratelimit5", "wrong-password-b"))
+        mockMvc.perform(loginFrom("9.9.4.2", "ratelimit5@example.com", "wrong-password-b"))
                 .andExpect(status().isUnauthorized());
 
-        mockMvc.perform(loginFrom("9.9.4.2", "ratelimit5", "wrong-password-c"))
+        mockMvc.perform(loginFrom("9.9.4.2", "ratelimit5@example.com", "wrong-password-c"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"));
     }
@@ -121,12 +121,12 @@ class RateLimitControllerTest {
 
         // Two failed attempts against the same account, each from its own IP — the per-IP
         // bucket for each of these IPs is nowhere near its limit, but the per-account bucket is.
-        mockMvc.perform(loginFrom("9.9.5.10", "ratelimit6", "wrong-password-a"))
+        mockMvc.perform(loginFrom("9.9.5.10", "ratelimit6@example.com", "wrong-password-a"))
                 .andExpect(status().isUnauthorized());
-        mockMvc.perform(loginFrom("9.9.5.11", "ratelimit6", "wrong-password-b"))
+        mockMvc.perform(loginFrom("9.9.5.11", "ratelimit6@example.com", "wrong-password-b"))
                 .andExpect(status().isUnauthorized());
 
-        mockMvc.perform(loginFrom("9.9.5.12", "ratelimit6", "wrong-password-c"))
+        mockMvc.perform(loginFrom("9.9.5.12", "ratelimit6@example.com", "wrong-password-c"))
                 .andExpect(status().isTooManyRequests());
     }
 
@@ -149,10 +149,10 @@ class RateLimitControllerTest {
                 .content(objectMapper.writeValueAsString(new RegisterRequest(username, email, "hunter2222password")));
     }
 
-    private MockHttpServletRequestBuilder loginFrom(String ip, String username, String password) throws Exception {
+    private MockHttpServletRequestBuilder loginFrom(String ip, String email, String password) throws Exception {
         return post("/api/auth/login").with(csrf()).with(remoteAddr(ip))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new LoginRequest(username, password)));
+                .content(objectMapper.writeValueAsString(new LoginRequest(email, password)));
     }
 
     private MockHttpServletRequestBuilder confirmResetFrom(String ip, String token) {

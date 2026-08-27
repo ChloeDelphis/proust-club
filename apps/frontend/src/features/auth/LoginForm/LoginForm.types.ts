@@ -1,3 +1,3 @@
 export interface LoginFormProps {
-  onSubmit: (params: { username: string; password: string }) => void
+  onSubmit: (params: { email: string; password: string }) => void
 }

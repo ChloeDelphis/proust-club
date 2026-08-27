@@ -47,16 +47,27 @@ describe('LoginPage', () => {
     expect(authApi.login).not.toHaveBeenCalled()
   })
 
+  it('refuse un email mal formé sans déclencher de requête', async () => {
+    render(<LoginPage />, { wrapper })
+
+    await userEvent.type(screen.getByLabelText('Email'), 'not-an-email')
+    await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222')
+    await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
+
+    expect(await screen.findByText('Adresse email invalide.')).toBeInTheDocument()
+    expect(authApi.login).not.toHaveBeenCalled()
+  })
+
   it('transmet les bons paramètres et redirige après connexion', async () => {
     vi.mocked(authApi.login).mockResolvedValue(mockUser)
 
     render(<LoginPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222')
     await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
 
-    expect(authApi.login).toHaveBeenCalledWith({ username: 'marcel', password: 'hunter2222' })
+    expect(authApi.login).toHaveBeenCalledWith({ email: 'marcel@example.com', password: 'hunter2222' })
     expect(await screen.findByText('Page de recherche')).toBeInTheDocument()
   })
 
@@ -65,7 +76,7 @@ describe('LoginPage', () => {
 
     render(<LoginPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
+    await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'wrong')
     await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
 

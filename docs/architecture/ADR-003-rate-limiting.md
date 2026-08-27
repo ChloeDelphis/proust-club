@@ -56,3 +56,7 @@ Rate-limit state is lost on application restart, and isn't shared across instanc
 ## Date
 
 2026-08-02
+
+## Addendum (2026-08-27)
+
+The login account bucket is keyed by the submitted, normalized **email**, not `username` — the diagrams and prose above predate the switch of the login credential from username to email (see [ADR-013](ADR-013-authentication-identifiers-and-stable-identity.md)). The reasoning in this ADR (two independent buckets, account bucket created for any submitted value whether or not it resolves to a real account) is unchanged, only the identifier itself.

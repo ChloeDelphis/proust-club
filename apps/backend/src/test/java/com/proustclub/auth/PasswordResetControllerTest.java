@@ -17,6 +17,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -115,12 +117,33 @@ class PasswordResetControllerTest {
                 .andExpect(jsonPath("$.username").value("confirmreset"));
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("confirmreset", "new-password-long-enough")))
+                        .content(loginJson("confirmreset@example.com", "new-password-long-enough")))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("confirmreset", "old-password-long-enough")))
+                        .content(loginJson("confirmreset@example.com", "old-password-long-enough")))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // This path builds its Authentication directly (see PasswordResetController.confirmReset())
+    // instead of going through AuthenticationManager/ProviderManager, so nothing calls
+    // eraseCredentials() automatically — verifies the manual call actually happened, not just that
+    // it compiles (see ADR-013).
+    @Test
+    void confirmResetErasesThePasswordHashFromTheSessionPrincipal() throws Exception {
+        register("erasehash", "erasehash@example.com", "old-password-long-enough");
+        mockMvc.perform(requestReset("erasehash@example.com")).andExpect(status().isAccepted());
+        var token = capturedToken("erasehash@example.com");
+
+        MvcResult result = mockMvc.perform(confirmReset(token, "new-password-long-enough"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
+        SecurityContext context = (SecurityContext) session.getAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        var principal = (ProustClubPrincipal) context.getAuthentication().getPrincipal();
+        assertThat(principal.getPassword()).isNull();
     }
 
     // Exercises the actual DB mechanism (upsert on the partial unique index from migration V10),
@@ -254,7 +277,7 @@ class PasswordResetControllerTest {
         return tokenCaptor.getValue();
     }
 
-    private String loginJson(String username, String password) throws Exception {
-        return objectMapper.writeValueAsString(new LoginRequest(username, password));
+    private String loginJson(String email, String password) throws Exception {
+        return objectMapper.writeValueAsString(new LoginRequest(email, password));
     }
 }

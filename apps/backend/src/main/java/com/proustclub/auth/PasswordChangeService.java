@@ -30,8 +30,8 @@ class PasswordChangeService {
     // — a wrong current password should never pay for the HIBP round-trip that follows. Re-verified
     // through the same AuthenticationManager round-trip as login — never a change on the strength
     // of the session alone (protects a shared/unattended device left logged in).
-    void verifyCurrentPassword(String username, String currentPassword) {
-        authService.reauthenticate(username, currentPassword);
+    void verifyCurrentPassword(String email, String currentPassword) {
+        authService.reauthenticate(email, currentPassword);
     }
 
     // Not @Transactional — makes an external HTTP call (PasswordBreachChecker), same reasoning as
@@ -42,12 +42,13 @@ class PasswordChangeService {
     }
 
     @Transactional
-    void changePassword(String username, String newPassword, String currentSessionId) {
-        userRepository.updatePasswordHash(username, passwordEncoder.encode(newPassword));
-        log.info("Password changed: {}", username);
+    void changePassword(ProustClubPrincipal principal, String newPassword, String currentSessionId) {
+        userRepository.updatePasswordHash(principal.getUserId(), passwordEncoder.encode(newPassword));
+        log.info("Password changed: {}", principal.getUserId());
 
         // The session backing this very request stays open; every other active session for the
-        // account is swept, same policy as the "forgot password" reset flow.
-        sessionInvalidator.invalidateOtherSessions(username, currentSessionId);
+        // account is swept, same policy as the "forgot password" reset flow. Passes the real
+        // current-session principal straight through — see SessionInvalidator for why.
+        sessionInvalidator.invalidateOtherSessions(principal, currentSessionId);
     }
 }

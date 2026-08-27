@@ -41,10 +41,6 @@ class UserRepository {
                 .fetchOne(r -> r.get("uuid", UUID.class));
     }
 
-    Optional<AuthUser> findByUsername(String username) {
-        return findOneWhere(DSL.field("username", String.class).eq(username));
-    }
-
     Optional<AuthUser> findByUuid(UUID uuid) {
         return findOneWhere(DSL.field("uuid", UUID.class).eq(uuid));
     }
@@ -85,16 +81,6 @@ class UserRepository {
         dsl.update(DSL.table("users"))
                 .set(DSL.field("password_hash", String.class), passwordHash)
                 .where(DSL.field("uuid", UUID.class).eq(uuid))
-                .execute();
-    }
-
-    // For callers that only have the username on hand (e.g. PasswordChangeService, which resolves
-    // it from the session and has no other reason to fetch the uuid) — avoids a redundant SELECT
-    // just to look up an id already implied by the WHERE clause.
-    void updatePasswordHash(String username, String passwordHash) {
-        dsl.update(DSL.table("users"))
-                .set(DSL.field("password_hash", String.class), passwordHash)
-                .where(DSL.field("username", String.class).eq(username))
                 .execute();
     }
 }

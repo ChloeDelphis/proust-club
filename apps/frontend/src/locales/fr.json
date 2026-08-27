@@ -71,8 +71,7 @@
     "defaultLabel": "Le mot de passe"
   },
   "loginForm": {
-    "missingFieldsError": "Renseignez votre nom d’utilisateur et votre mot de passe.",
-    "usernameLabel": "Nom d’utilisateur",
+    "missingFieldsError": "Renseignez votre adresse email et votre mot de passe.",
     "passwordLabel": "Mot de passe",
     "submitButton": "Se connecter"
   },
@@ -84,6 +83,7 @@
     "registerLink": "Créer un compte"
   },
   "registerForm": {
+    "usernameLabel": "Nom d’utilisateur",
     "usernameTooShortError": "Le nom d’utilisateur doit contenir au moins 3 caractères.",
     "emailLabel": "Email",
     "submitButton": "Créer un compte"
