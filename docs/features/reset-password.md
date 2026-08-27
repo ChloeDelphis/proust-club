@@ -154,7 +154,7 @@ Route: `/account` (English in code — routes/identifiers stay in English projec
 - Change with an incorrect current password → `401`, generic message (same as a failed login).
 - Change with a new password shorter than 15 characters → client-side validation blocks submission; server also rejects with `400` if bypassed.
 - Call the endpoint with no session → `401` (or `403` if the request also lacks a CSRF token — CSRF is checked before authentication in the filter chain).
-- Log in from a second session, change the password from the first → the second session's next request is rejected (`401`), the first stays valid.
+- Log in from a second session, change the password from the first → the second session's next request is rejected (`401`), the first stays valid. Re-verified end-to-end against the real server after the `ProustClubPrincipal`/`SessionInvalidator` redesign (see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md)) — done 2026-08-27.
 - Log in with the old password after a successful change → `401`. Log in with the new password → `200`.
 - Exceed 5 change attempts for the same account within 15 minutes → `429` with a `Retry-After` header.
 - Change with a new password found in a known data breach (correct current password) → `422`, current password stays valid (log in with it succeeds), password not written to the DB.
@@ -175,7 +175,7 @@ Route: `/account` (English in code — routes/identifiers stay in English projec
 - Submit the reset form twice with the same (already-used) token → second attempt gets the generic invalid/expired message.
 - Submit a new password shorter than 15 characters → client-side validation blocks submission (no request sent); if bypassed, server also rejects with 400 and the token is **not** consumed (verify the same token still works with a valid password afterward).
 - Visit `/reset-password` with no `token` query parameter → "invalid link" message, no form shown.
-- Log in on a second device/browser, then complete a reset from a first device → the second device's session is rejected (401, `ProblemDetail`) on its next request; the reset itself stays logged in.
+- Log in on a second device/browser, then complete a reset from a first device → the second device's session is rejected (401, `ProblemDetail`) on its next request; the reset itself stays logged in. Re-verified end-to-end against the real server (real Mailhog token) after the `ProustClubPrincipal`/`SessionInvalidator` redesign (see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md)) — done 2026-08-27.
 - Submit the reset form with a new password found in a known data breach, on a still-valid token → `422`, and the token is **not** consumed — verify the same token still works with a valid password immediately afterward.
 - A token that's already invalid/expired never triggers the breach-check network call for whatever password was submitted alongside it (skipped by the read-only peek).
 - Exceed 5 confirm attempts from the same IP within 1 hour (regardless of token validity) → `429` with a `Retry-After` header.
