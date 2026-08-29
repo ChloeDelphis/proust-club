@@ -3,7 +3,6 @@ package com.proustclub.auth;
 import com.proustclub.mail.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.mail.MailException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,14 +39,7 @@ class EmailVerificationService {
     void sendVerification(UUID userId, String email) {
         var rawToken = SecureToken.generate();
         tokenRepository.insert(TOKEN_TABLE, userId, SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
-        try {
-            mailService.sendEmailConfirmation(email, rawToken);
-        } catch (MailException e) {
-            // Exception class only, not the throwable itself: MailSendException/SendFailedException
-            // routinely embed the rejected recipient address in their message (SMTP bounces echo it
-            // back) — logging the full exception would leak the email, which CLAUDE.md forbids.
-            log.warn("Failed to send email confirmation ({})", e.getClass().getSimpleName());
-        }
+        MailFailureLogger.sendBestEffort(log, "email confirmation", () -> mailService.sendEmailConfirmation(email, rawToken));
     }
 
     // Guards on the user's current state rather than silently no-op'ing on an already-verified
