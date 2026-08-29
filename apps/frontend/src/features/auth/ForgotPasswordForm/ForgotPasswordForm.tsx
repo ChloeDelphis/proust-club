@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import type { ForgotPasswordFormProps } from './ForgotPasswordForm.types'
 import FormField from '../FormField/FormField'
 import { emailFormatError } from '../emailValidation'
+import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from '../AuthForm.module.css'
+
+const { email: emailConstraints } = validationConstraints.PasswordResetRequestRequest
 
 export default function ForgotPasswordForm({ onSubmit }: ForgotPasswordFormProps) {
   const { t } = useTranslation()
@@ -30,7 +33,7 @@ export default function ForgotPasswordForm({ onSubmit }: ForgotPasswordFormProps
         value={email}
         onChange={e => setEmail(e.target.value)}
         autoComplete="email"
-        maxLength={255}
+        maxLength={emailConstraints.maxLength}
       />
       <button className={styles.button} type="submit">
         {t('forgotPasswordForm.submitButton')}

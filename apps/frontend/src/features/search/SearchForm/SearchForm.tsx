@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from './SearchForm.module.css'
+
+const { q: queryConstraints } = validationConstraints.search
 
 interface SearchFormProps {
   onSubmit: (query: string) => void
@@ -14,7 +17,7 @@ export default function SearchForm({ onSubmit }: SearchFormProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = value.trim()
-    if (trimmed.length < 2) {
+    if (trimmed.length < queryConstraints.minLength) {
       setError(t('searchForm.tooShortError'))
       return
     }
@@ -32,7 +35,7 @@ export default function SearchForm({ onSubmit }: SearchFormProps) {
           onChange={e => setValue(e.target.value)}
           placeholder={t('searchForm.placeholder')}
           aria-label={t('searchForm.ariaLabel')}
-          maxLength={500}
+          maxLength={queryConstraints.maxLength}
         />
         <button className={styles.button} type="submit">
           {t('searchForm.submitButton')}

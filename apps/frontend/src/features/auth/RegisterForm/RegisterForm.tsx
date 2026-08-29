@@ -5,7 +5,11 @@ import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
 import { emailFormatError } from '../emailValidation'
 import { passwordMatchesIdentifierError } from '../passwordIdentifierValidation'
+import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from '../AuthForm.module.css'
+
+const { username: usernameConstraints, email: emailConstraints, password: passwordConstraints } =
+  validationConstraints.RegisterRequest
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
   const { t } = useTranslation()
@@ -19,7 +23,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
     const trimmedUsername = username.trim()
     const trimmedEmail = email.trim()
 
-    if (trimmedUsername.length < 3) {
+    if (trimmedUsername.length < usernameConstraints.minLength) {
       setError(t('registerForm.usernameTooShortError'))
       return
     }
@@ -28,7 +32,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
       setError(emailError)
       return
     }
-    const passwordError = passwordLengthError(password, t('passwordValidation.defaultLabel'))
+    const passwordError = passwordLengthError(password, t('passwordValidation.defaultLabel'), passwordConstraints)
     if (passwordError) {
       setError(passwordError)
       return
@@ -50,7 +54,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         value={username}
         onChange={e => setUsername(e.target.value)}
         autoComplete="username"
-        maxLength={50}
+        maxLength={usernameConstraints.maxLength}
       />
       <FormField
         label={t('registerForm.emailLabel')}
@@ -58,7 +62,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         value={email}
         onChange={e => setEmail(e.target.value)}
         autoComplete="email"
-        maxLength={255}
+        maxLength={emailConstraints.maxLength}
       />
       <FormField
         label={t('loginForm.passwordLabel')}
@@ -66,7 +70,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         value={password}
         onChange={e => setPassword(e.target.value)}
         autoComplete="new-password"
-        maxLength={128}
+        maxLength={passwordConstraints.maxLength}
       />
       <button className={styles.button} type="submit">
         {t('registerForm.submitButton')}

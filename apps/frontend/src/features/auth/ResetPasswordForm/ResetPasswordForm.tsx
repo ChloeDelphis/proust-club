@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import type { ResetPasswordFormProps } from './ResetPasswordForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
+import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from '../AuthForm.module.css'
+
+const { newPassword: newPasswordConstraints } = validationConstraints.PasswordResetConfirmRequest
 
 export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) {
   const { t } = useTranslation()
@@ -12,7 +15,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const passwordError = passwordLengthError(newPassword, t('passwordValidation.defaultLabel'))
+    const passwordError = passwordLengthError(newPassword, t('passwordValidation.defaultLabel'), newPasswordConstraints)
     if (passwordError) {
       setError(passwordError)
       return
@@ -29,7 +32,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
         value={newPassword}
         onChange={e => setNewPassword(e.target.value)}
         autoComplete="new-password"
-        maxLength={128}
+        maxLength={newPasswordConstraints.maxLength}
       />
       <button className={styles.button} type="submit">
         {t('resetPasswordForm.submitButton')}
