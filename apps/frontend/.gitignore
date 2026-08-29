@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Intermediate snapshot fetched by generate:api — regenerated on every run, not meant to be reviewed
+# (unlike src/api/schema.generated.ts and src/api/generated/validationConstraints.generated.ts).
+.openapi-snapshot.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
