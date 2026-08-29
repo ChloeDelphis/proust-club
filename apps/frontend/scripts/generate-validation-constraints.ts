@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { extractValidationConstraints } from './extractValidationConstraints.ts'
+import { SNAPSHOT_PATH } from './paths.ts'
 
-const SNAPSHOT_PATH = new URL('../.openapi-snapshot.json', import.meta.url)
 const OUTPUT_PATH = new URL('../src/api/generated/validationConstraints.generated.ts', import.meta.url)
 const OUTPUT_DIR = new URL('.', OUTPUT_PATH)
 

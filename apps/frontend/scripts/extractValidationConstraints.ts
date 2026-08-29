@@ -54,6 +54,17 @@ export function extractValidationConstraints(doc: OpenApiDocument): ValidationCo
   function addConstraint(groupKey: string, fieldKey: string, schema: LengthSchema | undefined, source: GroupSource) {
     const constraint = toConstraint(schema)
     if (!constraint) return
+    // Object.create(null) above only protects this function's own internal bookkeeping. The
+    // consuming generated file (generate-validation-constraints.ts) writes these keys back out as
+    // plain object-literal syntax (`{ "__proto__": ... }`), where "__proto__" — even quoted — sets
+    // the object's prototype instead of creating a data property, unlike here or in JSON.parse.
+    // Reject it outright rather than let that reintroduce the exact bug this function guards
+    // against, one serialization step later.
+    if (groupKey === '__proto__' || fieldKey === '__proto__') {
+      throw new Error(
+        `extractValidationConstraints: "__proto__" can't be used as a schema/operationId or field name — it would set the prototype instead of a data property once written out as an object literal.`,
+      )
+    }
     const existingSource = groupSource[groupKey]
     if (existingSource && existingSource !== source) {
       throw new Error(

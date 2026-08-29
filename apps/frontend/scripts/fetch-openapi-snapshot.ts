@@ -1,8 +1,8 @@
 import { writeFileSync } from 'node:fs'
+import { SNAPSHOT_PATH } from './paths.ts'
 
 // Same URL generate:api has always used (CLI or here) — backend must be running on :8080.
 const OPENAPI_URL = 'http://localhost:8080/v3/api-docs'
-const SNAPSHOT_PATH = new URL('../.openapi-snapshot.json', import.meta.url)
 
 // Written to a local snapshot, read by both the openapi-typescript CLI and
 // generate-validation-constraints.ts, so the two generated files always come from the exact same
