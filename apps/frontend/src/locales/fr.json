@@ -30,7 +30,7 @@
     "resendButton": "Renvoyer l'email de confirmation"
   },
   "searchForm": {
-    "tooShortError": "Saisissez au moins 2 caractères.",
+    "tooShortError": "Saisissez au moins {{min}} caractères.",
     "placeholder": "Rechercher dans Proust…",
     "ariaLabel": "Rechercher un passage",
     "submitButton": "Chercher"
@@ -84,7 +84,7 @@
   },
   "registerForm": {
     "usernameLabel": "Nom d’utilisateur",
-    "usernameTooShortError": "Le nom d’utilisateur doit contenir au moins 3 caractères.",
+    "usernameTooShortError": "Le nom d’utilisateur doit contenir au moins {{min}} caractères.",
     "emailLabel": "Email",
     "submitButton": "Créer un compte"
   },

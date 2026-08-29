@@ -16,7 +16,7 @@ pnpm preview        # serve the production build locally
 pnpm lint           # ESLint
 pnpm test           # tests in watch mode (Vitest)
 pnpm test:run       # one-shot tests, no watch — CI command
-pnpm generate:api   # regenerate src/api/schema.generated.ts from the backend OpenAPI spec
+pnpm generate:api   # regenerate src/api/schema.generated.ts and src/api/generated/validationConstraints.generated.ts from the backend OpenAPI spec
 ```
 
 ## Tests

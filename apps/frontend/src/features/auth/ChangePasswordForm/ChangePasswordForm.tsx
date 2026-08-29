@@ -31,6 +31,11 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
 
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
+      {/* No maxLength here, deliberately: PasswordChangeRequest.currentPassword has no @Size
+          server-side (only @NotBlank) — it's a credential re-verified against a stored hash, not
+          new data whose length policy the app is choosing, so there's no backend bound to mirror.
+          A client-side cap wouldn't be a real defense either (bypassable by any direct API call);
+          request-size limits are the backend's job if that's ever a concern. */}
       <FormField
         label={t('changePasswordForm.currentPasswordLabel')}
         type="password"

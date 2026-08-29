@@ -121,6 +121,28 @@ describe('extractValidationConstraints', () => {
     expect(extractValidationConstraints(doc)).toEqual({})
   })
 
+  it('throws if a schema name collides with an operationId', () => {
+    // Schema names and operationIds share one flat namespace in the output — a coincidental
+    // collision must fail loudly at generation time rather than silently merge two unrelated
+    // DTOs/operations into one object.
+    const doc = {
+      components: {
+        schemas: {
+          search: { properties: { name: { maxLength: 10 } } },
+        },
+      },
+      paths: {
+        '/api/search': {
+          get: {
+            operationId: 'search',
+            parameters: [{ name: 'q', in: 'query', schema: { minLength: 2 } }],
+          },
+        },
+      },
+    }
+    expect(() => extractValidationConstraints(doc)).toThrow(/"search".*schema name.*operationId/)
+  })
+
   it('does not pollute Object.prototype for a schema named __proto__', () => {
     // Built via JSON.parse, not an object literal: {"__proto__": ...} as a literal in source would
     // set the prototype at parse time (not what a real OpenAPI document over the wire produces) —

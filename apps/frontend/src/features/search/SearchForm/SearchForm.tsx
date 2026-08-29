@@ -18,7 +18,7 @@ export default function SearchForm({ onSubmit }: SearchFormProps) {
     e.preventDefault()
     const trimmed = value.trim()
     if (trimmed.length < queryConstraints.minLength) {
-      setError(t('searchForm.tooShortError'))
+      setError(t('searchForm.tooShortError', { min: queryConstraints.minLength }))
       return
     }
     setError('')

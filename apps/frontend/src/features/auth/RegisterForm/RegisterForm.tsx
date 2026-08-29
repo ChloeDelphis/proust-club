@@ -24,7 +24,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
     const trimmedEmail = email.trim()
 
     if (trimmedUsername.length < usernameConstraints.minLength) {
-      setError(t('registerForm.usernameTooShortError'))
+      setError(t('registerForm.usernameTooShortError', { min: usernameConstraints.minLength }))
       return
     }
     const emailError = emailFormatError(trimmedEmail)
