@@ -6,14 +6,7 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 
 ## Endpoints
 
-| Method | Path | Auth required | Purpose |
-|---|---|---|---|
-| POST | `/api/auth/register` | none | Create an account, then immediately open a session (auto-login) |
-| POST | `/api/auth/login` | none | Authenticate, open a session |
-| POST | `/api/auth/logout` | session | Invalidate the current session |
-| GET | `/api/auth/me` | session | Return the current user, or 401 if none |
-| POST | `/api/auth/email/confirm` | none | Confirm an account's email address from a one-time token sent at registration |
-| POST | `/api/auth/email/confirm/resend` | session | Issue and send a fresh confirmation token, invalidating any still-valid prior one |
+Register, login, logout, `me`, and the two email-confirmation endpoints. See Swagger UI (`/swagger-ui.html`) or the OpenAPI spec (`/v3/api-docs`) for the exact method/path/auth-requirement list — not duplicated here, see the source-of-truth note in `CLAUDE.md` ("Doc de feature"). What follows documents the behavior Swagger doesn't capture.
 
 ---
 
@@ -115,7 +108,7 @@ LoginForm / RegisterForm (fields + client-side validation)
 
 `useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
 
-Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`.
+Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `CLAUDE.md` ("Architecture frontend > Routage") for the canonical list.
 
 ---
 

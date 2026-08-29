@@ -20,22 +20,9 @@ Spring Security's own mechanism for tracking "which sessions belong to which pri
 
 Every controller in this codebase already authenticates programmatically instead of through Spring Security's `formLogin()` filter chain (see ADR-002), which means the pieces that would normally wire themselves up automatically — `RegisterSessionAuthenticationStrategy`, in particular — have to be assembled by hand into `SecurityConfig.sessionAuthenticationStrategy()`, the same way `ChangeSessionIdAuthenticationStrategy` and `CsrfAuthenticationStrategy` already are. Not a new pattern, just one more strategy in the same composite.
 
-```java
-// SecurityConfig
-.sessionManagement(session -> session
-        .sessionConcurrency(concurrency -> concurrency
-                .maximumSessions(-1)                  // no cap — this is about lookup, not limiting
-                .sessionRegistry(sessionRegistry)
-                .expiredSessionStrategy(securityHandlers)))  // ProblemDetail 401, not the default plain-text 200
-```
+The session-concurrency management is configured with no cap (`maximumSessions(-1)` — this is about lookup, not limiting), the shared `SessionRegistry`, and an expired-session strategy that returns the same `ProblemDetail` 401 as the rest of the API rather than the default plain-text 200.
 
-```java
-// PasswordResetService.invalidateOtherSessions
-var principal = new User(username, "N/A", List.of()); // equals()/hashCode() compare username only
-sessionRegistry.getAllSessions(principal, false).stream()
-        .filter(session -> !session.getSessionId().equals(currentSessionId))
-        .forEach(SessionInformation::expireNow);
-```
+The lookup/invalidate itself takes a real, already-meaningful principal — never a fabricated lookup key — and relies on that principal's `equals()`/`hashCode()` to make `SessionRegistry.getAllSessions()` a single O(1) call returning every session for that user. See `docs/features/auth.md` and `docs/architecture/ADR-013-authentication-identifiers-and-stable-identity.md` for what that principal is today and what its identity is based on — this has changed since this ADR was written, see the addendum below.
 
 ## Tradeoff accepted
 
@@ -48,3 +35,7 @@ True instant invalidation would need a session store the server can actively evi
 ## Date
 
 2026-08-10
+
+## Addendum (2026-08-27) — the lookup principal changed with ADR-013
+
+At the time this ADR was written, `SessionRegistry.getAllSessions()` was called with a principal built ad hoc for the lookup (a plain Spring Security `User`, equality based on `username` alone) — a "minimal" object that existed only to serve as a key. [ADR-013](ADR-013-authentication-identifiers-and-stable-identity.md) replaced it with `ProustClubPrincipal`, a real session principal whose `equals()`/`hashCode()` are based on the stable `userId` rather than `username`/`email`, and rejected fabricating a lookup-only object in favor of reusing the real principal both actual callers already hold. The mechanism this ADR decided on — `SessionRegistry`, no new infrastructure, O(1) lookup by principal equality — is unchanged; only what that principal *is* moved on. See ADR-013 for the full reasoning.

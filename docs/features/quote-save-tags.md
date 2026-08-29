@@ -6,27 +6,14 @@ Lets an authenticated user save a selection of text found in a paragraph (the wh
 
 ## Endpoints
 
-| Method | Route | Purpose |
-|---|---|---|
-| `POST` | `/api/quotes` | Save a quote selection, with optional tags |
-| `GET` | `/api/quotes` | List the authenticated user's quotes, optionally filtered by `tagId`, paginated |
-| `PATCH` | `/api/quotes/{id}` | Set or clear a quote's personal comment |
-| `DELETE` | `/api/quotes/{id}` | Delete a quote (and its tag associations) |
-| `POST` | `/api/quotes/{id}/tags` | Attach a tag (by name) to an existing quote |
-| `DELETE` | `/api/quotes/{id}/tags/{tagId}` | Detach a tag from a quote |
-| `POST` | `/api/tags` | Create a tag ahead of tagging any quote |
-| `GET` | `/api/tags` | List the authenticated user's tags |
-| `PATCH` | `/api/tags/{id}` | Rename a tag |
-| `DELETE` | `/api/tags/{id}` | Delete a tag, independently of any quote |
-
-All ten endpoints require an authenticated session — none are `permitAll()`.
+`/api/quotes` (create/list/timeline/update-comment/delete, plus tag attach/detach) and `/api/tags` (create/list/rename/delete). See Swagger UI (`/swagger-ui.html`) for the exact method/route list — not duplicated here, see `CLAUDE.md` ("Doc de feature"). Every endpoint in both groups requires an authenticated session — none are `permitAll()`.
 
 ---
 
 ## Data flow
 
 ```
-QuoteSelection (search results — point-and-click marker selection, see below)
+QuoteSelection (search results — native text selection, see below)
   → POST /api/quotes { paragraphId, startOffset, endOffset, selectedText, tagNames? }
   → QuoteController          resolves user_id from the session (never from the request body)
   → QuoteService.create()

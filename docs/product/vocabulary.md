@@ -52,6 +52,8 @@ A quote selection is defined by:
 - `startOffset`
 - `endOffset`
 - `selectedText`
+- an optional personal `comment`
+- zero or more tags
 
 Database: `quote_selections`
 

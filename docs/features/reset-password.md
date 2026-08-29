@@ -13,10 +13,7 @@ See [Auth](auth.md) for the base session/CSRF model both flows reuse.
 
 ## Endpoints
 
-| Method | Path | Auth required | Purpose |
-|---|---|---|---|
-| POST | `/api/auth/password-reset/request` | none | Send a reset link by email if it matches an account. Always returns the same generic response |
-| POST | `/api/auth/password-reset/confirm` | none (proven by token) | Set a new password from a valid token, open a session (auto-login) |
+`/api/auth/password-reset/request` and `/api/auth/password-reset/confirm`. See Swagger UI (`/swagger-ui.html`) for the exact method/auth-requirement details — not duplicated here, see `CLAUDE.md` ("Doc de feature").
 
 Changing a password for an already-logged-in user (with the current password, no email/token) is a separate flow — see [Change password (while logged in)](#change-password-while-logged-in) below.
 
@@ -107,9 +104,7 @@ For an authenticated user who knows their current password — no email, no toke
 
 ### Endpoint
 
-| Method | Path | Auth required | Purpose |
-|---|---|---|---|
-| POST | `/api/auth/password` | yes (session) | Re-verify the current password, then set a new one |
+`POST /api/auth/password`, session required. See Swagger UI (`/swagger-ui.html`) for the exact request/response contract.
 
 No new Flyway migration — `users.password_hash` already exists (V4).
 

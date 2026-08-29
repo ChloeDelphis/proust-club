@@ -18,6 +18,8 @@ erDiagram
         integer id PK
         varchar title
         integer position
+        integer min_page
+        integer max_page
     }
 
     parts {
@@ -53,11 +55,13 @@ erDiagram
 
 **`paragraphs.page_number`** comes from the source text file itself (line markers like `001 |`), not from an external edition reference. It is stable across imports.
 
+**`volumes.min_page`/`max_page`** are computed once by the corpus importer, right after paragraphs are inserted (`volumes` is seeded before any paragraph exists, so the bounds can't be known at seed time). Used by the personal timeline to position bookmarks and draw volume delimiters without recomputing an aggregate on every request. See [timeline-personnelle.md](../features/timeline-personnelle.md).
+
 ---
 
 ## User data
 
-`users` (auth, MVP step 4) and `quote_selections` / `tags` / `quote_selection_tags` (quote saving, MVP step 5) are implemented.
+`users` (auth, MVP step 4), `quote_selections` / `tags` / `quote_selection_tags` (quote saving, MVP step 5), and `password_reset_tokens` / `email_verification_tokens` (auth token flows) are implemented.
 
 ```mermaid
 erDiagram
@@ -67,6 +71,7 @@ erDiagram
         varchar email
         varchar password_hash
         varchar role
+        boolean email_verified
         timestamptz created_at
     }
 
@@ -77,8 +82,30 @@ erDiagram
         integer start_offset
         integer end_offset
         text    selected_text
+        text    comment
         timestamptz created_at
     }
+
+    password_reset_tokens {
+        bigserial id PK
+        uuid      user_id FK
+        varchar   token_hash
+        timestamptz expires_at
+        timestamptz used_at
+        timestamptz created_at
+    }
+
+    email_verification_tokens {
+        bigserial id PK
+        uuid      user_id FK
+        varchar   token_hash
+        timestamptz expires_at
+        timestamptz used_at
+        timestamptz created_at
+    }
+
+    users ||--o{ password_reset_tokens     : requests
+    users ||--o{ email_verification_tokens : requests
 
     tags {
         serial  id PK
@@ -104,7 +131,13 @@ erDiagram
 
 **`quote_selections.id` and `tags.id` are plain `SERIAL`, not UUID**, unlike `users.uuid` — deliberately. Ownership of these two tables is never enforced by making their IDs hard to guess; every read, update and delete filters on `user_id` in the query itself (see [Feature doc](../features/quote-save-tags.md)). A sequential ID in a URL like `/api/quotes/42` reveals nothing exploitable under that model, so there is no reason to pay UUID's cost (larger index, less locality) here.
 
-**`quote_selections.selected_text`** is stored alongside the offsets for display and debugging — if the corpus text were ever corrected, the saved text remains readable. Once a quote is saved, `selected_text`/`start_offset`/`end_offset` are immutable for now — only its tags can change (full editing is a possible future iteration).
+**`quote_selections.selected_text`** is stored alongside the offsets for display and debugging — if the corpus text were ever corrected, the saved text remains readable. Once a quote is saved, `selected_text`/`start_offset`/`end_offset` are immutable for now — only its tags and `comment` can change (full editing is a possible future iteration).
+
+**`quote_selections.comment`** (`TEXT NULL`) is an optional personal comment, editable only after creation — never set at creation time. Empty/whitespace-only input is normalized to `NULL` in the service layer, never stored as an empty string. See [quote-save-tags.md](../features/quote-save-tags.md).
+
+**`users.email_verified`** defaults to `FALSE` for new accounts; existing accounts were backfilled to `TRUE` by the migration that introduced the column. See [auth.md](../features/auth.md#email-confirmation-at-registration).
+
+**`password_reset_tokens`/`email_verification_tokens`** each hold one-time tokens for their respective flow: `SecureRandom`-generated, stored hashed (`token_hash`, SHA-256, never the raw token), single-use (`used_at`), time-limited (`expires_at`). Kept as two separate physical tables (rather than one shared table with a `kind` column) so a bug in one flow's queries can't touch the other flow's data, even though the query logic itself is generalized. A partial unique index guarantees at most one active (unused, unexpired) token per user per table. See [auth.md](../features/auth.md#email-confirmation-at-registration) and [reset-password.md](../features/reset-password.md#token-lifecycle).
 
 **Tagging is optional.** A quote selection can have zero tags; a tag can exist without being attached to any quote. The many-to-many relationship is genuinely `0..n ↔ 0..n` in both directions — there is no floor on either side.
 

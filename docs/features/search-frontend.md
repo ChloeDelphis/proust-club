@@ -48,7 +48,7 @@ TanStack Query derives loading state, data, errors, and caching from the `[searc
 | Error | `isError` | `<ErrorMessage />` |
 | Empty | 0 results | `<EmptyState />` |
 
-`keepPreviousData` keeps previous results visible during page transitions, preventing layout flicker. Never `if (isFetching) return <Spinner />` — that erases results already on screen.
+`placeholderData: keepPreviousData` (TanStack Query v5's replacement for v4's `keepPreviousData: true` option) keeps previous results visible during page transitions, preventing layout flicker. Never `if (isFetching) return <Spinner />` — that erases results already on screen.
 
 ---
 
