@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import type { ChangePasswordFormProps } from './ChangePasswordForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError } from '../passwordValidation'
+import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from '../AuthForm.module.css'
+
+const { newPassword: newPasswordConstraints } = validationConstraints.PasswordChangeRequest
 
 export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps) {
   const { t } = useTranslation()
@@ -13,7 +16,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const passwordError = passwordLengthError(newPassword, t('changePasswordForm.newPasswordSubject'))
+    const passwordError = passwordLengthError(newPassword, t('changePasswordForm.newPasswordSubject'), newPasswordConstraints)
     if (passwordError) {
       setError(passwordError)
       return
@@ -28,13 +31,17 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
 
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
+      {/* No maxLength here, deliberately: PasswordChangeRequest.currentPassword has no @Size
+          server-side (only @NotBlank) — it's a credential re-verified against a stored hash, not
+          new data whose length policy the app is choosing, so there's no backend bound to mirror.
+          A client-side cap wouldn't be a real defense either (bypassable by any direct API call);
+          request-size limits are the backend's job if that's ever a concern. */}
       <FormField
         label={t('changePasswordForm.currentPasswordLabel')}
         type="password"
         value={currentPassword}
         onChange={e => setCurrentPassword(e.target.value)}
         autoComplete="current-password"
-        maxLength={128}
       />
       <FormField
         label={t('changePasswordForm.newPasswordLabel')}
@@ -42,7 +49,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
         value={newPassword}
         onChange={e => setNewPassword(e.target.value)}
         autoComplete="new-password"
-        maxLength={128}
+        maxLength={newPasswordConstraints.maxLength}
       />
       <button className={styles.button} type="submit">
         {t('changePasswordForm.submitButton')}

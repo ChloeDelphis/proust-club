@@ -3,12 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate:api": "openapi-typescript http://localhost:8080/v3/api-docs -o src/api/schema.generated.ts",
+    "generate:api": "node scripts/fetch-openapi-snapshot.ts && openapi-typescript .openapi-snapshot.json -o src/api/schema.generated.ts && node scripts/generate-validation-constraints.ts",
     "test": "vitest",
     "test:run": "vitest run"
   },
