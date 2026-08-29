@@ -38,12 +38,16 @@ function toConstraint(schema: LengthSchema | undefined): LengthConstraint | null
 }
 
 export function extractValidationConstraints(doc: OpenApiDocument): ValidationConstraints {
-  const result: ValidationConstraints = {}
+  // Null-prototype objects: groupKey/fieldKey come from schema/operation/property names in the
+  // OpenAPI document, which this function treats as untrusted data rather than a codebase-authored
+  // literal. A regular {} would let a key like "__proto__" pollute Object.prototype through the
+  // bracket-notation assignment below.
+  const result: ValidationConstraints = Object.create(null)
 
   function addConstraint(groupKey: string, fieldKey: string, schema: LengthSchema | undefined) {
     const constraint = toConstraint(schema)
     if (!constraint) return
-    result[groupKey] ??= {}
+    result[groupKey] ??= Object.create(null)
     result[groupKey][fieldKey] = constraint
   }
 

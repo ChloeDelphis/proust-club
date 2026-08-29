@@ -121,6 +121,20 @@ describe('extractValidationConstraints', () => {
     expect(extractValidationConstraints(doc)).toEqual({})
   })
 
+  it('does not pollute Object.prototype for a schema named __proto__', () => {
+    // Built via JSON.parse, not an object literal: {"__proto__": ...} as a literal in source would
+    // set the prototype at parse time (not what a real OpenAPI document over the wire produces) —
+    // JSON.parse instead creates a genuine own property literally named "__proto__", exactly what
+    // the schema/property names become when this function does `result[groupKey][fieldKey] = ...`.
+    // Defense-in-depth for this dev-tooling script, not a realistic attack in this project's setup
+    // (the document always comes from this repo's own local backend).
+    const doc = JSON.parse(
+      '{"components":{"schemas":{"__proto__":{"properties":{"polluted":{"maxLength":1}}}}}}',
+    )
+    extractValidationConstraints(doc)
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined()
+  })
+
   it('returns an empty object for a document with no constraints anywhere', () => {
     const doc = {
       components: { schemas: { UserResponse: { properties: { uuid: {} } } } },
