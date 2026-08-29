@@ -59,6 +59,11 @@ class AuthService {
             // NPE, a future Spring Security behavior change). Kept anyway as a second layer: fail
             // open, never log the password itself. The throw below is deliberately outside this
             // try block so it can never be swallowed by this catch, regardless of clause order.
+            // Not unified with MailFailureLogger (used by EmailVerificationService/PasswordResetService
+            // for their own best-effort mail sends): different exception type (RuntimeException here,
+            // not MailException), different logging need (the full exception is safe to log here —
+            // unlike an email address, nothing about this exception leaks the password), and a
+            // different role (this is a defensive fallback for a bug, not the primary fail-open path).
             log.warn("Compromised password check failed, allowing registration to proceed", e);
             return;
         }

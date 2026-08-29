@@ -3,7 +3,6 @@ package com.proustclub.auth;
 import com.proustclub.mail.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,14 +52,7 @@ class PasswordResetService {
             // OneTimeTokenRepository for why this can't be a separate invalidate-then-insert.
             var rawToken = SecureToken.generate();
             tokenRepository.insert(TOKEN_TABLE, user.uuid(), SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
-            try {
-                mailService.sendPasswordResetEmail(user.email(), rawToken);
-            } catch (MailException e) {
-                // Exception class only, not the throwable itself: MailSendException/SendFailedException
-                // routinely embed the rejected recipient address in their message (SMTP bounces echo it
-                // back) — logging the full exception would leak the email, which CLAUDE.md forbids.
-                log.warn("Failed to send password reset email ({})", e.getClass().getSimpleName());
-            }
+            MailFailureLogger.sendBestEffort(log, "password reset email", () -> mailService.sendPasswordResetEmail(user.email(), rawToken));
             log.info("Password reset requested");
         });
     }
