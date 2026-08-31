@@ -33,8 +33,10 @@ The threshold lives **only** in the `audit:security` script in `apps/frontend/pa
 
 - **Manual, any time:** `pnpm audit` (full visibility) or `pnpm audit:security` (same check CI runs).
 - **On every PR/push touching the frontend:** `frontend-ci.yml` runs `pnpm audit:security`.
-- **Weekly, regardless of code changes:** `.github/workflows/frontend-security-audit.yml` runs `pnpm audit:security` on a schedule — this is what catches an advisory published on a dependency that hasn't changed in weeks, which the PR-triggered check alone would never see.
-- **Before release:** not wired yet (no release workflow exists), but `pnpm audit:security` is the command to reuse as a blocking step once it does.
+- **Weekly, regardless of code changes:** `.github/workflows/frontend-security-audit.yml` runs the same `pnpm audit --audit-level high` check on a schedule — this is what catches an advisory published on a dependency that hasn't changed in weeks, which the PR-triggered check alone would never see. This workflow calls the raw command rather than the `audit:security` script: running any `package.json` script via `pnpm run` (which is what `pnpm audit:security` resolves to) makes pnpm materialize `node_modules` first if it's missing, even though the plain `pnpm audit` subcommand itself never needs it — defeating the point of skipping installation in a job that only needs the lockfile and registry access. Keep the threshold in the workflow's inline flag in sync with the `audit:security` script if it ever changes.
+- **Before release:** not wired yet (no release workflow exists), but `pnpm audit:security` is the command to reuse as a blocking step once it does — a future release job installs dependencies anyway (build step), so the `install: false` concern doesn't apply there.
+
+**Weekly run output:** each run writes a one-line pass/fail summary to the workflow's GitHub Actions summary page (no need to open the logs to see the result), and uploads the full `pnpm audit` output — both the blocking High/Critical result and a second, always-informational full-severity run (Low/Moderate included, never blocking) — as a downloadable `pnpm-audit-report` artifact.
 
 **Registry/network failure:** `pnpm audit` fails (non-zero exit) by default if the registry can't be reached — `--ignore-registry-errors` is deliberately never used in this project, so a failed check is never mistaken for "nothing found." A vulnerability finding and an audit failure both produce a non-zero exit; the command's output text is what distinguishes them (visible in CI logs).
 
