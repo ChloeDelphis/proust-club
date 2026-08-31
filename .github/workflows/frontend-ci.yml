@@ -46,7 +46,7 @@ jobs:
             echo "## Frontend code coverage"
             echo ""
             read -r PCT COVERED TOTAL <<< "$(node scripts/print-coverage-summary.ts 2>/dev/null)"
-            if [[ "$TOTAL" =~ ^[0-9]+$ ]] && [ "$TOTAL" -gt 0 ]; then
+            if [[ "$COVERED" =~ ^[0-9]+$ && "$TOTAL" =~ ^[0-9]+$ ]] && [ "$TOTAL" -gt 0 ]; then
               STATUS="✅ Above threshold"
               # Compare the raw covered/total ratio against the threshold, not the
               # display-rounded $PCT — rounding could show "Above threshold" for a run
