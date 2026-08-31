@@ -41,26 +41,23 @@ jobs:
         if: always()
         run: |
           REPORT=coverage/coverage-summary.json
-          if [ ! -f "$REPORT" ]; then
-            {
-              echo "## Frontend code coverage"
-              echo ""
-              echo "Coverage unavailable — report not generated"
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          PCT=$(node -e "console.log(require('./$REPORT').total.lines.pct)")
-          COVERED=$(node -e "console.log(require('./$REPORT').total.lines.covered)")
-          TOTAL=$(node -e "console.log(require('./$REPORT').total.lines.total)")
+          # Keep in sync with vite.config.ts's test.coverage.thresholds.lines.
           THRESHOLD=85
-          STATUS="✅ Above threshold"
-          awk "BEGIN { exit !($PCT < $THRESHOLD) }" && STATUS="❌ Below threshold"
           {
             echo "## Frontend code coverage"
             echo ""
-            echo "Lines: ${PCT}% (${COVERED}/${TOTAL})"
-            echo "Threshold: ${THRESHOLD}%"
-            echo "$STATUS"
+            if [ -f "$REPORT" ]; then
+              read -r PCT COVERED TOTAL <<< "$(node -e "const t=require('./$REPORT').total.lines; console.log(t.pct, t.covered, t.total)" 2>/dev/null)"
+            fi
+            if [[ "$TOTAL" =~ ^[0-9]+$ ]] && [ "$TOTAL" -gt 0 ]; then
+              STATUS="✅ Above threshold"
+              awk "BEGIN { exit !($PCT < $THRESHOLD) }" && STATUS="❌ Below threshold"
+              echo "Lines: ${PCT}% (${COVERED}/${TOTAL})"
+              echo "Threshold: ${THRESHOLD}%"
+              echo "$STATUS"
+            else
+              echo "Coverage unavailable — report not generated"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
       - run: pnpm build
       - run: pnpm audit:security
