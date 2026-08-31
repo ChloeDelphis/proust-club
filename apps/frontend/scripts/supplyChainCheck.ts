@@ -37,13 +37,16 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
   }
 
   const packages: LockfilePackage[] = []
-  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'][^:]*)):$/
+  // Unquoted branch excludes whitespace (not just the quote character) so a line indented by an
+  // unexpected amount (1, 3, 5 spaces — never produced by pnpm, but not to be silently absorbed
+  // either) can't accidentally satisfy this pattern with a mangled, space-prefixed "name".
+  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'\s][^:\s]*)):$/
 
   for (let i = packagesLineIndex + 1; i < lines.length; i++) {
     const line = lines[i]
     if (line === '') continue
     if (!line.startsWith(' ')) break // next top-level key (`snapshots:` today) — end of the block
-    if (!/^ {2}\S/.test(line)) continue // 4+-space indent: package metadata (resolution/engines/...), not a new entry
+    if (/^ {4,}\S/.test(line)) continue // 4+-space indent: package metadata (resolution/engines/...), not a new entry
 
     const match = line.match(packageKeyPattern)
     if (!match) {
@@ -170,6 +173,13 @@ export async function queryMaliciousPackages(
       // (ordinary CVE/GHSA included), not just MAL- entries — most of that would otherwise be
       // stored per package just to be discarded a moment later.
       for (const vuln of result.vulns ?? []) {
+        // The response is untrusted network JSON cast through `as OsvBatchResponse` — `id: string`
+        // is only a compile-time claim, not a runtime guarantee. A malformed entry here would
+        // otherwise crash with a raw, unhelpful TypeError instead of the deliberately clear
+        // fail-closed message used for the structurally identical case above (missing `result`).
+        if (typeof vuln.id !== 'string') {
+          throw new Error(`OSV querybatch response contains a vulnerability entry without a valid "id" for query ${i} — refusing to guess whether it's a MAL- entry.`)
+        }
         if (vuln.id.startsWith(MALICIOUS_PACKAGE_ID_PREFIX)) {
           detections.push({ name: pkg.name, version: pkg.version, id: vuln.id })
         }

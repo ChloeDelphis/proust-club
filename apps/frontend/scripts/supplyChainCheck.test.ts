@@ -70,6 +70,23 @@ snapshots:
     const lockfile = "lockfileVersion: '9.0'\n\npackages:\n\n  this-is-not-a-valid-key-line\n"
     expect(() => parseLockfilePackages(lockfile)).toThrow(/Unrecognized line/)
   })
+
+  it('throws on an oddly-indented line (1 or 3 spaces — pnpm never produces this) instead of silently dropping it', () => {
+    // Neither the exactly-2-space entry pattern nor the 4+-space metadata skip matches this — must
+    // not fall through unnoticed, or a tampered/corrupted entry would be silently excluded from
+    // the check entirely rather than causing a loud failure.
+    const oneSpace = "lockfileVersion: '9.0'\n\npackages:\n\n acorn@8.18.0:\n    resolution: {integrity: sha512-fake==}\n"
+    expect(() => parseLockfilePackages(oneSpace)).toThrow(/Unrecognized line/)
+
+    const threeSpaces = "lockfileVersion: '9.0'\n\npackages:\n\n   acorn@8.18.0:\n    resolution: {integrity: sha512-fake==}\n"
+    expect(() => parseLockfilePackages(threeSpaces)).toThrow(/Unrecognized line/)
+  })
+
+  it('still treats deeply-nested 6-space metadata (e.g. peerDependencies children) as metadata, not a new entry', () => {
+    const lockfile =
+      "lockfileVersion: '9.0'\n\npackages:\n\n  zod-validation-error@4.0.2:\n    resolution: {integrity: sha512-fake==}\n    peerDependencies:\n      zod: ^3.25.0 || ^4.0.0\n\nsnapshots:\n"
+    expect(parseLockfilePackages(lockfile)).toEqual([{ name: 'zod-validation-error', version: '4.0.2' }])
+  })
 })
 
 describe('queryMaliciousPackages', () => {
@@ -126,6 +143,20 @@ describe('queryMaliciousPackages', () => {
     try {
       const detections = await queryMaliciousPackages([{ name: 'some-pkg', version: '2.0.0' }], { baseUrl: stub.baseUrl })
       expect(detections).toEqual([])
+    } finally {
+      await stub.close()
+    }
+  })
+
+  it('rejects with a clear message on a vulnerability entry missing "id", instead of a raw TypeError', async () => {
+    const stub = await startStubServer((_body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ results: [{ vulns: [{}] }] }))
+    })
+    try {
+      await expect(queryMaliciousPackages([{ name: 'some-pkg', version: '1.0.0' }], { baseUrl: stub.baseUrl })).rejects.toThrow(
+        /vulnerability entry without a valid "id"/,
+      )
     } finally {
       await stub.close()
     }
