@@ -11,7 +11,7 @@ Proust Club has two kinds of user-visible text with very different treatment:
 - **Interface chrome** — labels, buttons, toasts, error messages, aria-labels. This is what this feature moves into a catalog.
 - **Corpus content** — search results, saved quotes, timeline previews. This is Marcel Proust's actual text and is never translated; it stays French regardless of the interface language.
 
-Today the interface itself is still French-only — this feature is the extraction step, not the translation step. A language switcher and additional catalogs (starting with English) are tracked separately in `activation-multilingue` (see `private/tickets/`).
+Today the interface itself is still French-only — this feature is the extraction step, not the translation step. A language switcher and additional catalogs (starting with English) are tracked separately as a follow-up.
 
 ## Why react-i18next
 
