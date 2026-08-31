@@ -36,6 +36,31 @@ jobs:
           require-lockfile: true
           cache: true
       - run: pnpm lint
-      - run: pnpm test:run
+      - run: pnpm test:coverage
+      - name: Coverage summary
+        if: always()
+        run: |
+          REPORT=coverage/coverage-summary.json
+          if [ ! -f "$REPORT" ]; then
+            {
+              echo "## Frontend code coverage"
+              echo ""
+              echo "Coverage unavailable — report not generated"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          PCT=$(node -e "console.log(require('./$REPORT').total.lines.pct)")
+          COVERED=$(node -e "console.log(require('./$REPORT').total.lines.covered)")
+          TOTAL=$(node -e "console.log(require('./$REPORT').total.lines.total)")
+          THRESHOLD=85
+          STATUS="✅ Above threshold"
+          awk "BEGIN { exit !($PCT < $THRESHOLD) }" && STATUS="❌ Below threshold"
+          {
+            echo "## Frontend code coverage"
+            echo ""
+            echo "Lines: ${PCT}% (${COVERED}/${TOTAL})"
+            echo "Threshold: ${THRESHOLD}%"
+            echo "$STATUS"
+          } >> "$GITHUB_STEP_SUMMARY"
       - run: pnpm build
       - run: pnpm audit:security
