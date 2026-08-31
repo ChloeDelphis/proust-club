@@ -1,0 +1,40 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "apps/frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  push:
+    branches: [master]
+    paths:
+      - "apps/frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@ce3b1e5f04cd26dbb4614172464b544b5633cc92 # v2.1.0
+        with:
+          version: "11.19.0"
+          runtime: node@24
+          working-directory: apps/frontend
+          require-lockfile: true
+          cache: true
+      - run: pnpm lint
+      - run: pnpm test:run
+      - run: pnpm build
+      - run: pnpm audit --audit-level high
