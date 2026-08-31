@@ -44,8 +44,11 @@ jobs:
             echo "## Backend code coverage"
             echo ""
             if [ -f "$REPORT" ]; then
-              LINE=$(grep -o '<counter type="LINE"[^/]*/>' "$REPORT" | tail -1)
-              read -r MISSED COVERED <<< "$(echo "$LINE" | grep -oE '[0-9]+' | tr '\n' ' ')"
+              # `|| true`: GitHub Actions runs run: steps with `set -eo pipefail`, so a
+              # grep that matches nothing (empty/malformed report) would otherwise abort
+              # this whole step instead of falling through to the "unavailable" message.
+              LINE=$(grep -o '<counter type="LINE"[^/]*/>' "$REPORT" | tail -1 || true)
+              read -r MISSED COVERED <<< "$(echo "$LINE" | grep -oE '[0-9]+' | tr '\n' ' ' || true)"
             fi
             if [[ "$MISSED" =~ ^[0-9]+$ && "$COVERED" =~ ^[0-9]+$ ]] && [ "$((MISSED + COVERED))" -gt 0 ]; then
               TOTAL=$((MISSED + COVERED))
