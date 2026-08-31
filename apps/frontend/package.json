@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "generate:api": "node scripts/fetch-openapi-snapshot.ts && openapi-typescript .openapi-snapshot.json -o src/api/schema.generated.ts && node scripts/generate-validation-constraints.ts",
+    "check:supply-chain": "node scripts/check-supply-chain.ts",
     "test": "vitest",
     "test:run": "vitest run"
   },
