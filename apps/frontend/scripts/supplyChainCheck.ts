@@ -120,7 +120,7 @@ export async function queryMaliciousPackages(
     timeoutMs: options.timeoutMs ?? 10_000,
   }
 
-  const vulnIdsByPackageIndex: Set<string>[] = packages.map(() => new Set())
+  const detections: MaliciousDetection[] = []
 
   let pending: { packageIndex: number; query: OsvQuery }[] = packages.map((pkg, packageIndex) => ({
     packageIndex,
@@ -138,8 +138,14 @@ export async function queryMaliciousPackages(
     pending.forEach((entry, i) => {
       const result = results[i]
       if (!result) return
+      const pkg = packages[entry.packageIndex]
+      // Filtered inline, not accumulated then filtered afterward: OSV returns every advisory
+      // (ordinary CVE/GHSA included), not just MAL- entries — most of that would otherwise be
+      // stored per package just to be discarded a moment later.
       for (const vuln of result.vulns ?? []) {
-        vulnIdsByPackageIndex[entry.packageIndex].add(vuln.id)
+        if (vuln.id.startsWith(MALICIOUS_PACKAGE_ID_PREFIX)) {
+          detections.push({ name: pkg.name, version: pkg.version, id: vuln.id })
+        }
       }
       if (result.next_page_token) {
         next.push({ packageIndex: entry.packageIndex, query: { ...entry.query, page_token: result.next_page_token } })
@@ -148,14 +154,6 @@ export async function queryMaliciousPackages(
     pending = next
   }
 
-  const detections: MaliciousDetection[] = []
-  packages.forEach((pkg, packageIndex) => {
-    for (const id of vulnIdsByPackageIndex[packageIndex]) {
-      if (id.startsWith(MALICIOUS_PACKAGE_ID_PREFIX)) {
-        detections.push({ name: pkg.name, version: pkg.version, id })
-      }
-    }
-  })
   return detections
 }
 
