@@ -93,6 +93,24 @@ snapshots:
     expect(() => parseLockfilePackages(threeSpaces)).toThrow(/Unrecognized line/)
   })
 
+  it('tolerates trailing whitespace on the "packages:" line itself (YAML-insignificant), unlike the empty-block fallback that would otherwise silently apply', () => {
+    const lockfile = "lockfileVersion: '9.0'\n\npackages: \n\n  acorn@8.18.0:\n    resolution: {integrity: sha512-fake==}\n"
+    expect(parseLockfilePackages(lockfile)).toEqual([{ name: 'acorn', version: '8.18.0' }])
+  })
+
+  it('throws on a corrupted 0-indent line ending the packages: block (e.g. a stray merge-conflict marker), instead of silently truncating the scan', () => {
+    // A real top-level key is always a bare "key:" with no inline value — anything else at
+    // 0-indent stopping the scan would otherwise drop every remaining package (including a
+    // malicious one) from the check without any error.
+    const lockfile = "lockfileVersion: '9.0'\n\npackages:\n\n  acorn@8.18.0:\n    resolution: {integrity: sha512-fake==}\n\n<<<<<<< HEAD\n"
+    expect(() => parseLockfilePackages(lockfile)).toThrow(/Unrecognized line ending/)
+  })
+
+  it('throws on a packages: key with an empty version (a corrupted trailing "@" with nothing after it)', () => {
+    const lockfile = "lockfileVersion: '9.0'\n\npackages:\n\n  foo@:\n    resolution: {integrity: sha512-fake==}\n"
+    expect(() => parseLockfilePackages(lockfile)).toThrow(/Could not split a package name\/version/)
+  })
+
   it('still treats deeply-nested 6-space metadata (e.g. peerDependencies children) as metadata, not a new entry', () => {
     const lockfile =
       "lockfileVersion: '9.0'\n\npackages:\n\n  zod-validation-error@4.0.2:\n    resolution: {integrity: sha512-fake==}\n    peerDependencies:\n      zod: ^3.25.0 || ^4.0.0\n\nsnapshots:\n"
@@ -238,7 +256,23 @@ describe('queryMaliciousPackages', () => {
           ],
           { baseUrl: stub.baseUrl },
         ),
-      ).rejects.toThrow(/missing a result/)
+      ).rejects.toThrow(/missing a valid result/)
+    } finally {
+      await stub.close()
+    }
+  })
+
+  it('rejects when a result entry is a truthy non-object primitive, instead of silently reading it as "nothing found"', async () => {
+    // `!result` alone wouldn't catch this — 42 is truthy — and `(42).vulns` reads as `undefined`
+    // without throwing, so without the typeof guard this would be reported clean.
+    const stub = await startStubServer((_body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ results: [42] }))
+    })
+    try {
+      await expect(queryMaliciousPackages([{ name: 'some-pkg', version: '1.0.0' }], { baseUrl: stub.baseUrl })).rejects.toThrow(
+        /missing a valid result/,
+      )
     } finally {
       await stub.close()
     }

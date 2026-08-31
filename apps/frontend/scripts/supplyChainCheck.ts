@@ -29,7 +29,10 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
     )
   }
 
-  const packagesLineIndex = lines.indexOf('packages:')
+  // Trailing whitespace is YAML-insignificant (unlike arbitrary trailing content, which is not
+  // tolerated — trimEnd, not startsWith), so it shouldn't make this line "not found" and silently
+  // fall into the empty-lockfile path below.
+  const packagesLineIndex = lines.findIndex((line) => line.trimEnd() === 'packages:')
   if (packagesLineIndex === -1) {
     // No `packages:` block at all — a lockfile with zero resolved dependencies is a legitimate
     // (if unlikely) shape, not a parsing failure. Nothing to check.
@@ -56,8 +59,27 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
   for (let i = packagesLineIndex + 1; i < lines.length; i++) {
     const line = lines[i]
     if (line === '') continue
-    if (!line.startsWith(' ')) break // next top-level key (`snapshots:` today) — end of the block
-    if (/^ {4,}\S/.test(line)) continue // 4+-space indent: package metadata (resolution/engines/...), not a new entry
+    if (!line.startsWith(' ')) {
+      // A 0-indent line ends the block (next top-level key, `snapshots:` today) — but any 0-indent
+      // line at all, unvalidated, would also silently truncate the scan on stray/corrupted content
+      // (e.g. an unresolved merge-conflict marker), dropping every package after it from the check
+      // without an error. Every real top-level key in this file is a bare `key:` with no inline
+      // value — requiring that shape catches the corrupted case without hardcoding "snapshots:"
+      // specifically, in case a future pnpm version orders/names top-level keys differently.
+      if (!line.endsWith(':')) {
+        throw new Error(`Unrecognized line ending the pnpm-lock.yaml "packages:" block: ${JSON.stringify(line)}`)
+      }
+      break
+    }
+    // 4+-space indent: package metadata (resolution/engines/...), not a new entry. Known,
+    // accepted gap: a package key mistakenly indented at 4+ spaces (instead of 2) would be
+    // silently absorbed here as metadata rather than rejected. Distinguishing the two would need
+    // either a whitelist of known metadata field names (fragile, incomplete, drifts with pnpm) or
+    // rejecting any 4+-space content that doesn't match a known shape (false-positive risk on
+    // legitimate metadata this parser hasn't seen yet) — more sophistication than the
+    // deliberately minimal parser this script commits to (see the ticket). Real pnpm output never
+    // produces this shape; accepted as an edge case rather than engineered around.
+    if (/^ {4,}\S/.test(line)) continue
 
     const match = line.match(packageKeyPattern)
     if (!match) {
@@ -67,7 +89,11 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
     const aliasIndex = rawKey.indexOf(NPM_ALIAS_MARKER)
     const key = aliasIndex === -1 ? rawKey : rawKey.slice(aliasIndex + NPM_ALIAS_MARKER.length)
     const atIndex = key.lastIndexOf('@')
-    if (atIndex <= 0) {
+    // atIndex <= 0 rejects a missing/empty name (no "@" at all, or "@" as the very first
+    // character); atIndex === key.length - 1 rejects a missing/empty version (a trailing "@" with
+    // nothing after it, e.g. a corrupted `foo@:` key) — both would otherwise manufacture a
+    // {name, version} pair for a package/version that doesn't actually exist, instead of failing.
+    if (atIndex <= 0 || atIndex === key.length - 1) {
       throw new Error(`Could not split a package name/version out of "packages:" key: ${JSON.stringify(rawKey)}`)
     }
     packages.push({ name: key.slice(0, atIndex), version: key.slice(atIndex + 1) })
@@ -178,13 +204,17 @@ export async function queryMaliciousPackages(
     const next: typeof pending = []
     pending.forEach((entry, i) => {
       const result = results[i]
-      if (!result) {
-        // A missing entry here means the response doesn't line up with the queries actually
-        // sent (truncated/malformed response, an undocumented per-request cap, ...). Silently
-        // treating it as "nothing found" would report a package as clean without having actually
-        // checked it — the opposite of fail-closed. Throwing surfaces it as exit 2 instead.
+      // `!result` catches missing/null/undefined; `typeof result !== 'object'` also catches a
+      // truthy non-object entry (a bare number or string) — accessing `.vulns`/`.next_page_token`
+      // on either would silently read as `undefined` rather than throw, so without this check a
+      // primitive entry would be treated as "nothing found, no more pages" instead of failing.
+      if (!result || typeof result !== 'object') {
+        // A missing/malformed entry here means the response doesn't line up with the queries
+        // actually sent (truncated/malformed response, an undocumented per-request cap, ...).
+        // Silently treating it as "nothing found" would report a package as clean without having
+        // actually checked it — the opposite of fail-closed. Throwing surfaces it as exit 2 instead.
         throw new Error(
-          `OSV querybatch response is missing a result for query ${i} (sent ${pending.length}, received ${results.length}) — refusing to treat the corresponding package as checked.`,
+          `OSV querybatch response is missing a valid result for query ${i} (sent ${pending.length}, received ${results.length}) — refusing to treat the corresponding package as checked.`,
         )
       }
       const pkg = entry.pkg
