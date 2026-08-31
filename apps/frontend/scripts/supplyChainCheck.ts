@@ -45,8 +45,12 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
   // either) can't accidentally satisfy this pattern with a mangled, space-prefixed "name". It does
   // *not* exclude ":" — pnpm's npm-alias keys (`alias@npm:realname@version`) legitimately contain
   // one; YAML only treats a colon as a key/value separator when followed by whitespace or EOL, so
-  // the trailing, greedily-matched ":$" here still correctly lands on the real line-ending colon.
-  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'\s][^\s]*)):$/
+  // the trailing, greedily-matched ":" here still correctly lands on the real line-ending colon.
+  // Trailing whitespace after that colon is tolerated (`\s*$`, not a bare `$`) — YAML-insignificant,
+  // same reasoning as the `trimEnd()` already applied to the "packages:" header line below; without
+  // it, an editor-introduced trailing space would abort the whole check (exit 2) over an otherwise
+  // valid, untampered lockfile.
+  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'\s][^\s]*)):\s*$/
 
   // pnpm writes an aliased dependency's packages: key as `<local-alias>@npm:<real-name>@<version>`
   // (e.g. `string-width-cjs@npm:string-width@4.2.3` — eslint's own dependency chain uses this).
@@ -66,7 +70,9 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
       // without an error. Every real top-level key in this file is a bare `key:` with no inline
       // value — requiring that shape catches the corrupted case without hardcoding "snapshots:"
       // specifically, in case a future pnpm version orders/names top-level keys differently.
-      if (!line.endsWith(':')) {
+      // trimEnd() for the same reason as the "packages:" lookup and the entry-key pattern above:
+      // trailing whitespace is YAML-insignificant and shouldn't abort an otherwise valid lockfile.
+      if (!line.trimEnd().endsWith(':')) {
         throw new Error(`Unrecognized line ending the pnpm-lock.yaml "packages:" block: ${JSON.stringify(line)}`)
       }
       break

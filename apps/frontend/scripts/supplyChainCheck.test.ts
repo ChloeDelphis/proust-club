@@ -111,6 +111,16 @@ snapshots:
     expect(() => parseLockfilePackages(lockfile)).toThrow(/Could not split a package name\/version/)
   })
 
+  it('tolerates trailing whitespace on an entry key line, instead of aborting the whole check over an otherwise valid lockfile', () => {
+    const lockfile = "lockfileVersion: '9.0'\n\npackages:\n\n  acorn@8.18.0: \n    resolution: {integrity: sha512-fake==}\n"
+    expect(parseLockfilePackages(lockfile)).toEqual([{ name: 'acorn', version: '8.18.0' }])
+  })
+
+  it('tolerates trailing whitespace on the 0-indent line ending the block', () => {
+    const lockfile = "lockfileVersion: '9.0'\n\npackages:\n\n  acorn@8.18.0:\n    resolution: {integrity: sha512-fake==}\n\nsnapshots: \n"
+    expect(parseLockfilePackages(lockfile)).toEqual([{ name: 'acorn', version: '8.18.0' }])
+  })
+
   it('still treats deeply-nested 6-space metadata (e.g. peerDependencies children) as metadata, not a new entry', () => {
     const lockfile =
       "lockfileVersion: '9.0'\n\npackages:\n\n  zod-validation-error@4.0.2:\n    resolution: {integrity: sha512-fake==}\n    peerDependencies:\n      zod: ^3.25.0 || ^4.0.0\n\nsnapshots:\n"
