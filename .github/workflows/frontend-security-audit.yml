@@ -1,26 +1,19 @@
-name: Frontend CI
+name: Frontend security audit (weekly)
 
 on:
-  # No paths: filter here on purpose — this must always run on PRs to master
-  # so it can be a required status check without ever getting stuck "pending"
-  # on a PR that never touches apps/frontend/**.
-  pull_request:
-    branches: [master]
-  push:
-    branches: [master]
-    paths:
-      - "apps/frontend/**"
-      - ".github/workflows/frontend-ci.yml"
+  schedule:
+    - cron: "0 6 * * 1" # every Monday at 06:00 UTC
+  workflow_dispatch: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  frontend:
+  audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -34,8 +27,5 @@ jobs:
           runtime: node@24
           working-directory: apps/frontend
           require-lockfile: true
-          cache: true
-      - run: pnpm lint
-      - run: pnpm test:run
-      - run: pnpm build
+          install: false
       - run: pnpm audit:security
