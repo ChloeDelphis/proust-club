@@ -34,3 +34,30 @@ jobs:
           java-version: "21"
           cache: gradle
       - run: ./gradlew build --no-daemon
+      - name: Coverage summary
+        if: always()
+        run: |
+          REPORT=build/reports/jacoco/test/jacocoTestReport.xml
+          if [ ! -f "$REPORT" ]; then
+            {
+              echo "## Backend code coverage"
+              echo ""
+              echo "Coverage unavailable — report not generated"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          LINE=$(grep -o '<counter type="LINE"[^/]*/>' "$REPORT" | tail -1)
+          MISSED=$(echo "$LINE" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+          COVERED=$(echo "$LINE" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+          TOTAL=$((MISSED + COVERED))
+          THRESHOLD=90
+          PCT=$(awk "BEGIN { printf \"%.2f\", ($COVERED / $TOTAL) * 100 }")
+          STATUS="✅ Above threshold"
+          awk "BEGIN { exit !($PCT < $THRESHOLD) }" && STATUS="❌ Below threshold"
+          {
+            echo "## Backend code coverage"
+            echo ""
+            echo "Lines: ${PCT}% (${COVERED}/${TOTAL})"
+            echo "Threshold: ${THRESHOLD}%"
+            echo "$STATUS"
+          } >> "$GITHUB_STEP_SUMMARY"
