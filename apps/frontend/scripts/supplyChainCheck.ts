@@ -21,7 +21,11 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
   // re-saved by some editors/tools) would otherwise land inside lines[0] and make the exact-match
   // header check below fail on an otherwise perfectly valid lockfile.
   const withoutBom = lockfileContent.startsWith('\uFEFF') ? lockfileContent.slice(1) : lockfileContent
-  const lines = withoutBom.split(/\r\n|\r|\n/)
+  // Trailing whitespace is YAML-insignificant (unlike arbitrary trailing content, which is not
+  // tolerated) — normalized once here rather than at each of the several places below that compare
+  // a line exactly or match it against a pattern, so an editor-introduced trailing space can't
+  // abort the whole check (exit 2) over an otherwise valid, untampered lockfile.
+  const lines = withoutBom.split(/\r\n|\r|\n/).map((line) => line.trimEnd())
 
   if (!lines[0]?.startsWith(LOCKFILE_VERSION_HEADER)) {
     throw new Error(
@@ -29,10 +33,7 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
     )
   }
 
-  // Trailing whitespace is YAML-insignificant (unlike arbitrary trailing content, which is not
-  // tolerated — trimEnd, not startsWith), so it shouldn't make this line "not found" and silently
-  // fall into the empty-lockfile path below.
-  const packagesLineIndex = lines.findIndex((line) => line.trimEnd() === 'packages:')
+  const packagesLineIndex = lines.indexOf('packages:')
   if (packagesLineIndex === -1) {
     // No `packages:` block at all — a lockfile with zero resolved dependencies is a legitimate
     // (if unlikely) shape, not a parsing failure. Nothing to check.
@@ -46,11 +47,7 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
   // *not* exclude ":" — pnpm's npm-alias keys (`alias@npm:realname@version`) legitimately contain
   // one; YAML only treats a colon as a key/value separator when followed by whitespace or EOL, so
   // the trailing, greedily-matched ":" here still correctly lands on the real line-ending colon.
-  // Trailing whitespace after that colon is tolerated (`\s*$`, not a bare `$`) — YAML-insignificant,
-  // same reasoning as the `trimEnd()` already applied to the "packages:" header line below; without
-  // it, an editor-introduced trailing space would abort the whole check (exit 2) over an otherwise
-  // valid, untampered lockfile.
-  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'\s][^\s]*)):\s*$/
+  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'\s][^\s]*)):$/
 
   // pnpm writes an aliased dependency's packages: key as `<local-alias>@npm:<real-name>@<version>`
   // (e.g. `string-width-cjs@npm:string-width@4.2.3` — eslint's own dependency chain uses this).
@@ -70,9 +67,7 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
       // without an error. Every real top-level key in this file is a bare `key:` with no inline
       // value — requiring that shape catches the corrupted case without hardcoding "snapshots:"
       // specifically, in case a future pnpm version orders/names top-level keys differently.
-      // trimEnd() for the same reason as the "packages:" lookup and the entry-key pattern above:
-      // trailing whitespace is YAML-insignificant and shouldn't abort an otherwise valid lockfile.
-      if (!line.trimEnd().endsWith(':')) {
+      if (!line.endsWith(':')) {
         throw new Error(`Unrecognized line ending the pnpm-lock.yaml "packages:" block: ${JSON.stringify(line)}`)
       }
       break
