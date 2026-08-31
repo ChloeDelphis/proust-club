@@ -37,6 +37,17 @@ snapshots:
     ])
   })
 
+  it('resolves an unquoted npm-alias key to the real underlying name/version, not the local alias', () => {
+    // Real pattern, not hypothetical — eslint's own dependency chain aliases string-width this way.
+    const lockfile = "lockfileVersion: '9.0'\n\npackages:\n\n  string-width-cjs@npm:string-width@4.2.3:\n    resolution: {integrity: sha512-fake==}\n"
+    expect(parseLockfilePackages(lockfile)).toEqual([{ name: 'string-width', version: '4.2.3' }])
+  })
+
+  it('resolves a quoted, scoped npm-alias key to the real underlying name/version', () => {
+    const lockfile = "lockfileVersion: '9.0'\n\npackages:\n\n  '@scoped-alias/pkg@npm:@babel/core@7.28.0':\n    resolution: {integrity: sha512-fake==}\n"
+    expect(parseLockfilePackages(lockfile)).toEqual([{ name: '@babel/core', version: '7.28.0' }])
+  })
+
   it('handles CRLF line endings (Windows checkout)', () => {
     const lockfile = ["lockfileVersion: '9.0'", '', 'packages:', '', '  acorn@8.18.0:', '    resolution: {integrity: sha512-fake==}', '', 'snapshots:', ''].join(
       '\r\n',

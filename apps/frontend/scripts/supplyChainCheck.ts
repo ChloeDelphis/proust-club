@@ -39,8 +39,19 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
   const packages: LockfilePackage[] = []
   // Unquoted branch excludes whitespace (not just the quote character) so a line indented by an
   // unexpected amount (1, 3, 5 spaces — never produced by pnpm, but not to be silently absorbed
-  // either) can't accidentally satisfy this pattern with a mangled, space-prefixed "name".
-  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'\s][^:\s]*)):$/
+  // either) can't accidentally satisfy this pattern with a mangled, space-prefixed "name". It does
+  // *not* exclude ":" — pnpm's npm-alias keys (`alias@npm:realname@version`) legitimately contain
+  // one; YAML only treats a colon as a key/value separator when followed by whitespace or EOL, so
+  // the trailing, greedily-matched ":$" here still correctly lands on the real line-ending colon.
+  const packageKeyPattern = /^ {2}(?:'([^']*)'|([^'\s][^\s]*)):$/
+
+  // pnpm writes an aliased dependency's packages: key as `<local-alias>@npm:<real-name>@<version>`
+  // (e.g. `string-width-cjs@npm:string-width@4.2.3` — eslint's own dependency chain uses this).
+  // The alias is a local name, not what's actually installed/executed — resolving past it to the
+  // real name/version is required for the OSV query to mean anything; splitting on the outer alias
+  // would either query a name nobody publishes or, worse, silently query the wrong package and
+  // report "clean" without ever having checked the one that's actually there.
+  const NPM_ALIAS_MARKER = '@npm:'
 
   for (let i = packagesLineIndex + 1; i < lines.length; i++) {
     const line = lines[i]
@@ -52,10 +63,12 @@ export function parseLockfilePackages(lockfileContent: string): LockfilePackage[
     if (!match) {
       throw new Error(`Unrecognized line in the pnpm-lock.yaml "packages:" block: ${JSON.stringify(line)}`)
     }
-    const key = match[1] ?? match[2]
+    const rawKey = match[1] ?? match[2]
+    const aliasIndex = rawKey.indexOf(NPM_ALIAS_MARKER)
+    const key = aliasIndex === -1 ? rawKey : rawKey.slice(aliasIndex + NPM_ALIAS_MARKER.length)
     const atIndex = key.lastIndexOf('@')
     if (atIndex <= 0) {
-      throw new Error(`Could not split a package name/version out of "packages:" key: ${JSON.stringify(key)}`)
+      throw new Error(`Could not split a package name/version out of "packages:" key: ${JSON.stringify(rawKey)}`)
     }
     packages.push({ name: key.slice(0, atIndex), version: key.slice(atIndex + 1) })
   }
