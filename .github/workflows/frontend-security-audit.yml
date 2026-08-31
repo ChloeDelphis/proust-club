@@ -28,4 +28,46 @@ jobs:
           working-directory: apps/frontend
           require-lockfile: true
           install: false
-      - run: pnpm audit:security
+      # Calls `pnpm audit` directly rather than the `audit:security` package.json
+      # script: `pnpm run <script>` (which `pnpm audit:security` resolves to)
+      # silently installs node_modules first if it's missing, defeating `install:
+      # false` above. The plain `pnpm audit` subcommand never does this — it only
+      # reads the lockfile and queries the registry. Keep the threshold in sync
+      # with `apps/frontend/package.json`'s `audit:security` script if it changes.
+      - name: Run pnpm audit (blocking, High/Critical)
+        id: audit
+        continue-on-error: true
+        run: pnpm audit --audit-level high | tee audit-report.txt
+
+      # Informational only — never fails the job. Low/Moderate advisories don't
+      # block anything (see docs/architecture/dependency-security-strategy.md),
+      # but shouldn't be entirely invisible from a run that already queried the
+      # registry anyway.
+      - name: Run pnpm audit (informational, all severities)
+        if: always()
+        continue-on-error: true
+        run: pnpm audit | tee audit-report-full.txt
+
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ "${{ steps.audit.outcome }}" = "success" ]; then
+            echo "✅ No High/Critical vulnerabilities found." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "❌ \`pnpm audit\` did not pass — either a High/Critical vulnerability was found, or the check itself could not complete (e.g. registry unreachable). See the full report below and the \"Run pnpm audit (blocking, High/Critical)\" step log for details." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Full report (all severities, including non-blocking Low/Moderate) is attached below as the \`pnpm-audit-report\` artifact." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pnpm-audit-report
+          path: |
+            apps/frontend/audit-report.txt
+            apps/frontend/audit-report-full.txt
+
+      - name: Fail the job if the blocking audit did not pass
+        if: steps.audit.outcome != 'success'
+        run: exit 1
