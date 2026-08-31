@@ -17,7 +17,11 @@ const LOCKFILE_VERSION_HEADER = "lockfileVersion: '9.0'"
 // lockfileVersion 9, and throws on anything else rather than guessing — a security check that
 // silently under-reads its input is worse than one that refuses to run.
 export function parseLockfilePackages(lockfileContent: string): LockfilePackage[] {
-  const lines = lockfileContent.split(/\r\n|\r|\n/)
+  // A UTF-8 BOM (common on Windows — this project's actual dev environment — when a lockfile is
+  // re-saved by some editors/tools) would otherwise land inside lines[0] and make the exact-match
+  // header check below fail on an otherwise perfectly valid lockfile.
+  const withoutBom = lockfileContent.startsWith('\uFEFF') ? lockfileContent.slice(1) : lockfileContent
+  const lines = withoutBom.split(/\r\n|\r|\n/)
 
   if (!lines[0]?.startsWith(LOCKFILE_VERSION_HEADER)) {
     throw new Error(
@@ -88,6 +92,14 @@ interface OsvBatchResponse {
 // scope for this script (that's `pnpm audit`'s job, not this one's).
 const MALICIOUS_PACKAGE_ID_PREFIX = 'MAL-'
 
+// Each request already has its own timeout, but that only bounds a single round — an endpoint (or
+// a misbehaving proxy) that keeps returning next_page_token forever would otherwise make the
+// pagination loop below run indefinitely: no failure, just a hang, which defeats fail-closed just
+// as badly as a false "clean" would. A real OSV response pages a handful of times at most even
+// for a large batch; this ceiling exists to turn a malfunctioning endpoint into an explicit
+// exit-2 failure instead of an unbounded wait.
+const MAX_PAGINATION_ROUNDS = 50
+
 async function postQueryBatch(
   queries: OsvQuery[],
   { baseUrl, fetchImpl, timeoutMs }: Required<QueryMaliciousPackagesOptions>,
@@ -127,7 +139,14 @@ export async function queryMaliciousPackages(
     query: { package: { name: pkg.name, ecosystem: 'npm' }, version: pkg.version },
   }))
 
+  let round = 0
   while (pending.length > 0) {
+    round++
+    if (round > MAX_PAGINATION_ROUNDS) {
+      throw new Error(
+        `OSV querybatch pagination exceeded ${MAX_PAGINATION_ROUNDS} rounds without completing (${pending.length} quer${pending.length === 1 ? 'y' : 'ies'} still paginating) — refusing to continue indefinitely.`,
+      )
+    }
     const response = await postQueryBatch(
       pending.map((entry) => entry.query),
       resolvedOptions,

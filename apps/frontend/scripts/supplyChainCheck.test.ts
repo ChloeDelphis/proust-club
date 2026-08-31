@@ -44,6 +44,11 @@ snapshots:
     expect(parseLockfilePackages(lockfile)).toEqual([{ name: 'acorn', version: '8.18.0' }])
   })
 
+  it('ignores a leading UTF-8 BOM (common on Windows, this project\'s dev environment, when a lockfile is re-saved by some editors)', () => {
+    const lockfile = '\uFEFF' + "lockfileVersion: '9.0'\n\npackages:\n\n  acorn@8.18.0:\n    resolution: {integrity: sha512-fake==}\n"
+    expect(parseLockfilePackages(lockfile)).toEqual([{ name: 'acorn', version: '8.18.0' }])
+  })
+
   it('returns an empty array when there is no packages: block (no resolved dependencies)', () => {
     const lockfile = "lockfileVersion: '9.0'\n\nsettings:\n  autoInstallPeers: true\n"
     expect(parseLockfilePackages(lockfile)).toEqual([])
@@ -188,6 +193,21 @@ describe('queryMaliciousPackages', () => {
       const detections = await queryMaliciousPackages([{ name: 'evil-pkg', version: '1.2.3' }], { baseUrl: stub.baseUrl })
       expect(detections).toEqual([{ name: 'evil-pkg', version: '1.2.3', id: 'MAL-2026-9999' }])
       expect(callCount).toBe(2)
+    } finally {
+      await stub.close()
+    }
+  })
+
+  it('rejects instead of hanging forever if the endpoint keeps returning next_page_token indefinitely (fail-closed, not an infinite loop)', async () => {
+    const stub = await startStubServer((_body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      // Always another page — a malfunctioning/hostile endpoint, never a real OSV response.
+      res.end(JSON.stringify({ results: [{ next_page_token: 'always-more' }] }))
+    })
+    try {
+      await expect(queryMaliciousPackages([{ name: 'some-pkg', version: '1.0.0' }], { baseUrl: stub.baseUrl })).rejects.toThrow(
+        /exceeded \d+ rounds/,
+      )
     } finally {
       await stub.close()
     }
