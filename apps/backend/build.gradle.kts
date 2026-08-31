@@ -53,12 +53,12 @@ tasks.withType<Test> {
 
 // ---------------------------------------------------------------------------
 // Code coverage — JaCoCo
-// Chaîne explicite test -> jacocoTestReport -> jacocoTestCoverageVerification -> check,
-// pour garantir que le rapport XML existe avant qu'une couverture insuffisante
-// puisse faire échouer le build (utile pour le résumé $GITHUB_STEP_SUMMARY en CI,
-// qui doit rester lisible même quand le seuil n'est pas atteint).
-// Seuil de 90% choisi en dessous de la couverture mesurée (96.25% au 2026-08-31),
-// comme garde-fou anti-régression, pas comme objectif de couverture totale.
+// Explicit chain test -> jacocoTestReport -> jacocoTestCoverageVerification -> check,
+// so the XML report always exists before an insufficient coverage can fail the
+// build (needed by the $GITHUB_STEP_SUMMARY step in CI, which must stay readable
+// even when the threshold isn't met).
+// 90% threshold chosen below the measured coverage (96.25% on 2026-08-31), as an
+// anti-regression guardrail, not a coverage target.
 // ---------------------------------------------------------------------------
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
