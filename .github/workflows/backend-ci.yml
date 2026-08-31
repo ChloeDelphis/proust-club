@@ -44,21 +44,28 @@ jobs:
             echo "## Backend code coverage"
             echo ""
             if [ -f "$REPORT" ]; then
-              # `|| true`: GitHub Actions runs run: steps with `set -eo pipefail`, so a
-              # grep that matches nothing (empty/malformed report) would otherwise abort
-              # this whole step instead of falling through to the "unavailable" message.
+              # `|| true`: GitHub Actions runs run: steps with `set -eo pipefail`. This is a
+              # bare `VAR=$(pipeline)` assignment, so a grep that matches nothing (empty/
+              # malformed report) would otherwise abort this whole step instead of falling
+              # through to the "unavailable" message below.
               LINE=$(grep -o '<counter type="LINE"[^/]*/>' "$REPORT" | tail -1 || true)
-              read -r MISSED COVERED <<< "$(echo "$LINE" | grep -oE '[0-9]+' | tr '\n' ' ' || true)"
+              # No `|| true` needed here: this feeds a <<< here-string, so `read`'s own exit
+              # status governs set -e, not the substitution's.
+              read -r MISSED COVERED <<< "$(echo "$LINE" | grep -oE '[0-9]+' | tr '\n' ' ')"
             fi
             if [[ "$MISSED" =~ ^[0-9]+$ && "$COVERED" =~ ^[0-9]+$ ]] && [ "$((MISSED + COVERED))" -gt 0 ]; then
               TOTAL=$((MISSED + COVERED))
               PCT=$(awk "BEGIN { printf \"%.2f\", ($COVERED / $TOTAL) * 100 }")
               STATUS="✅ Above threshold"
-              awk "BEGIN { exit !($PCT < $THRESHOLD) }" && STATUS="❌ Below threshold"
+              # Compare the raw covered/total ratio against the threshold, not the
+              # display-rounded $PCT — rounding could show "Above threshold" for a build
+              # that actually failed jacocoTestCoverageVerification (e.g. a true 89.996%
+              # rounds to "90.00").
+              awk "BEGIN { exit !($COVERED * 100 < $THRESHOLD * $TOTAL) }" && STATUS="❌ Below threshold"
               echo "Lines: ${PCT}% (${COVERED}/${TOTAL})"
               echo "Threshold: ${THRESHOLD}%"
               echo "$STATUS"
             else
-              echo "Coverage unavailable — report not generated"
+              echo "Coverage unavailable — report missing or empty"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
