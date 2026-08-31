@@ -33,22 +33,20 @@ import { formatDetection, parseLockfilePackages, queryMaliciousPackages } from '
 const LOCKFILE_PATH = new URL('../pnpm-lock.yaml', import.meta.url)
 
 async function main() {
-  const packages = (() => {
-    let content: string
-    try {
-      content = readFileSync(LOCKFILE_PATH, 'utf-8')
-    } catch (cause) {
-      console.error(`Could not read pnpm-lock.yaml — supply-chain check aborted, treat as blocking.\n${(cause as Error).message}`)
-      return null
-    }
-    try {
-      return parseLockfilePackages(content)
-    } catch (cause) {
-      console.error(`Could not parse pnpm-lock.yaml — supply-chain check aborted, treat as blocking.\n${(cause as Error).message}`)
-      return null
-    }
-  })()
-  if (packages === null) {
+  let content: string
+  try {
+    content = readFileSync(LOCKFILE_PATH, 'utf-8')
+  } catch (cause) {
+    console.error(`Could not read pnpm-lock.yaml — supply-chain check aborted, treat as blocking.\n${(cause as Error).message}`)
+    process.exitCode = 2
+    return
+  }
+
+  let packages: ReturnType<typeof parseLockfilePackages>
+  try {
+    packages = parseLockfilePackages(content)
+  } catch (cause) {
+    console.error(`Could not parse pnpm-lock.yaml — supply-chain check aborted, treat as blocking.\n${(cause as Error).message}`)
     process.exitCode = 2
     return
   }

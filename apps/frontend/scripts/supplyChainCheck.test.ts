@@ -146,6 +146,56 @@ describe('queryMaliciousPackages', () => {
     }
   })
 
+  it('deduplicates lockfile entries that share the same name/version (e.g. several npm-alias local names for one real package) into a single OSV query', async () => {
+    let receivedQueryCount = 0
+    const stub = await startStubServer((body, res) => {
+      receivedQueryCount = (body as { queries: unknown[] }).queries.length
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ results: [{ vulns: [{ id: 'MAL-2026-4242' }] }] }))
+    })
+    try {
+      const detections = await queryMaliciousPackages(
+        [
+          { name: 'string-width', version: '4.2.3' },
+          { name: 'string-width', version: '4.2.3' },
+        ],
+        { baseUrl: stub.baseUrl },
+      )
+      expect(receivedQueryCount).toBe(1)
+      expect(detections).toEqual([{ name: 'string-width', version: '4.2.3', id: 'MAL-2026-4242' }])
+    } finally {
+      await stub.close()
+    }
+  })
+
+  it('rejects with a clear message on a null entry inside "vulns", instead of a raw TypeError', async () => {
+    const stub = await startStubServer((_body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ results: [{ vulns: [null] }] }))
+    })
+    try {
+      await expect(queryMaliciousPackages([{ name: 'some-pkg', version: '1.0.0' }], { baseUrl: stub.baseUrl })).rejects.toThrow(
+        /vulnerability entry without a valid "id"/,
+      )
+    } finally {
+      await stub.close()
+    }
+  })
+
+  it('rejects with a clear message when "vulns" is present but not an array, instead of a raw TypeError or silently treating it as empty', async () => {
+    const stub = await startStubServer((_body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ results: [{ vulns: 'not-an-array' }] }))
+    })
+    try {
+      await expect(queryMaliciousPackages([{ name: 'some-pkg', version: '1.0.0' }], { baseUrl: stub.baseUrl })).rejects.toThrow(
+        /non-array "vulns"/,
+      )
+    } finally {
+      await stub.close()
+    }
+  })
+
   it('ignores ordinary CVE/GHSA ids — that is pnpm audit\'s job, not this check\'s', async () => {
     const stub = await startStubServer((_body, res) => {
       res.writeHead(200, { 'content-type': 'application/json' })

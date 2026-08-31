@@ -150,8 +150,14 @@ export async function queryMaliciousPackages(
 
   const detections: MaliciousDetection[] = []
 
-  let pending: { packageIndex: number; query: OsvQuery }[] = packages.map((pkg, packageIndex) => ({
-    packageIndex,
+  // Multiple lockfile entries can resolve to the same underlying name/version — most commonly
+  // several npm-alias local names pointing at the same real package (see the alias resolution
+  // above). Deduping before querying means OSV isn't asked the same question twice, each
+  // independently paginated, for what is ultimately one installed package.
+  const uniquePackages = [...new Map(packages.map((pkg) => [`${pkg.name}@${pkg.version}`, pkg])).values()]
+
+  let pending: { pkg: LockfilePackage; query: OsvQuery }[] = uniquePackages.map((pkg) => ({
+    pkg,
     query: { package: { name: pkg.name, ecosystem: 'npm' }, version: pkg.version },
   }))
 
@@ -181,16 +187,24 @@ export async function queryMaliciousPackages(
           `OSV querybatch response is missing a result for query ${i} (sent ${pending.length}, received ${results.length}) — refusing to treat the corresponding package as checked.`,
         )
       }
-      const pkg = packages[entry.packageIndex]
+      const pkg = entry.pkg
       // Filtered inline, not accumulated then filtered afterward: OSV returns every advisory
       // (ordinary CVE/GHSA included), not just MAL- entries — most of that would otherwise be
       // stored per package just to be discarded a moment later.
+      // `vulns` absent means "no vulnerabilities" (matches the type), but present-and-not-an-array
+      // is a malformed response — fail-closed like every other unexpected shape here, not silently
+      // treated as "nothing found".
+      if (result.vulns !== undefined && !Array.isArray(result.vulns)) {
+        throw new Error(`OSV querybatch response has a non-array "vulns" for query ${i} — refusing to guess its contents.`)
+      }
       for (const vuln of result.vulns ?? []) {
         // The response is untrusted network JSON cast through `as OsvBatchResponse` — `id: string`
-        // is only a compile-time claim, not a runtime guarantee. A malformed entry here would
-        // otherwise crash with a raw, unhelpful TypeError instead of the deliberately clear
-        // fail-closed message used for the structurally identical case above (missing `result`).
-        if (typeof vuln.id !== 'string') {
+        // (and `vulns` being an array of objects at all) is only a compile-time claim, not a
+        // runtime guarantee. A malformed entry here would otherwise crash with a raw, unhelpful
+        // TypeError instead of the deliberately clear fail-closed message used for the
+        // structurally identical case above (missing `result`) — `vuln` itself can be `null` or a
+        // non-object, not just missing `id`, so both are checked before touching `vuln.id`.
+        if (vuln === null || typeof vuln !== 'object' || typeof vuln.id !== 'string') {
           throw new Error(`OSV querybatch response contains a vulnerability entry without a valid "id" for query ${i} — refusing to guess whether it's a MAL- entry.`)
         }
         if (vuln.id.startsWith(MALICIOUS_PACKAGE_ID_PREFIX)) {
@@ -198,7 +212,7 @@ export async function queryMaliciousPackages(
         }
       }
       if (result.next_page_token) {
-        next.push({ packageIndex: entry.packageIndex, query: { ...entry.query, page_token: result.next_page_token } })
+        next.push({ pkg: entry.pkg, query: { ...entry.query, page_token: result.next_page_token } })
       }
     })
     pending = next
