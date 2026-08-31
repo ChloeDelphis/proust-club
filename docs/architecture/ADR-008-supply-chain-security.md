@@ -51,3 +51,9 @@ Neither is wired into an automated pipeline yet, because **no CI exists in this 
 ## Date
 
 2026-08-05
+
+## Addendum (2026-08-31) — CI now enforces `pnpm audit`, and a real override mechanism was needed
+
+A CI now exists (`.github/workflows/frontend-ci.yml`, part of the `ci-minimale` ticket) and runs `pnpm install --frozen-lockfile` + `pnpm audit --audit-level high` on every PR/push to `master`, closing the gap this ADR left open ("once a CI is built, it must ... run `pnpm audit`"). The threshold decided at implementation time: High/Critical block the job, Low/Moderate do not, no `continue-on-error` — any future exception must be an explicit, documented one rather than a silent bypass.
+
+The very first real run found two pre-existing High-severity vulnerabilities in transitive dev dependencies (`js-yaml` via `eslint`, `nanoid` via `vite`/`postcss`) that had never been visible without a CI gate. Neither had a direct upstream fix available yet (the vulnerable version was pulled in transitively, not a direct dependency this project controls), so `overrides` in `apps/frontend/pnpm-workspace.yaml` — not `package.json`'s `pnpm` field, which pnpm 11 no longer reads for this setting — is now the established mechanism to force a patched transitive version pending an upstream bump. Before applying it, each new exact package/version pair was checked against OSV's malicious-package/advisory data (`https://api.osv.dev/v1/querybatch`) rather than assumed safe — a supply-chain check that now applies to every `pnpm add`/`update`/`install` changing a resolved version, not just this one.
