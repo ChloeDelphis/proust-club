@@ -1,6 +1,9 @@
 name: Backend CI
 
 on:
+  # No paths: filter here on purpose — this must always run on PRs to master
+  # so it can be a required status check without ever getting stuck "pending"
+  # on a PR that never touches apps/backend/**.
   pull_request:
     branches: [master]
   push:
