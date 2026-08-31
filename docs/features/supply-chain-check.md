@@ -1,6 +1,6 @@
 # Supply-chain check — Technical Design
 
-A local script that checks the frontend's `pnpm-lock.yaml` against OSV's malicious-packages data (`MAL-*` entries, sourced from the [OpenSSF Malicious Packages](https://github.com/ossf/malicious-packages) database) before an install. It complements the controls in [ADR-008](../architecture/ADR-008-supply-chain-security.md) and `pnpm audit`: `pnpm audit` covers registry-exposed security advisories (CVE/GHSA), this script covers packages explicitly flagged as malicious — typosquats, compromised maintainer accounts, phishing-driven publishes — which are a different failure mode `pnpm audit` doesn't detect. See `private/tickets/verification-osv-pre-install.md` for the full design rationale and the decisions/trade-offs behind it.
+A local script that checks the frontend's `pnpm-lock.yaml` against OSV's malicious-packages data (`MAL-*` entries, sourced from the [OpenSSF Malicious Packages](https://github.com/ossf/malicious-packages) database) before an install. It complements the controls in [ADR-008](../architecture/ADR-008-supply-chain-security.md) and `pnpm audit`: `pnpm audit` covers registry-exposed security advisories (CVE/GHSA), this script covers packages explicitly flagged as malicious — typosquats, compromised maintainer accounts, phishing-driven publishes — which are a different failure mode `pnpm audit` doesn't detect. See the sections below for the full design rationale and the decisions/trade-offs behind it.
 
 ---
 

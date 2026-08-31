@@ -126,6 +126,27 @@ describe('queryMaliciousPackages', () => {
     }
   })
 
+  it('rejects when the response has fewer results than queries sent, rather than treating the unmatched packages as clean (fail-closed)', async () => {
+    const stub = await startStubServer((_body, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      // Two queries sent, only one result returned.
+      res.end(JSON.stringify({ results: [{}] }))
+    })
+    try {
+      await expect(
+        queryMaliciousPackages(
+          [
+            { name: 'pkg-a', version: '1.0.0' },
+            { name: 'pkg-b', version: '1.0.0' },
+          ],
+          { baseUrl: stub.baseUrl },
+        ),
+      ).rejects.toThrow(/missing a result/)
+    } finally {
+      await stub.close()
+    }
+  })
+
   it('rejects on a non-OK HTTP response (the CLI would exit 2 on this, fail-closed)', async () => {
     const stub = await startStubServer((_body, res) => {
       res.writeHead(500, { 'content-type': 'application/json' })

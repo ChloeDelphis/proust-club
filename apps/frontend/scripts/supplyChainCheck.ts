@@ -1,5 +1,5 @@
 // Pure logic for the pre-install supply-chain check (see check-supply-chain.ts for the CLI entry
-// point, and private/tickets/verification-osv-pre-install.md for the design rationale). No npm
+// point, and docs/features/supply-chain-check.md for the design rationale). No npm
 // dependency, by design: this must be able to run before `node_modules` exists (right after
 // `pnpm add/update --lockfile-only`, before the real install) — a devDependency here would create
 // a circular requirement on the very install it's meant to gate.
@@ -137,7 +137,15 @@ export async function queryMaliciousPackages(
     const next: typeof pending = []
     pending.forEach((entry, i) => {
       const result = results[i]
-      if (!result) return
+      if (!result) {
+        // A missing entry here means the response doesn't line up with the queries actually
+        // sent (truncated/malformed response, an undocumented per-request cap, ...). Silently
+        // treating it as "nothing found" would report a package as clean without having actually
+        // checked it — the opposite of fail-closed. Throwing surfaces it as exit 2 instead.
+        throw new Error(
+          `OSV querybatch response is missing a result for query ${i} (sent ${pending.length}, received ${results.length}) — refusing to treat the corresponding package as checked.`,
+        )
+      }
       const pkg = packages[entry.packageIndex]
       // Filtered inline, not accumulated then filtered afterward: OSV returns every advisory
       // (ordinary CVE/GHSA included), not just MAL- entries — most of that would otherwise be

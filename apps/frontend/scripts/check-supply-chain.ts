@@ -24,7 +24,7 @@
  *        those same files). If the working tree was clean before step 1, `git checkout` on these
  *        two files is safe; otherwise revert the diff step 1 produced more surgically.
  *
- * See private/tickets/verification-osv-pre-install.md for the full design rationale.
+ * See docs/features/supply-chain-check.md for the full design rationale.
  */
 
 import { readFileSync } from 'node:fs'
@@ -34,10 +34,17 @@ const LOCKFILE_PATH = new URL('../pnpm-lock.yaml', import.meta.url)
 
 async function main() {
   const packages = (() => {
+    let content: string
     try {
-      return parseLockfilePackages(readFileSync(LOCKFILE_PATH, 'utf-8'))
+      content = readFileSync(LOCKFILE_PATH, 'utf-8')
     } catch (cause) {
       console.error(`Could not read pnpm-lock.yaml — supply-chain check aborted, treat as blocking.\n${(cause as Error).message}`)
+      return null
+    }
+    try {
+      return parseLockfilePackages(content)
+    } catch (cause) {
+      console.error(`Could not parse pnpm-lock.yaml — supply-chain check aborted, treat as blocking.\n${(cause as Error).message}`)
       return null
     }
   })()
