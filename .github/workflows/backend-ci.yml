@@ -40,7 +40,6 @@ jobs:
           REPORT=build/reports/jacoco/test/jacocoTestReport.xml
           # Keep in sync with the `minimum` in build.gradle.kts's jacocoTestCoverageVerification.
           THRESHOLD=90
-          PCT=""
           MISSED=""
           COVERED=""
           TOTAL=""
@@ -55,8 +54,7 @@ jobs:
             read -r MISSED COVERED <<< "$(echo "$LINE" | grep -oE '[0-9]+' | tr '\n' ' ')"
             if [[ "$MISSED" =~ ^[0-9]+$ && "$COVERED" =~ ^[0-9]+$ ]] && [ "$((MISSED + COVERED))" -gt 0 ]; then
               TOTAL=$((MISSED + COVERED))
-              PCT=$(awk "BEGIN { printf \"%.2f\", ($COVERED / $TOTAL) * 100 }")
             fi
           fi
           bash "${{ github.workspace }}/.github/scripts/coverage-summary.sh" \
-            "Backend code coverage" "$THRESHOLD" "$PCT" "$COVERED" "$TOTAL" >> "$GITHUB_STEP_SUMMARY"
+            "Backend code coverage" "$THRESHOLD" "$COVERED" "$TOTAL" >> "$GITHUB_STEP_SUMMARY"

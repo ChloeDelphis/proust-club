@@ -1,5 +1,4 @@
 export interface CoverageTotals {
-  pct: number
   covered: number
   total: number
 }
@@ -7,7 +6,6 @@ export interface CoverageTotals {
 interface CoverageSummaryReport {
   total?: {
     lines?: {
-      pct?: unknown
       covered?: unknown
       total?: unknown
     }
@@ -25,14 +23,8 @@ export function parseCoverageSummary(json: string): CoverageTotals | null {
   // itself can be `null` here — a plain `doc.total` would throw instead of falling through
   // to the `!lines` check below.
   const lines = doc?.total?.lines
-  if (
-    !lines ||
-    typeof lines.pct !== 'number' ||
-    typeof lines.covered !== 'number' ||
-    typeof lines.total !== 'number' ||
-    lines.total <= 0
-  ) {
+  if (!lines || typeof lines.covered !== 'number' || typeof lines.total !== 'number' || lines.total <= 0) {
     return null
   }
-  return { pct: lines.pct, covered: lines.covered, total: lines.total }
+  return { covered: lines.covered, total: lines.total }
 }

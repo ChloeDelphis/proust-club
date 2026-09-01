@@ -4,20 +4,22 @@
 # script only owns the part that was duplicated between them: the ✅/❌ threshold
 # comparison and the "report missing or empty" fallback.
 #
-# Usage: coverage-summary.sh <title> <threshold> [pct] [covered] [total]
-# pct/covered/total should be left empty (or total left <= 0) when the calling
-# workflow couldn't parse its report — this prints the fallback message in that case.
+# Usage: coverage-summary.sh <title> <threshold> [covered] [total]
+# covered/total should be left empty (or total left <= 0) when the calling workflow
+# couldn't parse its report — this prints the fallback message in that case. The
+# display percentage is derived from covered/total, not passed in separately — it's
+# the same ratio the threshold comparison below already needs.
 set -eo pipefail
 
 TITLE="$1"
 THRESHOLD="$2"
-PCT="${3:-}"
-COVERED="${4:-}"
-TOTAL="${5:-}"
+COVERED="${3:-}"
+TOTAL="${4:-}"
 
 echo "## $TITLE"
 echo ""
 if [[ "$COVERED" =~ ^[0-9]+$ && "$TOTAL" =~ ^[0-9]+$ ]] && [ "$TOTAL" -gt 0 ]; then
+  PCT=$(awk "BEGIN { printf \"%.2f\", ($COVERED / $TOTAL) * 100 }")
   STATUS="✅ Above threshold"
   # Compare the raw covered/total ratio against the threshold, not the display-rounded
   # $PCT — rounding could show "Above threshold" for a run that actually failed the

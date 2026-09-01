@@ -42,8 +42,8 @@ jobs:
         run: |
           # Keep in sync with vite.config.ts's test.coverage.thresholds.lines.
           THRESHOLD=85
-          read -r PCT COVERED TOTAL <<< "$(node scripts/print-coverage-summary.ts 2>/dev/null)"
+          read -r COVERED TOTAL <<< "$(node scripts/print-coverage-summary.ts 2>/dev/null)"
           bash "${{ github.workspace }}/.github/scripts/coverage-summary.sh" \
-            "Frontend code coverage" "$THRESHOLD" "$PCT" "$COVERED" "$TOTAL" >> "$GITHUB_STEP_SUMMARY"
+            "Frontend code coverage" "$THRESHOLD" "$COVERED" "$TOTAL" >> "$GITHUB_STEP_SUMMARY"
       - run: pnpm build
       - run: pnpm audit:security

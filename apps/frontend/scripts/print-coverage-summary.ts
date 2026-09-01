@@ -15,4 +15,4 @@ if (!totals) {
   process.exit(1)
 }
 
-console.log(`${totals.pct} ${totals.covered} ${totals.total}`)
+console.log(`${totals.covered} ${totals.total}`)
