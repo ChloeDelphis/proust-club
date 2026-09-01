@@ -42,22 +42,8 @@ jobs:
         run: |
           # Keep in sync with vite.config.ts's test.coverage.thresholds.lines.
           THRESHOLD=85
-          {
-            echo "## Frontend code coverage"
-            echo ""
-            read -r PCT COVERED TOTAL <<< "$(node scripts/print-coverage-summary.ts 2>/dev/null)"
-            if [[ "$COVERED" =~ ^[0-9]+$ && "$TOTAL" =~ ^[0-9]+$ ]] && [ "$TOTAL" -gt 0 ]; then
-              STATUS="✅ Above threshold"
-              # Compare the raw covered/total ratio against the threshold, not the
-              # display-rounded $PCT — rounding could show "Above threshold" for a run
-              # that actually failed the real vitest threshold check.
-              awk "BEGIN { exit !($COVERED * 100 < $THRESHOLD * $TOTAL) }" && STATUS="❌ Below threshold"
-              echo "Lines: ${PCT}% (${COVERED}/${TOTAL})"
-              echo "Threshold: ${THRESHOLD}%"
-              echo "$STATUS"
-            else
-              echo "Coverage unavailable — report missing or empty"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          read -r PCT COVERED TOTAL <<< "$(node scripts/print-coverage-summary.ts 2>/dev/null)"
+          bash "${{ github.workspace }}/.github/scripts/coverage-summary.sh" \
+            "Frontend code coverage" "$THRESHOLD" "$PCT" "$COVERED" "$TOTAL" >> "$GITHUB_STEP_SUMMARY"
       - run: pnpm build
       - run: pnpm audit:security
