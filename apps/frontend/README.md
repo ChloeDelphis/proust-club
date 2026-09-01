@@ -25,7 +25,8 @@ pnpm generate:api   # regenerate src/api/schema.generated.ts and src/api/generat
 Stack: Vitest + React Testing Library + jsdom.
 
 ```bash
-pnpm test:run
+pnpm test:run       # quick local run
+pnpm test:coverage  # what CI runs — also enforces the coverage threshold (see CLAUDE.md)
 ```
 
 Tests cover the full search flow: input, results, loading state, API error, empty state, form validation.
