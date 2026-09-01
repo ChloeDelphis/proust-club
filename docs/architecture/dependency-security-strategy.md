@@ -1,6 +1,8 @@
-# Frontend dependency security strategy
+# Dependency security strategy
 
-This is a living document (like `data-model.md`, not a frozen ADR): it describes the current policy for the frontend's dependency chain (`apps/frontend/`), kept accurate as the policy evolves. For the historical reasoning behind individual decisions, see `docs/architecture/ADR-008-supply-chain-security.md`.
+This is a living document (like `data-model.md`, not a frozen ADR): it describes the current dependency-security policy for this repo, kept accurate as the policy evolves. For the historical reasoning behind individual decisions, see `docs/architecture/ADR-008-supply-chain-security.md`.
+
+The two controls below (`OSV MAL-*`, `pnpm audit`) are frontend-specific (`apps/frontend/`) — see "GitHub-native monitoring (Dependabot)" at the bottom of this document for the repo-wide equivalent, which also covers the backend (`apps/backend/`).
 
 Two controls exist, answering two different questions. Neither replaces the other, and neither guarantees safety — no finding means "nothing known today," never "proven safe."
 
@@ -50,4 +52,12 @@ The threshold lives **only** in the `audit:security` script in `apps/frontend/pa
 
 ## GitHub-native monitoring (Dependabot)
 
-Dependabot alerts provide overlapping, GitHub-native visibility into the same class of advisories `pnpm audit` checks — complementary, not a replacement for the workflow described here (tracked separately).
+Unlike the two controls above, this section is repo-wide: it covers `apps/backend` (Gradle/Maven) as much as `apps/frontend` (npm). Enabled 2026-09-01 (see ADR-008 addendum of the same date for the full rationale and rollout notes):
+
+- **Dependabot alerts** — passive visibility, GitHub-native equivalent of `pnpm audit`'s known-vulnerability check (CVE/GHSA), computed from the dependency graph instead of a local lockfile scan.
+- **Dependabot security updates** — automatic PRs to bump a vulnerable dependency once an alert fires. No auto-merge — these PRs must still pass the required `gitleaks`/`backend`/`frontend` status checks (branch protection, `enforce_admins: true`) like any other PR. Review itself isn't required (`required_approving_review_count: 0`), so merging still depends on Chloé actually looking at the PR, not on a GitHub-enforced gate.
+- **Dependabot malware alerts** — GitHub-native equivalent of the `OSV MAL-*` check above, across every ecosystem GitHub covers for malware advisories, not just npm.
+
+**Backend coverage is Maven/Gradle-dependent on Automatic Dependency Submission**, not on static parsing of `build.gradle.kts`. Most dependencies here have no inline version — resolved via the `io.spring.dependency-management` plugin instead — so GitHub's manifest parser can't see them. Automatic Dependency Submission (enabled in repo Settings → Code security → Dependency graph) resolves this by submitting the actually-resolved snapshot on pushes to `master`, without a dedicated workflow file. **Status as of 2026-09-01: not yet verified** — no push to `master` has triggered it yet. Once one does, re-check `GET /repos/{owner}/{repo}/dependency-graph/sbom` for `maven`/`gradle` packages; if still absent, fall back to a dedicated `gradle/actions/dependency-submission` workflow.
+
+None of the three replace the frontend-specific controls above — overlapping, complementary visibility, not a substitute.
