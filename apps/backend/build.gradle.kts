@@ -1,5 +1,6 @@
 plugins {
 	java
+	jacoco
 	id("org.springframework.boot") version "4.1.0"
 	id("io.spring.dependency-management") version "1.1.7"
 }
@@ -48,6 +49,39 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+// ---------------------------------------------------------------------------
+// Code coverage — JaCoCo
+// Explicit chain test -> jacocoTestReport -> jacocoTestCoverageVerification -> check,
+// so the XML report always exists before an insufficient coverage can fail the
+// build (needed by the $GITHUB_STEP_SUMMARY step in CI, which must stay readable
+// even when the threshold isn't met).
+// 90% threshold chosen below the measured coverage (96.25% on 2026-08-31), as an
+// anti-regression guardrail, not a coverage target.
+// ---------------------------------------------------------------------------
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+tasks.jacocoTestCoverageVerification {
+	dependsOn(tasks.jacocoTestReport)
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				minimum = "0.90".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.check {
+	dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 // ---------------------------------------------------------------------------

@@ -15,7 +15,8 @@
     "check:supply-chain": "node scripts/check-supply-chain.ts",
     "audit:security": "pnpm audit --audit-level high",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
@@ -35,6 +36,7 @@
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.5",
+    "@vitest/coverage-v8": "4.1.10",
     "eslint": "9.39.1",
     "eslint-plugin-react-hooks": "7.0.1",
     "eslint-plugin-react-refresh": "0.4.24",

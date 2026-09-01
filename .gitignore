@@ -6,6 +6,7 @@ application-local.yml
 # ── Frontend — Node / Vite ────────────────────────────────────────────────────
 apps/frontend/node_modules/
 apps/frontend/dist/
+apps/frontend/coverage/
 apps/frontend/.env.local
 apps/frontend/.env.*.local
 
