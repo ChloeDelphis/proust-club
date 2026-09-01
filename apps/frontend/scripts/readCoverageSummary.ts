@@ -21,7 +21,10 @@ export function parseCoverageSummary(json: string): CoverageTotals | null {
   } catch {
     return null
   }
-  const lines = doc.total?.lines
+  // `?.` on `doc` too: `JSON.parse` accepts the bare literal "null" as valid JSON, so `doc`
+  // itself can be `null` here — a plain `doc.total` would throw instead of falling through
+  // to the `!lines` check below.
+  const lines = doc?.total?.lines
   if (
     !lines ||
     typeof lines.pct !== 'number' ||

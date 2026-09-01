@@ -23,4 +23,12 @@ describe('parseCoverageSummary', () => {
     const json = JSON.stringify({ total: { lines: { pct: 0, covered: 0, total: 0 } } })
     expect(parseCoverageSummary(json)).toBeNull()
   })
+
+  it('returns null for the JSON literal "null" instead of throwing', () => {
+    expect(parseCoverageSummary('null')).toBeNull()
+  })
+
+  it('returns null for a JSON value that is not an object (e.g. a bare number)', () => {
+    expect(parseCoverageSummary('42')).toBeNull()
+  })
 })
