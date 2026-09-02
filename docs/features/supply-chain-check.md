@@ -82,3 +82,10 @@ This script must be able to run *before* `node_modules` exists — specifically,
 - An empty `packages:` block or a missing one → exit `0`, no network call.
 - An unrecognized `lockfileVersion` → exit `2`, explicit message, no best-effort parsing attempt.
 - OSV unreachable (e.g. no network) → exit `2`, explicit message distinct from "nothing found".
+
+Enforcement layer (`.pnpmfile.mjs` + `safe-pnpm.ts`):
+
+- `pnpm add <pkg>` (raw, no `PROUST_SAFE_PNPM` marker) → rejected before any write to `node_modules`/`pnpm-lock.yaml`/`package.json`.
+- `pnpm safe:add <pkg>` / `safe:update <pkg>` / `safe:install` / `safe:remove <pkg>` → each completes end-to-end, `check:supply-chain` runs at the expected point in the sequence.
+- `pnpm safe:install <pkg>` (misuse — pnpm treats `install <pkg>` as `add <pkg>`) → refused with a message pointing at `safe:add`, nothing written.
+- `pnpm safe:add -- --registry=https://example/` (flag-shaped argument) → refused before spawning anything.
