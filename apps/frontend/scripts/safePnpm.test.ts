@@ -1,4 +1,24 @@
-import { buildPnpmSteps, isSafePnpmArg, runSafePnpm } from './safePnpm'
+import { buildPnpmSteps, isSafePnpmArg, runSafePnpm, validateSafePnpmArgs } from './safePnpm'
+
+describe('validateSafePnpmArgs', () => {
+  it('rejects a package spec on install — pnpm treats "install <pkg>" as "add <pkg>"', () => {
+    // Regression test: verified empirically that `pnpm install left-pad` adds left-pad to
+    // package.json/pnpm-lock.yaml and installs it for real, identically to `pnpm add left-pad`.
+    // buildPnpmSteps's 'install' case only runs check:supply-chain against the *old* lockfile, so
+    // a package name here would install unchecked — bypassing the entire mechanism.
+    expect(validateSafePnpmArgs('install', ['lodash'])).toMatch(/safe:add/)
+  })
+
+  it('allows install with no args', () => {
+    expect(validateSafePnpmArgs('install', [])).toBeNull()
+  })
+
+  it('allows package specs on add/update/remove', () => {
+    expect(validateSafePnpmArgs('add', ['lodash'])).toBeNull()
+    expect(validateSafePnpmArgs('update', ['lodash'])).toBeNull()
+    expect(validateSafePnpmArgs('remove', ['lodash'])).toBeNull()
+  })
+})
 
 describe('isSafePnpmArg', () => {
   it('accepts ordinary package specs', () => {
@@ -72,11 +92,11 @@ describe('buildPnpmSteps', () => {
   })
 
   it('install: forwards extra args to the real install step rather than dropping them', () => {
-    // buildPnpmSteps itself doesn't validate args — that's isSafePnpmArg's job, enforced by the
-    // CLI wrapper (safe-pnpm.ts) before extraArgs ever reaches this function. Since that check
-    // rejects any leading "-", an install flag like "--frozen-lockfile" can't actually reach here
-    // through `pnpm safe:install` today; this test only proves the plumbing itself isn't lossy —
-    // a future non-flag extra arg (or a relaxed arg check) wouldn't silently vanish.
+    // buildPnpmSteps itself doesn't validate args — callers must run validateSafePnpmArgs first
+    // (which the CLI wrapper does, and which rejects any package-spec-shaped arg on 'install' —
+    // see the regression test above). This test only proves the plumbing itself isn't lossy for
+    // whatever does get through validation (e.g. a genuine install flag, if one is ever added to
+    // the allowlist).
     expect(buildPnpmSteps('install', ['extra-arg'])).toEqual([
       ['check:supply-chain'],
       ['install', 'extra-arg'],

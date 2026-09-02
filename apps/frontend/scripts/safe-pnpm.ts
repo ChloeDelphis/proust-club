@@ -12,7 +12,13 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { PROUST_SAFE_PNPM_ENV, isSafePnpmArg, runSafePnpm, type SafeSubcommand } from './safePnpm.ts'
+import {
+  PROUST_SAFE_PNPM_ENV,
+  isSafePnpmArg,
+  runSafePnpm,
+  validateSafePnpmArgs,
+  type SafeSubcommand,
+} from './safePnpm.ts'
 
 // `shell: true` is required on Windows so the `pnpm.cmd` shim resolves at all (spawnSync on a
 // bare `.cmd` file without a shell fails with EINVAL — a known Node/Windows limitation, verified
@@ -37,12 +43,17 @@ const [subcommand, ...extraArgs] = process.argv.slice(2)
 const unsafeArg = extraArgs.find((arg) => !isSafePnpmArg(arg))
 
 const SUBCOMMANDS: SafeSubcommand[] = ['add', 'update', 'install', 'remove']
+const isKnownSubcommand = SUBCOMMANDS.includes(subcommand as SafeSubcommand)
+const argsError = isKnownSubcommand ? validateSafePnpmArgs(subcommand as SafeSubcommand, extraArgs) : null
 
-if (!SUBCOMMANDS.includes(subcommand as SafeSubcommand)) {
+if (!isKnownSubcommand) {
   console.error(`Usage: safe-pnpm.ts <${SUBCOMMANDS.join('|')}> [args...]`)
   process.exitCode = 2
 } else if (unsafeArg !== undefined) {
   console.error(`Refusing to run: argument looks unsafe to pass to a shell: ${JSON.stringify(unsafeArg)}`)
+  process.exitCode = 2
+} else if (argsError !== null) {
+  console.error(`Refusing to run: ${argsError}`)
   process.exitCode = 2
 } else {
   const exitCode = runSafePnpm(subcommand as SafeSubcommand, extraArgs, spawnPnpm)

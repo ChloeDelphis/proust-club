@@ -3,16 +3,35 @@ export type SafeSubcommand = 'add' | 'update' | 'install' | 'remove'
 export const PROUST_SAFE_PNPM_ENV = 'PROUST_SAFE_PNPM'
 
 /**
+ * `pnpm install <pkg>` is not "just re-sync from the lockfile" — pnpm treats it as an alias for
+ * `pnpm add <pkg>` (verified empirically: it writes the package into package.json/pnpm-lock.yaml
+ * and installs it for real, scripts included). `buildPnpmSteps`'s `'install'` case runs
+ * check:supply-chain against the *old* lockfile and then a plain `pnpm install ...extraArgs` —
+ * if extraArgs contains a package spec, that package gets fully installed without ever being
+ * checked, defeating the entire point of this mechanism. `pnpm safe:install <pkg>` is also a
+ * very plausible typo/habit coming from `npm install <pkg>`, so this has to be a hard error, not
+ * just documentation. Only `add`/`update` accept package specs; `install` only takes install
+ * flags (and even those can't reach pnpm today — see `isSafePnpmArg`'s leading-dash rejection).
+ */
+export function validateSafePnpmArgs(subcommand: SafeSubcommand, extraArgs: string[]): string | null {
+  if (subcommand === 'install' && extraArgs.length > 0) {
+    return "pnpm safe:install doesn't take package arguments (pnpm treats `install <pkg>` as `add <pkg>`, bypassing the check) — did you mean `pnpm safe:add`?"
+  }
+  return null
+}
+
+/**
  * The pnpm invocations for each safe subcommand, in order. `add`/`update` resolve the new graph
  * without touching node_modules first (`--lockfile-only --ignore-scripts`), so the supply-chain
  * check runs against the already-rewritten lockfile before any third-party code is fetched.
- * `install`'s extraArgs (e.g. `--frozen-lockfile`) are forwarded to the real install step, not
- * the check — there's nothing for check:supply-chain to do with an install-specific flag.
  *
  * `remove` doesn't introduce any new package, so there's nothing to check — it only exists here
  * because .pnpmfile.mjs's preResolution guard blocks *any* pnpm add/update/install/remove without
  * the PROUST_SAFE_PNPM marker (it has no way to tell them apart), so a plain `pnpm remove <pkg>`
  * would otherwise be blocked for no real reason.
+ *
+ * Callers must run `validateSafePnpmArgs` first — this function assumes `install` never receives
+ * a package spec in `extraArgs` and just forwards them as install flags.
  */
 export function buildPnpmSteps(subcommand: SafeSubcommand, extraArgs: string[]): string[][] {
   switch (subcommand) {
