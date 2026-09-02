@@ -26,14 +26,9 @@ export function isSafePnpmInvocation(env: NodeJS.ProcessEnv = process.env): bool
 export function buildPnpmSteps(subcommand: SafeSubcommand, extraArgs: string[]): string[][] {
   switch (subcommand) {
     case 'add':
-      return [
-        ['add', ...extraArgs, '--lockfile-only', '--ignore-scripts'],
-        ['check:supply-chain'],
-        ['install'],
-      ]
     case 'update':
       return [
-        ['update', ...extraArgs, '--lockfile-only', '--ignore-scripts'],
+        [subcommand, ...extraArgs, '--lockfile-only', '--ignore-scripts'],
         ['check:supply-chain'],
         ['install'],
       ]
