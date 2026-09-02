@@ -1,0 +1,69 @@
+name: CodeQL
+
+# No paths: filter — the scan is cheap (build-mode: none, no compilation) and analyzing
+# both codebases on every run keeps the workflow simple and gives regular coverage. Filters
+# can be added later if run cost ever justifies it.
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  schedule:
+    - cron: "0 6 * * 1" # every Monday at 06:00 UTC — same slot as frontend-security-audit.yml
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  # Required by codeql-action/analyze to publish SARIF results under Security > Code
+  # scanning. The only permission this workflow needs beyond the project's usual
+  # `contents: read` baseline.
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # "java-kotlin" is the only valid CodeQL language name for Java, even though this
+          # backend is pure Java (0 .kt files under apps/backend/src) — build.gradle.kts is
+          # just the Gradle build script's Kotlin DSL, not the application language.
+          - language: java-kotlin
+            # build-mode: none queries Gradle/Maven for dependency info without running a
+            # build, then extracts every Java file found — this is what GitHub's own default
+            # setup picks for a Java-only repo. Deliberately not `manual`: jOOQ code
+            # generation isn't configured yet (build.gradle.kts, "À configurer" — no plugin
+            # active), so there's no generated code that `none` would miss, and skipping a
+            # real ./gradlew build keeps this workflow declarative with no duplication of
+            # backend-ci.yml. Revisit if jOOQ codegen is enabled later, or if a real run shows
+            # poor dependency resolution / incomplete coverage — fall back to `manual`
+            # (./gradlew compileJava, deliberately not compileTestJava, to keep test code out
+            # of the analysis) in that case, not before.
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # No `queries:` override — the default query suite is used deliberately (favors
+          # precision, limits noise). `security-extended` can be evaluated later if needed;
+          # don't add it here without revisiting that decision (see ADR-014).
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: "/language:${{ matrix.language }}"
