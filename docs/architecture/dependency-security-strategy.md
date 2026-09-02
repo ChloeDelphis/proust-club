@@ -11,9 +11,9 @@ Two controls exist, answering two different questions. Neither replaces the othe
 **Question:** has this exact `package@version` pair been explicitly reported as malicious or compromised (typosquat, hijacked maintainer account, supply-chain attack campaign)?
 
 - Checks the resolved lockfile against OSV, filtered to `MAL-*` entries (the OpenSSF Malicious Packages database within OSV) — not ordinary CVEs/GHSAs.
-- Run **before** any `pnpm install`/`add`/`update` that changes a resolved version — the point is to catch a known-malicious version before its install-time scripts can run.
-- Command: `pnpm check:supply-chain` (`apps/frontend/scripts/check-supply-chain.ts`) — see `docs/features/supply-chain-check.md` for the full design (lockfile parsing, OSV batch query, exit codes) and the exact `install` vs `add`/`update` sequence.
-- Manual only for now — no automatic `preinstall` hook and no CI wiring exist yet for this check (tracked separately, not this document's scope).
+- Runs **before** any `pnpm install`/`add`/`update` that changes a resolved version — the point is to catch a known-malicious version before its install-time scripts can run.
+- Command: `pnpm safe:add`/`safe:update`/`safe:install`/`safe:remove` (not `pnpm add`/`update`/`install`/`remove` directly — `apps/frontend/.pnpmfile.mjs` blocks those). Enforced, not a habit to remember: see `docs/features/supply-chain-check.md` for the full design and `ADR-008`'s 2026-09-02 addendum for the enforcement mechanism.
+- No CI wiring for the check itself — CI trusts the already-committed, already-reviewed lockfile (see the same ADR addendum).
 - No finding ≠ safe — only "not flagged as malicious in OSV as of this check."
 
 ## 2. Known vulnerabilities — `pnpm audit`
