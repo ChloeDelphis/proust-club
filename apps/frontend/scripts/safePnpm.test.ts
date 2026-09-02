@@ -1,18 +1,4 @@
-import { buildPnpmSteps, isSafePnpmArg, isSafePnpmInvocation, runSafePnpm } from './safePnpm'
-
-describe('isSafePnpmInvocation', () => {
-  it('is true only when the marker is exactly "1"', () => {
-    expect(isSafePnpmInvocation({ PROUST_SAFE_PNPM: '1' })).toBe(true)
-  })
-
-  it('is false when the marker is missing', () => {
-    expect(isSafePnpmInvocation({})).toBe(false)
-  })
-
-  it('is false when the marker is set to a truthy-looking non-"1" value', () => {
-    expect(isSafePnpmInvocation({ PROUST_SAFE_PNPM: 'true' })).toBe(false)
-  })
-})
+import { buildPnpmSteps, isSafePnpmArg, runSafePnpm } from './safePnpm'
 
 describe('isSafePnpmArg', () => {
   it('accepts ordinary package specs', () => {
@@ -28,12 +14,13 @@ describe('isSafePnpmArg', () => {
   })
 
   it('rejects flag injection — a leading "-" is never a package spec', () => {
-    // Regression test: a character-class check alone still accepted these (every character is
-    // otherwise "safe"), letting an injected --registry flag silently repoint dependency
-    // resolution to an attacker-controlled registry — bypassing check:supply-chain entirely,
-    // since it only checks name@version identity against OSV, not where the tarball came from.
+    // Regression test: an injected --registry flag would silently repoint dependency resolution
+    // to an attacker-controlled registry — bypassing check:supply-chain entirely, since it only
+    // checks name@version identity against OSV, not where the tarball actually came from.
     expect(isSafePnpmArg('--registry=https://attacker.example/')).toBe(false)
-    expect(isSafePnpmArg('--registry')).toBe(false) // split across two args defeats a naive check
+    expect(isSafePnpmArg('--registry')).toBe(false)
+    // Split across two argv entries, "https://attacker.example/" alone still looks like a
+    // harmless URL-shaped string — this is the case the character class alone can't catch.
     expect(isSafePnpmArg('-r')).toBe(false)
   })
 
@@ -82,6 +69,18 @@ describe('buildPnpmSteps', () => {
 
   it('install: no lockfile-only resolution step, nothing new to check', () => {
     expect(buildPnpmSteps('install', [])).toEqual([['check:supply-chain'], ['install']])
+  })
+
+  it('install: forwards extra args to the real install step rather than dropping them', () => {
+    // buildPnpmSteps itself doesn't validate args — that's isSafePnpmArg's job, enforced by the
+    // CLI wrapper (safe-pnpm.ts) before extraArgs ever reaches this function. Since that check
+    // rejects any leading "-", an install flag like "--frozen-lockfile" can't actually reach here
+    // through `pnpm safe:install` today; this test only proves the plumbing itself isn't lossy —
+    // a future non-flag extra arg (or a relaxed arg check) wouldn't silently vanish.
+    expect(buildPnpmSteps('install', ['extra-arg'])).toEqual([
+      ['check:supply-chain'],
+      ['install', 'extra-arg'],
+    ])
   })
 
   it('remove: just the removal itself, nothing new to check', () => {

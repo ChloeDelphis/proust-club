@@ -3,20 +3,11 @@ export type SafeSubcommand = 'add' | 'update' | 'install' | 'remove'
 export const PROUST_SAFE_PNPM_ENV = 'PROUST_SAFE_PNPM'
 
 /**
- * Same condition as .pnpmfile.mjs's preResolution guard (kept as a literal there too, on
- * purpose — a `.pnpmfile.mjs` importing a `.ts` helper would depend on however pnpm's own Node
- * process happens to load TypeScript, which isn't something this repo controls or has verified;
- * not worth the risk for a one-line, load-bearing check). This copy exists so the condition is
- * covered by a normal typed unit test; if you change one, change the other.
- */
-export function isSafePnpmInvocation(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env[PROUST_SAFE_PNPM_ENV] === '1'
-}
-
-/**
  * The pnpm invocations for each safe subcommand, in order. `add`/`update` resolve the new graph
  * without touching node_modules first (`--lockfile-only --ignore-scripts`), so the supply-chain
  * check runs against the already-rewritten lockfile before any third-party code is fetched.
+ * `install`'s extraArgs (e.g. `--frozen-lockfile`) are forwarded to the real install step, not
+ * the check — there's nothing for check:supply-chain to do with an install-specific flag.
  *
  * `remove` doesn't introduce any new package, so there's nothing to check — it only exists here
  * because .pnpmfile.mjs's preResolution guard blocks *any* pnpm add/update/install/remove without
@@ -33,7 +24,7 @@ export function buildPnpmSteps(subcommand: SafeSubcommand, extraArgs: string[]):
         ['install'],
       ]
     case 'install':
-      return [['check:supply-chain'], ['install']]
+      return [['check:supply-chain'], ['install', ...extraArgs]]
     case 'remove':
       return [['remove', ...extraArgs]]
   }
@@ -45,14 +36,15 @@ export function buildPnpmSteps(subcommand: SafeSubcommand, extraArgs: string[]):
 // before use rather than relying on quoting to neutralize them.
 //
 // Rejecting a leading `-` is not just character hygiene — it's the actual security boundary.
-// A character-class check alone would still accept `--registry=https://attacker.example/` (every
-// character in that string is otherwise "safe"), which pnpm would honor for that one resolution:
-// the poisoned resolution gets written into pnpm-lock.yaml, check:supply-chain checks the
-// requested name@version against OSV (identity, not artifact hash — it has no way to know the
-// tarball came from a different registry), and the final `pnpm install` step re-fetches from that
+// `=` isn't in the character class above, so `--registry=<url>` is already rejected by the class
+// check alone — but `--registry <url>` split across two separate argv entries is not: `<url>` on
+// its own is a "safe"-looking string. Either form, if it slipped through, would let pnpm resolve
+// that one package from an attacker-controlled registry: the poisoned resolution gets written
+// into pnpm-lock.yaml, check:supply-chain only checks the requested name@version identity against
+// OSV (not the actual tarball's origin), and the final `pnpm install` step re-fetches from that
 // same pinned registry — a full bypass of the check this whole mechanism exists to enforce.
-// Splitting the flag across two args (`--registry https://...`) would defeat a character-class
-// check just as easily, which is why this rejects *any* leading `-`, not just specific flags.
+// Rejecting any leading `-` closes both forms, current and future flags alike, rather than
+// denylisting `--registry` specifically.
 const SAFE_PNPM_ARG = /^[A-Za-z0-9@_./:+~-]+$/
 
 export function isSafePnpmArg(arg: string): boolean {
