@@ -11,7 +11,9 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # event_name suffix: schedule and push both resolve to the same github.ref (master) —
+  # without it, a push landing while the weekly scan is running would silently cancel it.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
