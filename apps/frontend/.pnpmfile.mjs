@@ -14,9 +14,10 @@
  *
  * The condition below is a literal, not an import from scripts/safePnpm.ts — this file runs
  * inside pnpm's own Node process, and relying on however that process happens to load
- * TypeScript isn't something this repo controls or has verified. scripts/safePnpm.ts's
- * `isSafePnpmInvocation` is the same one-line condition, covered by a normal unit test; keep
- * both in sync if this ever changes.
+ * TypeScript isn't something this repo controls or has verified. It's covered indirectly by
+ * safePnpm.test.ts's `buildPnpmSteps`/`runSafePnpm` tests and the real end-to-end pnpm runs in
+ * docs/features/supply-chain-check.md's manual verification, not by a unit test of this literal
+ * itself — keep this comment (and this file) in sync if the marker/env var name ever changes.
  */
 
 export const hooks = {
