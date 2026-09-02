@@ -1,0 +1,58 @@
+name: CodeQL
+
+# No paths: filter — deliberate, see "Trigger" in ADR-014 for the reasoning.
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  schedule:
+    - cron: "0 6 * * 1" # every Monday at 06:00 UTC — same slot as frontend-security-audit.yml
+  workflow_dispatch: {}
+
+concurrency:
+  # event_name suffix: schedule and push both resolve to the same github.ref (master) —
+  # without it, a push landing while the weekly scan is running would silently cancel it.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  # Required by codeql-action/analyze to publish SARIF results under Security > Code
+  # scanning. The only permission this workflow needs beyond the project's usual
+  # `contents: read` baseline.
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # "java-kotlin" is CodeQL's language name for Java too — this backend is pure Java.
+          - language: java-kotlin
+            # build-mode: none, deliberately not manual/autobuild — see "Build mode for
+            # java-kotlin" in ADR-014 for the reasoning and the documented fallback trigger.
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # No `queries:` override — default suite kept deliberately, see "Query suite"
+          # in ADR-014 before adding security-extended.
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: "/language:${{ matrix.language }}"
