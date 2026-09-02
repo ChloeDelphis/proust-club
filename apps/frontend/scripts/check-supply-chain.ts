@@ -2,13 +2,20 @@
  * Pre-install supply-chain check — blocks on packages known to be malicious (OpenSSF Malicious
  * Packages / OSV `MAL-*` entries), not ordinary CVEs (that's `pnpm audit`'s job).
  *
- * Usage:
+ * Do not run this manually as part of a `pnpm add`/`update`/`install`/`remove` sequence — use
+ * `pnpm safe:add`/`safe:update`/`safe:install`/`safe:remove` instead (`safe-pnpm.ts`/
+ * `safePnpm.ts`), which orchestrate exactly that sequence automatically. `apps/frontend/
+ * .pnpmfile.mjs` rejects a raw `pnpm add`/`update`/`install`/`remove` outright, so the manual
+ * sequence this comment used to document no longer works on its own.
  *
- *   `pnpm install` (lockfile already resolved, package.json unchanged):
+ * The sequence the `safe:*` commands run, for reference (see `safePnpm.ts`'s `buildPnpmSteps`
+ * for the authoritative version):
+ *
+ *   `safe:install` (lockfile already resolved, package.json unchanged):
  *     1. pnpm check:supply-chain
  *     2. if exit 0 → pnpm install
  *
- *   `pnpm add <pkg>` / `pnpm update [<pkg>]` (this changes the lockfile — the package/version
+ *   `safe:add <pkg>` / `safe:update [<pkg>]` (this changes the lockfile — the package/version
  *   being added isn't in it yet when the command starts):
  *     1. pnpm add <pkg> --lockfile-only --ignore-scripts
  *        (or `pnpm update ... --lockfile-only --ignore-scripts`)
@@ -19,10 +26,9 @@
  *     2. pnpm check:supply-chain
  *     3. if exit 0 → pnpm install (materializes node_modules from the already-checked lockfile)
  *     4. if exit 1 or 2 → do not install. Step 1 may have changed both package.json and
- *        pnpm-lock.yaml (pnpm add writes both) — restore only what step 1 introduced, not an
- *        unqualified `git checkout` (which would also discard any unrelated local changes on
- *        those same files). If the working tree was clean before step 1, `git checkout` on these
- *        two files is safe; otherwise revert the diff step 1 produced more surgically.
+ *        pnpm-lock.yaml (pnpm add writes both) — the orchestrator leaves those changes in place
+ *        for review rather than reverting them automatically (an unqualified `git checkout` would
+ *        also discard any unrelated local changes on those same files).
  *
  * See docs/features/supply-chain-check.md for the full design rationale.
  */

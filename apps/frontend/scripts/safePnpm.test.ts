@@ -18,6 +18,14 @@ describe('validateSafePnpmArgs', () => {
     expect(validateSafePnpmArgs('update', ['lodash'])).toBeNull()
     expect(validateSafePnpmArgs('remove', ['lodash'])).toBeNull()
   })
+
+  it('allows update with no args — updating everything is legitimate', () => {
+    expect(validateSafePnpmArgs('update', [])).toBeNull()
+  })
+
+  it('rejects remove with no args — nothing to remove', () => {
+    expect(validateSafePnpmArgs('remove', [])).toMatch(/at least one package/)
+  })
 })
 
 describe('isSafePnpmArg', () => {

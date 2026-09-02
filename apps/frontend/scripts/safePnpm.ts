@@ -11,12 +11,20 @@ export const PROUST_SAFE_PNPM_ENV = 'PROUST_SAFE_PNPM'
  * if extraArgs contains a package spec, that package gets fully installed without ever being
  * checked, defeating the entire point of this mechanism. `pnpm safe:install <pkg>` is also a
  * very plausible typo/habit coming from `npm install <pkg>`, so this has to be a hard error, not
- * just documentation. Only `add`/`update` accept package specs; `install` only takes install
- * flags (and even those can't reach pnpm today — see `isSafePnpmArg`'s leading-dash rejection).
+ * just documentation. Only `add`/`update` accept package specs; `install` takes no arguments at
+ * all today — not even install flags, which is a stricter rule than the alias problem alone
+ * requires, but simpler and safer than trying to distinguish a legitimate flag from a package
+ * spec that merely happens to not start with `-`.
+ *
+ * `remove` requires at least one package — `pnpm remove` with nothing to remove is a no-op that's
+ * better rejected here, with a clear reason, than forwarded to pnpm's own generic usage error.
  */
 export function validateSafePnpmArgs(subcommand: SafeSubcommand, extraArgs: string[]): string | null {
   if (subcommand === 'install' && extraArgs.length > 0) {
-    return "pnpm safe:install doesn't take package arguments (pnpm treats `install <pkg>` as `add <pkg>`, bypassing the check) — did you mean `pnpm safe:add`?"
+    return "pnpm safe:install doesn't take any arguments (pnpm treats `install <pkg>` as `add <pkg>`, bypassing the check) — did you mean `pnpm safe:add`?"
+  }
+  if (subcommand === 'remove' && extraArgs.length === 0) {
+    return 'pnpm safe:remove needs at least one package name.'
   }
   return null
 }
