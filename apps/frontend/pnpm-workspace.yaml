@@ -4,6 +4,12 @@ onlyBuiltDependencies:
   - esbuild
 minimumReleaseAge: 4320
 minimumReleaseAgeStrict: true
+# Default ("install") silently runs a real `pnpm install` before any `pnpm run <script>`/test/
+# build/dev when node_modules looks out of sync with the lockfile — that install doesn't carry
+# the PROUST_SAFE_PNPM marker, so .pnpmfile.mjs blocks it with a confusing error instead of
+# pnpm's own clear one. "error" fails fast with pnpm's native "run pnpm install" hint instead;
+# the fix is the same either way (an explicit install), this just avoids the misleading failure.
+verifyDepsBeforeRun: error
 overrides:
   js-yaml: 4.3.2
   nanoid: 3.3.18
