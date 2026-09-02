@@ -8,6 +8,8 @@ overrides:
   js-yaml: 4.3.2
   nanoid: 3.3.18
 
+pnpmfileChecksum: sha256-rzuQaA3rMouQp+jfOjD1pmnCkbB3Qqqge/iCoqXgfBE=
+
 importers:
 
   .:

@@ -54,7 +54,7 @@ cd apps/backend
 
 ```bash
 cd apps/frontend
-pnpm install
+pnpm safe:install
 pnpm dev
 ```
 
