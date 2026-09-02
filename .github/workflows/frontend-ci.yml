@@ -26,6 +26,12 @@ jobs:
     defaults:
       run:
         working-directory: apps/frontend
+    env:
+      # pnpm/setup below runs a real `pnpm install` internally. apps/frontend/.pnpmfile.mjs
+      # blocks any pnpm add/update/install/remove that isn't marked this way — CI trusts the
+      # already-committed, already-reviewed lockfile rather than re-running check:supply-chain
+      # here (see docs/features/supply-chain-check.md and ADR-008).
+      PROUST_SAFE_PNPM: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/setup@ce3b1e5f04cd26dbb4614172464b544b5633cc92 # v2.1.0
