@@ -27,6 +27,16 @@ describe('isSafePnpmArg', () => {
     expect(isSafePnpmArg('git+https://github.com/user/repo.git')).toBe(true)
   })
 
+  it('rejects flag injection — a leading "-" is never a package spec', () => {
+    // Regression test: a character-class check alone still accepted these (every character is
+    // otherwise "safe"), letting an injected --registry flag silently repoint dependency
+    // resolution to an attacker-controlled registry — bypassing check:supply-chain entirely,
+    // since it only checks name@version identity against OSV, not where the tarball came from.
+    expect(isSafePnpmArg('--registry=https://attacker.example/')).toBe(false)
+    expect(isSafePnpmArg('--registry')).toBe(false) // split across two args defeats a naive check
+    expect(isSafePnpmArg('-r')).toBe(false)
+  })
+
   it('rejects shell metacharacters', () => {
     expect(isSafePnpmArg('lodash; rm -rf /')).toBe(false)
     expect(isSafePnpmArg('lodash && echo pwned')).toBe(false)

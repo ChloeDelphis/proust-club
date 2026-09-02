@@ -48,10 +48,20 @@ export function buildPnpmSteps(subcommand: SafeSubcommand, extraArgs: string[]):
 // file:/git:/https: source. No shell metacharacters — the CLI wrapper spawns pnpm with
 // `shell: true` (needed on Windows to resolve the pnpm.cmd shim), so args must be validated
 // before use rather than relying on quoting to neutralize them.
-const SAFE_PNPM_ARG = /^[A-Za-z0-9@_./:+~=-]+$/
+//
+// Rejecting a leading `-` is not just character hygiene — it's the actual security boundary.
+// A character-class check alone would still accept `--registry=https://attacker.example/` (every
+// character in that string is otherwise "safe"), which pnpm would honor for that one resolution:
+// the poisoned resolution gets written into pnpm-lock.yaml, check:supply-chain checks the
+// requested name@version against OSV (identity, not artifact hash — it has no way to know the
+// tarball came from a different registry), and the final `pnpm install` step re-fetches from that
+// same pinned registry — a full bypass of the check this whole mechanism exists to enforce.
+// Splitting the flag across two args (`--registry https://...`) would defeat a character-class
+// check just as easily, which is why this rejects *any* leading `-`, not just specific flags.
+const SAFE_PNPM_ARG = /^[A-Za-z0-9@_./:+~-]+$/
 
 export function isSafePnpmArg(arg: string): boolean {
-  return SAFE_PNPM_ARG.test(arg)
+  return !arg.startsWith('-') && SAFE_PNPM_ARG.test(arg)
 }
 
 export type PnpmRunner = (args: string[]) => number
