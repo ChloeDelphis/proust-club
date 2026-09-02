@@ -14,6 +14,7 @@
 import { spawnSync } from 'node:child_process'
 import {
   PROUST_SAFE_PNPM_ENV,
+  SAFE_SUBCOMMANDS,
   isSafePnpmArg,
   runSafePnpm,
   validateSafePnpmArgs,
@@ -42,12 +43,11 @@ function spawnPnpm(args: string[]): number {
 const [subcommand, ...extraArgs] = process.argv.slice(2)
 const unsafeArg = extraArgs.find((arg) => !isSafePnpmArg(arg))
 
-const SUBCOMMANDS: SafeSubcommand[] = ['add', 'update', 'install', 'remove']
-const isKnownSubcommand = SUBCOMMANDS.includes(subcommand as SafeSubcommand)
+const isKnownSubcommand = (SAFE_SUBCOMMANDS as readonly string[]).includes(subcommand)
 const argsError = isKnownSubcommand ? validateSafePnpmArgs(subcommand as SafeSubcommand, extraArgs) : null
 
 if (!isKnownSubcommand) {
-  console.error(`Usage: safe-pnpm.ts <${SUBCOMMANDS.join('|')}> [args...]`)
+  console.error(`Usage: safe-pnpm.ts <${SAFE_SUBCOMMANDS.join('|')}> [args...]`)
   process.exitCode = 2
 } else if (unsafeArg !== undefined) {
   console.error(`Refusing to run: argument looks unsafe to pass to a shell: ${JSON.stringify(unsafeArg)}`)

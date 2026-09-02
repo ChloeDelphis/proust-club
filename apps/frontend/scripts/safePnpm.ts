@@ -1,4 +1,5 @@
-export type SafeSubcommand = 'add' | 'update' | 'install' | 'remove'
+export const SAFE_SUBCOMMANDS = ['add', 'update', 'install', 'remove'] as const
+export type SafeSubcommand = (typeof SAFE_SUBCOMMANDS)[number]
 
 export const PROUST_SAFE_PNPM_ENV = 'PROUST_SAFE_PNPM'
 
