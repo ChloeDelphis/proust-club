@@ -47,9 +47,8 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          # No `queries:` override — the default query suite is used deliberately (favors
-          # precision, limits noise). `security-extended` can be evaluated later if needed;
-          # don't add it here without revisiting that decision (see ADR-014).
+          # No `queries:` override — default suite kept deliberately, see "Query suite"
+          # in ADR-014 before adding security-extended.
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
