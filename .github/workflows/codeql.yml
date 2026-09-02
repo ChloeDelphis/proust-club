@@ -1,8 +1,6 @@
 name: CodeQL
 
-# No paths: filter — the scan is cheap (build-mode: none, no compilation) and analyzing
-# both codebases on every run keeps the workflow simple and gives regular coverage. Filters
-# can be added later if run cost ever justifies it.
+# No paths: filter — deliberate, see "Trigger" in ADR-014 for the reasoning.
 on:
   pull_request:
     branches: [master]
@@ -33,20 +31,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # "java-kotlin" is the only valid CodeQL language name for Java, even though this
-          # backend is pure Java (0 .kt files under apps/backend/src) — build.gradle.kts is
-          # just the Gradle build script's Kotlin DSL, not the application language.
+          # "java-kotlin" is CodeQL's language name for Java too — this backend is pure Java.
           - language: java-kotlin
-            # build-mode: none queries Gradle/Maven for dependency info without running a
-            # build, then extracts every Java file found — this is what GitHub's own default
-            # setup picks for a Java-only repo. Deliberately not `manual`: jOOQ code
-            # generation isn't configured yet (build.gradle.kts, "À configurer" — no plugin
-            # active), so there's no generated code that `none` would miss, and skipping a
-            # real ./gradlew build keeps this workflow declarative with no duplication of
-            # backend-ci.yml. Revisit if jOOQ codegen is enabled later, or if a real run shows
-            # poor dependency resolution / incomplete coverage — fall back to `manual`
-            # (./gradlew compileJava, deliberately not compileTestJava, to keep test code out
-            # of the analysis) in that case, not before.
+            # build-mode: none, deliberately not manual/autobuild — see "Build mode for
+            # java-kotlin" in ADR-014 for the reasoning and the documented fallback trigger.
             build-mode: none
           - language: javascript-typescript
             build-mode: none

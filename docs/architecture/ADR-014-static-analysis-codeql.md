@@ -52,9 +52,8 @@ PR to `master` + push to `master` + weekly cron (same slot as `frontend-security
 
 ## Tradeoff accepted
 
-- No merge-blocking on CodeQL alerts yet (see level C above) — a real vulnerability could be merged unnoticed before a manual look at a run. Accepted for this initial triage phase, to be revisited once alerts have been reviewed at least once.
-- `build-mode: none` for the backend depends on jOOQ code generation staying unconfigured. If jOOQ codegen is enabled later, this decision must be revisited — generated code would silently escape analysis.
-- `security-events: write` is the one permission this workflow needs beyond the project's usual `contents: read` baseline, scoped to the job.
+- No merge-blocking on CodeQL alerts yet — see level C above.
+- `build-mode: none` for the backend depends on jOOQ code generation staying unconfigured — see "Build mode for `java-kotlin`" above.
 
 ## Date
 
