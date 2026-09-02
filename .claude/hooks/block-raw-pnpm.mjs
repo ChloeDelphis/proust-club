@@ -7,7 +7,12 @@
 // Deliberately not a security boundary: a command containing PROUST_SAFE_PNPM=1
 // anywhere is let through unconditionally (e.g. a human debugging directly).
 
-const BLOCKED_SUBCOMMAND = /pnpm(\.cmd)?[ \t]+(add|install|i|update|up|remove|rm|uninstall|un)([ \t]|$)/
+// Anchored to an actual command position (start of string, or right after a shell separator) —
+// not just anywhere "pnpm add"/"pnpm install" appears. Without this, a command like
+// `git commit -m "docs: mention pnpm install workflow"` got denied even though it never runs
+// pnpm at all — the text only appears inside a quoted commit message.
+const BLOCKED_SUBCOMMAND =
+  /(^|[;&|`\n]|&&|\|\|)\s*pnpm(\.cmd)?[ \t]+(add|install|i|update|up|remove|rm|uninstall|un)([ \t]|$)/
 
 let data = ''
 process.stdin.on('data', (chunk) => {
