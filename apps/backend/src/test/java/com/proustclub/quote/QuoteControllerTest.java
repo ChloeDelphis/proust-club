@@ -186,11 +186,7 @@ class QuoteControllerTest {
         var alice = registerAndLogin("alice", "alice@example.com");
         var bob = registerAndLogin("bob", "bob@example.com");
 
-        MvcResult tagResult = mockMvc.perform(post("/api/tags").with(csrf()).session(bob).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"BobTag\"}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-        String bobTagId = objectMapper.readTree(tagResult.getResponse().getContentAsString()).get("id").asText();
+        String bobTagId = createTagAs(bob, "BobTag");
 
         mockMvc.perform(get("/api/quotes").session(alice).param("tagId", bobTagId))
                 .andExpect(status().isOk())
@@ -303,11 +299,7 @@ class QuoteControllerTest {
         var alice = registerAndLogin("alice", "alice@example.com");
         var bob = registerAndLogin("bob", "bob@example.com");
 
-        MvcResult tagResult = mockMvc.perform(post("/api/tags").with(csrf()).session(bob).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"BobTag\"}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-        String bobTagId = objectMapper.readTree(tagResult.getResponse().getContentAsString()).get("id").asText();
+        String bobTagId = createTagAs(bob, "BobTag");
 
         createQuote(alice, paragraphId, 3, 12, "madeleine");
 
@@ -487,11 +479,7 @@ class QuoteControllerTest {
         var session = registerAndLogin("alice", "alice@example.com");
         String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
 
-        MvcResult tagResult = mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"UnrelatedTag\"}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-        String unrelatedTagId = objectMapper.readTree(tagResult.getResponse().getContentAsString()).get("id").asText();
+        String unrelatedTagId = createTagAs(session, "UnrelatedTag");
 
         mockMvc.perform(delete("/api/quotes/" + quoteId + "/tags/" + unrelatedTagId).with(csrf()).session(session))
                 .andExpect(status().isNotFound());
@@ -521,6 +509,14 @@ class QuoteControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
         return (MockHttpSession) result.getRequest().getSession(false);
+    }
+
+    private String createTagAs(MockHttpSession session, String name) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + name + "\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
     private String createQuote(MockHttpSession session, int paragraphId, int startOffset, int endOffset, String selectedText) throws Exception {

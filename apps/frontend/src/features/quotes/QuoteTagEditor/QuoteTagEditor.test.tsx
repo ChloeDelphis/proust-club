@@ -6,6 +6,7 @@ import QuoteTagEditor from './QuoteTagEditor'
 import * as quoteApi from '../../../api/quote'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
+import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/quote')
 vi.mock('../../../api/tag')
@@ -19,7 +20,7 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
-const QUOTE_ID = '00000000-0000-4000-8000-000000000007'
+const QUOTE_ID = quoteId(7)
 const COMBRAY_ID = '00000000-0000-4000-8000-000000000101'
 const BALBEC_ID = '00000000-0000-4000-8000-000000000102'
 const JALOUSIE_ID = '00000000-0000-4000-8000-000000000103'

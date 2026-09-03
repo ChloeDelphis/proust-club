@@ -6,6 +6,7 @@ import QuoteCard from './QuoteCard'
 import * as quoteApi from '../../../api/quote'
 import ToastProvider from '../../../components/Toast/ToastProvider'
 import type { QuoteSelectionResponse } from '../../../api/quote'
+import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/quote')
 
@@ -18,7 +19,7 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
-const QUOTE_ID = '00000000-0000-4000-8000-000000000007'
+const QUOTE_ID = quoteId(7)
 
 const quote: QuoteSelectionResponse = {
   id: QUOTE_ID,
