@@ -76,7 +76,7 @@ erDiagram
     }
 
     quote_selections {
-        serial  id PK
+        uuid    id PK
         uuid    user_id FK
         integer paragraph_id FK
         integer start_offset
@@ -108,15 +108,15 @@ erDiagram
     users ||--o{ email_verification_tokens : requests
 
     tags {
-        serial  id PK
+        uuid    id PK
         uuid    user_id FK
         varchar name
         timestamptz created_at
     }
 
     quote_selection_tags {
-        integer quote_selection_id PK_FK
-        integer tag_id PK_FK
+        uuid quote_selection_id PK_FK
+        uuid tag_id PK_FK
     }
 
     users          ||--o{ quote_selections     : saves
@@ -129,7 +129,9 @@ erDiagram
 
 **`users.uuid`** is a UUID (not a serial integer) — avoids enumerable user IDs in URLs and API responses. Generated in Postgres via `gen_random_uuid()` (built into Postgres 13+, no `pgcrypto` extension needed).
 
-**`quote_selections.id` and `tags.id` are plain `SERIAL`, not UUID**, unlike `users.uuid` — deliberately. Ownership of these two tables is never enforced by making their IDs hard to guess; every read, update and delete filters on `user_id` in the query itself (see [Feature doc](../features/quote-save-tags.md)). A sequential ID in a URL like `/api/quotes/42` reveals nothing exploitable under that model, so there is no reason to pay UUID's cost (larger index, less locality) here.
+**`quote_selections.id` and `tags.id` are UUID** (`DEFAULT gen_random_uuid()`), like `users.uuid` — not the original decision (see history below). Ownership is still enforced the same way it always was: every read, update and delete filters on `user_id` in the query itself (see [Feature doc](../features/quote-save-tags.md)) — the UUID doesn't replace that check, it's defense in depth on top of it. See [ADR-015](ADR-015-opaque-identifiers-for-user-owned-resources.md) for the general rule this follows and why it changed.
+
+*History*: these two columns were originally `SERIAL`, on the reasoning that a sequential ID reveals nothing exploitable as long as `user_id` is always filtered. Revisited once the project had no production data left to migrate and changing a PK was still cheap — sequential IDs still leak a metadata signal (approximate insertion order/volume via the sequence value) and offer no defense in depth against a future missing `user_id` check, which a UUID does. See ADR-015.
 
 **`quote_selections.selected_text`** is stored alongside the offsets for display and debugging — if the corpus text were ever corrected, the saved text remains readable. Once a quote is saved, `selected_text`/`start_offset`/`end_offset` are immutable for now — only its tags and `comment` can change (full editing is a possible future iteration).
 

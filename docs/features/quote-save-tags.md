@@ -154,7 +154,7 @@ The personal comment field lives directly in `QuoteDetailModal` (no dedicated su
 - Search for a phrase, save it as a quote with two tags, confirm both appear in the response with their own ids. **Gotcha**: `/api/search` matches case-insensitively, but `selectedText` revalidation is an exact (case-sensitive) match — the phrase actually highlighted at the returned offsets may not be the same case as the search query typed (e.g. searching "madeleine" can surface a paragraph where the match is actually "Madeleine"); send the text exactly as it appears in the paragraph, not as typed in the search box.
 - Save a quote with no tags at all — succeeds, `tags: []`.
 - Try to save a quote whose `selectedText` doesn't match the paragraph at the given offsets → `400`.
-- `GET /api/quotes` with `page=-1`, `size=0`, `size=21`, or `tagId=0` → `400` in each case, with a `detail` stating the specific reason (e.g. `"tagId must be >= 1"`) rather than a generic message.
+- `GET /api/quotes` with `page=-1`, `size=0`, or `size=21` → `400` in each case, with a `detail` stating the specific reason (e.g. `"size must be <= 20"`). `tagId=not-a-uuid` (a malformed UUID) also `400`s, but via Spring's own type conversion rather than a bespoke validation message (see ADR-015 — `tagId` moved from a bounded `int` to a `UUID`, so `@Min` no longer applies).
 - List quotes filtered by an existing tag id → only matching quotes returned. Filter by a tag id that doesn't exist → empty list, not an error.
 - Attach the same tag name twice to the same quote → second call is a no-op, still `200`, still one tag.
 - Remove a quote's only tag → succeeds, quote now has zero tags.
