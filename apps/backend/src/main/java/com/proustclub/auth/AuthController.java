@@ -78,9 +78,18 @@ class AuthController {
     @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/login", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        rateLimiter.checkLoginByIp(httpRequest);
-        rateLimiter.checkLoginByAccount(request.email());
-        var authentication = service.authenticate(request.email(), request.password());
+        // Baseline instrumentation for credential-stuffing detection (Phase A1) — see
+        // docs/features/rate-limiting.md "Login attempt baseline" for scope/rationale.
+        Authentication authentication;
+        try {
+            rateLimiter.checkLoginByIp(httpRequest);
+            rateLimiter.checkLoginByAccount(request.email());
+            authentication = service.authenticate(request.email(), request.password());
+        } catch (RuntimeException e) {
+            log.warn("login_attempt outcome=failure");
+            throw e;
+        }
+        log.info("login_attempt outcome=success");
         sessionPersister.persist(authentication, httpRequest, httpResponse);
         return service.currentUser(currentUser.resolveUuid(authentication));
     }

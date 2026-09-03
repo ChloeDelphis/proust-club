@@ -76,6 +76,17 @@ WARN rate_limit_exceeded endpoint=login keyType=ip
 
 `endpoint`/`keyType` only — never the IP/email value beyond what the existing logging policy already allows, never the password.
 
+**Login attempt baseline** — separate from the above, `AuthController.login()` logs one event per attempt regardless of whether the rate limit is hit:
+
+```
+INFO login_attempt outcome=success
+WARN login_attempt outcome=failure
+```
+
+No account/IP identifier, same reasoning as above. Purpose: establish a real-traffic baseline (volume, failure rate) before deciding on a threshold for anomaly detection — see `private/tickets/credential-stuffing-detection.md`, Phase A1. Deliberately scoped to this endpoint only, not to `AuthService.authenticate()`/`reauthenticate()`, which are also reached by `register()`'s auto-login and by password-change reauthentication — neither is a login attempt and counting them would skew the baseline. No counter, no sliding window, no threshold yet: this is pure per-attempt telemetry, aggregated after the fact (there is no log-aggregation/observability layer in the project today). A threshold-based `AUTH_LOGIN_ANOMALY` event is a separate, not-yet-started phase (A2), gated on having observed real traffic and having somewhere to actually consume the signal.
+
+A rate-limited login (`rate_limit_exceeded` above) also produces `login_attempt outcome=failure` — two log lines for one rejected request, deliberately: `rate_limit_exceeded` identifies which bucket tripped, `login_attempt` keeps the attempt in the overall baseline. Not a bug if both appear together.
+
 ---
 
 ## What this deliberately does not do
@@ -93,3 +104,4 @@ WARN rate_limit_exceeded endpoint=login keyType=ip
 - Log in successfully, then keep searching past the search limit from the same IP → still `429` (an authenticated session is not exempt).
 - Make more than the configured number of `password-reset/confirm` attempts from the same IP within the window (regardless of token validity) → `429` with `Retry-After`.
 - Wait past the refill window → requests succeed again without restarting the app.
+- Log in with valid credentials → console shows `login_attempt outcome=success`. Log in with wrong credentials → `login_attempt outcome=failure`. Trip the per-IP or per-account login limit → both `rate_limit_exceeded` and `login_attempt outcome=failure` appear for that request.
