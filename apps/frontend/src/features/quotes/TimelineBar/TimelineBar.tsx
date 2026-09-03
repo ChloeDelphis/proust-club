@@ -40,11 +40,11 @@ function activateOnEnterOrSpace(onActivate: () => void) {
 export default function TimelineBar({ activeTagId }: TimelineBarProps) {
   const { t } = useTranslation()
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
-  const [hoveredQuoteId, setHoveredQuoteId] = useState<number | null>(null)
+  const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
   // Stores an id, not the quote object itself, so the modal re-derives fresh data from the query
   // cache below on every render — a mutation issued from inside the modal (comment/tags) just
   // needs to invalidate ['quotes'] to show up here, no extra plumbing to patch local state.
-  const [openQuoteId, setOpenQuoteId] = useState<number | null>(null)
+  const [openQuoteId, setOpenQuoteId] = useState<string | null>(null)
 
   const { data, isPending, isError } = useQuery({
     queryKey: ['quotes', 'timeline', activeTagId],

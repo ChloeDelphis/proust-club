@@ -1,3 +1,3 @@
 export interface TimelineBarProps {
-  activeTagId: number | null
+  activeTagId: string | null
 }

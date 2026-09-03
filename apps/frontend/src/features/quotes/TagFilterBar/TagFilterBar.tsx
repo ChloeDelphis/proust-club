@@ -16,14 +16,14 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
   const showToast = useToast()
   const { data: tags } = useTags()
 
-  const [editingTagId, setEditingTagId] = useState<number | null>(null)
+  const [editingTagId, setEditingTagId] = useState<string | null>(null)
   const [editingValue, setEditingValue] = useState('')
   // Enter/Escape both resolve the edit before the input's blur handler also fires —
   // this flag lets that following blur be ignored instead of double-committing.
   const suppressNextBlurRef = useRef(false)
 
   const renameMutation = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => renameTag(id, { name }),
+    mutationFn: ({ id, name }: { id: string; name: string }) => renameTag(id, { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
@@ -39,7 +39,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteTag(id),
+    mutationFn: (id: string) => deleteTag(id),
     onSuccess: (_result, id) => {
       const wasActiveFilter = activeTagId === id
       queryClient.invalidateQueries({ queryKey: ['tags'] })
@@ -54,13 +54,13 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     },
   })
 
-  function startEditing(id: number, currentName: string) {
+  function startEditing(id: string, currentName: string) {
     suppressNextBlurRef.current = false
     setEditingTagId(id)
     setEditingValue(currentName)
   }
 
-  function commitEditing(id: number) {
+  function commitEditing(id: string) {
     const name = editingValue.trim()
     if (!name) {
       setEditingTagId(null)
@@ -69,7 +69,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     renameMutation.mutate({ id, name })
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>, id: number) {
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>, id: string) {
     if (event.key === 'Enter') {
       suppressNextBlurRef.current = true
       commitEditing(id)
@@ -79,7 +79,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     }
   }
 
-  function handleBlur(id: number) {
+  function handleBlur(id: string) {
     if (suppressNextBlurRef.current) {
       suppressNextBlurRef.current = false
       return
@@ -87,7 +87,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     commitEditing(id)
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: string) {
     if (!window.confirm(t('tagFilterBar.deleteConfirm'))) return
     deleteMutation.mutate(id)
   }

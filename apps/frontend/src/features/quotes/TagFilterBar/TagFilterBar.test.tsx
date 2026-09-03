@@ -18,9 +18,12 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
+const COMBRAY_ID = '00000000-0000-4000-8000-000000000101'
+const BALBEC_ID = '00000000-0000-4000-8000-000000000102'
+
 const TAGS = [
-  { id: 1, name: 'Combray' },
-  { id: 2, name: 'Balbec' },
+  { id: COMBRAY_ID, name: 'Combray' },
+  { id: BALBEC_ID, name: 'Balbec' },
 ]
 
 beforeEach(() => {
@@ -43,11 +46,11 @@ it('renders "Tous" and one button per tag, calling onSelectTag on click', async 
   expect(await screen.findByRole('button', { name: 'Tous' })).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Combray' }))
 
-  expect(onSelectTag).toHaveBeenCalledWith(1)
+  expect(onSelectTag).toHaveBeenCalledWith(COMBRAY_ID)
 })
 
 it('renames a tag on Enter', async () => {
-  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: 1, name: 'Combray renommé' })
+  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: COMBRAY_ID, name: 'Combray renommé' })
   render(<TagFilterBar activeTagId={null} onSelectTag={vi.fn()} />, { wrapper })
 
   await userEvent.click(await screen.findByRole('button', { name: 'Renommer Combray' }))
@@ -55,7 +58,7 @@ it('renames a tag on Enter', async () => {
   await userEvent.clear(input)
   await userEvent.type(input, 'Combray renommé{Enter}')
 
-  expect(tagApi.renameTag).toHaveBeenCalledWith(1, { name: 'Combray renommé' })
+  expect(tagApi.renameTag).toHaveBeenCalledWith(COMBRAY_ID, { name: 'Combray renommé' })
 })
 
 it('cancels the edit on Escape without renaming', async () => {
@@ -70,7 +73,7 @@ it('cancels the edit on Escape without renaming', async () => {
 })
 
 it('commits the edit on blur', async () => {
-  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: 1, name: 'Combray modifié' })
+  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: COMBRAY_ID, name: 'Combray modifié' })
   render(
     <div>
       <TagFilterBar activeTagId={null} onSelectTag={vi.fn()} />
@@ -85,7 +88,7 @@ it('commits the edit on blur', async () => {
   await userEvent.type(input, 'Combray modifié')
   await userEvent.click(screen.getByRole('button', { name: 'ailleurs' }))
 
-  expect(tagApi.renameTag).toHaveBeenCalledWith(1, { name: 'Combray modifié' })
+  expect(tagApi.renameTag).toHaveBeenCalledWith(COMBRAY_ID, { name: 'Combray modifié' })
 })
 
 it('shows an error toast on a 409 conflict and keeps editing', async () => {
@@ -113,10 +116,10 @@ it('deletes a tag when the confirmation is accepted, clearing the filter if it w
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.mocked(tagApi.deleteTag).mockResolvedValue(undefined)
   const onSelectTag = vi.fn()
-  render(<TagFilterBar activeTagId={1} onSelectTag={onSelectTag} />, { wrapper })
+  render(<TagFilterBar activeTagId={COMBRAY_ID} onSelectTag={onSelectTag} />, { wrapper })
 
   await userEvent.click(await screen.findByRole('button', { name: 'Supprimer Combray' }))
 
-  expect(tagApi.deleteTag).toHaveBeenCalledWith(1)
+  expect(tagApi.deleteTag).toHaveBeenCalledWith(COMBRAY_ID)
   expect(onSelectTag).toHaveBeenCalledWith(null)
 })

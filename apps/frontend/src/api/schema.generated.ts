@@ -381,11 +381,11 @@ export interface components {
         /** @description A personal tag */
         TagResponse: {
             /**
-             * Format: int32
+             * Format: uuid
              * @description Tag identifier
-             * @example 12
+             * @example 3fa85f64-5717-4562-b3fc-2c963f66afa6
              */
-            id?: number;
+            id?: string;
             /**
              * @description Tag name, as entered by the user (trimmed, original casing preserved)
              * @example Combray
@@ -433,11 +433,11 @@ export interface components {
         /** @description A saved quote selection */
         QuoteSelectionResponse: {
             /**
-             * Format: int32
+             * Format: uuid
              * @description Quote selection identifier
-             * @example 7
+             * @example 3fa85f64-5717-4562-b3fc-2c963f66afa6
              */
-            id?: number;
+            id?: string;
             /**
              * Format: int32
              * @description Paragraph the selection belongs to
@@ -682,11 +682,11 @@ export interface components {
         /** @description A saved quote positioned on the personal timeline */
         TimelineQuote: {
             /**
-             * Format: int32
+             * Format: uuid
              * @description Quote selection identifier
-             * @example 7
+             * @example 3fa85f64-5717-4562-b3fc-2c963f66afa6
              */
-            id?: number;
+            id?: string;
             /**
              * Format: int32
              * @description Paragraph the selection belongs to
@@ -835,9 +835,9 @@ export interface operations {
             query?: {
                 /**
                  * @description Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty list, not an error.
-                 * @example 12
+                 * @example 3fa85f64-5717-4562-b3fc-2c963f66afa6
                  */
-                tagId?: number;
+                tagId?: string;
                 /**
                  * @description Zero-based page index (default: 0)
                  * @example 0
@@ -922,7 +922,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -1259,7 +1259,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -1288,7 +1288,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -1341,7 +1341,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -1370,7 +1370,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: never;
         };
@@ -1459,9 +1459,9 @@ export interface operations {
             query?: {
                 /**
                  * @description Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty quotes list, not an error.
-                 * @example 12
+                 * @example 3fa85f64-5717-4562-b3fc-2c963f66afa6
                  */
-                tagId?: number;
+                tagId?: string;
             };
             header?: never;
             path?: never;
@@ -1523,8 +1523,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
-                tagId: number;
+                id: string;
+                tagId: string;
             };
             cookie?: never;
         };

@@ -13,7 +13,7 @@ export default function QuoteCard({ quote }: QuoteCardProps) {
   const showToast = useToast()
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteQuote(id),
+    mutationFn: (id: string) => deleteQuote(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },

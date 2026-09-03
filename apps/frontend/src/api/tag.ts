@@ -2,7 +2,7 @@ import { apiFetch } from './client'
 import type { operations } from './schema.generated'
 
 export type TagResponse = {
-  id: number
+  id: string
   name: string
 }
 
@@ -12,7 +12,7 @@ export function listTags(signal?: AbortSignal): Promise<TagResponse[]> {
 
 export type RenameTagParams = operations['rename']['requestBody']['content']['application/json']
 
-export function renameTag(id: number, params: RenameTagParams, signal?: AbortSignal): Promise<TagResponse> {
+export function renameTag(id: string, params: RenameTagParams, signal?: AbortSignal): Promise<TagResponse> {
   return apiFetch<TagResponse>(`/api/tags/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -21,6 +21,6 @@ export function renameTag(id: number, params: RenameTagParams, signal?: AbortSig
   })
 }
 
-export function deleteTag(id: number, signal?: AbortSignal): Promise<void> {
+export function deleteTag(id: string, signal?: AbortSignal): Promise<void> {
   return apiFetch<void>(`/api/tags/${id}`, { method: 'DELETE', signal })
 }

@@ -32,6 +32,9 @@ const connectedUser: authApi.UserResponse = {
   emailVerified: true,
 }
 
+const QUOTE_ID = '00000000-0000-4000-8000-000000000001'
+const TAG_ID = '00000000-0000-4000-8000-000000000101'
+
 // "hello world today" (length 17). Highlight covers "world" (6-11).
 const TEXT = 'hello world today'
 const HIGHLIGHT = { start: 6, end: 11 }
@@ -137,7 +140,7 @@ describe('QuoteSelection — connected', () => {
 
   it('does not reach backward across a whitespace gap when only one end lands inside a word', async () => {
     vi.mocked(quoteApi.createQuote).mockResolvedValue({
-      id: 1,
+      id: QUOTE_ID,
       paragraphId: PARAGRAPH_ID,
       startOffset: 6,
       endOffset: 11,
@@ -162,9 +165,9 @@ describe('QuoteSelection — connected', () => {
   })
 
   it('clicking Sauvegarder opens the tag panel with the word-extended, trimmed selection', async () => {
-    vi.mocked(tagApi.listTags).mockResolvedValue([{ id: 1, name: 'Combray' }])
+    vi.mocked(tagApi.listTags).mockResolvedValue([{ id: TAG_ID, name: 'Combray' }])
     vi.mocked(quoteApi.createQuote).mockResolvedValue({
-      id: 1,
+      id: QUOTE_ID,
       paragraphId: PARAGRAPH_ID,
       startOffset: 6,
       endOffset: 11,
@@ -265,7 +268,7 @@ describe('QuoteSelection — connected', () => {
 
     await act(async () => {
       resolveSave({
-        id: 1,
+        id: QUOTE_ID,
         paragraphId: PARAGRAPH_ID,
         startOffset: 6,
         endOffset: 11,

@@ -8,7 +8,7 @@ export type CreateQuoteParams = operations['create_1']['requestBody']['content']
 // same reasoning already applied to SearchHit/UserResponse (springdoc can't mark response fields
 // required, so every field in the generated type is `foo?: ...`).
 export type QuoteSelectionResponse = {
-  id: number
+  id: string
   paragraphId: number
   startOffset: number
   endOffset: number
@@ -29,7 +29,7 @@ export function createQuote(params: CreateQuoteParams, signal?: AbortSignal): Pr
 
 export type UpdateQuoteCommentParams = operations['updateComment']['requestBody']['content']['application/json']
 
-export function updateQuoteComment(id: number, params: UpdateQuoteCommentParams, signal?: AbortSignal): Promise<QuoteSelectionResponse> {
+export function updateQuoteComment(id: string, params: UpdateQuoteCommentParams, signal?: AbortSignal): Promise<QuoteSelectionResponse> {
   return apiFetch<QuoteSelectionResponse>(`/api/quotes/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -40,7 +40,7 @@ export function updateQuoteComment(id: number, params: UpdateQuoteCommentParams,
 
 export type AddTagParams = operations['addTag']['requestBody']['content']['application/json']
 
-export function addTagToQuote(id: number, params: AddTagParams, signal?: AbortSignal): Promise<QuoteSelectionResponse> {
+export function addTagToQuote(id: string, params: AddTagParams, signal?: AbortSignal): Promise<QuoteSelectionResponse> {
   return apiFetch<QuoteSelectionResponse>(`/api/quotes/${id}/tags`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -49,7 +49,7 @@ export function addTagToQuote(id: number, params: AddTagParams, signal?: AbortSi
   })
 }
 
-export function removeTagFromQuote(id: number, tagId: number, signal?: AbortSignal): Promise<void> {
+export function removeTagFromQuote(id: string, tagId: string, signal?: AbortSignal): Promise<void> {
   return apiFetch<void>(`/api/quotes/${id}/tags/${tagId}`, { method: 'DELETE', signal })
 }
 
@@ -68,7 +68,7 @@ export function listQuotes(params: QuoteListParams = {}, signal?: AbortSignal): 
   return apiFetch<QuoteSelectionListResponse>(`/api/quotes?${qs}`, { signal })
 }
 
-export function deleteQuote(id: number, signal?: AbortSignal): Promise<void> {
+export function deleteQuote(id: string, signal?: AbortSignal): Promise<void> {
   return apiFetch<void>(`/api/quotes/${id}`, { method: 'DELETE', signal })
 }
 
@@ -84,7 +84,7 @@ export type TimelineVolume = {
 }
 
 export type TimelineQuote = {
-  id: number
+  id: string
   paragraphId: number
   pageNumber: number
   volumeId: number

@@ -1,6 +1,6 @@
 import type { TagResponse } from '../../../api/tag'
 
 export interface QuoteTagEditorProps {
-  quoteId: number
+  quoteId: string
   tags: TagResponse[]
 }

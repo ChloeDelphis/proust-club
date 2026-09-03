@@ -31,7 +31,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
   })
 
   const removeMutation = useMutation({
-    mutationFn: (tagId: number) => removeTagFromQuote(quoteId, tagId),
+    mutationFn: (tagId: string) => removeTagFromQuote(quoteId, tagId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
