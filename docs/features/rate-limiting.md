@@ -76,6 +76,15 @@ WARN rate_limit_exceeded endpoint=login keyType=ip
 
 `endpoint`/`keyType` only — never the IP/email value beyond what the existing logging policy already allows, never the password.
 
+**Login attempt baseline** — separate from the above, `AuthController.login()` logs one event per attempt regardless of whether the rate limit is hit:
+
+```
+INFO login_attempt outcome=success
+WARN login_attempt outcome=failure
+```
+
+No account/IP identifier, same reasoning as above. Purpose: establish a real-traffic baseline (volume, failure rate) before deciding on a threshold for anomaly detection — see `private/tickets/credential-stuffing-detection.md`, Phase A1. Deliberately scoped to this endpoint only, not to `AuthService.authenticate()`/`reauthenticate()`, which are also reached by `register()`'s auto-login and by password-change reauthentication — neither is a login attempt and counting them would skew the baseline. No counter, no sliding window, no threshold yet: this is pure per-attempt telemetry, aggregated after the fact (there is no log-aggregation/observability layer in the project today). A threshold-based `AUTH_LOGIN_ANOMALY` event is a separate, not-yet-started phase (A2), gated on having observed real traffic and having somewhere to actually consume the signal.
+
 ---
 
 ## What this deliberately does not do

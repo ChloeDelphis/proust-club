@@ -80,7 +80,18 @@ class AuthController {
     UserResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         rateLimiter.checkLoginByIp(httpRequest);
         rateLimiter.checkLoginByAccount(request.email());
-        var authentication = service.authenticate(request.email(), request.password());
+        // Baseline instrumentation for credential-stuffing detection (Phase A1, see
+        // private/tickets/credential-stuffing-detection.md) — scoped to this endpoint only, not to
+        // AuthService.authenticate()/reauthenticate(), which are also used by register()'s
+        // auto-login and by password-change reauthentication (neither is a login attempt).
+        Authentication authentication;
+        try {
+            authentication = service.authenticate(request.email(), request.password());
+        } catch (ApiException e) {
+            log.warn("login_attempt outcome=failure");
+            throw e;
+        }
+        log.info("login_attempt outcome=success");
         sessionPersister.persist(authentication, httpRequest, httpResponse);
         return service.currentUser(currentUser.resolveUuid(authentication));
     }
