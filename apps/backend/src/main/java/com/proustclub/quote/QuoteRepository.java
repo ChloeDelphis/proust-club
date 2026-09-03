@@ -81,6 +81,11 @@ class QuoteRepository {
         var commentField = DSL.field("comment", String.class);
         var createdAtField = DSL.field("created_at", Instant.class);
 
+        // id DESC is a tiebreak for equal created_at (same-transaction inserts share Postgres's
+        // now(), so ties aren't just a theoretical microsecond coincidence). Since the UUID
+        // migration this only guarantees a stable, total order — it no longer approximates
+        // insertion order the way the previous SERIAL id incidentally did. No business rule
+        // specifies the order among ties, so this is intentionally left as-is.
         return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, commentField, createdAtField)
                 .from(DSL.table("quote_selections"))
                 .where(conditions("", userId, tagId))
