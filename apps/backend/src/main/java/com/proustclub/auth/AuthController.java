@@ -78,13 +78,8 @@ class AuthController {
     @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/login", produces = MediaType.APPLICATION_JSON_VALUE)
     UserResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        // Baseline instrumentation for credential-stuffing detection (Phase A1, see
-        // private/tickets/credential-stuffing-detection.md) — scoped to this endpoint only, not to
-        // AuthService.authenticate()/reauthenticate(), which are also used by register()'s
-        // auto-login and by password-change reauthentication (neither is a login attempt). Wraps
-        // the rate-limit checks too, not just authenticate(): a rejection there (or any other
-        // unanticipated RuntimeException, e.g. a transient DB error) is still an attempt and must
-        // still count toward the baseline — one event per attempt, no exception silently unlogged.
+        // Baseline instrumentation for credential-stuffing detection (Phase A1) — see
+        // docs/features/rate-limiting.md "Login attempt baseline" for scope/rationale.
         Authentication authentication;
         try {
             rateLimiter.checkLoginByIp(httpRequest);

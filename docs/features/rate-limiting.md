@@ -85,6 +85,8 @@ WARN login_attempt outcome=failure
 
 No account/IP identifier, same reasoning as above. Purpose: establish a real-traffic baseline (volume, failure rate) before deciding on a threshold for anomaly detection — see `private/tickets/credential-stuffing-detection.md`, Phase A1. Deliberately scoped to this endpoint only, not to `AuthService.authenticate()`/`reauthenticate()`, which are also reached by `register()`'s auto-login and by password-change reauthentication — neither is a login attempt and counting them would skew the baseline. No counter, no sliding window, no threshold yet: this is pure per-attempt telemetry, aggregated after the fact (there is no log-aggregation/observability layer in the project today). A threshold-based `AUTH_LOGIN_ANOMALY` event is a separate, not-yet-started phase (A2), gated on having observed real traffic and having somewhere to actually consume the signal.
 
+A rate-limited login (`rate_limit_exceeded` above) also produces `login_attempt outcome=failure` — two log lines for one rejected request, deliberately: `rate_limit_exceeded` identifies which bucket tripped, `login_attempt` keeps the attempt in the overall baseline. Not a bug if both appear together.
+
 ---
 
 ## What this deliberately does not do
