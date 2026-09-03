@@ -10,6 +10,7 @@ import * as tagApi from '../../../api/tag'
 import { ApiError } from '../../../api/client'
 import ToastProvider from '../../../components/Toast/ToastProvider'
 import type { QuoteSelectionListResponse } from '../../../api/quote'
+import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/auth')
 vi.mock('../../../api/quote')
@@ -40,10 +41,6 @@ const connectedUser: authApi.UserResponse = {
 }
 
 const COMBRAY_TAG_ID = '00000000-0000-4000-8000-000000000101'
-
-function quoteId(n: number): string {
-  return `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
-}
 
 function makeQuote(n: number): QuoteSelectionListResponse['results'][number] {
   return {

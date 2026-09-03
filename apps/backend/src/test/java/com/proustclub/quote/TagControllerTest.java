@@ -17,6 +17,8 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.UUID;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -29,11 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class TagControllerTest {
-
-    // Syntactically valid but never-inserted UUID — used where a path variable must merely
-    // parse (e.g. an unauthenticated request that should 401 before ownership is even checked,
-    // or a lookup that should 404 because nothing has this id).
-    private static final String NONEXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
     @Autowired
     MockMvc mockMvc;
@@ -187,7 +184,7 @@ class TagControllerTest {
     void renameNonExistentTagReturnsNotFound() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
 
-        mockMvc.perform(patch("/api/tags/" + NONEXISTENT_ID).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(patch("/api/tags/" + UUID.randomUUID()).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Combray\"}"))
                 .andExpect(status().isNotFound());
     }
@@ -214,7 +211,7 @@ class TagControllerTest {
 
     @Test
     void renameTagWithoutSessionReturnsUnauthorized() throws Exception {
-        mockMvc.perform(patch("/api/tags/" + NONEXISTENT_ID).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(patch("/api/tags/" + UUID.randomUUID()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Combray\"}"))
                 .andExpect(status().isUnauthorized());
     }
@@ -257,7 +254,7 @@ class TagControllerTest {
     void deleteNonExistentTagReturnsNotFound() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
 
-        mockMvc.perform(delete("/api/tags/" + NONEXISTENT_ID).with(csrf()).session(session))
+        mockMvc.perform(delete("/api/tags/" + UUID.randomUUID()).with(csrf()).session(session))
                 .andExpect(status().isNotFound());
     }
 
@@ -281,7 +278,7 @@ class TagControllerTest {
 
     @Test
     void deleteTagWithoutSessionReturnsUnauthorized() throws Exception {
-        mockMvc.perform(delete("/api/tags/" + NONEXISTENT_ID).with(csrf()))
+        mockMvc.perform(delete("/api/tags/" + UUID.randomUUID()).with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 

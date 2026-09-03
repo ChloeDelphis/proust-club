@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -35,10 +36,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class QuoteControllerTest {
-
-    // Syntactically valid but never-inserted UUID — used where a path variable must merely
-    // parse (e.g. an unauthenticated request that should 401 before ownership is even checked).
-    private static final String NONEXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
     @Autowired
     MockMvc mockMvc;
@@ -359,7 +356,7 @@ class QuoteControllerTest {
 
     @Test
     void deleteQuoteWithoutSessionReturnsUnauthorized() throws Exception {
-        mockMvc.perform(delete("/api/quotes/" + NONEXISTENT_ID).with(csrf()))
+        mockMvc.perform(delete("/api/quotes/" + UUID.randomUUID()).with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -418,7 +415,7 @@ class QuoteControllerTest {
 
     @Test
     void updateQuoteCommentWithoutSessionReturnsUnauthorized() throws Exception {
-        mockMvc.perform(patch("/api/quotes/" + NONEXISTENT_ID).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(patch("/api/quotes/" + UUID.randomUUID()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"x\"}"))
                 .andExpect(status().isUnauthorized());
     }
