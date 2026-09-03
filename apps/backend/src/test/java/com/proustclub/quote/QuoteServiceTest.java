@@ -37,15 +37,16 @@ class QuoteServiceTest {
 
     @Test
     void createSavesQuoteWhenSelectedTextMatchesParagraph() {
+        var quoteId = UUID.randomUUID();
         var request = new CreateQuoteSelectionRequest(1, 3, 12, "madeleine", List.of());
         when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("La madeleine est un symbole fort."));
         when(quoteRepository.insert(userId, 1, 3, 12, "madeleine"))
-                .thenReturn(new QuoteSelection(42, 1, 3, 12, "madeleine", null, Instant.now()));
-        when(quoteRepository.tagsForQuoteIds(List.of(42))).thenReturn(Map.of());
+                .thenReturn(new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now()));
+        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of());
 
         var response = service.create(userId, request);
 
-        assertThat(response.id()).isEqualTo(42);
+        assertThat(response.id()).isEqualTo(quoteId);
         assertThat(response.selectedText()).isEqualTo("madeleine");
         assertThat(response.tags()).isEmpty();
     }
@@ -85,9 +86,11 @@ class QuoteServiceTest {
 
     @Test
     void getTimelineAttachesTagsAndPreservesRepositoryOrder() {
+        var quoteId1 = UUID.randomUUID();
+        var quoteId2 = UUID.randomUUID();
         var entries = List.of(
-                new TimelineEntry(1, 10, 5, 1, "madeleine", null, Instant.now()),
-                new TimelineEntry(2, 20, 150, 2, "Un", null, Instant.now())
+                new TimelineEntry(quoteId1, 10, 5, 1, "madeleine", null, Instant.now()),
+                new TimelineEntry(quoteId2, 20, 150, 2, "Un", null, Instant.now())
         );
         var volumes = List.of(
                 new VolumeRange(1, "Du Côté de Chez Swann", 1, 1, 103),
@@ -95,7 +98,7 @@ class QuoteServiceTest {
         );
         when(quoteRepository.findTimelineByUserId(userId, null)).thenReturn(entries);
         when(quoteRepository.findVolumesWithPageRange()).thenReturn(volumes);
-        when(quoteRepository.tagsForQuoteIds(List.of(1, 2))).thenReturn(Map.of(1, List.of()));
+        when(quoteRepository.tagsForQuoteIds(List.of(quoteId1, quoteId2))).thenReturn(Map.of(quoteId1, List.of()));
 
         var response = service.getTimeline(userId, null);
 
@@ -109,41 +112,46 @@ class QuoteServiceTest {
 
     @Test
     void updateCommentTrimsBeforeStoring() {
-        when(quoteRepository.updateCommentForOwner(userId, 1, "Un souvenir d'enfance."))
-                .thenReturn(Optional.of(new QuoteSelection(1, 10, 0, 5, "madeleine", "Un souvenir d'enfance.", Instant.now())));
-        when(quoteRepository.tagsForQuoteIds(List.of(1))).thenReturn(Map.of());
+        var quoteId = UUID.randomUUID();
+        when(quoteRepository.updateCommentForOwner(userId, quoteId, "Un souvenir d'enfance."))
+                .thenReturn(Optional.of(new QuoteSelection(quoteId, 10, 0, 5, "madeleine", "Un souvenir d'enfance.", Instant.now())));
+        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of());
 
-        var response = service.updateComment(userId, 1, "  Un souvenir d'enfance.  ");
+        var response = service.updateComment(userId, quoteId, "  Un souvenir d'enfance.  ");
 
         assertThat(response.comment()).isEqualTo("Un souvenir d'enfance.");
-        verify(quoteRepository).updateCommentForOwner(userId, 1, "Un souvenir d'enfance.");
+        verify(quoteRepository).updateCommentForOwner(userId, quoteId, "Un souvenir d'enfance.");
     }
 
     @Test
     void updateCommentNormalizesBlankToNull() {
-        when(quoteRepository.updateCommentForOwner(userId, 1, null))
-                .thenReturn(Optional.of(new QuoteSelection(1, 10, 0, 5, "madeleine", null, Instant.now())));
-        when(quoteRepository.tagsForQuoteIds(List.of(1))).thenReturn(Map.of());
+        var quoteId = UUID.randomUUID();
+        when(quoteRepository.updateCommentForOwner(userId, quoteId, null))
+                .thenReturn(Optional.of(new QuoteSelection(quoteId, 10, 0, 5, "madeleine", null, Instant.now())));
+        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of());
 
-        var response = service.updateComment(userId, 1, "   ");
+        var response = service.updateComment(userId, quoteId, "   ");
 
         assertThat(response.comment()).isNull();
-        verify(quoteRepository).updateCommentForOwner(userId, 1, null);
+        verify(quoteRepository).updateCommentForOwner(userId, quoteId, null);
     }
 
     @Test
     void updateCommentThrowsWhenQuoteNotOwned() {
-        when(quoteRepository.updateCommentForOwner(userId, 1, "comment")).thenReturn(Optional.empty());
+        var quoteId = UUID.randomUUID();
+        when(quoteRepository.updateCommentForOwner(userId, quoteId, "comment")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.updateComment(userId, 1, "comment"))
+        assertThatThrownBy(() -> service.updateComment(userId, quoteId, "comment"))
                 .isInstanceOf(ApiException.class);
     }
 
     @Test
     void removeTagThrowsWhenNoAssociationWasRemoved() {
-        when(quoteRepository.removeTagForOwner(userId, 1, 99)).thenReturn(0);
+        var quoteId = UUID.randomUUID();
+        var tagId = UUID.randomUUID();
+        when(quoteRepository.removeTagForOwner(userId, quoteId, tagId)).thenReturn(0);
 
-        assertThatThrownBy(() -> service.removeTag(userId, 1, 99))
+        assertThatThrownBy(() -> service.removeTag(userId, quoteId, tagId))
                 .isInstanceOf(ApiException.class);
     }
 }

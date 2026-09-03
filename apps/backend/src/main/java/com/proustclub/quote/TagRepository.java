@@ -20,7 +20,7 @@ class TagRepository {
     }
 
     List<TagResponse> findByUserId(UUID userId) {
-        var idField = DSL.field("id", Integer.class);
+        var idField = DSL.field("id", UUID.class);
         var nameField = DSL.field("name", String.class);
 
         return dsl.select(idField, nameField)
@@ -30,8 +30,8 @@ class TagRepository {
                 .fetch(r -> new TagResponse(r.get(idField), r.get(nameField)));
     }
 
-    private Optional<Integer> findIdByUserIdAndNormalizedName(UUID userId, String trimmedName) {
-        var idField = DSL.field("id", Integer.class);
+    private Optional<UUID> findIdByUserIdAndNormalizedName(UUID userId, String trimmedName) {
+        var idField = DSL.field("id", UUID.class);
         var nameField = DSL.field("name", String.class);
 
         return dsl.select(idField)
@@ -44,10 +44,10 @@ class TagRepository {
     // Shared primitive for TagService.create() (409 on conflict) and upsertByName() (reuse on
     // conflict) — targets the exact (user_id, LOWER(name)) unique index rather than catching any
     // DuplicateKeyException, which would also mask an unrelated PK collision.
-    Optional<Integer> insertIfAbsent(UUID userId, String trimmedName) {
+    Optional<UUID> insertIfAbsent(UUID userId, String trimmedName) {
         var userIdField = DSL.field("user_id", UUID.class);
         var nameField = DSL.field("name", String.class);
-        var idField = DSL.field("id", Integer.class);
+        var idField = DSL.field("id", UUID.class);
 
         return dsl.insertInto(DSL.table("tags"))
                 .set(userIdField, userId)
@@ -58,7 +58,7 @@ class TagRepository {
                 .fetchOptional(idField);
     }
 
-    int upsertByName(UUID userId, String rawName) {
+    UUID upsertByName(UUID userId, String rawName) {
         String trimmed = rawName.trim();
         return insertIfAbsent(userId, trimmed)
                 .orElseGet(() -> findIdByUserIdAndNormalizedName(userId, trimmed)
@@ -69,12 +69,12 @@ class TagRepository {
     // in the WHERE clause itself rather than caught from a unique constraint violation.
     // `other.id <> tagId` excludes the row being renamed, so re-casing a tag's own name never
     // trips this.
-    RenameOutcome renameForOwner(UUID userId, int tagId, String trimmedName) {
-        var idField = DSL.field("id", Integer.class);
+    RenameOutcome renameForOwner(UUID userId, UUID tagId, String trimmedName) {
+        var idField = DSL.field("id", UUID.class);
         var userIdField = DSL.field("user_id", UUID.class);
         var nameField = DSL.field("name", String.class);
         var otherTags = DSL.table("tags").as("other");
-        var otherIdField = DSL.field("other.id", Integer.class);
+        var otherIdField = DSL.field("other.id", UUID.class);
         var otherUserIdField = DSL.field("other.user_id", UUID.class);
         var otherNameField = DSL.field("other.name", String.class);
 
@@ -101,9 +101,9 @@ class TagRepository {
 
     // The cascade on quote_selection_tags.tag_id (ON DELETE CASCADE, V5) handles detaching this
     // tag from every quote — no application-level cleanup needed here.
-    boolean deleteForOwner(UUID userId, int tagId) {
+    boolean deleteForOwner(UUID userId, UUID tagId) {
         int affected = dsl.deleteFrom(DSL.table("tags"))
-                .where(DSL.field("id", Integer.class).eq(tagId))
+                .where(DSL.field("id", UUID.class).eq(tagId))
                 .and(DSL.field("user_id", UUID.class).eq(userId))
                 .execute();
         return affected > 0;

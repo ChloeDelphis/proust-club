@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -63,8 +64,8 @@ class QuoteController {
     @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping(value = "/api/quotes", produces = MediaType.APPLICATION_JSON_VALUE)
     QuoteSelectionListResponse list(
-        @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty list, not an error.", example = "12")
-        @RequestParam(required = false) @Min(value = 1, message = "tagId must be >= {value}") Integer tagId,
+        @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty list, not an error.", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        @RequestParam(required = false) UUID tagId,
 
         @Parameter(description = "Zero-based page index (default: 0)", example = "0")
         @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= {value}") int page,
@@ -82,8 +83,8 @@ class QuoteController {
     @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping(value = "/api/quotes/timeline", produces = MediaType.APPLICATION_JSON_VALUE)
     TimelineResponse timeline(
-        @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty quotes list, not an error.", example = "12")
-        @RequestParam(required = false) @Min(value = 1, message = "tagId must be >= {value}") Integer tagId,
+        @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty quotes list, not an error.", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        @RequestParam(required = false) UUID tagId,
 
         Authentication authentication
     ) {
@@ -95,7 +96,7 @@ class QuoteController {
     @ApiResponse(responseCode = "404", description = "Quote not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @DeleteMapping("/api/quotes/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(@PathVariable int id, Authentication authentication) {
+    void delete(@PathVariable UUID id, Authentication authentication) {
         service.delete(currentUser.resolveUuid(authentication), id);
     }
 
@@ -104,7 +105,7 @@ class QuoteController {
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "Quote not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PatchMapping(value = "/api/quotes/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    QuoteSelectionResponse updateComment(@PathVariable int id, @Valid @RequestBody UpdateQuoteCommentRequest request, Authentication authentication) {
+    QuoteSelectionResponse updateComment(@PathVariable UUID id, @Valid @RequestBody UpdateQuoteCommentRequest request, Authentication authentication) {
         return service.updateComment(currentUser.resolveUuid(authentication), id, request.comment());
     }
 
@@ -113,7 +114,7 @@ class QuoteController {
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "Quote not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/quotes/{id}/tags", produces = MediaType.APPLICATION_JSON_VALUE)
-    QuoteSelectionResponse addTag(@PathVariable int id, @Valid @RequestBody AddTagRequest request, Authentication authentication) {
+    QuoteSelectionResponse addTag(@PathVariable UUID id, @Valid @RequestBody AddTagRequest request, Authentication authentication) {
         return service.addTag(currentUser.resolveUuid(authentication), id, request.name());
     }
 
@@ -122,7 +123,7 @@ class QuoteController {
     @ApiResponse(responseCode = "404", description = "Quote not found, or tag not attached to this quote", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @DeleteMapping("/api/quotes/{id}/tags/{tagId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void removeTag(@PathVariable int id, @PathVariable int tagId, Authentication authentication) {
+    void removeTag(@PathVariable UUID id, @PathVariable UUID tagId, Authentication authentication) {
         service.removeTag(currentUser.resolveUuid(authentication), id, tagId);
     }
 }
