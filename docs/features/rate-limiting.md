@@ -104,3 +104,4 @@ A rate-limited login (`rate_limit_exceeded` above) also produces `login_attempt 
 - Log in successfully, then keep searching past the search limit from the same IP → still `429` (an authenticated session is not exempt).
 - Make more than the configured number of `password-reset/confirm` attempts from the same IP within the window (regardless of token validity) → `429` with `Retry-After`.
 - Wait past the refill window → requests succeed again without restarting the app.
+- Log in with valid credentials → console shows `login_attempt outcome=success`. Log in with wrong credentials → `login_attempt outcome=failure`. Trip the per-IP or per-account login limit → both `rate_limit_exceeded` and `login_attempt outcome=failure` appear for that request.
