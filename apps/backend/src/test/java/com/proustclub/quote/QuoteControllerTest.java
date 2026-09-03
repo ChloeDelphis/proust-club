@@ -352,6 +352,14 @@ class QuoteControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void deleteQuoteWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(delete("/api/quotes/not-a-uuid").with(csrf()).session(session))
+                .andExpect(status().isBadRequest());
+    }
+
     // --- PATCH /api/quotes/{id} ---
 
     @Test
@@ -412,6 +420,15 @@ class QuoteControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void updateQuoteCommentWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(patch("/api/quotes/not-a-uuid").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"comment\":\"x\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
     // --- POST /api/quotes/{id}/tags ---
 
     @Test
@@ -451,6 +468,15 @@ class QuoteControllerTest {
         mockMvc.perform(post("/api/quotes/" + quoteId + "/tags").with(csrf()).session(bob).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Combray\"}"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addTagToQuoteWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(post("/api/quotes/not-a-uuid/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Combray\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     // --- DELETE /api/quotes/{id}/tags/{tagId} ---
@@ -501,6 +527,14 @@ class QuoteControllerTest {
 
         mockMvc.perform(delete("/api/quotes/" + quoteId + "/tags/" + tagId).with(csrf()).session(bob))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void removeTagFromQuoteWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(delete("/api/quotes/not-a-uuid/tags/" + UUID.randomUUID()).with(csrf()).session(session))
+                .andExpect(status().isBadRequest());
     }
 
     private MockHttpSession registerAndLogin(String username, String email) throws Exception {
