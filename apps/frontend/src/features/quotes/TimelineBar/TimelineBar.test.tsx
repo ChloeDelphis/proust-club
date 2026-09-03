@@ -7,6 +7,7 @@ import * as quoteApi from '../../../api/quote'
 import type { TimelineResponse } from '../../../api/quote'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
+import { quoteId } from './timelineTestFixtures'
 
 vi.mock('../../../api/quote')
 vi.mock('../../../api/tag')
@@ -24,10 +25,6 @@ const volumes: TimelineResponse['volumes'] = [
   { id: 1, title: 'Du Côté de Chez Swann', position: 1, minPage: 1, maxPage: 103 },
   { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183 },
 ]
-
-function quoteId(n: number): string {
-  return `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
-}
 
 function makeQuote(n: number, pageNumber: number, volumeId: number, selectedText = `citation ${n}`): TimelineResponse['quotes'][number] {
   return { id: quoteId(n), paragraphId: n, pageNumber, volumeId, selectedText, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }

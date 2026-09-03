@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { positionTimelineQuotes } from './positionTimelineQuotes'
 import type { TimelineQuote } from '../../../api/quote'
-
-function quoteId(n: number): string {
-  return `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
-}
+import { quoteId } from './timelineTestFixtures'
 
 function quote(n: number, pageNumber: number): TimelineQuote {
   return { id: quoteId(n), paragraphId: n, pageNumber, volumeId: 1, selectedText: `quote ${n}`, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }
