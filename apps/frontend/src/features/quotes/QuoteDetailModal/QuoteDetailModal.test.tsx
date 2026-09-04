@@ -7,6 +7,7 @@ import type { TimelineQuote } from '../../../api/quote'
 import * as quoteApi from '../../../api/quote'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
+import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/quote')
 vi.mock('../../../api/tag')
@@ -20,20 +21,23 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
+const QUOTE_ID = quoteId(1)
+const TAG_ID = '00000000-0000-4000-8000-000000000101'
+
 const quote: TimelineQuote = {
-  id: 1,
+  id: QUOTE_ID,
   paragraphId: 45,
   pageNumber: 9,
   volumeId: 1,
   selectedText: 'Il y avait déjà bien des années',
   comment: null,
-  tags: [{ id: 1, name: 'Combray' }],
+  tags: [{ id: TAG_ID, name: 'Combray' }],
   createdAt: '2026-08-07T11:09:15.787282Z',
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: 1, name: 'Combray' }])
+  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: TAG_ID, name: 'Combray' }])
 })
 
 describe('QuoteDetailModal', () => {
@@ -107,7 +111,7 @@ describe('QuoteDetailModal', () => {
     await user.type(screen.getByRole('textbox', { name: 'Commentaire personnel' }), '  Un souvenir marquant.  ')
     await user.click(screen.getByRole('button', { name: 'Fermer' }))
 
-    expect(quoteApi.updateQuoteComment).toHaveBeenCalledWith(1, { comment: 'Un souvenir marquant.' })
+    expect(quoteApi.updateQuoteComment).toHaveBeenCalledWith(QUOTE_ID, { comment: 'Un souvenir marquant.' })
   })
 
   it('saves a trimmed comment when closing via Escape', async () => {
@@ -118,7 +122,7 @@ describe('QuoteDetailModal', () => {
     await user.type(screen.getByRole('textbox', { name: 'Commentaire personnel' }), 'Un souvenir marquant.')
     await user.keyboard('{Escape}')
 
-    expect(quoteApi.updateQuoteComment).toHaveBeenCalledWith(1, { comment: 'Un souvenir marquant.' })
+    expect(quoteApi.updateQuoteComment).toHaveBeenCalledWith(QUOTE_ID, { comment: 'Un souvenir marquant.' })
   })
 
   it('does not call the API when the comment is unchanged on close', async () => {

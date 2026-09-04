@@ -19,10 +19,10 @@ const PAGE_SIZE = 10
 export default function MyQuotesPage() {
   const { t } = useTranslation()
   const { isPending: isUserPending, isSuccess: isConnected } = useCurrentUser()
-  const [tagId, setTagId] = useState<number | null>(null)
+  const [tagId, setTagId] = useState<string | null>(null)
   const [page, setPage] = useState(0)
 
-  function handleSelectTag(id: number | null) {
+  function handleSelectTag(id: string | null) {
     setTagId(id)
     setPage(0)
   }

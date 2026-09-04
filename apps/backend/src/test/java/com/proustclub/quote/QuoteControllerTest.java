@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -171,10 +172,10 @@ class QuoteControllerTest {
                         .content(createQuoteJson(paragraphId, 0, 2, "La", List.of("autre"))))
                 .andExpect(status().isCreated());
 
-        int tagId = objectMapper.readTree(tagged.getResponse().getContentAsString())
-                .get("tags").get(0).get("id").asInt();
+        String tagId = objectMapper.readTree(tagged.getResponse().getContentAsString())
+                .get("tags").get(0).get("id").asText();
 
-        mockMvc.perform(get("/api/quotes").session(session).param("tagId", String.valueOf(tagId)))
+        mockMvc.perform(get("/api/quotes").session(session).param("tagId", tagId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(1))
                 .andExpect(jsonPath("$.results[0].selectedText").value("madeleine"));
@@ -185,13 +186,9 @@ class QuoteControllerTest {
         var alice = registerAndLogin("alice", "alice@example.com");
         var bob = registerAndLogin("bob", "bob@example.com");
 
-        MvcResult tagResult = mockMvc.perform(post("/api/tags").with(csrf()).session(bob).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"BobTag\"}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-        int bobTagId = objectMapper.readTree(tagResult.getResponse().getContentAsString()).get("id").asInt();
+        String bobTagId = createTagAs(bob, "BobTag");
 
-        mockMvc.perform(get("/api/quotes").session(alice).param("tagId", String.valueOf(bobTagId)))
+        mockMvc.perform(get("/api/quotes").session(alice).param("tagId", bobTagId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0))
                 .andExpect(jsonPath("$.results.length()").value(0));
@@ -230,10 +227,10 @@ class QuoteControllerTest {
     }
 
     @Test
-    void listQuotesTagIdBelowMinimumReturnsBadRequest() throws Exception {
+    void listQuotesMalformedTagIdReturnsBadRequest() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
 
-        mockMvc.perform(get("/api/quotes").session(session).param("tagId", "0"))
+        mockMvc.perform(get("/api/quotes").session(session).param("tagId", "not-a-uuid"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -285,20 +282,37 @@ class QuoteControllerTest {
 
         createQuote(session, paragraphId, 0, 2, "La");
 
-        int tagId = objectMapper.readTree(tagged.getResponse().getContentAsString())
-                .get("tags").get(0).get("id").asInt();
+        String tagId = objectMapper.readTree(tagged.getResponse().getContentAsString())
+                .get("tags").get(0).get("id").asText();
 
-        mockMvc.perform(get("/api/quotes/timeline").session(session).param("tagId", String.valueOf(tagId)))
+        mockMvc.perform(get("/api/quotes/timeline").session(session).param("tagId", tagId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quotes.length()").value(1))
                 .andExpect(jsonPath("$.quotes[0].selectedText").value("madeleine"));
     }
 
+    // Mirrors listQuotesWithForeignTagIdReturnsEmptyNotNotFound — same documented semantics
+    // ("tagId that doesn't exist or belongs to another user yields an empty list, not an error")
+    // apply to timeline(), but only list() had a test for the cross-user case before this one.
     @Test
-    void timelineTagIdBelowMinimumReturnsBadRequest() throws Exception {
+    void timelineWithForeignTagIdReturnsEmptyNotNotFound() throws Exception {
+        var alice = registerAndLogin("alice", "alice@example.com");
+        var bob = registerAndLogin("bob", "bob@example.com");
+
+        String bobTagId = createTagAs(bob, "BobTag");
+
+        createQuote(alice, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(get("/api/quotes/timeline").session(alice).param("tagId", bobTagId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quotes.length()").value(0));
+    }
+
+    @Test
+    void timelineMalformedTagIdReturnsBadRequest() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
 
-        mockMvc.perform(get("/api/quotes/timeline").session(session).param("tagId", "0"))
+        mockMvc.perform(get("/api/quotes/timeline").session(session).param("tagId", "not-a-uuid"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -313,7 +327,7 @@ class QuoteControllerTest {
     @Test
     void deleteQuoteSucceeds() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
-        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(delete("/api/quotes/" + quoteId).with(csrf()).session(session))
                 .andExpect(status().isNoContent());
@@ -326,7 +340,7 @@ class QuoteControllerTest {
     void deleteQuoteOfAnotherUserReturnsNotFound() throws Exception {
         var alice = registerAndLogin("alice", "alice@example.com");
         var bob = registerAndLogin("bob", "bob@example.com");
-        int quoteId = createQuote(alice, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(alice, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(delete("/api/quotes/" + quoteId).with(csrf()).session(bob))
                 .andExpect(status().isNotFound());
@@ -334,8 +348,16 @@ class QuoteControllerTest {
 
     @Test
     void deleteQuoteWithoutSessionReturnsUnauthorized() throws Exception {
-        mockMvc.perform(delete("/api/quotes/1").with(csrf()))
+        mockMvc.perform(delete("/api/quotes/" + UUID.randomUUID()).with(csrf()))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deleteQuoteWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(delete("/api/quotes/not-a-uuid").with(csrf()).session(session))
+                .andExpect(status().isBadRequest());
     }
 
     // --- PATCH /api/quotes/{id} ---
@@ -343,7 +365,7 @@ class QuoteControllerTest {
     @Test
     void updateQuoteCommentTrimsAndSucceeds() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
-        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"  Un souvenir d'enfance.  \"}"))
@@ -357,7 +379,7 @@ class QuoteControllerTest {
     @Test
     void updateQuoteCommentWithBlankClearsIt() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
-        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"Un premier commentaire.\"}"))
@@ -372,7 +394,7 @@ class QuoteControllerTest {
     @Test
     void updateQuoteCommentTooLongReturnsBadRequest() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
-        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
         String tooLong = "a".repeat(2001);
 
         mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
@@ -384,7 +406,7 @@ class QuoteControllerTest {
     void updateQuoteCommentOfAnotherUserReturnsNotFound() throws Exception {
         var alice = registerAndLogin("alice", "alice@example.com");
         var bob = registerAndLogin("bob", "bob@example.com");
-        int quoteId = createQuote(alice, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(alice, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(patch("/api/quotes/" + quoteId).with(csrf()).session(bob).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"Pas le mien.\"}"))
@@ -393,9 +415,18 @@ class QuoteControllerTest {
 
     @Test
     void updateQuoteCommentWithoutSessionReturnsUnauthorized() throws Exception {
-        mockMvc.perform(patch("/api/quotes/1").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(patch("/api/quotes/" + UUID.randomUUID()).with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"comment\":\"x\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void updateQuoteCommentWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(patch("/api/quotes/not-a-uuid").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"comment\":\"x\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     // --- POST /api/quotes/{id}/tags ---
@@ -403,7 +434,7 @@ class QuoteControllerTest {
     @Test
     void addTagToQuoteUpsertsByName() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
-        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(post("/api/quotes/" + quoteId + "/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Combray\"}"))
@@ -421,7 +452,7 @@ class QuoteControllerTest {
     @Test
     void addTagToQuoteWithBlankNameReturnsBadRequest() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
-        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(post("/api/quotes/" + quoteId + "/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"  \"}"))
@@ -432,11 +463,20 @@ class QuoteControllerTest {
     void addTagToQuoteOfAnotherUserReturnsNotFound() throws Exception {
         var alice = registerAndLogin("alice", "alice@example.com");
         var bob = registerAndLogin("bob", "bob@example.com");
-        int quoteId = createQuote(alice, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(alice, paragraphId, 3, 12, "madeleine");
 
         mockMvc.perform(post("/api/quotes/" + quoteId + "/tags").with(csrf()).session(bob).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Combray\"}"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addTagToQuoteWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(post("/api/quotes/not-a-uuid/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Combray\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     // --- DELETE /api/quotes/{id}/tags/{tagId} ---
@@ -450,8 +490,8 @@ class QuoteControllerTest {
                 .andReturn();
 
         var body = objectMapper.readTree(result.getResponse().getContentAsString());
-        int quoteId = body.get("id").asInt();
-        int tagId = body.get("tags").get(0).get("id").asInt();
+        String quoteId = body.get("id").asText();
+        String tagId = body.get("tags").get(0).get("id").asText();
 
         mockMvc.perform(delete("/api/quotes/" + quoteId + "/tags/" + tagId).with(csrf()).session(session))
                 .andExpect(status().isNoContent());
@@ -463,13 +503,9 @@ class QuoteControllerTest {
     @Test
     void removeTagNotAssociatedWithQuoteReturnsNotFound() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
-        int quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
+        String quoteId = createQuote(session, paragraphId, 3, 12, "madeleine");
 
-        MvcResult tagResult = mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"UnrelatedTag\"}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-        int unrelatedTagId = objectMapper.readTree(tagResult.getResponse().getContentAsString()).get("id").asInt();
+        String unrelatedTagId = createTagAs(session, "UnrelatedTag");
 
         mockMvc.perform(delete("/api/quotes/" + quoteId + "/tags/" + unrelatedTagId).with(csrf()).session(session))
                 .andExpect(status().isNotFound());
@@ -486,11 +522,19 @@ class QuoteControllerTest {
                 .andReturn();
 
         var body = objectMapper.readTree(result.getResponse().getContentAsString());
-        int quoteId = body.get("id").asInt();
-        int tagId = body.get("tags").get(0).get("id").asInt();
+        String quoteId = body.get("id").asText();
+        String tagId = body.get("tags").get(0).get("id").asText();
 
         mockMvc.perform(delete("/api/quotes/" + quoteId + "/tags/" + tagId).with(csrf()).session(bob))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void removeTagFromQuoteWithMalformedIdReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(delete("/api/quotes/not-a-uuid/tags/" + UUID.randomUUID()).with(csrf()).session(session))
+                .andExpect(status().isBadRequest());
     }
 
     private MockHttpSession registerAndLogin(String username, String email) throws Exception {
@@ -501,12 +545,20 @@ class QuoteControllerTest {
         return (MockHttpSession) result.getRequest().getSession(false);
     }
 
-    private int createQuote(MockHttpSession session, int paragraphId, int startOffset, int endOffset, String selectedText) throws Exception {
+    private String createTagAs(MockHttpSession session, String name) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + name + "\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private String createQuote(MockHttpSession session, int paragraphId, int startOffset, int endOffset, String selectedText) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
                         .content(createQuoteJson(paragraphId, startOffset, endOffset, selectedText, List.of())))
                 .andExpect(status().isCreated())
                 .andReturn();
-        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asInt();
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
     private String createQuoteJson(int paragraphId, int startOffset, int endOffset, String selectedText, List<String> tagNames) throws Exception {

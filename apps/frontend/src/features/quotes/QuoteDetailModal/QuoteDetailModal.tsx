@@ -22,7 +22,7 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
   // renderedQuoteId is reset to null on close (not just changed on a new id) so that reopening
   // the SAME quote also re-syncs the draft from the current `quote.comment` — otherwise the
   // leftover local draft from before closing would stick around instead of the saved value.
-  const [renderedQuoteId, setRenderedQuoteId] = useState<number | null>(null)
+  const [renderedQuoteId, setRenderedQuoteId] = useState<string | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
   if (quote && quote.id !== renderedQuoteId) {
     setRenderedQuoteId(quote.id)
@@ -32,7 +32,7 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
   }
 
   const updateCommentMutation = useMutation({
-    mutationFn: ({ quoteId, comment }: { quoteId: number; comment: string }) => updateQuoteComment(quoteId, { comment }),
+    mutationFn: ({ quoteId, comment }: { quoteId: string; comment: string }) => updateQuoteComment(quoteId, { comment }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },

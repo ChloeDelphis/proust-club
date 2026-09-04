@@ -1,9 +1,10 @@
 package com.proustclub.quote;
 
 import java.time.Instant;
+import java.util.UUID;
 
 record QuoteSelection(
-        int id,
+        UUID id,
         int paragraphId,
         int startOffset,
         int endOffset,

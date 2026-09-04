@@ -19,7 +19,7 @@ class TagService {
     @Transactional
     TagResponse create(UUID userId, String name) {
         String trimmed = name.trim();
-        int id = repository.insertIfAbsent(userId, trimmed)
+        UUID id = repository.insertIfAbsent(userId, trimmed)
                 .orElseThrow(ApiException::tagAlreadyExists);
         return new TagResponse(id, trimmed);
     }
@@ -30,7 +30,7 @@ class TagService {
     }
 
     @Transactional
-    TagResponse rename(UUID userId, int tagId, String name) {
+    TagResponse rename(UUID userId, UUID tagId, String name) {
         String trimmed = name.trim();
         RenameOutcome outcome = repository.renameForOwner(userId, tagId, trimmed);
         if (outcome == RenameOutcome.NOT_FOUND) {
@@ -43,7 +43,7 @@ class TagService {
     }
 
     @Transactional
-    void delete(UUID userId, int tagId) {
+    void delete(UUID userId, UUID tagId) {
         if (!repository.deleteForOwner(userId, tagId)) {
             throw ApiException.tagNotFound();
         }

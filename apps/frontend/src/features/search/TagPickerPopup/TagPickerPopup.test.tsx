@@ -13,8 +13,8 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const existingTags: tagApi.TagResponse[] = [
-  { id: 1, name: 'Combray' },
-  { id: 2, name: 'Jalousie' },
+  { id: '00000000-0000-4000-8000-000000000101', name: 'Combray' },
+  { id: '00000000-0000-4000-8000-000000000102', name: 'Jalousie' },
 ]
 
 beforeEach(() => {

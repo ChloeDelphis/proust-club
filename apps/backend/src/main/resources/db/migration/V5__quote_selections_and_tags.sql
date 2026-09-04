@@ -1,7 +1,7 @@
 -- Personal quote selections and tags
 
 CREATE TABLE tags (
-    id         SERIAL       PRIMARY KEY,
+    id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id    UUID         NOT NULL REFERENCES users(uuid),
     name       VARCHAR(50)  NOT NULL,
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -15,7 +15,7 @@ CREATE TABLE tags (
 CREATE UNIQUE INDEX tags_user_id_lower_name_idx ON tags(user_id, LOWER(name));
 
 CREATE TABLE quote_selections (
-    id            SERIAL       PRIMARY KEY,
+    id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id       UUID         NOT NULL REFERENCES users(uuid),
     paragraph_id  INTEGER      NOT NULL REFERENCES paragraphs(id),
     start_offset  INTEGER      NOT NULL,
@@ -30,8 +30,8 @@ CREATE INDEX quote_selections_user_id_idx      ON quote_selections(user_id);
 CREATE INDEX quote_selections_paragraph_id_idx ON quote_selections(paragraph_id);
 
 CREATE TABLE quote_selection_tags (
-    quote_selection_id INTEGER NOT NULL REFERENCES quote_selections(id) ON DELETE CASCADE,
-    tag_id             INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    quote_selection_id UUID NOT NULL REFERENCES quote_selections(id) ON DELETE CASCADE,
+    tag_id             UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
 
     PRIMARY KEY (quote_selection_id, tag_id)
 );

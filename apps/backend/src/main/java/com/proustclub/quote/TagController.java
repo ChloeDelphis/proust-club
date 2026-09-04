@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -60,7 +61,7 @@ class TagController {
     @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "409", description = "Another tag with this name already exists for this user", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PatchMapping(value = "/api/tags/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    TagResponse rename(@PathVariable int id, @Valid @RequestBody RenameTagRequest request, Authentication authentication) {
+    TagResponse rename(@PathVariable UUID id, @Valid @RequestBody RenameTagRequest request, Authentication authentication) {
         return service.rename(currentUser.resolveUuid(authentication), id, request.name());
     }
 
@@ -69,7 +70,7 @@ class TagController {
     @ApiResponse(responseCode = "404", description = "Tag not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @DeleteMapping("/api/tags/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(@PathVariable int id, Authentication authentication) {
+    void delete(@PathVariable UUID id, Authentication authentication) {
         service.delete(currentUser.resolveUuid(authentication), id);
     }
 }

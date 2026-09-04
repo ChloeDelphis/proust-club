@@ -4,11 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Schema(description = "A saved quote positioned on the personal timeline")
 public record TimelineQuote(
-        @Schema(description = "Quote selection identifier", example = "7")
-        int id,
+        @Schema(description = "Quote selection identifier", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        UUID id,
 
         @Schema(description = "Paragraph the selection belongs to", example = "42")
         int paragraphId,

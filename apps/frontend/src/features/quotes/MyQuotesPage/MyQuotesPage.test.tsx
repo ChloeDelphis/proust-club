@@ -10,6 +10,7 @@ import * as tagApi from '../../../api/tag'
 import { ApiError } from '../../../api/client'
 import ToastProvider from '../../../components/Toast/ToastProvider'
 import type { QuoteSelectionListResponse } from '../../../api/quote'
+import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/auth')
 vi.mock('../../../api/quote')
@@ -39,13 +40,15 @@ const connectedUser: authApi.UserResponse = {
   emailVerified: true,
 }
 
-function makeQuote(id: number): QuoteSelectionListResponse['results'][number] {
+const COMBRAY_TAG_ID = '00000000-0000-4000-8000-000000000101'
+
+function makeQuote(n: number): QuoteSelectionListResponse['results'][number] {
   return {
-    id,
+    id: quoteId(n),
     paragraphId: 42,
     startOffset: 0,
     endOffset: 11,
-    selectedText: `citation ${id}`,
+    selectedText: `citation ${n}`,
     comment: null,
     tags: [],
     createdAt: '2026-08-05T00:00:00Z',
@@ -54,7 +57,7 @@ function makeQuote(id: number): QuoteSelectionListResponse['results'][number] {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: 1, name: 'Combray' }])
+  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: COMBRAY_TAG_ID, name: 'Combray' }])
   // TimelineBar renders nothing when there are no volumes — a safe default that doesn't
   // interfere with the assertions below, which are about the list/pagination underneath it.
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes: [], quotes: [] })
@@ -122,6 +125,6 @@ describe('connected', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Combray' }))
 
-    expect(quoteApi.listQuotes).toHaveBeenLastCalledWith({ tagId: 1, page: 0, size: 10 }, expect.anything())
+    expect(quoteApi.listQuotes).toHaveBeenLastCalledWith({ tagId: COMBRAY_TAG_ID, page: 0, size: 10 }, expect.anything())
   })
 })

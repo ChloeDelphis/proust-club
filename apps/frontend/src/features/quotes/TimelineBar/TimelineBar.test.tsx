@@ -7,6 +7,7 @@ import * as quoteApi from '../../../api/quote'
 import type { TimelineResponse } from '../../../api/quote'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
+import { quoteId } from './timelineTestFixtures'
 
 vi.mock('../../../api/quote')
 vi.mock('../../../api/tag')
@@ -25,8 +26,8 @@ const volumes: TimelineResponse['volumes'] = [
   { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183 },
 ]
 
-function makeQuote(id: number, pageNumber: number, volumeId: number, selectedText = `citation ${id}`): TimelineResponse['quotes'][number] {
-  return { id, paragraphId: id, pageNumber, volumeId, selectedText, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }
+function makeQuote(n: number, pageNumber: number, volumeId: number, selectedText = `citation ${n}`): TimelineResponse['quotes'][number] {
+  return { id: quoteId(n), paragraphId: n, pageNumber, volumeId, selectedText, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }
 }
 
 beforeEach(() => {
@@ -152,10 +153,11 @@ it('hovering a bookmark shows a preview, leaving hides it', async () => {
 
 it('refetches with the active tag filter', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
+  const tagId = '00000000-0000-4000-8000-000000000101'
 
-  render(<TimelineBar activeTagId={7} />, { wrapper })
+  render(<TimelineBar activeTagId={tagId} />, { wrapper })
 
   await waitFor(() => {
-    expect(quoteApi.getQuoteTimeline).toHaveBeenCalledWith({ tagId: 7 }, expect.anything())
+    expect(quoteApi.getQuoteTimeline).toHaveBeenCalledWith({ tagId }, expect.anything())
   })
 })

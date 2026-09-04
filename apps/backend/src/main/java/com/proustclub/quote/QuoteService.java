@@ -40,7 +40,7 @@ class QuoteService {
 
         var tagNames = request.tagNames() == null ? List.<String>of() : request.tagNames();
         for (String tagName : tagNames) {
-            int tagId = tagRepository.upsertByName(userId, tagName);
+            UUID tagId = tagRepository.upsertByName(userId, tagName);
             quoteRepository.addTagForOwner(userId, quote.id(), tagId);
         }
 
@@ -50,7 +50,7 @@ class QuoteService {
     }
 
     @Transactional(readOnly = true)
-    QuoteSelectionListResponse list(UUID userId, Integer tagId, int page, int size) {
+    QuoteSelectionListResponse list(UUID userId, UUID tagId, int page, int size) {
         var quotes = quoteRepository.findByUserId(userId, tagId, page, size);
         long total = quoteRepository.countByUserId(userId, tagId);
 
@@ -65,7 +65,7 @@ class QuoteService {
     }
 
     @Transactional(readOnly = true)
-    TimelineResponse getTimeline(UUID userId, Integer tagId) {
+    TimelineResponse getTimeline(UUID userId, UUID tagId) {
         var entries = quoteRepository.findTimelineByUserId(userId, tagId);
         var volumes = quoteRepository.findVolumesWithPageRange();
 
@@ -87,7 +87,7 @@ class QuoteService {
     }
 
     @Transactional
-    QuoteSelectionResponse updateComment(UUID userId, int quoteId, String rawComment) {
+    QuoteSelectionResponse updateComment(UUID userId, UUID quoteId, String rawComment) {
         String comment = normalizeComment(rawComment);
         var quote = quoteRepository.updateCommentForOwner(userId, quoteId, comment)
                 .orElseThrow(ApiException::quoteNotFound);
@@ -96,30 +96,30 @@ class QuoteService {
     }
 
     @Transactional
-    void delete(UUID userId, int quoteId) {
+    void delete(UUID userId, UUID quoteId) {
         if (!quoteRepository.deleteByIdAndUserId(quoteId, userId)) {
             throw ApiException.quoteNotFound();
         }
     }
 
     @Transactional
-    QuoteSelectionResponse addTag(UUID userId, int quoteId, String tagName) {
+    QuoteSelectionResponse addTag(UUID userId, UUID quoteId, String tagName) {
         var quote = quoteRepository.findByIdAndUserId(quoteId, userId).orElseThrow(ApiException::quoteNotFound);
 
-        int tagId = tagRepository.upsertByName(userId, tagName);
+        UUID tagId = tagRepository.upsertByName(userId, tagName);
         quoteRepository.addTagForOwner(userId, quoteId, tagId);
 
         return toResponse(quote, tagsFor(quoteId));
     }
 
     @Transactional
-    void removeTag(UUID userId, int quoteId, int tagId) {
+    void removeTag(UUID userId, UUID quoteId, UUID tagId) {
         if (quoteRepository.removeTagForOwner(userId, quoteId, tagId) == 0) {
             throw ApiException.tagNotFound();
         }
     }
 
-    private List<TagResponse> tagsFor(int quoteId) {
+    private List<TagResponse> tagsFor(UUID quoteId) {
         return quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
     }
 

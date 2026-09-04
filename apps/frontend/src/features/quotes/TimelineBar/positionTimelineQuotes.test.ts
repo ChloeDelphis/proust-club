@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { positionTimelineQuotes } from './positionTimelineQuotes'
 import type { TimelineQuote } from '../../../api/quote'
+import { quoteId } from './timelineTestFixtures'
 
-function quote(id: number, pageNumber: number): TimelineQuote {
-  return { id, paragraphId: id, pageNumber, volumeId: 1, selectedText: `quote ${id}`, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }
+function quote(n: number, pageNumber: number): TimelineQuote {
+  return { id: quoteId(n), paragraphId: n, pageNumber, volumeId: 1, selectedText: `quote ${n}`, comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' }
 }
 
 describe('positionTimelineQuotes', () => {
@@ -24,7 +25,7 @@ describe('positionTimelineQuotes', () => {
 
   it('sorts quotes by page regardless of input order', () => {
     const groups = positionTimelineQuotes([quote(2, 300), quote(1, 50)], { minPage: 1, maxPage: 486 })
-    expect(groups.map((g) => g.quotes[0].id)).toEqual([1, 2])
+    expect(groups.map((g) => g.quotes[0].id)).toEqual([quoteId(1), quoteId(2)])
   })
 
   it('keeps every quote in its own group (no merging in v1)', () => {
