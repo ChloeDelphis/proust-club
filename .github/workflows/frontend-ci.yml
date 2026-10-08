@@ -54,4 +54,13 @@ jobs:
           bash "${{ github.workspace }}/.github/scripts/coverage-summary.sh" \
             "Frontend code coverage" "$THRESHOLD" "$COVERED" "$TOTAL" >> "$GITHUB_STEP_SUMMARY"
       - run: pnpm build
-      - run: pnpm audit:security
+
+  # Deliberately not a required status check — see ADR-008's 2026-10-08 addendum for why.
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/pnpm-audit-setup
+      - run: pnpm audit --audit-level high
+        working-directory: apps/frontend
