@@ -37,7 +37,17 @@ jobs:
       - name: Run pnpm audit (blocking, High/Critical)
         id: audit
         continue-on-error: true
-        run: pnpm audit --audit-level high | tee audit-report.txt
+        # A plain redirection, not `| tee` — piping into tee makes the step's exit code tee's
+        # (always 0), silently masking a real pnpm audit failure as "success" and skipping the
+        # guard step below. Found the hard way: the 2026-10-05 run already had 6 High-severity
+        # findings and still reported "success" because of this.
+        run: pnpm audit --audit-level high > audit-report.txt
+
+      # Separate from the step above on purpose: printing the report to the log must never be
+      # able to influence this step's own exit code the way `| tee` just did.
+      - name: Print the report to the log
+        if: always()
+        run: cat audit-report.txt
 
       # Informational only — never fails the job. Low/Moderate advisories don't
       # block anything (see docs/architecture/dependency-security-strategy.md),
