@@ -9,7 +9,7 @@ import FilterButton from '../../../components/FilterButton/FilterButton'
 import QuoteHoverPreview from '../QuoteHoverPreview/QuoteHoverPreview'
 import QuoteDetailModal from '../QuoteDetailModal/QuoteDetailModal'
 import { pageToPercent, positionTimelineQuotes } from './positionTimelineQuotes'
-import type { TimelineGroup } from './positionTimelineQuotes'
+import type { PageRange, TimelineGroup } from './positionTimelineQuotes'
 import type { TimelineBarProps } from './TimelineBar.types'
 import styles from './TimelineBar.module.css'
 
@@ -38,14 +38,23 @@ function activateOnEnterOrSpace(onActivate: () => void) {
   }
 }
 
-type PageRange = { minPage: number; maxPage: number }
-
 // The three SVG layers below are independent visual tracks sharing the same viewBox coordinate
 // space — kept as local, unexported pieces of TimelineBar rather than promoted components, since
 // none of them has a second consumer (see CLAUDE.md "Composants et hooks partagés").
 
-function VolumeZones({ volumes, range, onSelect }: { volumes: TimelineVolume[]; range: PageRange; onSelect: (id: number) => void }) {
-  const { t } = useTranslation()
+type TranslateFn = ReturnType<typeof useTranslation>['t']
+
+function VolumeZones({
+  volumes,
+  range,
+  onSelect,
+  t,
+}: {
+  volumes: TimelineVolume[]
+  range: PageRange
+  onSelect: (id: number) => void
+  t: TranslateFn
+}) {
   return (
     <>
       {volumes.map(volume => {
@@ -86,12 +95,13 @@ function Bookmarks({
   groups,
   onOpen,
   onHoverChange,
+  t,
 }: {
   groups: TimelineGroup[]
   onOpen: (id: string) => void
   onHoverChange: (id: string | null) => void
+  t: TranslateFn
 }) {
-  const { t } = useTranslation()
   return (
     <>
       {groups.map(group => {
@@ -185,9 +195,9 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
         role="img"
         aria-label={t('timelineBar.trackAriaLabel')}
       >
-        {!selectedVolume && <VolumeZones volumes={data.volumes} range={range} onSelect={setSelectedVolumeId} />}
+        {!selectedVolume && <VolumeZones volumes={data.volumes} range={range} onSelect={setSelectedVolumeId} t={t} />}
         {!selectedVolume && <VolumeDelimiters volumes={data.volumes} range={range} />}
-        <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} />
+        <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} t={t} />
 
         {hoveredGroup && (
           <foreignObject

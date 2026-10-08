@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -47,8 +48,12 @@ public class ParagraphParser {
         int currentPage = 0;
         boolean reachedContent = false;
 
-        for (String rawLine : lines.toList()) {
-            String line = rawLine.stripTrailing();
+        // A plain Iterator, not lines.toList(), so the corpus file is still streamed one line at a
+        // time from Files.lines()'s underlying BufferedReader rather than fully materialized in
+        // memory before the first line is even processed.
+        Iterator<String> it = lines.iterator();
+        while (it.hasNext()) {
+            String line = it.next().stripTrailing();
 
             var sectionMatch = SECTION_MARKER.matcher(line);
             if (sectionMatch.matches()) {
