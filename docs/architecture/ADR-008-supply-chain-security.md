@@ -101,3 +101,19 @@ The OSV `MAL-*` check (`pnpm check:supply-chain`, see `docs/features/supply-chai
 ## Date (this addendum)
 
 2026-09-02
+
+## Addendum (2026-10-08) — `pnpm audit:security` no longer blocks a PR unrelated to dependencies; the weekly scan's "blocking" check was a silent no-op
+
+**Incident:** PR #14 (a pure readability refactor, no dependency touched) was blocked by the `frontend` required status check, which ran `pnpm audit:security` against the *current* dependency tree — 7 High-severity advisories on transitive dev dependencies (`brace-expansion`, `source-map-js`), unrelated to the PR's diff. Investigating why the weekly scan (`frontend-security-audit.yml`) had never surfaced this surfaced a second, independent bug: its blocking step ran `pnpm audit --audit-level high | tee audit-report.txt` — without `pipefail` in effect, the step's exit code is `tee`'s own (always 0), not `pnpm audit`'s. The 2026-10-05 run already had 6 High-severity findings and still reported "success": the guard step that should have failed the job was skipped, and the summary wrote "✅ No High/Critical vulnerabilities found" — a false green. This had presumably been true for every run since the workflow was written; nothing was ever caught by it.
+
+**Decision — PR-blocking:** moved `pnpm audit --audit-level high` out of the required `frontend` job in `frontend-ci.yml`, into a new `dependency-audit` job in the same file, deliberately **not** added to branch protection's required status checks. It still runs on every PR/push (visibility per PR, not just weekly) and is still allowed to genuinely fail — being non-required, not a `continue-on-error`, is what keeps a real finding from blocking an unrelated merge. A `continue-on-error: true` approach was considered and rejected: it would have worked, but makes "never blocks" depend on a flag that's easy to remove by accident later, whereas a job absent from the required-checks list structurally cannot block regardless of its own outcome.
+
+**Decision — weekly scan:** the blocking step now redirects with a plain `>` instead of `| tee`, so its exit code is `pnpm audit`'s own. A separate, exit-code-independent step (`cat audit-report.txt`) restores the previous convenience of seeing the report directly in the step log, without reintroducing a way for that convenience to mask the result again.
+
+**Why not fix it by adding `set -o pipefail` and keeping `tee`:** considered, since it would have kept both the inline log output and the file write in one step. Rejected in favor of dropping the pipe entirely: GitHub Actions' documented default shell behavior for `run:` steps is widely cited as already including `pipefail`, yet this exact step's `outcome` was empirically `"success"` on a run that had real High-severity findings — meaning that assumption was wrong for this workflow, in a way that cost real signal for an unknown number of weeks before being noticed. A plain redirection needs no shell-option assumption to be correct.
+
+**What this does not fix:** the actual High-severity findings on the current tree (`undici`, `brace-expansion`, `source-map-js`) are a separate concern — this addendum is about the detection/alerting mechanism being trustworthy, not about resolving what it (correctly, this time) found. A release-time hard gate (reusing `pnpm audit:security` as originally planned) remains unbuilt, since no release/deploy pipeline exists yet in this repo.
+
+## Date (this addendum)
+
+2026-10-08
