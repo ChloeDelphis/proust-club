@@ -9,6 +9,7 @@ import FilterButton from '../../../components/FilterButton/FilterButton'
 import QuoteHoverPreview from '../QuoteHoverPreview/QuoteHoverPreview'
 import QuoteDetailModal from '../QuoteDetailModal/QuoteDetailModal'
 import { pageToPercent, positionTimelineQuotes } from './positionTimelineQuotes'
+import type { TimelineGroup } from './positionTimelineQuotes'
 import type { TimelineBarProps } from './TimelineBar.types'
 import styles from './TimelineBar.module.css'
 
@@ -35,6 +36,90 @@ function activateOnEnterOrSpace(onActivate: () => void) {
       onActivate()
     }
   }
+}
+
+type PageRange = { minPage: number; maxPage: number }
+
+// The three SVG layers below are independent visual tracks sharing the same viewBox coordinate
+// space — kept as local, unexported pieces of TimelineBar rather than promoted components, since
+// none of them has a second consumer (see CLAUDE.md "Composants et hooks partagés").
+
+function VolumeZones({ volumes, range, onSelect }: { volumes: TimelineVolume[]; range: PageRange; onSelect: (id: number) => void }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      {volumes.map(volume => {
+        const x1 = percentToX(pageToPercent(volume.minPage, range))
+        const x2 = percentToX(pageToPercent(volume.maxPage, range))
+        return (
+          <rect
+            key={volume.id}
+            x={x1}
+            y={TRACK_TOP}
+            width={Math.max(0, x2 - x1)}
+            height={TRACK_BOTTOM - TRACK_TOP}
+            className={styles.volumeZone}
+            role="button"
+            tabIndex={0}
+            aria-label={t('timelineBar.zoomOnVolume', { title: volume.title })}
+            onClick={() => onSelect(volume.id)}
+            onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
+          />
+        )
+      })}
+    </>
+  )
+}
+
+function VolumeDelimiters({ volumes, range }: { volumes: TimelineVolume[]; range: PageRange }) {
+  return (
+    <>
+      {volumes.slice(1).map(volume => {
+        const x = percentToX(pageToPercent(volume.minPage, range))
+        return <line key={volume.id} x1={x} x2={x} y1={TRACK_TOP} y2={TRACK_BOTTOM} className={styles.delimiter} />
+      })}
+    </>
+  )
+}
+
+function Bookmarks({
+  groups,
+  onOpen,
+  onHoverChange,
+}: {
+  groups: TimelineGroup[]
+  onOpen: (id: string) => void
+  onHoverChange: (id: string | null) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      {groups.map(group => {
+        const quote = group.quotes[0]
+        const x = percentToX(group.offsetPercent)
+        const height = group.isExtended ? BOOKMARK_HEIGHT_EXTENDED : BOOKMARK_HEIGHT_NORMAL
+        return (
+          <rect
+            key={quote.id}
+            x={x - BOOKMARK_WIDTH / 2}
+            y={TRACK_BOTTOM - height}
+            width={BOOKMARK_WIDTH}
+            height={height}
+            className={styles.bookmark}
+            role="button"
+            tabIndex={0}
+            aria-label={t('timelineBar.bookmarkAriaLabel', { page: quote.pageNumber })}
+            onClick={() => onOpen(quote.id)}
+            onKeyDown={activateOnEnterOrSpace(() => onOpen(quote.id))}
+            onMouseEnter={() => onHoverChange(quote.id)}
+            onMouseLeave={() => onHoverChange(null)}
+            onFocus={() => onHoverChange(quote.id)}
+            onBlur={() => onHoverChange(null)}
+          />
+        )
+      })}
+    </>
+  )
 }
 
 export default function TimelineBar({ activeTagId }: TimelineBarProps) {
@@ -100,55 +185,9 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
         role="img"
         aria-label={t('timelineBar.trackAriaLabel')}
       >
-        {!selectedVolume && data.volumes.map(volume => {
-          const x1 = percentToX(pageToPercent(volume.minPage, range))
-          const x2 = percentToX(pageToPercent(volume.maxPage, range))
-          return (
-            <rect
-              key={volume.id}
-              x={x1}
-              y={TRACK_TOP}
-              width={Math.max(0, x2 - x1)}
-              height={TRACK_BOTTOM - TRACK_TOP}
-              className={styles.volumeZone}
-              role="button"
-              tabIndex={0}
-              aria-label={t('timelineBar.zoomOnVolume', { title: volume.title })}
-              onClick={() => setSelectedVolumeId(volume.id)}
-              onKeyDown={activateOnEnterOrSpace(() => setSelectedVolumeId(volume.id))}
-            />
-          )
-        })}
-
-        {!selectedVolume && data.volumes.slice(1).map(volume => {
-          const x = percentToX(pageToPercent(volume.minPage, range))
-          return <line key={volume.id} x1={x} x2={x} y1={TRACK_TOP} y2={TRACK_BOTTOM} className={styles.delimiter} />
-        })}
-
-        {groups.map(group => {
-          const quote = group.quotes[0]
-          const x = percentToX(group.offsetPercent)
-          const height = group.isExtended ? BOOKMARK_HEIGHT_EXTENDED : BOOKMARK_HEIGHT_NORMAL
-          return (
-            <rect
-              key={quote.id}
-              x={x - BOOKMARK_WIDTH / 2}
-              y={TRACK_BOTTOM - height}
-              width={BOOKMARK_WIDTH}
-              height={height}
-              className={styles.bookmark}
-              role="button"
-              tabIndex={0}
-              aria-label={t('timelineBar.bookmarkAriaLabel', { page: quote.pageNumber })}
-              onClick={() => setOpenQuoteId(quote.id)}
-              onKeyDown={activateOnEnterOrSpace(() => setOpenQuoteId(quote.id))}
-              onMouseEnter={() => setHoveredQuoteId(quote.id)}
-              onMouseLeave={() => setHoveredQuoteId(null)}
-              onFocus={() => setHoveredQuoteId(quote.id)}
-              onBlur={() => setHoveredQuoteId(null)}
-            />
-          )
-        })}
+        {!selectedVolume && <VolumeZones volumes={data.volumes} range={range} onSelect={setSelectedVolumeId} />}
+        {!selectedVolume && <VolumeDelimiters volumes={data.volumes} range={range} />}
+        <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} />
 
         {hoveredGroup && (
           <foreignObject
