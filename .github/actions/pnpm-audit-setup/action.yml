@@ -1,0 +1,19 @@
+name: Set up pnpm for a lockfile-only audit
+description: >
+  pnpm/setup with install:false — shared by every job that only runs `pnpm audit` against the
+  lockfile and never needs a real install. Calls the raw `pnpm audit` command, not the
+  `audit:security` package.json script: `pnpm run <script>` materializes node_modules first if
+  it's missing, even with install:false, defeating the point of skipping installation here.
+  Does not check out the repo itself — a local composite action can't be resolved before the
+  calling job's own `actions/checkout` has already run, so that step stays in each caller.
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/setup@ce3b1e5f04cd26dbb4614172464b544b5633cc92 # v2.1.0
+      with:
+        version: "11.19.0"
+        runtime: node@24
+        working-directory: apps/frontend
+        require-lockfile: true
+        install: false

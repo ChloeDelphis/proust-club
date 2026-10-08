@@ -55,28 +55,12 @@ jobs:
             "Frontend code coverage" "$THRESHOLD" "$COVERED" "$TOTAL" >> "$GITHUB_STEP_SUMMARY"
       - run: pnpm build
 
-  # Not a required status check (see branch protection settings) — a High/Critical advisory on
-  # the existing dependency tree isn't caused by this PR's diff, so it must never be able to
-  # block an unrelated change. Still runs on every PR/push for visibility (not just the weekly
-  # scan), and is still allowed to actually fail/show red — being non-required is what keeps it
-  # from blocking, not a continue-on-error that would hide a real finding as green.
+  # Deliberately not a required status check — see ADR-008's 2026-10-08 addendum for why.
   dependency-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: apps/frontend
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/setup@ce3b1e5f04cd26dbb4614172464b544b5633cc92 # v2.1.0
-        with:
-          version: "11.19.0"
-          runtime: node@24
-          working-directory: apps/frontend
-          require-lockfile: true
-          install: false
-      # Calls the raw command, not the `audit:security` package.json script: `pnpm run <script>`
-      # materializes node_modules first if it's missing, even with install: false above — the
-      # same trap already documented for the weekly workflow (frontend-security-audit.yml). Keep
-      # this threshold in sync with that script and with the weekly workflow if it ever changes.
+      - uses: ./.github/actions/pnpm-audit-setup
       - run: pnpm audit --audit-level high
+        working-directory: apps/frontend
