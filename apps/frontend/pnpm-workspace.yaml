@@ -13,3 +13,8 @@ verifyDepsBeforeRun: error
 overrides:
   js-yaml: 4.3.2
   nanoid: 3.3.18
+  undici: 8.11.2
+  source-map-js: 1.2.2
+  "minimatch@3>brace-expansion": 1.1.21
+  "minimatch@5>brace-expansion": 2.1.7
+  "minimatch@9>brace-expansion": 2.1.7
