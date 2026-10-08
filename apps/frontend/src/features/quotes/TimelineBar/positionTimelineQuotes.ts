@@ -1,5 +1,7 @@
 import type { TimelineQuote } from '../../../api/quote'
 
+export type PageRange = { minPage: number; maxPage: number }
+
 // A group always holds exactly one quote today — every consumer of this shape (TimelineBar,
 // QuoteHoverPreview, QuoteDetailModal) still reads `quotes[0]` and stays single-quote-only.
 // The array is a deliberately cheap hook for later, not a finished contract: a future
@@ -17,7 +19,7 @@ const DEFAULT_OVERLAP_THRESHOLD_PERCENT = 1.5
 
 // Shared by bookmark positioning and volume delimiter placement — both are "where does this
 // page fall between minPage and maxPage" in the end.
-export function pageToPercent(page: number, pageRange: { minPage: number; maxPage: number }): number {
+export function pageToPercent(page: number, pageRange: PageRange): number {
   const span = pageRange.maxPage - pageRange.minPage || 1
   return Math.min(100, Math.max(0, ((page - pageRange.minPage) / span) * 100))
 }
@@ -27,7 +29,7 @@ export function pageToPercent(page: number, pageRange: { minPage: number; maxPag
 // this function never needs to know the container's actual pixel width.
 export function positionTimelineQuotes(
   quotes: TimelineQuote[],
-  pageRange: { minPage: number; maxPage: number },
+  pageRange: PageRange,
   overlapThresholdPercent = DEFAULT_OVERLAP_THRESHOLD_PERCENT,
 ): TimelineGroup[] {
   const sorted = [...quotes].sort((a, b) => a.pageNumber - b.pageNumber)
