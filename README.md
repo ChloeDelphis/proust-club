@@ -14,19 +14,16 @@ Explore the original French text, rediscover passages in context, and build your
 
 ## Features
 
-### Current
+### Available
 
-- Search passages by text
-- Read passages in context
-- Highlight matching fragments
-- Create an account and sign in (email confirmation, password reset)
-- Save personal quotes with an optional comment and tags
-- Browse, filter and manage your saved quotes
-- Personal reading timeline (bookmarks positioned by volume and page)
+- **Find passages** — Search the original French text of _In Search of Lost Time_, with matching fragments highlighted and passages displayed in context.
+- **Build your collection** — Save your favorite quotes, add personal comments and tags, and browse, filter and manage your collection.
+- **Track your reading** — Keep bookmarks organized by volume and page.
+- **Manage your account** — Sign up, confirm your email address, sign in and reset your password.
 
 ### Planned
 
-- Community features (sharing, discovery)
+- **Community features** — Share and discover passages with other readers.
 
 ---
 
