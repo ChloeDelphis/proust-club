@@ -24,3 +24,8 @@
   border-color: #6b3fa0;
   box-shadow: 0 0 0 2px rgba(107, 63, 160, 0.15);
 }
+
+.hint {
+  font-size: 0.8125rem;
+  color: #6b655f;
+}

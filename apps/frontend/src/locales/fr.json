@@ -68,7 +68,8 @@
   },
   "passwordValidation": {
     "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — une phrase de passe fonctionne très bien.",
-    "defaultLabel": "Le mot de passe"
+    "defaultLabel": "Le mot de passe",
+    "minLengthHint": "{{min}} caractères minimum — une phrase de passe fonctionne très bien."
   },
   "loginForm": {
     "missingFieldsError": "Renseignez votre adresse email et votre mot de passe.",

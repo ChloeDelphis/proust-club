@@ -33,6 +33,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
         onChange={e => setNewPassword(e.target.value)}
         autoComplete="new-password"
         maxLength={newPasswordConstraints.maxLength}
+        hint={t('passwordValidation.minLengthHint', { min: newPasswordConstraints.minLength })}
       />
       <button className={styles.button} type="submit">
         {t('resetPasswordForm.submitButton')}
