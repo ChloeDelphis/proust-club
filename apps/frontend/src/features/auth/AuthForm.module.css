@@ -9,8 +9,8 @@
   padding: 0.625rem 1.25rem;
   font-size: 1rem;
   font-family: inherit;
-  background: #6b3fa0;
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -18,11 +18,11 @@
 }
 
 .button:hover {
-  background: #5a3490;
+  background: var(--color-accent-hover);
 }
 
 .error {
   margin: 0;
   font-size: 0.875rem;
-  color: #b91c1c;
+  color: var(--color-danger-text);
 }

@@ -1,8 +1,8 @@
 .root {
   width: 2rem;
   height: 2rem;
-  border: 2px solid #e0ddd8;
-  border-top-color: #6b3fa0;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   margin: 3rem auto;

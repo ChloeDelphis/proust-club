@@ -1,5 +1,5 @@
 .root {
-  border: 1px solid #e0ddd8;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 1rem 1.25rem;
 }
@@ -29,13 +29,13 @@
   font-size: 0.75rem;
   padding: 0.125rem 0.5rem;
   border-radius: 999px;
-  background: #f0eeea;
-  color: #4a453f;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-subtle);
 }
 
 .date {
   font-size: 0.75rem;
-  color: #6b6660;
+  color: var(--color-text-muted);
   margin-left: auto;
 }
 
@@ -44,15 +44,15 @@
   font-size: 0.8125rem;
   font-family: inherit;
   background: none;
-  border: 1px solid #c0bbb5;
+  border: 1px solid var(--color-border-strong);
   border-radius: 4px;
-  color: #1a1a1a;
+  color: var(--color-text);
   cursor: pointer;
 }
 
 .deleteButton:hover:not(:disabled) {
-  border-color: #b3423f;
-  color: #b3423f;
+  border-color: var(--color-danger-accent);
+  color: var(--color-danger-accent);
 }
 
 .deleteButton:disabled {

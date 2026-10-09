@@ -1,0 +1,48 @@
+/*
+ * Design tokens — single source of truth for visual values consumed by
+ * .module.css files. Components must reference the semantic tokens below,
+ * never the raw palette and never a literal value for anything covered here.
+ */
+
+:root {
+  /* Raw palette — not consumed directly by components, only by the semantic
+     tokens below. Keeps renaming/retheming (e.g. a future dark mode) from
+     requiring a search-and-replace across every component. */
+  --palette-purple: #6b3fa0;
+  --palette-purple-dark: #5a3490;
+  --palette-ink: #1a1a1a;
+  --palette-warm-grey: #6b6660;
+  --palette-warm-grey-dark: #4a453f;
+  --palette-white: #fff;
+  --palette-border-subtle: #e0ddd8;
+  --palette-border-strong: #c0bbb5;
+  --palette-surface-subtle: #f2ede8;
+  --palette-highlight: #fff3cd;
+  --palette-danger: #b91c1c;
+  --palette-danger-bg: #fef2f2;
+  --palette-danger-border: #fecaca;
+  --palette-danger-accent: #b3423f;
+
+  /* Semantic tokens */
+  --color-text: var(--palette-ink);
+  --color-text-muted: var(--palette-warm-grey);
+  --color-text-subtle: var(--palette-warm-grey-dark);
+  --color-text-on-accent: var(--palette-white);
+
+  --color-surface: var(--palette-white);
+  --color-surface-subtle: var(--palette-surface-subtle);
+  --color-surface-inverse: var(--palette-ink);
+
+  --color-border: var(--palette-border-subtle);
+  --color-border-strong: var(--palette-border-strong);
+
+  --color-accent: var(--palette-purple);
+  --color-accent-hover: var(--palette-purple-dark);
+
+  --color-highlight-bg: var(--palette-highlight);
+
+  --color-danger-text: var(--palette-danger);
+  --color-danger-bg: var(--palette-danger-bg);
+  --color-danger-border: var(--palette-danger-border);
+  --color-danger-accent: var(--palette-danger-accent);
+}
