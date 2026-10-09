@@ -7,9 +7,9 @@
   border-radius: var(--radius-full);
   color: var(--color-text);
   cursor: pointer;
-  transition: color var(--motion-duration-fast) var(--motion-ease-standard),
-    border-color var(--motion-duration-fast) var(--motion-ease-standard),
-    background var(--motion-duration-fast) var(--motion-ease-standard);
+  transition-property: color, border-color, background;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
 }
 
 .root:hover {

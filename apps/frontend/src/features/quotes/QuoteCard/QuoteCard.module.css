@@ -48,8 +48,9 @@
   border-radius: var(--radius-md);
   color: var(--color-text);
   cursor: pointer;
-  transition: color var(--motion-duration-fast) var(--motion-ease-standard),
-    border-color var(--motion-duration-fast) var(--motion-ease-standard);
+  transition-property: color, border-color;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
 }
 
 .deleteButton:hover:not(:disabled) {

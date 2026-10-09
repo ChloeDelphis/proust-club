@@ -17,8 +17,9 @@
   background: var(--color-surface);
   color: var(--color-text);
   outline: none;
-  transition: border-color var(--motion-duration-fast) var(--motion-ease-standard),
-    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+  transition-property: border-color, box-shadow;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
 }
 
 .input:focus {

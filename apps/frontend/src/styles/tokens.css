@@ -70,13 +70,10 @@
   --line-height-loose: 1.75;
 
   /* Typography — letter spacing */
-  --font-tracking-normal: normal;
   --font-tracking-wide: 0.02em;
 
   /* Typography — weights */
   --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
 
   /* Spacing scale — numbered in quarter-rem units (space-1 = 0.25rem) so a
      future in-between step never forces a naming collision the way t-shirt
@@ -113,11 +110,24 @@
      custom properties can't derive an alpha variant from a hex token. */
   --shadow-focus-ring: 0 0 0 2px rgba(107, 63, 160, 0.15);
 
-  /* Motion. "fast" covers hover/focus feedback and small appearance
-     transitions; "slow" is reserved for larger surfaces (modals). */
+  /* Motion. "fast" covers hover/focus feedback and all current appearance
+     transitions, modals included — nothing in this diff needs a slower
+     tier, so one wasn't added speculatively. */
   --motion-duration-fast: 0.15s;
-  --motion-duration-slow: 0.3s;
   --motion-duration-spin: 0.7s;
   --motion-ease-standard: ease;
   --motion-ease-out: ease-out;
+}
+
+/* Shared entrance keyframes for backdrop+popup overlays (QuoteDetailModal,
+   TagPickerPopup) — defined once here rather than duplicated per modal. */
+@keyframes backdrop-in {
+  from { opacity: 0; }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
 }
