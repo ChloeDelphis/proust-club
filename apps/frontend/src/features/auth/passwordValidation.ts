@@ -7,3 +7,9 @@ export function passwordLengthError(password: string, label: string, constraints
   if (password.length >= constraints.minLength) return null
   return i18n.t('passwordValidation.tooShortError', { label, min: constraints.minLength })
 }
+
+// Same bound as passwordLengthError, shown proactively instead of after a failed submission —
+// centralized for the same reason: each operation's own DTO constraint, not a shared constant.
+export function passwordLengthHint(constraints: { minLength: number }): string {
+  return i18n.t('passwordValidation.minLengthHint', { min: constraints.minLength })
+}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegisterFormProps } from './RegisterForm.types'
 import FormField from '../FormField/FormField'
-import { passwordLengthError } from '../passwordValidation'
+import { passwordLengthError, passwordLengthHint } from '../passwordValidation'
 import { emailFormatError } from '../emailValidation'
 import { passwordMatchesIdentifierError } from '../passwordIdentifierValidation'
 import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
@@ -71,7 +71,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         onChange={e => setPassword(e.target.value)}
         autoComplete="new-password"
         maxLength={passwordConstraints.maxLength}
-        hint={t('passwordValidation.minLengthHint', { min: passwordConstraints.minLength })}
+        hint={passwordLengthHint(passwordConstraints)}
       />
       <button className={styles.button} type="submit">
         {t('registerForm.submitButton')}
