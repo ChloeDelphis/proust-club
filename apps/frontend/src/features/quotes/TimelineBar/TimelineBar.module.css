@@ -1,12 +1,12 @@
 .root {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .volumeFilters {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-3);
 }
 
 .track {
@@ -18,24 +18,26 @@
 .volumeZone {
   fill: transparent;
   cursor: pointer;
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .volumeZone:hover,
 .volumeZone:focus-visible {
-  fill: #f2ede8;
+  fill: var(--color-surface-subtle);
 }
 
 .delimiter {
-  stroke: #c0bbb5;
+  stroke: var(--color-border-strong);
   stroke-width: 1.5;
 }
 
 .bookmark {
-  fill: #6b3fa0;
+  fill: var(--color-accent);
   cursor: pointer;
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .bookmark:hover,
 .bookmark:focus-visible {
-  fill: #4a2b70;
+  fill: var(--color-accent-hover);
 }

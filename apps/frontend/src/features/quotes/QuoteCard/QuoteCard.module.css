@@ -1,18 +1,18 @@
 .root {
-  border: 1px solid #e0ddd8;
-  border-radius: 6px;
-  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
 }
 
 .text {
-  margin: 0 0 0.75rem;
+  margin: 0 0 var(--space-3);
   font-style: italic;
 }
 
 .footer {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -21,38 +21,41 @@
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .tag {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 999px;
-  background: #f0eeea;
-  color: #4a453f;
+  font-size: var(--text-2xs);
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-subtle);
 }
 
 .date {
-  font-size: 0.75rem;
-  color: #6b6660;
+  font-size: var(--text-2xs);
+  color: var(--color-text-muted);
   margin-left: auto;
 }
 
 .deleteButton {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8125rem;
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-xs);
   font-family: inherit;
   background: none;
-  border: 1px solid #c0bbb5;
-  border-radius: 4px;
-  color: #1a1a1a;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
   cursor: pointer;
+  transition-property: color, border-color;
+  transition-duration: var(--motion-duration-fast);
+  transition-timing-function: var(--motion-ease-standard);
 }
 
 .deleteButton:hover:not(:disabled) {
-  border-color: #b3423f;
-  color: #b3423f;
+  border-color: var(--color-danger-accent);
+  color: var(--color-danger-accent);
 }
 
 .deleteButton:disabled {

@@ -4,39 +4,40 @@
   justify-content: space-between;
   max-width: 56rem;
   margin: 0 auto;
-  padding: 1rem 1.5rem 0;
-  font-family: system-ui, sans-serif;
+  padding: var(--space-4) var(--space-6) 0;
+  font-family: var(--font-sans);
 }
 
 .brand {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.1rem;
-  color: #1a1a1a;
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  color: var(--color-text);
   text-decoration: none;
 }
 
 .nav {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .session {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-  color: #1a1a1a;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text);
 }
 
 .logoutButton {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.85rem;
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-xs);
   font-family: inherit;
   background: transparent;
-  color: #6b3fa0;
-  border: 1px solid #6b3fa0;
-  border-radius: 4px;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: background var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .logoutButton:hover {
