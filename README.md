@@ -6,31 +6,42 @@ Have you ever wished you could collect your favorite passages from Marcel Proust
 
 **Proust Club** lets you find and save the passages you love, add your own notes and tags, and return to them whenever you like.
 
-Explore the original French text, rediscover passages in context, and build your own personal collection of quotes.
-
 🚧 Work in progress.
 
 ---
 
 ## Features
 
-### Current
+### Available
 
-- Search passages by text
-- Read passages in context
-- Highlight matching fragments
-- Create an account and sign in (email confirmation, password reset)
-- Save personal quotes with an optional comment and tags
-- Browse, filter and manage your saved quotes
-- Personal reading timeline (bookmarks positioned by volume and page)
+- **Find passages** — Search the original French text of _In Search of Lost Time_, with matching fragments highlighted and passages displayed in context.
+- **Build your collection** — Save your favorite quotes, add personal comments and tags, and browse, filter and manage your collection.
+- **Track your reading** — Keep bookmarks organized by volume and page.
+- **Manage your account** — Sign up, confirm your email address, sign in and reset your password.
 
 ### Planned
 
-- Community features (sharing, discovery)
+- **Community features** — Share and discover passages with other readers.
+
+---
+
+## Tech Stack
+
+- **Backend** — Java, Spring Boot, jOOQ, Flyway, PostgreSQL
+- **Frontend** — React, TypeScript, Vite
+- **Dev environment** — Docker Compose (PostgreSQL, Mailhog)
 
 ---
 
 ## Getting Started
+
+### Prerequisites
+
+- Java 21 (the Gradle Wrapper is included, no separate Gradle install needed)
+- Node.js 24 and pnpm 11
+- Docker (for PostgreSQL and Mailhog)
+
+Run the commands below from the repository root. Use separate terminals for the backend and frontend.
 
 **1. Start PostgreSQL and Mailhog**
 
@@ -38,21 +49,15 @@ Explore the original French text, rediscover passages in context, and build your
 docker compose up -d
 ```
 
-**2. Import the corpus** _(first time only)_
+**2. Start the backend**
 
 ```bash
 cd apps/backend
-./gradlew importProust
-```
-
-**3. Start the backend**
-
-```bash
-cd apps/backend
+./gradlew importProust  # first time only, to import the corpus
 ./gradlew bootRun
 ```
 
-**4. Start the frontend**
+**3. Start the frontend**
 
 ```bash
 cd apps/frontend
