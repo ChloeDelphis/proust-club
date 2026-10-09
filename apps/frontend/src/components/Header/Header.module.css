@@ -37,6 +37,7 @@
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
   cursor: pointer;
+  transition: background var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .logoutButton:hover {

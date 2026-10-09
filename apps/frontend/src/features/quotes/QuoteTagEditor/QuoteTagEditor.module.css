@@ -59,6 +59,7 @@
   background: none;
   cursor: pointer;
   font-size: var(--text-sm);
+  transition: background var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .suggestions button:hover {

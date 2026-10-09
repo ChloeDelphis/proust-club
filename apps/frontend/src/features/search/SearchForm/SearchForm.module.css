@@ -17,6 +17,8 @@
   background: var(--color-surface);
   color: var(--color-text);
   outline: none;
+  transition: border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .input:focus {
@@ -33,6 +35,7 @@
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
+  transition: background var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .button:hover {

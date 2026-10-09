@@ -18,6 +18,7 @@
 .volumeZone {
   fill: transparent;
   cursor: pointer;
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .volumeZone:hover,
@@ -33,6 +34,7 @@
 .bookmark {
   fill: var(--color-accent);
   cursor: pointer;
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .bookmark:hover,

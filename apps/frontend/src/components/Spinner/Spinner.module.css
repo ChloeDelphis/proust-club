@@ -4,7 +4,7 @@
   border: 2px solid var(--color-border);
   border-top-color: var(--color-accent);
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: spin var(--motion-duration-spin) linear infinite;
   margin: var(--space-12) auto;
 }
 

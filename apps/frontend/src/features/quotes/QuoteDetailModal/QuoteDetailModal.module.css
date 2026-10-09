@@ -2,6 +2,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
+  animation: backdrop-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
 .popup {
@@ -9,6 +10,7 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  scale: 1;
   width: 28rem;
   max-width: calc(100vw - var(--space-12));
   max-height: calc(100vh - var(--space-12));
@@ -17,6 +19,18 @@
   background: var(--color-surface);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
+  animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
 }
 
 .closeButton {
@@ -30,6 +44,7 @@
   border: none;
   color: var(--color-text-muted);
   cursor: pointer;
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .closeButton:hover {

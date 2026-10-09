@@ -112,4 +112,12 @@
   /* Mirrors --color-accent at ~15% opacity — kept literal since plain CSS
      custom properties can't derive an alpha variant from a hex token. */
   --shadow-focus-ring: 0 0 0 2px rgba(107, 63, 160, 0.15);
+
+  /* Motion. "fast" covers hover/focus feedback and small appearance
+     transitions; "slow" is reserved for larger surfaces (modals). */
+  --motion-duration-fast: 0.15s;
+  --motion-duration-slow: 0.3s;
+  --motion-duration-spin: 0.7s;
+  --motion-ease-standard: ease;
+  --motion-ease-out: ease-out;
 }

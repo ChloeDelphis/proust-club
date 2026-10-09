@@ -1,5 +1,5 @@
 .root {
-  transition: opacity 0.15s ease;
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .isFetching {
