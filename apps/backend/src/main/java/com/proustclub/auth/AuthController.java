@@ -101,7 +101,7 @@ class AuthController {
     void logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // getDisplayUsername(), never getName() — the latter is the email under this project's
-        // model (see ADR-013), and CLAUDE.md forbids logging emails unnecessarily.
+        // model (see ADR-013), and this project's logging policy forbids logging emails unnecessarily.
         log.info("User logged out: {}", currentUser.resolvePrincipal(authentication).getDisplayUsername());
         logoutHandlers.forEach(handler -> handler.logout(httpRequest, httpResponse, authentication));
     }
