@@ -1,10 +1,12 @@
 # Proust Club
 
-> _"Longtemps, je me suis couché de bonne heure."_
+> _« Longtemps, je me suis couché de bonne heure. »_
 
-**Proust Club** is a full-stack application for searching, rediscovering and organizing passages from Marcel Proust's _In Search of Lost Time_.
+Have you ever wished you could collect your favorite passages from Marcel Proust's _In Search of Lost Time_, without writing in the margins or filling your books with dog-eared pages?
 
-The project combines literary exploration with modern software engineering, providing contextual search, personal annotations and tools for revisiting the work over time.
+**Proust Club** lets you find and save the passages you love, add your own notes and tags, and return to them whenever you like.
+
+Explore the original French text, rediscover passages in context, and build your own personal collection of quotes.
 
 🚧 Work in progress.
 
