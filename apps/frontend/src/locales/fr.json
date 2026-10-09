@@ -67,9 +67,10 @@
     "matchesIdentifierError": "Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email."
   },
   "passwordValidation": {
-    "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — une phrase de passe fonctionne très bien.",
+    "passphraseSuggestion": "une phrase de passe fonctionne très bien.",
+    "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — $t(passwordValidation.passphraseSuggestion)",
     "defaultLabel": "Le mot de passe",
-    "minLengthHint": "{{min}} caractères minimum — une phrase de passe fonctionne très bien."
+    "minLengthHint": "{{min}} caractères minimum — $t(passwordValidation.passphraseSuggestion)"
   },
   "loginForm": {
     "missingFieldsError": "Renseignez votre adresse email et votre mot de passe.",
