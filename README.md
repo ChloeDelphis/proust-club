@@ -37,9 +37,11 @@ Have you ever wished you could collect your favorite passages from Marcel Proust
 
 ### Prerequisites
 
-- Java 21
+- Java 21 (the Gradle Wrapper is included, no separate Gradle install needed)
 - Node.js 24 and pnpm 11
 - Docker (for PostgreSQL and Mailhog)
+
+Run each step from the repository root, using a separate terminal for the backend and frontend.
 
 **1. Start PostgreSQL and Mailhog**
 
