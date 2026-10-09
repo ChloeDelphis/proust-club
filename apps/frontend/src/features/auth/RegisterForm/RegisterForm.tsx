@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RegisterFormProps } from './RegisterForm.types'
 import FormField from '../FormField/FormField'
-import { passwordLengthError } from '../passwordValidation'
+import { passwordLengthError, passwordLengthHint } from '../passwordValidation'
 import { emailFormatError } from '../emailValidation'
 import { passwordMatchesIdentifierError } from '../passwordIdentifierValidation'
 import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
@@ -10,6 +10,10 @@ import styles from '../AuthForm.module.css'
 
 const { username: usernameConstraints, email: emailConstraints, password: passwordConstraints } =
   validationConstraints.RegisterRequest
+// Computed once at module scope, not per render: the constraint is a module-level constant, and
+// i18n.init() already completes synchronously before any module's top-level code runs (see
+// src/i18n/index.ts) — safe to call t() here instead of re-resolving it on every keystroke.
+const passwordHint = passwordLengthHint(passwordConstraints)
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
   const { t } = useTranslation()
@@ -71,6 +75,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         onChange={e => setPassword(e.target.value)}
         autoComplete="new-password"
         maxLength={passwordConstraints.maxLength}
+        hint={passwordHint}
       />
       <button className={styles.button} type="submit">
         {t('registerForm.submitButton')}

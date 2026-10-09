@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ChangePasswordFormProps } from './ChangePasswordForm.types'
 import FormField from '../FormField/FormField'
-import { passwordLengthError } from '../passwordValidation'
+import { passwordLengthError, passwordLengthHint } from '../passwordValidation'
 import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from '../AuthForm.module.css'
 
 const { newPassword: newPasswordConstraints } = validationConstraints.PasswordChangeRequest
+// Computed once at module scope — see RegisterForm.tsx for why this is safe at module load.
+const passwordHint = passwordLengthHint(newPasswordConstraints)
 
 export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps) {
   const { t } = useTranslation()
@@ -50,6 +52,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
         onChange={e => setNewPassword(e.target.value)}
         autoComplete="new-password"
         maxLength={newPasswordConstraints.maxLength}
+        hint={passwordHint}
       />
       <button className={styles.button} type="submit">
         {t('changePasswordForm.submitButton')}
