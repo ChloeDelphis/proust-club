@@ -101,9 +101,13 @@
   --radius-xl: 8px;
   --radius-full: 999px;
 
-  /* Elevation (box-shadow). Three near-identical "large overlay" shadows
-     (8px/30px, 8px/24px, 4px/16px, all at 0.25 alpha) were consolidated into
-     one --shadow-lg: the differences weren't a deliberate hierarchy. */
+  /* Elevation (box-shadow). The two near-identical "large overlay" shadows
+     (8px/30px and 8px/24px, same offset, blur within 25% of each other, same
+     alpha) were consolidated into one --shadow-lg — full-screen modal/popup
+     overlays only. A third, previously-distinct shadow (4px/16px/0.25, on a
+     small floating action button) has a different offset, not just a
+     rounding difference, so it maps to --shadow-sm (same 4px offset) rather
+     than --shadow-lg, despite the slightly lower blur/alpha. */
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.25);
   /* Mirrors --color-accent at ~15% opacity — kept literal since plain CSS

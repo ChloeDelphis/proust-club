@@ -31,5 +31,5 @@
   color: var(--color-text-on-accent);
   font-size: var(--text-md);
   cursor: pointer;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-sm);
 }
