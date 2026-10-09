@@ -7,6 +7,8 @@ import { validationConstraints } from '../../../api/generated/validationConstrai
 import styles from '../AuthForm.module.css'
 
 const { newPassword: newPasswordConstraints } = validationConstraints.PasswordResetConfirmRequest
+// Computed once at module scope — see RegisterForm.tsx for why this is safe at module load.
+const passwordHint = passwordLengthHint(newPasswordConstraints)
 
 export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) {
   const { t } = useTranslation()
@@ -33,7 +35,7 @@ export default function ResetPasswordForm({ onSubmit }: ResetPasswordFormProps) 
         onChange={e => setNewPassword(e.target.value)}
         autoComplete="new-password"
         maxLength={newPasswordConstraints.maxLength}
-        hint={passwordLengthHint(newPasswordConstraints)}
+        hint={passwordHint}
       />
       <button className={styles.button} type="submit">
         {t('resetPasswordForm.submitButton')}

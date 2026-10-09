@@ -10,6 +10,10 @@ import styles from '../AuthForm.module.css'
 
 const { username: usernameConstraints, email: emailConstraints, password: passwordConstraints } =
   validationConstraints.RegisterRequest
+// Computed once at module scope, not per render: the constraint is a module-level constant, and
+// i18n.init() already completes synchronously before any module's top-level code runs (see
+// src/i18n/index.ts) — safe to call t() here instead of re-resolving it on every keystroke.
+const passwordHint = passwordLengthHint(passwordConstraints)
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
   const { t } = useTranslation()
@@ -71,7 +75,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         onChange={e => setPassword(e.target.value)}
         autoComplete="new-password"
         maxLength={passwordConstraints.maxLength}
-        hint={passwordLengthHint(passwordConstraints)}
+        hint={passwordHint}
       />
       <button className={styles.button} type="submit">
         {t('registerForm.submitButton')}

@@ -7,6 +7,8 @@ import { validationConstraints } from '../../../api/generated/validationConstrai
 import styles from '../AuthForm.module.css'
 
 const { newPassword: newPasswordConstraints } = validationConstraints.PasswordChangeRequest
+// Computed once at module scope — see RegisterForm.tsx for why this is safe at module load.
+const passwordHint = passwordLengthHint(newPasswordConstraints)
 
 export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps) {
   const { t } = useTranslation()
@@ -50,7 +52,7 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
         onChange={e => setNewPassword(e.target.value)}
         autoComplete="new-password"
         maxLength={newPasswordConstraints.maxLength}
-        hint={passwordLengthHint(newPasswordConstraints)}
+        hint={passwordHint}
       />
       <button className={styles.button} type="submit">
         {t('changePasswordForm.submitButton')}
