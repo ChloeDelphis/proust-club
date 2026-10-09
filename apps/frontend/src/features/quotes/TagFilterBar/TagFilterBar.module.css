@@ -23,7 +23,7 @@
 
 .iconButton {
   padding: 0.125rem 0.375rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-family: inherit;
   background: none;
   border: none;
@@ -37,7 +37,7 @@
 
 .editInput {
   padding: 0.3125rem 0.625rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   font-family: inherit;
   border: 1px solid var(--color-accent);
   border-radius: 999px;

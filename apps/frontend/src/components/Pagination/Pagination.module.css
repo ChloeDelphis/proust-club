@@ -10,7 +10,7 @@
 
 .pageButton {
   padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-family: inherit;
   background: none;
   border: 1px solid var(--color-border-strong);
@@ -30,7 +30,7 @@
 }
 
 .pageInfo {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
   min-width: 5rem;
   text-align: center;

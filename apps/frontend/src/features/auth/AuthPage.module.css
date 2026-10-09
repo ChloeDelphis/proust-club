@@ -2,19 +2,19 @@
   max-width: 28rem;
   margin: 0 auto;
   padding: 2rem 1.5rem;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-serif);
 }
 
 .title {
-  font-size: 1.75rem;
-  font-weight: 400;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-regular);
   color: var(--color-text);
   margin: 0 0 1.5rem;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--font-tracking-wide);
 }
 
 .switch {
   margin-top: 1rem;
-  font-size: 0.9rem;
-  font-family: system-ui, sans-serif;
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
 }

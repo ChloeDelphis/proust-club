@@ -7,6 +7,6 @@
 }
 
 body {
-  font-family: system-ui, sans-serif;
-  line-height: 1.5;
+  font-family: var(--font-sans);
+  line-height: var(--line-height-normal);
 }

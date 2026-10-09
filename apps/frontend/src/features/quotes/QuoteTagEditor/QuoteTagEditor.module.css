@@ -18,7 +18,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.375rem 0.25rem 0.625rem;
-  font-size: 0.75rem;
+  font-size: var(--text-2xs);
   background: var(--color-surface-subtle);
   border-radius: 999px;
   color: var(--color-accent);
@@ -28,10 +28,10 @@
   border: none;
   background: none;
   cursor: pointer;
-  line-height: 1;
+  line-height: var(--line-height-tight);
   padding: 0 0.125rem;
   color: inherit;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .searchInput {
@@ -39,7 +39,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .suggestions {
@@ -58,7 +58,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .suggestions button:hover {
@@ -73,5 +73,5 @@
   border-radius: 4px;
   background: none;
   cursor: pointer;
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
 }

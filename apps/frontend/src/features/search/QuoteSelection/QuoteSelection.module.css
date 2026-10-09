@@ -4,8 +4,8 @@
 
 .text {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.75;
+  font-size: var(--text-lg);
+  line-height: var(--line-height-loose);
   color: var(--color-text);
 }
 
@@ -29,7 +29,7 @@
   border-radius: 999px;
   background: var(--color-surface-inverse);
   color: var(--color-text-on-accent);
-  font-size: 0.9375rem;
+  font-size: var(--text-md);
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }

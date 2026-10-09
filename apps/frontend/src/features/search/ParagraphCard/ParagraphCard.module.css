@@ -10,7 +10,7 @@
 }
 
 .location {
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--font-tracking-wide);
 }

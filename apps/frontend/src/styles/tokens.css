@@ -45,4 +45,36 @@
   --color-danger-bg: var(--palette-danger-bg);
   --color-danger-border: var(--palette-danger-border);
   --color-danger-accent: var(--palette-danger-accent);
+
+  /* Typography — font families */
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --font-sans: system-ui, sans-serif;
+
+  /* Typography — type scale. Steps below ~2% apart (e.g. 0.8/0.8125/0.85rem,
+     or 1.0625/1.1/1.125rem) were merged into a single step: the difference
+     isn't perceptible, so keeping them distinct was drift, not intent. */
+  --text-2xs: 0.75rem;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.25rem;
+  --text-3xl: 1.75rem;
+
+  /* Typography — line heights */
+  --line-height-tight: 1;
+  --line-height-snug: 1.4;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.75;
+
+  /* Typography — letter spacing */
+  --font-tracking-normal: normal;
+  --font-tracking-wide: 0.02em;
+
+  /* Typography — weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
 }
