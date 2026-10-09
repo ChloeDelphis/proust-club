@@ -40,7 +40,7 @@ function activateOnEnterOrSpace(onActivate: () => void) {
 
 // The three SVG layers below are independent visual tracks sharing the same viewBox coordinate
 // space — kept as local, unexported pieces of TimelineBar rather than promoted components, since
-// none of them has a second consumer (see CLAUDE.md "Composants et hooks partagés").
+// none of them has a second consumer outside this feature.
 
 type TranslateFn = ReturnType<typeof useTranslation>['t']
 

@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // browser, Swagger UI, and the Postman collection run via Newman — see -4-verification.md.
 //
 // Class-level @Timeout: every test here does real socket I/O (loopback stub or a deliberately
-// unreachable host) — per CLAUDE.md's "Tests de câblage" convention, always bounded by an explicit
+// unreachable host) — per this project's wiring-test convention, always bounded by an explicit
 // timeout so a sandboxed/locked-down runner that silently stalls rather than fast-refuses can't
 // hang the build indefinitely. Found missing on two of the three tests by /code-review.
 @Timeout(5)

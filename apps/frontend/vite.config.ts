@@ -23,7 +23,7 @@ export default defineConfig({
         '**/*.test.*',
       ],
       // Floor below the measured baseline (92.55% lines on 2026-08-31) — an
-      // anti-regression guardrail, not a coverage target. See CLAUDE.md.
+      // anti-regression guardrail, not a coverage target.
       thresholds: {
         lines: 85,
       },
