@@ -4,7 +4,7 @@ import styles from './FormField.module.css'
 
 export default function FormField({ label, hint, ...inputProps }: FormFieldProps) {
   const inputId = useId()
-  const hintId = useId()
+  const hintId = `${inputId}-hint`
   return (
     <div className={styles.field}>
       <label className={styles.label} htmlFor={inputId}>{label}</label>
