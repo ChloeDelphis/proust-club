@@ -6,7 +6,7 @@ Account creation and session-based login: from a JSON request to an active HTTP 
 
 ## Endpoints
 
-Register, login, logout, `me`, and the two email-confirmation endpoints. See Swagger UI (`/swagger-ui.html`) or the OpenAPI spec (`/v3/api-docs`) for the exact method/path/auth-requirement list — not duplicated here, see the source-of-truth note in `CLAUDE.md` ("Doc de feature"). What follows documents the behavior Swagger doesn't capture.
+Register, login, logout, `me`, and the two email-confirmation endpoints. See Swagger UI (`/swagger-ui.html`) or the OpenAPI spec (`/v3/api-docs`) for the exact method/path/auth-requirement list — not duplicated here. What follows documents the behavior Swagger doesn't capture.
 
 ---
 
@@ -108,7 +108,7 @@ LoginForm / RegisterForm (fields + client-side validation)
 
 `useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
 
-Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `CLAUDE.md` ("Architecture frontend > Routage") for the canonical list.
+Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
 
 ---
 

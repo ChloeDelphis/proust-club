@@ -6,7 +6,7 @@ Lets an authenticated user save a selection of text found in a paragraph (the wh
 
 ## Endpoints
 
-`/api/quotes` (create/list/timeline/update-comment/delete, plus tag attach/detach) and `/api/tags` (create/list/rename/delete). See Swagger UI (`/swagger-ui.html`) for the exact method/route list — not duplicated here, see `CLAUDE.md` ("Doc de feature"). Every endpoint in both groups requires an authenticated session — none are `permitAll()`.
+`/api/quotes` (create/list/timeline/update-comment/delete, plus tag attach/detach) and `/api/tags` (create/list/rename/delete). See Swagger UI (`/swagger-ui.html`) for the exact method/route list — not duplicated here. Every endpoint in both groups requires an authenticated session — none are `permitAll()`.
 
 ---
 
@@ -192,7 +192,7 @@ Verified end-to-end in a real headless browser (Playwright, driving an actual na
 
 ### Frontend (`/mes-citations` — `MyQuotesPage`)
 
-Verified manually end-to-end in a real browser (register a test account, save quotes from search, then exercise the page below) — see `CLAUDE.md` for a reusable local test account.
+Verified manually end-to-end in a real browser (reuse an existing local test account rather than recreating one, save quotes from search, then exercise the page below).
 
 - As an anonymous visitor, navigating directly to `/mes-citations` redirects to `/login`.
 - As a connected user with no saved quotes, the page shows the empty-state message and no filter bar (no tags exist yet either).

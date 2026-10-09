@@ -6,7 +6,7 @@
 
 ## Context
 
-The personal timeline (a graphical bar on `/mes-citations` showing saved quotes positioned on the work's structure) needs a modal that opens when a bookmark is clicked, showing the full quote. Every interactive overlay built so far in this frontend (`Toast`, `TagPickerPopup`) has been hand-built from scratch — no UI primitives library has been a real dependency until now, even though "Base UI" was already listed in `CLAUDE.md`'s stack table as the intended choice.
+The personal timeline (a graphical bar on `/mes-citations` showing saved quotes positioned on the work's structure) needs a modal that opens when a bookmark is clicked, showing the full quote. Every interactive overlay built so far in this frontend (`Toast`, `TagPickerPopup`) has been hand-built from scratch — no UI primitives library has been a real dependency until now, even though "Base UI" had already been the intended stack choice since project setup, just never previously needed.
 
 A true modal dialog has real accessibility requirements a from-scratch build would have to reinvent correctly: focus trap while open, `Escape` to close, `aria-modal`/focus restoration on close, click-outside dismissal. `TagPickerPopup`'s hand-rolled `useClickOutside` hook covers the simpler "anchored popup" case, but not a full page-level modal.
 
@@ -14,7 +14,7 @@ A true modal dialog has real accessibility requirements a from-scratch build wou
 No new dependency. But a correct focus trap and full keyboard/screen-reader behavior for a modal is a meaningfully bigger surface than a click-outside hook — reinventing it risks getting the accessibility details wrong on the first real "true modal" use case.
 
 **Option B — `@base-ui/react`'s `Dialog`**
-Unstyled, composable (`Dialog.Root`/`Trigger`/`Portal`/`Backdrop`/`Popup`/`Close`), ships focus trap, `Escape`, `aria-modal`, and outside-press dismissal out of the box. Already the intended stack choice per `CLAUDE.md`, just never previously needed.
+Unstyled, composable (`Dialog.Root`/`Trigger`/`Portal`/`Backdrop`/`Popup`/`Close`), ships focus trap, `Escape`, `aria-modal`, and outside-press dismissal out of the box. Already the intended stack choice, just never previously needed.
 
 ## Why Option B
 

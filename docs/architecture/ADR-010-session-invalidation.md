@@ -16,7 +16,7 @@ Spring Security's own mechanism for tracking "which sessions belong to which pri
 
 ## Why Option B
 
-`CLAUDE.md`'s Spring Initializr section already documents that Spring Session was deliberately not selected for the MVP ("Spring Session non sélectionné (Spring Security gère nativement les sessions HttpOnly pour le MVP)") — introducing Redis now, for one feature, on a single-instance deployment, would reverse that decision for a capability Option B provides just as well at this scale. `SessionRegistry` needs no new dependency (already transitively available via `spring-boot-starter-security`) and no new infrastructure to run locally or in prod.
+This project's initial stack setup already documents that Spring Session was deliberately not selected for the MVP ("Spring Session non sélectionné (Spring Security gère nativement les sessions HttpOnly pour le MVP)") — introducing Redis now, for one feature, on a single-instance deployment, would reverse that decision for a capability Option B provides just as well at this scale. `SessionRegistry` needs no new dependency (already transitively available via `spring-boot-starter-security`) and no new infrastructure to run locally or in prod.
 
 Every controller in this codebase already authenticates programmatically instead of through Spring Security's `formLogin()` filter chain (see ADR-002), which means the pieces that would normally wire themselves up automatically — `RegisterSessionAuthenticationStrategy`, in particular — have to be assembled by hand into `SecurityConfig.sessionAuthenticationStrategy()`, the same way `ChangeSessionIdAuthenticationStrategy` and `CsrfAuthenticationStrategy` already are. Not a new pattern, just one more strategy in the same composite.
 

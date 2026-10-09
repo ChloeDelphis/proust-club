@@ -13,7 +13,7 @@ See [Auth](auth.md) for the base session/CSRF model both flows reuse.
 
 ## Endpoints
 
-`/api/auth/password-reset/request` and `/api/auth/password-reset/confirm`. See Swagger UI (`/swagger-ui.html`) for the exact method/auth-requirement details — not duplicated here, see `CLAUDE.md` ("Doc de feature").
+`/api/auth/password-reset/request` and `/api/auth/password-reset/confirm`. See Swagger UI (`/swagger-ui.html`) for the exact method/auth-requirement details — not duplicated here.
 
 Changing a password for an already-logged-in user (with the current password, no email/token) is a separate flow — see [Change password (while logged in)](#change-password-while-logged-in) below.
 

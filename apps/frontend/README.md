@@ -39,7 +39,7 @@ Stack: Vitest + React Testing Library + jsdom.
 
 ```bash
 pnpm test:run       # quick local run
-pnpm test:coverage  # what CI runs — also enforces the coverage threshold (see CLAUDE.md)
+pnpm test:coverage  # what CI runs — also enforces the coverage threshold (vite.config.ts)
 ```
 
 Tests cover the full search flow: input, results, loading state, API error, empty state, form validation.
