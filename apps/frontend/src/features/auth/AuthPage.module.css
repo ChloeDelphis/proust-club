@@ -1,7 +1,7 @@
 .root {
   max-width: 28rem;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: var(--space-8) var(--space-6);
   font-family: var(--font-serif);
 }
 
@@ -9,12 +9,12 @@
   font-size: var(--text-3xl);
   font-weight: var(--font-weight-regular);
   color: var(--color-text);
-  margin: 0 0 1.5rem;
+  margin: 0 0 var(--space-6);
   letter-spacing: var(--font-tracking-wide);
 }
 
 .switch {
-  margin-top: 1rem;
+  margin-top: var(--space-4);
   font-size: var(--text-sm);
   font-family: var(--font-sans);
 }

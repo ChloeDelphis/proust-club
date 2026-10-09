@@ -1,5 +1,5 @@
 .root {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
 }
 
 .text {
@@ -13,23 +13,23 @@
   background: var(--color-highlight-bg);
   color: inherit;
   padding: 0 0.1em;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .contextualMenu {
   position: fixed;
-  right: 1.5rem;
-  bottom: 1.5rem;
+  right: var(--space-6);
+  bottom: var(--space-6);
   z-index: 900;
 }
 
 .contextualMenu button {
-  padding: 0.625rem 1rem;
+  padding: var(--space-2-5) var(--space-4);
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface-inverse);
   color: var(--color-text-on-accent);
   font-size: var(--text-md);
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-lg);
 }

@@ -1,8 +1,8 @@
 .root {
-  padding: 1rem;
+  padding: var(--space-4);
   background: var(--color-danger-bg);
   border: 1px solid var(--color-danger-border);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   color: var(--color-danger-text);
   font-size: var(--text-md);
 }

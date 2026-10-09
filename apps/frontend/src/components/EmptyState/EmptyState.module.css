@@ -1,5 +1,5 @@
 .root {
-  padding: 2rem 0;
+  padding: var(--space-8) 0;
   text-align: center;
   color: var(--color-text-muted);
   font-style: italic;

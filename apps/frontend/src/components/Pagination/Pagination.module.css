@@ -2,19 +2,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
   border-top: 1px solid var(--color-border);
 }
 
 .pageButton {
-  padding: 0.5rem 1rem;
+  padding: var(--space-2) var(--space-4);
   font-size: var(--text-sm);
   font-family: inherit;
   background: none;
   border: 1px solid var(--color-border-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   color: var(--color-text);
   cursor: pointer;
 }
