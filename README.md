@@ -41,7 +41,7 @@ Have you ever wished you could collect your favorite passages from Marcel Proust
 - Node.js 24 and pnpm 11
 - Docker (for PostgreSQL and Mailhog)
 
-Run each step from the repository root, using a separate terminal for the backend and frontend.
+Run the commands below from the repository root. Use separate terminals for the backend and frontend.
 
 **1. Start PostgreSQL and Mailhog**
 
@@ -49,21 +49,15 @@ Run each step from the repository root, using a separate terminal for the backen
 docker compose up -d
 ```
 
-**2. Import the corpus** _(first time only)_
+**2. Start the backend**
 
 ```bash
 cd apps/backend
-./gradlew importProust
-```
-
-**3. Start the backend**
-
-```bash
-cd apps/backend
+./gradlew importProust  # first time only, to import the corpus
 ./gradlew bootRun
 ```
 
-**4. Start the frontend**
+**3. Start the frontend**
 
 ```bash
 cd apps/frontend
