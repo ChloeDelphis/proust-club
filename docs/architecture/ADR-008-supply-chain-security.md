@@ -117,19 +117,3 @@ The OSV `MAL-*` check (`pnpm check:supply-chain`, see `docs/features/supply-chai
 ## Date (this addendum)
 
 2026-10-08
-
-## Addendum (2026-10-08, same day) — the 19 findings the fix above surfaced were all fixed, not exempted
-
-The previous addendum's "what this does not fix" was resolved the same day. All 19 findings traced to 5 packages (`undici`, `brace-expansion`, `source-map-js`, `vitest`, `@vitest/mocker`), all of them devDependencies never present in `dist/`: `undici` via `jsdom` (Vitest's simulated DOM — this project mocks every API call at the `src/api/*.ts` boundary, so `undici` never makes a real network request during tests), `brace-expansion` via `minimatch` (ESLint, typescript-eslint, `openapi-typescript`'s glob matching — on this project's own config/specs, never attacker-controlled input), `source-map-js` via Vite/PostCSS and Vitest/`css-tree` (parses this project's own build output and CSS, never an untrusted source map), and `vitest`/`@vitest/mocker` directly (the test runner itself).
-
-**Decision:** fix all 19 by version bump rather than document an exception. Every available fix was a patch/minor release with no breaking change, so fixing was cheaper and cleaner than maintaining a documented-exception list — reserved for cases where fixing isn't this cheap.
-
-- `vitest`/`@vitest/coverage-v8`: direct dependencies, bumped `4.1.10` → `4.1.11` via `pnpm safe:update` (fixes `GHSA-82fw-gwwq-j7x9`).
-- `undici` → `8.11.2`, `source-map-js` → `1.2.2`: transitive, added to `overrides:` in `pnpm-workspace.yaml` (same mechanism as the 2026-08-31 addendum's `js-yaml`/`nanoid` fix).
-- `brace-expansion`: two major lines coexist in the tree (`minimatch@3` resolves `brace-expansion@1.x`, `minimatch@5`/`@9` resolve `brace-expansion@2.x`). A single global override would have forced `minimatch@3` onto `brace-expansion@2.x` — an unverified major jump for no reason, since a same-major patch fix already exists on both lines. Used pnpm's scoped override syntax instead (`"minimatch@3>brace-expansion": 1.1.21`, `"minimatch@5>brace-expansion": 2.1.7`, `"minimatch@9>brace-expansion": 2.1.7`), fixing all 6 advisories without changing either major.
-
-Verified: `pnpm audit` clean, `pnpm check:supply-chain` clean on the newly resolved versions, full lint/test/build green, and `pnpm generate:api` re-run end-to-end against a live backend (exercises the `openapi-typescript`/`@redocly/openapi-core` chain, the other consumer of `brace-expansion`) — output byte-identical to before the bump.
-
-## Date (this addendum)
-
-2026-10-08
