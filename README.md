@@ -25,7 +25,21 @@ Have you ever wished you could collect your favorite passages from Marcel Proust
 
 ---
 
+## Tech Stack
+
+- **Backend** — Java, Spring Boot, jOOQ, Flyway, PostgreSQL
+- **Frontend** — React, TypeScript, Vite
+- **Dev environment** — Docker Compose (PostgreSQL, Mailhog)
+
+---
+
 ## Getting Started
+
+### Prerequisites
+
+- Java 21
+- Node.js 24 and pnpm 11
+- Docker (for PostgreSQL and Mailhog)
 
 **1. Start PostgreSQL and Mailhog**
 
