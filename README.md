@@ -6,8 +6,6 @@ Have you ever wished you could collect your favorite passages from Marcel Proust
 
 **Proust Club** lets you find and save the passages you love, add your own notes and tags, and return to them whenever you like.
 
-Explore the original French text, rediscover passages in context, and build your own personal collection of quotes.
-
 🚧 Work in progress.
 
 ---
