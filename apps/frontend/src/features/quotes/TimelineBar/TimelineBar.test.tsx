@@ -112,16 +112,21 @@ it('removes volume zones from the accessibility tree once zoomed, without unmoun
   })
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
+  const { container } = render(<TimelineBar activeTagId={null} />, { wrapper })
   await screen.findByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })
 
   await user.click(screen.getByRole('button', { name: 'Du Côté de Chez Swann' }))
 
-  // Kept mounted for a smooth opacity transition (see TimelineBar.module.css), but aria-hidden +
-  // tabIndex={-1} once hidden — unreachable by role query (and so by keyboard/screen reader),
-  // not just visually faded via CSS pointer-events.
+  // Unreachable via the accessible-role query — aria-hidden + tabIndex={-1} once hidden, not just
+  // visually faded via CSS pointer-events. Note: `{ hidden: true }` does *not* help here — per the
+  // ARIA spec aria-hidden removes the element's exposed role entirely, so role-based queries can't
+  // find it even with that option; a direct DOM query is the only way to check it is still mounted.
   expect(screen.queryByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: "Zoomer sur À l'Ombre des Jeunes Filles en Fleurs" })).not.toBeInTheDocument()
+
+  // ...but still physically in the DOM (kept mounted on purpose, for the CSS opacity transition).
+  expect(container.querySelector('[aria-label="Zoomer sur Du Côté de Chez Swann"]')).toBeInTheDocument()
+  expect(container.querySelector('[aria-label="Zoomer sur À l\'Ombre des Jeunes Filles en Fleurs"]')).toBeInTheDocument()
 })
 
 it('returns to the full view when "Tous les tomes" is clicked again', async () => {

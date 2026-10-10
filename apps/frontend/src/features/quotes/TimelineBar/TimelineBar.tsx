@@ -57,6 +57,8 @@ function VolumeZones({
   onSelect: (id: number) => void
   t: TranslateFn
 }) {
+  const className = isHidden ? `${styles.volumeZone} ${styles.isHidden}` : styles.volumeZone
+
   return (
     <>
       {volumes.map(volume => {
@@ -69,7 +71,7 @@ function VolumeZones({
             y={TRACK_TOP}
             width={Math.max(0, x2 - x1)}
             height={TRACK_BOTTOM - TRACK_TOP}
-            className={isHidden ? `${styles.volumeZone} ${styles.isHidden}` : styles.volumeZone}
+            className={className}
             role="button"
             // Hidden zones stay mounted (for a smooth opacity transition) but drop out of the tab
             // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
@@ -86,20 +88,13 @@ function VolumeZones({
 }
 
 function VolumeDelimiters({ volumes, range, isHidden }: { volumes: TimelineVolume[]; range: PageRange; isHidden: boolean }) {
+  const className = isHidden ? `${styles.delimiter} ${styles.isHidden}` : styles.delimiter
+
   return (
     <>
       {volumes.slice(1).map(volume => {
         const x = percentToX(pageToPercent(volume.minPage, range))
-        return (
-          <line
-            key={volume.id}
-            x1={x}
-            x2={x}
-            y1={TRACK_TOP}
-            y2={TRACK_BOTTOM}
-            className={isHidden ? `${styles.delimiter} ${styles.isHidden}` : styles.delimiter}
-          />
-        )
+        return <line key={volume.id} x1={x} x2={x} y1={TRACK_TOP} y2={TRACK_BOTTOM} className={className} />
       })}
     </>
   )
@@ -209,8 +204,8 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
         role="img"
         aria-label={t('timelineBar.trackAriaLabel')}
       >
-        <VolumeZones volumes={data.volumes} range={range} isHidden={!!selectedVolume} onSelect={setSelectedVolumeId} t={t} />
-        <VolumeDelimiters volumes={data.volumes} range={range} isHidden={!!selectedVolume} />
+        <VolumeZones volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} onSelect={setSelectedVolumeId} t={t} />
+        <VolumeDelimiters volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} />
         <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} t={t} />
 
         {hoveredGroup && (
