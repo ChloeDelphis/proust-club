@@ -1,5 +1,10 @@
 .root {
   margin-bottom: var(--space-6);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-surface);
+  padding-top: var(--space-2);
 }
 
 .volumeFilters {
@@ -18,7 +23,11 @@
 .volumeZone {
   fill: transparent;
   cursor: pointer;
-  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
+  transition:
+    fill var(--motion-duration-fast) var(--motion-ease-standard),
+    opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    x var(--motion-duration-fast) var(--motion-ease-standard),
+    width var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .volumeZone:hover,
@@ -26,15 +35,27 @@
   fill: var(--color-surface-subtle);
 }
 
+.volumeZone.isHidden,
+.delimiter.isHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .delimiter {
   stroke: var(--color-border-strong);
   stroke-width: 1.5;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    x1 var(--motion-duration-fast) var(--motion-ease-standard),
+    x2 var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .bookmark {
   fill: var(--color-accent);
   cursor: pointer;
-  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
+  transition:
+    fill var(--motion-duration-fast) var(--motion-ease-standard),
+    x var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .bookmark:hover,
