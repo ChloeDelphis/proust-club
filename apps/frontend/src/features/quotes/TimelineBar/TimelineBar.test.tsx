@@ -105,6 +105,25 @@ it('zooming by clicking directly on a volume zone in the bar also hides other vo
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
 })
 
+it('removes volume zones from the accessibility tree once zoomed, without unmounting them', async () => {
+  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
+    volumes,
+    quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
+  })
+  const user = userEvent.setup()
+
+  render(<TimelineBar activeTagId={null} />, { wrapper })
+  await screen.findByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })
+
+  await user.click(screen.getByRole('button', { name: 'Du Côté de Chez Swann' }))
+
+  // Kept mounted for a smooth opacity transition (see TimelineBar.module.css), but aria-hidden +
+  // tabIndex={-1} once hidden — unreachable by role query (and so by keyboard/screen reader),
+  // not just visually faded via CSS pointer-events.
+  expect(screen.queryByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: "Zoomer sur À l'Ombre des Jeunes Filles en Fleurs" })).not.toBeInTheDocument()
+})
+
 it('returns to the full view when "Tous les tomes" is clicked again', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
     volumes,

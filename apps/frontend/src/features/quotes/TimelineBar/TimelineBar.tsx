@@ -47,11 +47,13 @@ type TranslateFn = ReturnType<typeof useTranslation>['t']
 function VolumeZones({
   volumes,
   range,
+  isHidden,
   onSelect,
   t,
 }: {
   volumes: TimelineVolume[]
   range: PageRange
+  isHidden: boolean
   onSelect: (id: number) => void
   t: TranslateFn
 }) {
@@ -67,9 +69,12 @@ function VolumeZones({
             y={TRACK_TOP}
             width={Math.max(0, x2 - x1)}
             height={TRACK_BOTTOM - TRACK_TOP}
-            className={styles.volumeZone}
+            className={isHidden ? `${styles.volumeZone} ${styles.isHidden}` : styles.volumeZone}
             role="button"
-            tabIndex={0}
+            // Hidden zones stay mounted (for a smooth opacity transition) but drop out of the tab
+            // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
+            tabIndex={isHidden ? -1 : 0}
+            aria-hidden={isHidden}
             aria-label={t('timelineBar.zoomOnVolume', { title: volume.title })}
             onClick={() => onSelect(volume.id)}
             onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
@@ -80,12 +85,21 @@ function VolumeZones({
   )
 }
 
-function VolumeDelimiters({ volumes, range }: { volumes: TimelineVolume[]; range: PageRange }) {
+function VolumeDelimiters({ volumes, range, isHidden }: { volumes: TimelineVolume[]; range: PageRange; isHidden: boolean }) {
   return (
     <>
       {volumes.slice(1).map(volume => {
         const x = percentToX(pageToPercent(volume.minPage, range))
-        return <line key={volume.id} x1={x} x2={x} y1={TRACK_TOP} y2={TRACK_BOTTOM} className={styles.delimiter} />
+        return (
+          <line
+            key={volume.id}
+            x1={x}
+            x2={x}
+            y1={TRACK_TOP}
+            y2={TRACK_BOTTOM}
+            className={isHidden ? `${styles.delimiter} ${styles.isHidden}` : styles.delimiter}
+          />
+        )
       })}
     </>
   )
@@ -195,8 +209,8 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
         role="img"
         aria-label={t('timelineBar.trackAriaLabel')}
       >
-        {!selectedVolume && <VolumeZones volumes={data.volumes} range={range} onSelect={setSelectedVolumeId} t={t} />}
-        {!selectedVolume && <VolumeDelimiters volumes={data.volumes} range={range} />}
+        <VolumeZones volumes={data.volumes} range={range} isHidden={!!selectedVolume} onSelect={setSelectedVolumeId} t={t} />
+        <VolumeDelimiters volumes={data.volumes} range={range} isHidden={!!selectedVolume} />
         <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} t={t} />
 
         {hoveredGroup && (
