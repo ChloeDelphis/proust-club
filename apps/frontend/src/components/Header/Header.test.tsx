@@ -42,7 +42,7 @@ describe('Header', () => {
     expect(screen.getByRole('link', { name: 'Créer un compte' })).toBeInTheDocument()
   })
 
-  it('affiche le nom d’utilisateur connecté et repasse en état déconnecté après logout', async () => {
+  it('affiche un avatar portant le nom d’utilisateur connecté, dont le menu permet de se déconnecter', async () => {
     let loggedIn = true
     vi.mocked(authApi.getCurrentUser).mockImplementation(() =>
       loggedIn ? Promise.resolve(mockUser) : Promise.reject(new ApiError(401)),
@@ -51,12 +51,15 @@ describe('Header', () => {
       loggedIn = false
       return Promise.resolve(undefined)
     })
+    const user = userEvent.setup()
 
     render(<Header />, { wrapper })
 
-    expect(await screen.findByText('Connecté en tant que marcel')).toBeInTheDocument()
+    const avatar = await screen.findByRole('button', { name: 'Connecté en tant que marcel' })
+    await user.click(avatar)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Se déconnecter' }))
+    expect(await screen.findByRole('menuitem', { name: 'Mon compte' })).toBeInTheDocument()
+    await user.click(screen.getByRole('menuitem', { name: 'Se déconnecter' }))
 
     expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeInTheDocument()
   })
