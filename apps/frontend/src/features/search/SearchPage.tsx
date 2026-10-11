@@ -19,6 +19,14 @@ import styles from './SearchPage.module.css'
 
 const PAGE_SIZE = 10
 
+// The text filter takes priority over "no tag selected" in the message: a query present means the
+// empty result is about the search, not about the (lack of a) tag filter.
+function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
+  if (query) return 'myQuotesPage.emptyStateNoTextMatch'
+  if (tagId === null) return 'myQuotesPage.emptyStateNoQuotes'
+  return 'myQuotesPage.emptyStateNoTagMatch'
+}
+
 // Searches either the corpus or the connected user's own saved citations — scope follows
 // whichever entry is active in TagFilterBar (a real tag, or the special "saved citations" one),
 // defaulting to corpus search. Not route-split: this is one page, matching the reference mockup.
@@ -104,11 +112,7 @@ export default function SearchPage() {
   } else if (savedQuery.isError) {
     content = <ErrorMessage message={t('common.genericError')} />
   } else if (savedQuery.data.results.length === 0) {
-    content = (
-      <EmptyState
-        message={tagId === null && !query ? t('myQuotesPage.emptyStateNoQuotes') : t('myQuotesPage.emptyStateNoTagMatch')}
-      />
-    )
+    content = <EmptyState message={t(savedScopeEmptyStateKey(tagId, query))} />
   } else {
     content = (
       <>

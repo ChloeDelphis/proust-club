@@ -138,7 +138,8 @@
   },
   "myQuotesPage": {
     "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
-    "emptyStateNoTagMatch": "Aucune citation avec ce tag."
+    "emptyStateNoTagMatch": "Aucune citation avec ce tag.",
+    "emptyStateNoTextMatch": "Aucune citation ne correspond à cette recherche."
   },
   "quoteCard": {
     "deleteErrorToast": "La citation n'a pas pu être supprimée.",

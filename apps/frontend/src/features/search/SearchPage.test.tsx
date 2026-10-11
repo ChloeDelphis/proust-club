@@ -231,6 +231,19 @@ describe('connected', () => {
     )
   })
 
+  it('shows a text-match empty state (not the tag one) when no tag is active and a saved-scope search matches nothing', async () => {
+    vi.mocked(quoteApi.listQuotes).mockResolvedValue({ results: [], total: 0, page: 0, size: 10 })
+    const user = userEvent.setup()
+
+    render(<SearchPage />, { wrapper })
+    await user.click(await screen.findByRole('button', { name: 'Mes citations enregistrées' }))
+    await user.type(screen.getByRole('searchbox'), 'guermantes')
+    await user.click(screen.getByRole('button', { name: 'Chercher' }))
+
+    expect(await screen.findByText('Aucune citation ne correspond à cette recherche.')).toBeInTheDocument()
+    expect(screen.queryByText('Aucune citation avec ce tag.')).not.toBeInTheDocument()
+  })
+
   it('clicking an already-active tag returns to corpus search', async () => {
     vi.mocked(quoteApi.listQuotes).mockResolvedValue({ results: [], total: 0, page: 0, size: 10 })
     const user = userEvent.setup()

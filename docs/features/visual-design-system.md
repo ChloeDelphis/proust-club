@@ -60,7 +60,7 @@ Font files live under `apps/frontend/src/styles/fonts/` (`.woff2`, Latin subset 
 
 A global `@media (prefers-reduced-motion: reduce)` rule in `index.css` collapses all animation/transition durations to near-zero for users who request it — including the `Spinner`'s indefinite rotation, which is the standard, expected tradeoff for that rule (a reduced-motion user gets a static spinner rather than no loading indicator at all). This is not a substitute for a full accessibility audit (tracked separately, not yet scoped).
 
-Contrast is checked by real computation (relative-luminance formula, not an estimate) against every text/background pair the palette actually produces, each time the palette changes — this caught the `--palette-ink-soft` issue documented above when direction B was applied; the original value measured 4.05:1/4.33:1, re-verified at 4.76:1/4.33:1 → 5.09:1 after the fix, both above the 4.5:1 AA threshold for normal-size text.
+Contrast is checked by real computation (relative-luminance formula, not an estimate) against every text/background pair the palette actually produces, each time the palette changes — this caught the `--palette-ink-soft` issue documented above when direction B was applied; the original value measured 4.05:1/4.33:1 (page background/surface), re-verified at 4.76:1/5.09:1 after the fix, both above the 4.5:1 AA threshold for normal-size text.
 
 ## Manual verification
 
