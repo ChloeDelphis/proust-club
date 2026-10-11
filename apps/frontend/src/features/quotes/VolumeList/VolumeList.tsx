@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import FilterButton from '../../../components/FilterButton/FilterButton'
 import { useTimeline } from '../useTimeline'
 import type { VolumeListProps } from './VolumeList.types'
 import styles from './VolumeList.module.css'
@@ -13,23 +14,19 @@ export default function VolumeList({ activeTagId, selectedVolumeId, onSelectVolu
 
   if (isPending || isError || data.volumes.length === 0) return null
 
-  function itemClass(active: boolean) {
-    return active ? `${styles.item} ${styles.isActive}` : styles.item
-  }
-
   return (
     <nav aria-label={t('timelineBar.volumeFilterAriaLabel')}>
       <ul className={styles.list}>
         <li>
-          <button type="button" className={itemClass(selectedVolumeId === null)} onClick={() => onSelectVolume(null)}>
+          <FilterButton variant="list" active={selectedVolumeId === null} onClick={() => onSelectVolume(null)}>
             {t('timelineBar.allVolumesFilter')}
-          </button>
+          </FilterButton>
         </li>
         {data.volumes.map(volume => (
           <li key={volume.id}>
-            <button type="button" className={itemClass(selectedVolumeId === volume.id)} onClick={() => onSelectVolume(volume.id)}>
+            <FilterButton variant="list" active={selectedVolumeId === volume.id} onClick={() => onSelectVolume(volume.id)}>
               {volume.title}
-            </button>
+            </FilterButton>
           </li>
         ))}
       </ul>
