@@ -1,6 +1,6 @@
 # Personal timeline — Technical Design
 
-A graphical bar on top of `/mes-citations` showing the user's saved quotes positioned on the structure of the work (volume → page), not on the date they were saved — that's what the list below it already does. See [ADR-009](../architecture/ADR-009-base-ui-dependency.md) for the Base UI dependency decision behind the quote-detail modal.
+A graphical bar, shown to connected users on the unified search/citations page (`/`, `SearchPage` — see `docs/features/search-frontend.md`), positioning the user's saved quotes on the structure of the work (volume → page), not on the date they were saved — that's what the list below it already does. `/mes-citations` is now a redirect to `/`, kept for the old link. See [ADR-009](../architecture/ADR-009-base-ui-dependency.md) for the Base UI dependency decision behind the quote-detail modal.
 
 ---
 
@@ -48,9 +48,9 @@ WHERE volumes.id = ranges.volume_id
 
 ## Frontend
 
-`TimelineBar` (`src/features/quotes/TimelineBar/`) — stayed inside `features/quotes/`, not a new top-level feature folder, since this isn't a separate page: it's a second consumer of the same `tagId` filter state already owned by `MyQuotesPage`, passed down as a plain prop exactly like `TagFilterBar` already is.
+`TimelineBar` (`src/features/quotes/TimelineBar/`) — stayed inside `features/quotes/`, not a new top-level feature folder, even though it's now rendered from `SearchPage` (`features/search/`): it's a consumer of the same `tagId` filter state `SearchPage` already owns for `TagFilterBar`, passed down as a plain prop, not a feature in its own right.
 
-**Layout** — `MyQuotesPage` renders the frieze (`TimelineBar`) full-width above a two-column grid (`aside` 12rem / content `1fr`), with the volume list (`VolumeList`, `src/features/quotes/VolumeList/`) in the `aside` — reproducing the reference mockup's left-sidebar tome list instead of the horizontal pill row `TimelineBar` used to render internally. `selectedVolumeId` is owned by `MyQuotesPage` (not `TimelineBar` itself) and passed as a controlled prop to both `TimelineBar` and `VolumeList`, so a click in either one stays in sync with the other. Both components read the same timeline data independently via a shared hook, `useTimeline(activeTagId)` (`src/features/quotes/useTimeline.ts`) — same `queryKey`, deduplicated by TanStack Query into a single request, not prop-drilled.
+**Layout** — `SearchPage` renders the frieze (`TimelineBar`) full-width above a two-column grid (`aside` 12rem / content `1fr`), with the volume list (`VolumeList`, `src/features/quotes/VolumeList/`) in the `aside` — reproducing the reference mockup's left-sidebar tome list instead of the horizontal pill row `TimelineBar` used to render internally. All three (frieze, sidebar, `TagFilterBar`) are gated on `isConnected` — an anonymous visitor sees plain corpus search, nothing from this feature. `selectedVolumeId` is owned by `SearchPage` (not `TimelineBar` itself) and passed as a controlled prop to both `TimelineBar` and `VolumeList`, so a click in either one stays in sync with the other. Both components read the same timeline data independently via a shared hook, `useTimeline(activeTagId)` (`src/features/quotes/useTimeline.ts`) — same `queryKey`, deduplicated by TanStack Query into a single request, not prop-drilled.
 
 **Rendered as one SVG**, not absolutely-positioned HTML elements. This project's CSP forbids inline `style={{ ... }}` — bookmark position is a continuous value per quote (0–100% along the page range), which can't be expressed as a finite set of CSS classes. SVG geometry attributes (`x`, `width`, `y1`/`y2`, ...) aren't CSS and aren't covered by that restriction, and are the idiomatic tool for "plot points on an axis" regardless. `preserveAspectRatio="none"` on a `0 0 1000 200` viewBox stretches the same layout math to any real container width — no `getBoundingClientRect`/`ResizeObserver` needed anywhere (this codebase's tests have never had to mock either, and still don't).
 
@@ -72,7 +72,7 @@ WHERE volumes.id = ranges.volume_id
 - A user with zero saved quotes still sees all 7 volumes delimited (empty bar).
 - Filtering by tag (the existing `TagFilterBar`) removes non-matching bookmarks from the bar, not just from the list below.
 - Clicking a volume's zone directly, and clicking its entry in the sidebar, both zoom the same way and stay in sync (selecting one updates the other); re-selecting "Tous les tomes" in the sidebar returns to the full view, with a smooth transition in both directions rather than an instant jump.
-- Scrolling `/mes-citations` keeps the bar pinned at the top of the viewport with an opaque background, never letting the quote list scroll visibly through it.
+- Scrolling the page (connected, saved-citations scope) keeps the bar pinned at the top of the viewport with an opaque background, never letting the quote list scroll visibly through it.
 - Hovering a bookmark shows a truncated preview; leaving hides it.
 - Clicking a bookmark opens the full quote in a modal; `Escape`, the close button, and an outside click all dismiss it. Editing the comment and the tags from within the modal — see `docs/features/quote-save-tags.md` for the detailed manual verification matrix (comment save/trim/clear, tag add/remove, re-opening the same quote).
 - Two quotes on nearby pages render at visibly different bar heights instead of fully overlapping.

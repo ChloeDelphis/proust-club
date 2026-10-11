@@ -62,6 +62,10 @@ The `comment` field is always present in `QuoteSelectionResponse`/`TimelineQuote
 
 `GET /api/quotes?tagId=...` filters to quotes associated with that tag id. A `tagId` that doesn't exist, or belongs to a different user, isn't an error — it just matches nothing, so the response is `200` with an empty `results` list. This is a collection filter, not a lookup by identity: it also avoids confirming whether a given tag id exists for someone else.
 
+### Filtering by text — `q`
+
+`GET /api/quotes?q=...` (and `GET /api/quotes/timeline?q=...`) does a case-insensitive substring match against the quote's own saved text (`selected_text`) — not the personal comment. Combines with `tagId` (both conditions apply). Blank/omitted is "no text filter," not an error — same normalization as the comment field (trim, empty → no filter). Implemented with `LIKE ... ESCAPE '\'` via jOOQ (`QuoteRepository`'s shared `conditions()` helper), reusing the same pattern (and the same `LikePatterns.escape()` helper, promoted to `com.proustclub.common` once this became its second consumer) `SearchRepository` already used for corpus search — not PostgreSQL full-text search, consistent with that existing choice. This is what powers the unified search page's "saved citations" scope — see `docs/features/search-frontend.md`.
+
 ### Renaming and deleting a tag
 
 A tag created by mistake (typically a typo caught by the implicit upsert, e.g. "Jalouise" instead of "Jalousie") can be fixed or removed independently of any quote:
@@ -156,6 +160,7 @@ The personal comment field lives directly in `QuoteDetailModal` (no dedicated su
 - Try to save a quote whose `selectedText` doesn't match the paragraph at the given offsets → `400`.
 - `GET /api/quotes` with `page=-1`, `size=0`, or `size=21` → `400` in each case, with a `detail` stating the specific reason (e.g. `"size must be <= 20"`). `tagId=not-a-uuid` (a malformed UUID) also `400`s, but via Spring's own type conversion rather than a bespoke validation message (see ADR-015 — `tagId` moved from a bounded `int` to a `UUID`, so `@Min` no longer applies).
 - List quotes filtered by an existing tag id → only matching quotes returned. Filter by a tag id that doesn't exist → empty list, not an error.
+- List quotes with `q=` a substring of a saved quote's text, any casing → only matching quotes returned; combine with `tagId` → both filters apply. Blank `q` → same as omitting it. `q` over 500 characters → `400`.
 - Attach the same tag name twice to the same quote → second call is a no-op, still `200`, still one tag.
 - Remove a quote's only tag → succeeds, quote now has zero tags.
 - Create a tag "Combray", then try to create "combray" → `409`.
