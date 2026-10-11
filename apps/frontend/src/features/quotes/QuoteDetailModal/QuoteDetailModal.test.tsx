@@ -31,13 +31,13 @@ const quote: TimelineQuote = {
   volumeId: 1,
   selectedText: 'Il y avait déjà bien des années',
   comment: null,
-  tags: [{ id: TAG_ID, name: 'Combray' }],
+  tags: [{ id: TAG_ID, name: 'Combray', colorIndex: 0 }],
   createdAt: '2026-08-07T11:09:15.787282Z',
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: TAG_ID, name: 'Combray' }])
+  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: TAG_ID, name: 'Combray', colorIndex: 0 }])
 })
 
 describe('QuoteDetailModal', () => {

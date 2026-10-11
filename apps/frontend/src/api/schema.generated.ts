@@ -37,7 +37,7 @@ export interface paths {
         };
         /**
          * List my quote selections
-         * @description Returns the authenticated user's quotes, most recent first. Filterable by tagId and/or a free-text search within the saved selection's own text.
+         * @description Returns the authenticated user's quotes, most recent first. Filterable by tagId.
          */
         get: operations["list_1"];
         put?: never;
@@ -315,7 +315,7 @@ export interface paths {
         };
         /**
          * Get my personal timeline
-         * @description Returns every one of the authenticated user's saved quotes, positioned on the work's structure (volume, page) — unpaginated, unlike list(). Filterable by tagId and q, same semantics as list().
+         * @description Returns every one of the authenticated user's saved quotes, positioned on the work's structure (volume, page) — unpaginated, unlike list(). Filterable by tagId, same semantics as list().
          */
         get: operations["timeline"];
         put?: never;
@@ -377,6 +377,12 @@ export interface components {
              * @example Combray
              */
             name: string;
+            /**
+             * Format: int32
+             * @description Position of the chosen display color in the predefined palette (0-9). Defaults to palette slot 0 when omitted.
+             * @example 3
+             */
+            colorIndex?: number;
         };
         /** @description A personal tag */
         TagResponse: {
@@ -391,6 +397,12 @@ export interface components {
              * @example Combray
              */
             name?: string;
+            /**
+             * Format: int32
+             * @description Position of this tag's display color in the predefined palette (0-9)
+             * @example 3
+             */
+            colorIndex?: number;
         };
         ProblemDetail: {
             /** Format: uri */
@@ -838,11 +850,6 @@ export interface operations {
                  * @example 3fa85f64-5717-4562-b3fc-2c963f66afa6
                  */
                 tagId?: string;
-                /**
-                 * @description Case-insensitive substring match against the quote's own saved text (not its comment). Blank/omitted means no text filter.
-                 * @example madeleine
-                 */
-                q?: string;
                 /**
                  * @description Zero-based page index (default: 0)
                  * @example 0
@@ -1467,11 +1474,6 @@ export interface operations {
                  * @example 3fa85f64-5717-4562-b3fc-2c963f66afa6
                  */
                 tagId?: string;
-                /**
-                 * @description Case-insensitive substring match against the quote's own saved text. Blank/omitted means no text filter.
-                 * @example madeleine
-                 */
-                q?: string;
             };
             header?: never;
             path?: never;

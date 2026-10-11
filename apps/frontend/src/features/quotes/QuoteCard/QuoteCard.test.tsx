@@ -28,7 +28,7 @@ const quote: QuoteSelectionResponse = {
   endOffset: 11,
   selectedText: 'hello world',
   comment: null,
-  tags: [{ id: '00000000-0000-4000-8000-000000000101', name: 'Combray' }],
+  tags: [{ id: '00000000-0000-4000-8000-000000000101', name: 'Combray', colorIndex: 0 }],
   createdAt: '2026-08-05T00:00:00Z',
 }
 

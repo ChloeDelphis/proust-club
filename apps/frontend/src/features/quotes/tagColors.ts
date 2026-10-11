@@ -3,9 +3,10 @@
 // validates the index, never a color value, so this array is the single source of truth for what
 // each slot actually looks like; changing a hex here never requires a migration.
 //
-// Values are the 10 list colors from the already-chosen visual direction (see
-// docs/features/visual-design-system.md) — not yet reflected in tokens.css itself, since no
-// component here consumes them as CSS custom properties yet.
+// Values are the 10-color list palette chosen alongside this project's "Club joyeux" visual
+// direction — a separate, parallel piece of work is applying that direction's main palette and
+// typography to tokens.css/docs/features/visual-design-system.md, which doesn't cover these list
+// colors yet. This file is the first place they're written down as literal hex values.
 export const TAG_COLORS: readonly string[] = [
   '#E78C6B',
   '#D5D0EF',

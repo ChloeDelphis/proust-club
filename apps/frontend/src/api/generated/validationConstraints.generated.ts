@@ -78,19 +78,9 @@ export const validationConstraints = {
       "maxLength": 2000
     }
   },
-  "list_1": {
-    "q": {
-      "maxLength": 500
-    }
-  },
   "search": {
     "q": {
       "minLength": 2,
-      "maxLength": 500
-    }
-  },
-  "timeline": {
-    "q": {
       "maxLength": 500
     }
   }

@@ -4,6 +4,7 @@ import type { operations } from './schema.generated'
 export type TagResponse = {
   id: string
   name: string
+  colorIndex: number
 }
 
 export function listTags(signal?: AbortSignal): Promise<TagResponse[]> {
