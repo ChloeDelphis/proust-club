@@ -108,9 +108,10 @@ erDiagram
     users ||--o{ email_verification_tokens : requests
 
     tags {
-        uuid    id PK
-        uuid    user_id FK
-        varchar name
+        uuid     id PK
+        uuid     user_id FK
+        varchar  name
+        smallint color_index
         timestamptz created_at
     }
 
@@ -144,6 +145,8 @@ erDiagram
 **Tagging is optional.** A quote selection can have zero tags; a tag can exist without being attached to any quote. The many-to-many relationship is genuinely `0..n ↔ 0..n` in both directions — there is no floor on either side.
 
 **`tags`** are per-user and private — there is no shared tag taxonomy. Uniqueness is `(user_id, name)`, compared case-insensitively after trimming (a `CHECK` constraint guarantees `name` is always already trimmed and non-empty; a unique index on `(user_id, LOWER(name))` enforces the case-insensitive part) — so "Combray" and "combray" cannot both exist for the same user, while the casing a user actually typed is preserved for display.
+
+**`tags.color_index`** (`SMALLINT NOT NULL DEFAULT 0`, `CHECK (color_index BETWEEN 0 AND 9)`) is a position in a fixed, predefined 10-color palette, not a stored color value — the palette itself lives in the frontend and can change without a migration touching every row. Chosen by the user at creation time (optional on the create request; defaults to slot 0 when omitted), immutable afterward — no endpoint changes a tag's color after creation yet.
 
 ## Offset convention
 

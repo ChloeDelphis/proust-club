@@ -57,7 +57,31 @@ class TagControllerTest {
                         .content("{\"name\":\"Combray\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Combray"))
-                .andExpect(jsonPath("$.id").exists());
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.colorIndex").value(0));
+    }
+
+    @Test
+    void createTagWithChosenColorSucceeds() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Combray\",\"colorIndex\":3}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.colorIndex").value(3));
+    }
+
+    @Test
+    void createTagWithOutOfRangeColorIndexReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Combray\",\"colorIndex\":10}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Combray\",\"colorIndex\":-1}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -146,6 +170,21 @@ class TagControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(tagId))
                 .andExpect(jsonPath("$.name").value("Jalousie"));
+    }
+
+    @Test
+    void renameTagPreservesItsColor() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        MvcResult created = mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Jalouise\",\"colorIndex\":7}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String tagId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(patch("/api/tags/" + tagId).with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Jalousie\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.colorIndex").value(7));
     }
 
     @Test

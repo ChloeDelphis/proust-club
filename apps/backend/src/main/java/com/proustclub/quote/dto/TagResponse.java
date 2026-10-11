@@ -10,5 +10,8 @@ public record TagResponse(
         UUID id,
 
         @Schema(description = "Tag name, as entered by the user (trimmed, original casing preserved)", example = "Combray")
-        String name
+        String name,
+
+        @Schema(description = "Position of this tag's display color in the predefined palette (0-9)", example = "3")
+        int colorIndex
 ) {}

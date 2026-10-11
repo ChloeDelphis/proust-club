@@ -45,7 +45,7 @@ class TagController {
     @PostMapping(value = "/api/tags", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     TagResponse create(@Valid @RequestBody CreateTagRequest request, Authentication authentication) {
-        return service.create(currentUser.resolveUuid(authentication), request.name());
+        return service.create(currentUser.resolveUuid(authentication), request.name(), request.colorIndex());
     }
 
     @Operation(summary = "List my tags", description = "Returns the authenticated user's tags, ordered alphabetically (case-insensitive).")

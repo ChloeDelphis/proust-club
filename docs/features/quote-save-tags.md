@@ -78,11 +78,11 @@ Both endpoints follow the same ownership discipline as the rest of this feature:
 
 ## Response shapes
 
-**`QuoteSelectionResponse`**: `id`, `paragraphId`, `startOffset`, `endOffset`, `selectedText`, `comment` (nullable), `tags` (a list of `{id, name}`, not bare names — a tag is a real resource with its own id, needed by the frontend to call the detach endpoint without a round trip to look it up), `createdAt`.
+**`QuoteSelectionResponse`**: `id`, `paragraphId`, `startOffset`, `endOffset`, `selectedText`, `comment` (nullable), `tags` (a list of `TagResponse`, not bare names — a tag is a real resource with its own id, needed by the frontend to call the detach endpoint without a round trip to look it up), `createdAt`.
 
 **`QuoteSelectionListResponse`**: `results`, `total`, `page`, `size` — same pagination envelope as `/api/search`. Ordered by `createdAt` descending, `id` descending as a tiebreaker (two quotes saved in the same instant still need a total order, or `LIMIT`/`OFFSET` pagination could skip or repeat a row across pages).
 
-**`TagResponse`**: `id`, `name` (as the user typed it, trimmed — casing is preserved, only the uniqueness check ignores it).
+**`TagResponse`**: `id`, `name` (as the user typed it, trimmed — casing is preserved, only the uniqueness check ignores it), `colorIndex` (an `int` 0-9, the tag's position in a predefined 10-color palette — the palette itself lives in the frontend, not the backend, which only stores and validates the index; see [data model](../architecture/data-model.md#user-data)). Optional on `POST /api/tags`, defaults to `0` when omitted; immutable after creation — no endpoint changes an existing tag's color.
 
 ---
 
