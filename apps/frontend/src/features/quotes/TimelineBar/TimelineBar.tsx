@@ -45,40 +45,55 @@ type TranslateFn = ReturnType<typeof useTranslation>['t']
 function VolumeZones({
   volumes,
   range,
-  isHidden,
+  selectedVolumeId,
   onSelect,
   t,
 }: {
   volumes: TimelineVolume[]
   range: PageRange
-  isHidden: boolean
+  selectedVolumeId: number | null
   onSelect: (id: number) => void
   t: TranslateFn
 }) {
-  const className = isHidden ? `${styles.volumeZone} ${styles.isHidden}` : styles.volumeZone
-
   return (
     <>
       {volumes.map(volume => {
         const x1 = percentToX(pageToPercent(volume.minPage, range))
         const x2 = percentToX(pageToPercent(volume.maxPage, range))
+        const width = Math.max(0, x2 - x1)
+        // Only the *other* volumes hide when one is selected — the selected one's own zone stays
+        // visible and interactive (now spanning the full track, since `range` narrows to its own
+        // page bounds), so clicking it again can toggle the zoom back off.
+        const isActive = volume.id === selectedVolumeId
+        const isHidden = selectedVolumeId !== null && !isActive
+        const zoneClassName = [styles.volumeZone, isActive && styles.isActiveZone, isHidden && styles.isHidden]
+          .filter(Boolean)
+          .join(' ')
+        const labelClassName = [styles.volumeLabel, isActive && styles.isActiveLabel, isHidden && styles.isHidden]
+          .filter(Boolean)
+          .join(' ')
         return (
-          <rect
-            key={volume.id}
-            x={x1}
-            y={TRACK_TOP}
-            width={Math.max(0, x2 - x1)}
-            height={TRACK_BOTTOM - TRACK_TOP}
-            className={className}
-            role="button"
-            // Hidden zones stay mounted (for a smooth opacity transition) but drop out of the tab
-            // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
-            tabIndex={isHidden ? -1 : 0}
-            aria-hidden={isHidden}
-            aria-label={t('timelineBar.zoomOnVolume', { title: volume.title })}
-            onClick={() => onSelect(volume.id)}
-            onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
-          />
+          <g key={volume.id}>
+            <rect
+              x={x1}
+              y={TRACK_TOP}
+              width={width}
+              height={TRACK_BOTTOM - TRACK_TOP}
+              className={zoneClassName}
+              role="button"
+              // Hidden zones stay mounted (for a smooth opacity transition) but drop out of the tab
+              // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
+              tabIndex={isHidden ? -1 : 0}
+              aria-hidden={isHidden}
+              aria-label={isActive ? t('timelineBar.zoomOutOfVolume') : t('timelineBar.zoomOnVolume', { title: volume.title })}
+              onClick={() => onSelect(volume.id)}
+              onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
+            />
+            {/* Purely decorative — the rect above already carries the full accessible name. */}
+            <foreignObject x={x1} y={TRACK_TOP} width={width} height={TRACK_BOTTOM - TRACK_TOP} className={labelClassName} aria-hidden="true">
+              <div className={styles.volumeLabelText}>{volume.title}</div>
+            </foreignObject>
+          </g>
         )
       })}
     </>
@@ -186,7 +201,7 @@ export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVol
         role="img"
         aria-label={t('timelineBar.trackAriaLabel')}
       >
-        <VolumeZones volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} onSelect={onSelectVolume} t={t} />
+        <VolumeZones volumes={data.volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} />
         <VolumeDelimiters volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} />
         <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} t={t} />
 

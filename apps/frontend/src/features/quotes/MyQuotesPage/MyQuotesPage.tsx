@@ -29,6 +29,12 @@ export default function MyQuotesPage() {
     setPage(0)
   }
 
+  // Selecting the already-selected volume again zooms back out — the frieze zone and the sidebar
+  // entry both call this, there's no separate "Tous les tomes" control.
+  function handleSelectVolume(id: number) {
+    setSelectedVolumeId(current => (current === id ? null : id))
+  }
+
   const { data, isPending, isFetching, isError } = useQuery({
     queryKey: ['quotes', tagId, page],
     queryFn: ({ signal }) => listQuotes({ tagId: tagId ?? undefined, page, size: PAGE_SIZE }, signal),
@@ -78,10 +84,10 @@ export default function MyQuotesPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('myQuotesPage.title')}</h1>
-      <TimelineBar activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
+      <TimelineBar activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={handleSelectVolume} />
       <div className={styles.layout}>
         <aside>
-          <VolumeList activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
+          <VolumeList activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={handleSelectVolume} />
         </aside>
         <div>
           <TagFilterBar activeTagId={tagId} onSelectTag={handleSelectTag} />

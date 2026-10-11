@@ -17,11 +17,6 @@ export default function VolumeList({ activeTagId, selectedVolumeId, onSelectVolu
   return (
     <nav aria-label={t('timelineBar.volumeFilterAriaLabel')}>
       <ul className={styles.list}>
-        <li>
-          <FilterButton variant="list" active={selectedVolumeId === null} onClick={() => onSelectVolume(null)}>
-            {t('timelineBar.allVolumesFilter')}
-          </FilterButton>
-        </li>
         {data.volumes.map(volume => (
           <li key={volume.id}>
             <FilterButton variant="list" active={selectedVolumeId === volume.id} onClick={() => onSelectVolume(volume.id)}>

@@ -9,7 +9,7 @@ import * as quoteApi from '../../../api/quote'
 import * as tagApi from '../../../api/tag'
 import { ApiError } from '../../../api/client'
 import ToastProvider from '../../../components/Toast/ToastProvider'
-import type { QuoteSelectionListResponse } from '../../../api/quote'
+import type { QuoteSelectionListResponse, TimelineResponse } from '../../../api/quote'
 import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/auth')
@@ -126,5 +126,33 @@ describe('connected', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Combray' }))
 
     expect(quoteApi.listQuotes).toHaveBeenLastCalledWith({ tagId: COMBRAY_TAG_ID, page: 0, size: 10 }, expect.anything())
+  })
+
+  it('selecting a volume in the sidebar zooms the frieze, and selecting it again zooms back out', async () => {
+    vi.mocked(quoteApi.listQuotes).mockResolvedValue({ results: [], total: 0, page: 0, size: 10 })
+    const volumes: TimelineResponse['volumes'] = [
+      { id: 1, title: 'Du Côté de Chez Swann', position: 1, minPage: 1, maxPage: 103 },
+      { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183 },
+    ]
+    vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
+      volumes,
+      quotes: [
+        { id: quoteId(1), paragraphId: 1, pageNumber: 9, volumeId: 1, selectedText: 'citation 1', comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' },
+        { id: quoteId(2), paragraphId: 2, pageNumber: 150, volumeId: 2, selectedText: 'citation 2', comment: null, tags: [], createdAt: '2026-08-07T00:00:00Z' },
+      ],
+    })
+    const user = userEvent.setup()
+
+    render(<MyQuotesPage />, { wrapper })
+    await screen.findByRole('button', { name: 'Citation page 150' })
+
+    const volumeEntry = screen.getByRole('button', { name: 'Du Côté de Chez Swann' })
+    await user.click(volumeEntry)
+    expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
+    expect(volumeEntry.className).toMatch(/isActive/)
+
+    await user.click(volumeEntry)
+    expect(await screen.findByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
+    expect(volumeEntry.className).not.toMatch(/isActive/)
   })
 })

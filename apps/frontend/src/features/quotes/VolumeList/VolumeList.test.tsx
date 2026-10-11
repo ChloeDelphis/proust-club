@@ -39,27 +39,24 @@ it('renders nothing once loaded if there are no volumes', async () => {
   expect(container).toBeEmptyDOMElement()
 })
 
-it('shows a button for every volume, plus "Tous les tomes"', async () => {
+it('shows a button for every volume', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
 
   render(<VolumeList activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
 
-  expect(await screen.findByRole('button', { name: 'Tous les tomes' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Du Côté de Chez Swann' })).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: 'Du Côté de Chez Swann' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: "À l'Ombre des Jeunes Filles en Fleurs" })).toBeInTheDocument()
 })
 
-it('calls onSelectVolume with the volume id when an entry is clicked, and null for "Tous les tomes"', async () => {
+it('calls onSelectVolume with the volume id when an entry is clicked', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
   const onSelectVolume = vi.fn()
   const user = userEvent.setup()
 
   render(<VolumeList activeTagId={null} selectedVolumeId={null} onSelectVolume={onSelectVolume} />, { wrapper })
   await user.click(await screen.findByRole('button', { name: 'Du Côté de Chez Swann' }))
-  expect(onSelectVolume).toHaveBeenLastCalledWith(1)
 
-  await user.click(screen.getByRole('button', { name: 'Tous les tomes' }))
-  expect(onSelectVolume).toHaveBeenLastCalledWith(null)
+  expect(onSelectVolume).toHaveBeenCalledWith(1)
 })
 
 it('reflects the selected volume as the active entry', async () => {
@@ -68,13 +65,13 @@ it('reflects the selected volume as the active entry', async () => {
 
   render(<ControlledVolumeList />, { wrapper })
 
-  const allVolumes = await screen.findByRole('button', { name: 'Tous les tomes' })
-  const firstVolume = screen.getByRole('button', { name: 'Du Côté de Chez Swann' })
-  expect(allVolumes.className).toMatch(/isActive/)
+  const firstVolume = await screen.findByRole('button', { name: 'Du Côté de Chez Swann' })
+  const secondVolume = screen.getByRole('button', { name: "À l'Ombre des Jeunes Filles en Fleurs" })
   expect(firstVolume.className).not.toMatch(/isActive/)
+  expect(secondVolume.className).not.toMatch(/isActive/)
 
   await user.click(firstVolume)
 
-  expect(allVolumes.className).not.toMatch(/isActive/)
   expect(firstVolume.className).toMatch(/isActive/)
+  expect(secondVolume.className).not.toMatch(/isActive/)
 })

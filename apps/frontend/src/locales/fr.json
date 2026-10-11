@@ -173,9 +173,9 @@
     "loadError": "La frise n'a pas pu être chargée.",
     "ariaLabel": "Frise de mes citations",
     "volumeFilterAriaLabel": "Filtrer par tome",
-    "allVolumesFilter": "Tous les tomes",
     "trackAriaLabel": "Positions des citations sauvegardées dans l'œuvre",
     "zoomOnVolume": "Zoomer sur {{title}}",
+    "zoomOutOfVolume": "Revenir à tous les tomes",
     "bookmarkAriaLabel": "Citation page {{page}}"
   }
 }

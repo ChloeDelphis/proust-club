@@ -88,7 +88,7 @@ it('zooming by clicking directly on a volume zone in the bar hides bookmarks fro
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
 })
 
-it('removes volume zones from the accessibility tree once zoomed, without unmounting them', async () => {
+it('keeps the selected volume zone reachable while hiding the others from the accessibility tree', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
     volumes,
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
@@ -100,15 +100,17 @@ it('removes volume zones from the accessibility tree once zoomed, without unmoun
 
   await user.click(screen.getByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' }))
 
-  // Unreachable via the accessible-role query — aria-hidden + tabIndex={-1} once hidden, not just
+  // The selected zone stays reachable — its accessible name now reflects that clicking it again
+  // zooms back out, not further in.
+  expect(screen.getByRole('button', { name: 'Revenir à tous les tomes' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })).not.toBeInTheDocument()
+
+  // The other volume's zone is unreachable via role query — aria-hidden + tabIndex={-1}, not just
   // visually faded via CSS pointer-events. Note: `{ hidden: true }` does *not* help here — per the
   // ARIA spec aria-hidden removes the element's exposed role entirely, so role-based queries can't
   // find it even with that option; a direct DOM query is the only way to check it is still mounted.
-  expect(screen.queryByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: "Zoomer sur À l'Ombre des Jeunes Filles en Fleurs" })).not.toBeInTheDocument()
-
   // ...but still physically in the DOM (kept mounted on purpose, for the CSS opacity transition).
-  expect(container.querySelector('[aria-label="Zoomer sur Du Côté de Chez Swann"]')).toBeInTheDocument()
   expect(container.querySelector('[aria-label="Zoomer sur À l\'Ombre des Jeunes Filles en Fleurs"]')).toBeInTheDocument()
 })
 
