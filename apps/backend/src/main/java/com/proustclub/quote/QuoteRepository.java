@@ -1,5 +1,6 @@
 package com.proustclub.quote;
 
+import com.proustclub.common.LikePatterns;
 import com.proustclub.quote.dto.TagResponse;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -72,7 +73,7 @@ class QuoteRepository {
                 ));
     }
 
-    List<QuoteSelection> findByUserId(UUID userId, UUID tagId, int page, int size) {
+    List<QuoteSelection> findByUserId(UUID userId, UUID tagId, String q, int page, int size) {
         var idField = DSL.field("id", UUID.class);
         var paragraphIdField = DSL.field("paragraph_id", Integer.class);
         var startOffsetField = DSL.field("start_offset", Integer.class);
@@ -88,7 +89,7 @@ class QuoteRepository {
         // specifies the order among ties, so this is intentionally left as-is.
         return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, commentField, createdAtField)
                 .from(DSL.table("quote_selections"))
-                .where(conditions("", userId, tagId))
+                .where(conditions("", userId, tagId, q))
                 .orderBy(createdAtField.desc(), idField.desc())
                 .limit(size)
                 .offset((long) page * size)
@@ -124,7 +125,7 @@ class QuoteRepository {
 
     // Flat, unpaginated: the personal timeline needs every one of the user's quotes at once to
     // place all bookmarks — there is no page size that makes sense here, unlike findByUserId.
-    List<TimelineEntry> findTimelineByUserId(UUID userId, UUID tagId) {
+    List<TimelineEntry> findTimelineByUserId(UUID userId, UUID tagId, String q) {
         var idField = DSL.field("qs.id", UUID.class);
         var paragraphIdField = DSL.field("qs.paragraph_id", Integer.class);
         var selectedTextField = DSL.field("qs.selected_text", String.class);
@@ -138,7 +139,7 @@ class QuoteRepository {
                 .from(DSL.table("quote_selections").as("qs"))
                 .join(DSL.table("paragraphs").as("p"))
                         .on(paragraphIdField.eq(DSL.field("p.id", Integer.class)))
-                .where(conditions("qs.", userId, tagId))
+                .where(conditions("qs.", userId, tagId, q))
                 .orderBy(positionField)
                 .fetch(r -> new TimelineEntry(
                         r.get(idField), r.get(paragraphIdField), r.get(pageNumberField),
@@ -164,10 +165,10 @@ class QuoteRepository {
                 ));
     }
 
-    long countByUserId(UUID userId, UUID tagId) {
+    long countByUserId(UUID userId, UUID tagId, String q) {
         return dsl.selectCount()
                 .from(DSL.table("quote_selections"))
-                .where(conditions("", userId, tagId))
+                .where(conditions("", userId, tagId, q))
                 .fetchOne(0, Long.class);
     }
 
@@ -175,8 +176,9 @@ class QuoteRepository {
     // identical whether or not a filter is applied, and reads clearly as "id is among the quotes
     // tagged with tagId" rather than juggling join/no-join branches. `alias` qualifies the
     // quote_selections columns for callers that join it under an alias (e.g. findTimelineByUserId
-    // joining "qs") — pass "" for callers selecting from quote_selections unaliased.
-    private List<Condition> conditions(String alias, UUID userId, UUID tagId) {
+    // joining "qs") — pass "" for callers selecting from quote_selections unaliased. `q` filters on
+    // the quote's own saved text only (not the comment) — matches what the frontend highlights.
+    private List<Condition> conditions(String alias, UUID userId, UUID tagId, String q) {
         var conditions = new ArrayList<Condition>();
         conditions.add(DSL.field(alias + "user_id", UUID.class).eq(userId));
 
@@ -186,6 +188,11 @@ class QuoteRepository {
                             .from(DSL.table("quote_selection_tags"))
                             .where(DSL.field("tag_id", UUID.class).eq(tagId))
             ));
+        }
+
+        if (q != null) {
+            String pattern = "%" + LikePatterns.escape(q) + "%";
+            conditions.add(DSL.field(alias + "selected_text", String.class).likeIgnoreCase(pattern, '\\'));
         }
 
         return conditions;

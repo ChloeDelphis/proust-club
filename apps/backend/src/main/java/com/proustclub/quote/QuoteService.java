@@ -50,9 +50,10 @@ class QuoteService {
     }
 
     @Transactional(readOnly = true)
-    QuoteSelectionListResponse list(UUID userId, UUID tagId, int page, int size) {
-        var quotes = quoteRepository.findByUserId(userId, tagId, page, size);
-        long total = quoteRepository.countByUserId(userId, tagId);
+    QuoteSelectionListResponse list(UUID userId, UUID tagId, String q, int page, int size) {
+        String normalizedQ = normalizeSearchQuery(q);
+        var quotes = quoteRepository.findByUserId(userId, tagId, normalizedQ, page, size);
+        long total = quoteRepository.countByUserId(userId, tagId, normalizedQ);
 
         var quoteIds = quotes.stream().map(QuoteSelection::id).toList();
         var tagsByQuoteId = quoteRepository.tagsForQuoteIds(quoteIds);
@@ -65,8 +66,8 @@ class QuoteService {
     }
 
     @Transactional(readOnly = true)
-    TimelineResponse getTimeline(UUID userId, UUID tagId) {
-        var entries = quoteRepository.findTimelineByUserId(userId, tagId);
+    TimelineResponse getTimeline(UUID userId, UUID tagId, String q) {
+        var entries = quoteRepository.findTimelineByUserId(userId, tagId, normalizeSearchQuery(q));
         var volumes = quoteRepository.findVolumesWithPageRange();
 
         var quoteIds = entries.stream().map(TimelineEntry::id).toList();
@@ -129,6 +130,16 @@ class QuoteService {
             return null;
         }
         String trimmed = rawComment.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    // Blank (empty/whitespace-only) means "no text filter" — same normalization as the comment,
+    // kept separate since the two represent different concepts that just happen to share this rule.
+    private static String normalizeSearchQuery(String rawQuery) {
+        if (rawQuery == null) {
+            return null;
+        }
+        String trimmed = rawQuery.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
 

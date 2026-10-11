@@ -1,5 +1,6 @@
 package com.proustclub.search;
 
+import com.proustclub.common.LikePatterns;
 import com.proustclub.search.dto.SearchHit;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
@@ -17,7 +18,7 @@ class SearchRepository {
     }
 
     List<SearchHit> search(String query, int page, int size) {
-        String pattern = "%" + escapeForLike(query) + "%";
+        String pattern = "%" + LikePatterns.escape(query) + "%";
         var pText = DSL.field("p.text", String.class);
 
         return dsl
@@ -56,18 +57,11 @@ class SearchRepository {
     }
 
     long count(String query) {
-        String pattern = "%" + escapeForLike(query) + "%";
+        String pattern = "%" + LikePatterns.escape(query) + "%";
         return dsl
                 .selectCount()
                 .from(DSL.table("paragraphs"))
                 .where(DSL.field("text", String.class).likeIgnoreCase(pattern, '\\'))
                 .fetchOne(0, Long.class);
-    }
-
-    // Escapes %, _ and \ which have special meaning in SQL LIKE patterns
-    private static String escapeForLike(String q) {
-        return q.replace("\\", "\\\\")
-                .replace("%", "\\%")
-                .replace("_", "\\_");
     }
 }
