@@ -1,12 +1,11 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { getQuoteTimeline } from '../../../api/quote'
 import type { TimelineVolume } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
 import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
 import QuoteHoverPreview from '../QuoteHoverPreview/QuoteHoverPreview'
 import QuoteDetailModal from '../QuoteDetailModal/QuoteDetailModal'
+import { useTimeline } from '../useTimeline'
 import { pageToPercent, positionTimelineQuotes } from './positionTimelineQuotes'
 import type { PageRange, TimelineGroup } from './positionTimelineQuotes'
 import type { TimelineBarProps } from './TimelineBar.types'
@@ -148,11 +147,7 @@ export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVol
   // needs to invalidate ['quotes'] to show up here, no extra plumbing to patch local state.
   const [openQuoteId, setOpenQuoteId] = useState<string | null>(null)
 
-  const { data, isPending, isError } = useQuery({
-    queryKey: ['quotes', 'timeline', activeTagId],
-    queryFn: ({ signal }) => getQuoteTimeline({ tagId: activeTagId ?? undefined }, signal),
-    staleTime: 60_000,
-  })
+  const { data, isPending, isError } = useTimeline(activeTagId)
 
   // Hooks below must run unconditionally (before the isPending/isError/empty early returns),
   // so each guards against a still-undefined `data` internally rather than skipping the hook.
