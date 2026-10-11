@@ -5,7 +5,6 @@ import { getQuoteTimeline } from '../../../api/quote'
 import type { TimelineVolume } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
 import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
-import FilterButton from '../../../components/FilterButton/FilterButton'
 import QuoteHoverPreview from '../QuoteHoverPreview/QuoteHoverPreview'
 import QuoteDetailModal from '../QuoteDetailModal/QuoteDetailModal'
 import { pageToPercent, positionTimelineQuotes } from './positionTimelineQuotes'
@@ -141,9 +140,8 @@ function Bookmarks({
   )
 }
 
-export default function TimelineBar({ activeTagId }: TimelineBarProps) {
+export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVolume }: TimelineBarProps) {
   const { t } = useTranslation()
-  const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
   const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
   // Stores an id, not the quote object itself, so the modal re-derives fresh data from the query
   // cache below on every render — a mutation issued from inside the modal (comment/tags) just
@@ -186,17 +184,6 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
 
   return (
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
-      <nav className={styles.volumeFilters} aria-label={t('timelineBar.volumeFilterAriaLabel')}>
-        <FilterButton active={selectedVolumeId === null} onClick={() => setSelectedVolumeId(null)}>
-          {t('timelineBar.allVolumesFilter')}
-        </FilterButton>
-        {data.volumes.map(volume => (
-          <FilterButton key={volume.id} active={selectedVolumeId === volume.id} onClick={() => setSelectedVolumeId(volume.id)}>
-            {volume.title}
-          </FilterButton>
-        ))}
-      </nav>
-
       <svg
         className={styles.track}
         viewBox={`0 0 ${VIEWBOX_WIDTH} 200`}
@@ -204,7 +191,7 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
         role="img"
         aria-label={t('timelineBar.trackAriaLabel')}
       >
-        <VolumeZones volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} onSelect={setSelectedVolumeId} t={t} />
+        <VolumeZones volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} onSelect={onSelectVolume} t={t} />
         <VolumeDelimiters volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} />
         <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} t={t} />
 

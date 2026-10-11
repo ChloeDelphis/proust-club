@@ -7,6 +7,7 @@ import { useCurrentUser } from '../../auth/useCurrentUser'
 import { listQuotes } from '../../../api/quote'
 import TagFilterBar from '../TagFilterBar/TagFilterBar'
 import TimelineBar from '../TimelineBar/TimelineBar'
+import VolumeList from '../VolumeList/VolumeList'
 import QuoteCard from '../QuoteCard/QuoteCard'
 import Pagination from '../../../components/Pagination/Pagination'
 import Spinner from '../../../components/Spinner/Spinner'
@@ -21,6 +22,7 @@ export default function MyQuotesPage() {
   const { isPending: isUserPending, isSuccess: isConnected } = useCurrentUser()
   const [tagId, setTagId] = useState<string | null>(null)
   const [page, setPage] = useState(0)
+  const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
 
   function handleSelectTag(id: string | null) {
     setTagId(id)
@@ -76,9 +78,16 @@ export default function MyQuotesPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('myQuotesPage.title')}</h1>
-      <TimelineBar activeTagId={tagId} />
-      <TagFilterBar activeTagId={tagId} onSelectTag={handleSelectTag} />
-      {content}
+      <TimelineBar activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
+      <div className={styles.layout}>
+        <aside>
+          <VolumeList activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
+        </aside>
+        <div>
+          <TagFilterBar activeTagId={tagId} onSelectTag={handleSelectTag} />
+          {content}
+        </div>
+      </div>
     </main>
   )
 }

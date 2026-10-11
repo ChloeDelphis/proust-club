@@ -7,13 +7,6 @@
   padding-top: var(--space-2);
 }
 
-.volumeFilters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1-5);
-  margin-bottom: var(--space-3);
-}
-
 .track {
   width: 100%;
   height: 6.25rem;
