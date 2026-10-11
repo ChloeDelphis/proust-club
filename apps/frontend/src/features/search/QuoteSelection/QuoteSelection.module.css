@@ -4,6 +4,7 @@
 
 .text {
   margin: 0;
+  font-family: var(--font-reading);
   font-size: var(--text-lg);
   line-height: var(--line-height-loose);
   color: var(--color-text);

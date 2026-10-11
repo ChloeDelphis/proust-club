@@ -7,17 +7,19 @@
 :root {
   /* Raw palette — not consumed directly by components, only by the semantic
      tokens below. Keeps renaming/retheming (e.g. a future dark mode) from
-     requiring a search-and-replace across every component. */
-  --palette-purple: #6b3fa0;
-  --palette-purple-dark: #5a3490;
-  --palette-ink: #1a1a1a;
-  --palette-warm-grey: #6b6660;
-  --palette-warm-grey-dark: #4a453f;
-  --palette-white: #fff;
-  --palette-border-subtle: #e0ddd8;
-  --palette-border-strong: #c0bbb5;
-  --palette-surface-subtle: #f2ede8;
-  --palette-highlight: #fff3cd;
+     requiring a search-and-replace across every component. Values are the
+     "Club joyeux" (direction B) palette — see docs/features/visual-design-system.md. */
+  --palette-bg: #fff1df;
+  --palette-surface: #fffaf2;
+  --palette-ink: #3a2430;
+  --palette-ink-soft: #8a7078;
+  --palette-signature: #884d69;
+  --palette-signature-hover: #6e3c54;
+  --palette-accent-coral: #e78c6b;
+  --palette-accent-lavender: #d5d0ef;
+  --palette-accent-mint: #bfdcce;
+  --palette-rule: #f3dec4;
+  --palette-on-signature: #fff;
   --palette-danger: #b91c1c;
   --palette-danger-bg: #fef2f2;
   --palette-danger-border: #fecaca;
@@ -25,30 +27,44 @@
 
   /* Semantic tokens */
   --color-text: var(--palette-ink);
-  --color-text-muted: var(--palette-warm-grey);
-  --color-text-subtle: var(--palette-warm-grey-dark);
-  --color-text-on-accent: var(--palette-white);
+  --color-text-muted: var(--palette-ink-soft);
+  /* No second ink tone in the direction B palette — blended from the two
+     that exist rather than inventing an unsourced third hex. */
+  --color-text-subtle: color-mix(in srgb, var(--palette-ink) 70%, var(--palette-ink-soft) 30%);
+  --color-text-on-accent: var(--palette-on-signature);
 
-  --color-surface: var(--palette-white);
-  --color-surface-subtle: var(--palette-surface-subtle);
+  /* Page background — distinct from --color-surface (cards/popups/inputs
+     sit a shade lighter on top of it). No component consumed a page-level
+     background token before this; the page previously relied on the
+     browser's default white. */
+  --color-page-bg: var(--palette-bg);
+
+  --color-surface: var(--palette-surface);
+  /* No distinct "subtle surface" tone in direction B either — reuses the
+     rule color, which already plays a similar "lightly demarcated" role. */
+  --color-surface-subtle: var(--palette-rule);
   --color-surface-inverse: var(--palette-ink);
 
-  --color-border: var(--palette-border-subtle);
-  --color-border-strong: var(--palette-border-strong);
+  --color-border: var(--palette-rule);
+  --color-border-strong: var(--palette-ink-soft);
 
-  --color-accent: var(--palette-purple);
-  --color-accent-hover: var(--palette-purple-dark);
+  --color-accent: var(--palette-signature);
+  --color-accent-hover: var(--palette-signature-hover);
 
-  --color-highlight-bg: var(--palette-highlight);
+  /* Mint at 45% over transparent, not a solid fill — direction B's own
+     answer for search-match highlighting (.paragraph-text mark). */
+  --color-highlight-bg: color-mix(in srgb, var(--palette-accent-mint) 45%, transparent);
 
   --color-danger-text: var(--palette-danger);
   --color-danger-bg: var(--palette-danger-bg);
   --color-danger-border: var(--palette-danger-border);
   --color-danger-accent: var(--palette-danger-accent);
 
-  /* Typography — font families */
-  --font-serif: Georgia, 'Times New Roman', serif;
-  --font-sans: system-ui, sans-serif;
+  /* Typography — font families. Three roles, not two: display (titles),
+     reading (quotes/paragraphs), ui (interface chrome). */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-reading: 'Source Serif 4', Georgia, serif;
+  --font-ui: 'DM Sans', system-ui, sans-serif;
 
   /* Typography — type scale. Steps below ~2% apart (e.g. 0.8/0.8125/0.85rem,
      or 1.0625/1.1/1.125rem) were merged into a single step: the difference
@@ -71,9 +87,6 @@
 
   /* Typography — letter spacing */
   --font-tracking-wide: 0.02em;
-
-  /* Typography — weights */
-  --font-weight-regular: 400;
 
   /* Spacing scale — numbered in quarter-rem units (space-1 = 0.25rem) so a
      future in-between step never forces a naming collision the way t-shirt
@@ -110,9 +123,8 @@
      than --shadow-lg, despite the slightly lower blur/alpha. */
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.25);
-  /* Mirrors --color-accent at ~15% opacity — kept literal since plain CSS
-     custom properties can't derive an alpha variant from a hex token. */
-  --shadow-focus-ring: 0 0 0 2px rgba(107, 63, 160, 0.15);
+  /* Mirrors --color-accent at ~15% opacity. */
+  --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--palette-signature) 15%, transparent);
 
   /* Motion. "fast" covers hover/focus feedback and all current appearance
      transitions, modals included — nothing in this diff needs a slower

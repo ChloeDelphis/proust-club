@@ -5,11 +5,13 @@
   max-width: 56rem;
   margin: 0 auto;
   padding: var(--space-4) var(--space-6) 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
 }
 
 .brand {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
   font-size: var(--text-xl);
   color: var(--color-text);
   text-decoration: none;
@@ -41,5 +43,5 @@
 }
 
 .logoutButton:hover {
-  background: rgba(107, 63, 160, 0.08);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }

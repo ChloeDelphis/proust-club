@@ -42,6 +42,7 @@
 
 .text {
   margin: 0 0 var(--space-4);
+  font-family: var(--font-reading);
   font-size: var(--text-xl);
   line-height: var(--line-height-relaxed);
   color: var(--color-text);

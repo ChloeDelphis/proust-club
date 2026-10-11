@@ -2,12 +2,13 @@
   max-width: 56rem;
   margin: 0 auto;
   padding: var(--space-8) var(--space-6);
-  font-family: var(--font-serif);
 }
 
 .title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
   font-size: var(--text-3xl);
-  font-weight: var(--font-weight-regular);
   color: var(--color-text);
   margin: 0 0 var(--space-6);
   letter-spacing: var(--font-tracking-wide);

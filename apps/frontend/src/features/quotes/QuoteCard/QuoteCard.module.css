@@ -6,6 +6,7 @@
 
 .text {
   margin: 0 0 var(--space-3);
+  font-family: var(--font-reading);
   font-style: italic;
 }
 
