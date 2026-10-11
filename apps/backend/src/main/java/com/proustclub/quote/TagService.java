@@ -17,11 +17,10 @@ class TagService {
     }
 
     @Transactional
-    TagResponse create(UUID userId, String name) {
+    TagResponse create(UUID userId, String name, Integer colorIndex) {
         String trimmed = name.trim();
-        UUID id = repository.insertIfAbsent(userId, trimmed)
+        return repository.insertIfAbsent(userId, trimmed, colorIndex)
                 .orElseThrow(ApiException::tagAlreadyExists);
-        return new TagResponse(id, trimmed);
     }
 
     @Transactional(readOnly = true)
@@ -32,14 +31,14 @@ class TagService {
     @Transactional
     TagResponse rename(UUID userId, UUID tagId, String name) {
         String trimmed = name.trim();
-        RenameOutcome outcome = repository.renameForOwner(userId, tagId, trimmed);
-        if (outcome == RenameOutcome.NOT_FOUND) {
+        var result = repository.renameForOwner(userId, tagId, trimmed);
+        if (result.outcome() == RenameOutcome.NOT_FOUND) {
             throw ApiException.tagNotFound();
         }
-        if (outcome == RenameOutcome.NAME_TAKEN) {
+        if (result.outcome() == RenameOutcome.NAME_TAKEN) {
             throw ApiException.tagAlreadyExists();
         }
-        return new TagResponse(tagId, trimmed);
+        return new TagResponse(tagId, trimmed, result.colorIndex());
     }
 
     @Transactional

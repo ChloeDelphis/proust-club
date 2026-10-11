@@ -165,7 +165,7 @@ describe('QuoteSelection — connected', () => {
   })
 
   it('clicking Sauvegarder opens the tag panel with the word-extended, trimmed selection', async () => {
-    vi.mocked(tagApi.listTags).mockResolvedValue([{ id: TAG_ID, name: 'Combray' }])
+    vi.mocked(tagApi.listTags).mockResolvedValue([{ id: TAG_ID, name: 'Combray', colorIndex: 0 }])
     vi.mocked(quoteApi.createQuote).mockResolvedValue({
       id: QUOTE_ID,
       paragraphId: PARAGRAPH_ID,

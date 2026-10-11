@@ -57,7 +57,7 @@ function makeQuote(n: number): QuoteSelectionListResponse['results'][number] {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: COMBRAY_TAG_ID, name: 'Combray' }])
+  vi.mocked(tagApi.listTags).mockResolvedValue([{ id: COMBRAY_TAG_ID, name: 'Combray', colorIndex: 0 }])
   // TimelineBar renders nothing when there are no volumes — a safe default that doesn't
   // interfere with the assertions below, which are about the list/pagination underneath it.
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes: [], quotes: [] })

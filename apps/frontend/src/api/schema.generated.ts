@@ -377,6 +377,12 @@ export interface components {
              * @example Combray
              */
             name: string;
+            /**
+             * Format: int32
+             * @description Position of the chosen display color in the predefined palette (0-9). Defaults to palette slot 0 when omitted.
+             * @example 3
+             */
+            colorIndex?: number;
         };
         /** @description A personal tag */
         TagResponse: {
@@ -391,6 +397,12 @@ export interface components {
              * @example Combray
              */
             name?: string;
+            /**
+             * Format: int32
+             * @description Position of this tag's display color in the predefined palette (0-9)
+             * @example 3
+             */
+            colorIndex?: number;
         };
         ProblemDetail: {
             /** Format: uri */

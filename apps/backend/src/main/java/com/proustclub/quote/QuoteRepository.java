@@ -207,8 +207,9 @@ class QuoteRepository {
         var quoteIdField = DSL.field("qst.quote_selection_id", UUID.class);
         var tagIdField = DSL.field("t.id", UUID.class);
         var nameField = DSL.field("t.name", String.class);
+        var colorIndexField = DSL.field("t.color_index", Integer.class);
 
-        var rows = dsl.select(quoteIdField, tagIdField, nameField)
+        var rows = dsl.select(quoteIdField, tagIdField, nameField, colorIndexField)
                 .from(DSL.table("quote_selection_tags").as("qst"))
                 .join(DSL.table("tags").as("t"))
                         .on(DSL.field("t.id", UUID.class).eq(DSL.field("qst.tag_id", UUID.class)))
@@ -219,7 +220,7 @@ class QuoteRepository {
         Map<UUID, List<TagResponse>> result = new LinkedHashMap<>();
         for (var row : rows) {
             result.computeIfAbsent(row.get(quoteIdField), k -> new ArrayList<>())
-                    .add(new TagResponse(row.get(tagIdField), row.get(nameField)));
+                    .add(new TagResponse(row.get(tagIdField), row.get(nameField), row.get(colorIndexField)));
         }
         return result;
     }

@@ -22,8 +22,8 @@ const COMBRAY_ID = '00000000-0000-4000-8000-000000000101'
 const BALBEC_ID = '00000000-0000-4000-8000-000000000102'
 
 const TAGS = [
-  { id: COMBRAY_ID, name: 'Combray' },
-  { id: BALBEC_ID, name: 'Balbec' },
+  { id: COMBRAY_ID, name: 'Combray', colorIndex: 0 },
+  { id: BALBEC_ID, name: 'Balbec', colorIndex: 1 },
 ]
 
 beforeEach(() => {
@@ -50,7 +50,7 @@ it('renders "Tous" and one button per tag, calling onSelectTag on click', async 
 })
 
 it('renames a tag on Enter', async () => {
-  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: COMBRAY_ID, name: 'Combray renommé' })
+  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: COMBRAY_ID, name: 'Combray renommé', colorIndex: 0 })
   render(<TagFilterBar activeTagId={null} onSelectTag={vi.fn()} />, { wrapper })
 
   await userEvent.click(await screen.findByRole('button', { name: 'Renommer Combray' }))
@@ -73,7 +73,7 @@ it('cancels the edit on Escape without renaming', async () => {
 })
 
 it('commits the edit on blur', async () => {
-  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: COMBRAY_ID, name: 'Combray modifié' })
+  vi.mocked(tagApi.renameTag).mockResolvedValue({ id: COMBRAY_ID, name: 'Combray modifié', colorIndex: 0 })
   render(
     <div>
       <TagFilterBar activeTagId={null} onSelectTag={vi.fn()} />

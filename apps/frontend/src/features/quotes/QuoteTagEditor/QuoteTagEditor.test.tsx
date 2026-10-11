@@ -26,9 +26,9 @@ const BALBEC_ID = '00000000-0000-4000-8000-000000000102'
 const JALOUSIE_ID = '00000000-0000-4000-8000-000000000103'
 
 const ALL_TAGS = [
-  { id: COMBRAY_ID, name: 'Combray' },
-  { id: BALBEC_ID, name: 'Balbec' },
-  { id: JALOUSIE_ID, name: 'jalousie' },
+  { id: COMBRAY_ID, name: 'Combray', colorIndex: 0 },
+  { id: BALBEC_ID, name: 'Balbec', colorIndex: 1 },
+  { id: JALOUSIE_ID, name: 'jalousie', colorIndex: 2 },
 ]
 
 beforeEach(() => {
@@ -37,7 +37,7 @@ beforeEach(() => {
 })
 
 it('renders attached tags as chips and excludes them from suggestions', async () => {
-  render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[{ id: COMBRAY_ID, name: 'Combray' }]} />, { wrapper })
+  render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[{ id: COMBRAY_ID, name: 'Combray', colorIndex: 0 }]} />, { wrapper })
 
   expect(screen.getByText('Combray')).toBeInTheDocument()
   await userEvent.type(await screen.findByRole('textbox', { name: 'Ajouter un tag' }), 'a')
@@ -76,7 +76,7 @@ it('does not offer to create a tag that already exists', async () => {
 
 it('removes a tag when its chip button is clicked', async () => {
   vi.mocked(quoteApi.removeTagFromQuote).mockResolvedValue(undefined)
-  render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[{ id: COMBRAY_ID, name: 'Combray' }]} />, { wrapper })
+  render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[{ id: COMBRAY_ID, name: 'Combray', colorIndex: 0 }]} />, { wrapper })
 
   await userEvent.click(screen.getByRole('button', { name: 'Retirer Combray' }))
 
@@ -95,7 +95,7 @@ it('shows an error toast when adding a tag fails', async () => {
 
 it('shows an error toast when removing a tag fails', async () => {
   vi.mocked(quoteApi.removeTagFromQuote).mockRejectedValue(new Error('network error'))
-  render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[{ id: COMBRAY_ID, name: 'Combray' }]} />, { wrapper })
+  render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[{ id: COMBRAY_ID, name: 'Combray', colorIndex: 0 }]} />, { wrapper })
 
   await userEvent.click(screen.getByRole('button', { name: 'Retirer Combray' }))
 
