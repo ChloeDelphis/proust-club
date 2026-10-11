@@ -25,7 +25,6 @@ export default function Header() {
       <Link className={styles.brand} to="/">{t('header.brand')}</Link>
       {isSuccess ? (
         <div className={styles.session}>
-          <Link to="/mes-citations">{t('header.myQuotesLink')}</Link>
           <Menu.Root>
             <Menu.Trigger className={styles.avatar} aria-label={t('header.loggedInAs', { username: user.username })}>
               {user.username.charAt(0).toUpperCase()}

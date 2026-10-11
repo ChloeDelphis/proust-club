@@ -9,20 +9,21 @@ interface SearchFormProps {
   onSubmit: (query: string) => void
 }
 
+// No minimum-length validation here on purpose — a short/empty query is meaningful (it's how a
+// saved-citations text filter gets cleared, see SearchPage). The 2-character floor only applies to
+// corpus search, and that's already handled there (empty-state placeholder, no request fired).
 export default function SearchForm({ onSubmit }: SearchFormProps) {
   const { t } = useTranslation()
   const [value, setValue] = useState('')
-  const [error, setError] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmed = value.trim()
-    if (trimmed.length < queryConstraints.minLength) {
-      setError(t('searchForm.tooShortError', { min: queryConstraints.minLength }))
-      return
-    }
-    setError('')
-    onSubmit(trimmed)
+    onSubmit(value.trim())
+  }
+
+  function handleClear() {
+    setValue('')
+    onSubmit('')
   }
 
   return (
@@ -37,11 +38,15 @@ export default function SearchForm({ onSubmit }: SearchFormProps) {
           aria-label={t('searchForm.ariaLabel')}
           maxLength={queryConstraints.maxLength}
         />
+        {value && (
+          <button type="button" className={styles.clearButton} onClick={handleClear} aria-label={t('searchForm.clearButton')}>
+            ×
+          </button>
+        )}
         <button className={styles.button} type="submit">
           {t('searchForm.submitButton')}
         </button>
       </div>
-      {error && <p className={styles.error} role="alert">{error}</p>}
     </form>
   )
 }

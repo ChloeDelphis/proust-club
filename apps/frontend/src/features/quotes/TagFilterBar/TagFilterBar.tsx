@@ -10,7 +10,7 @@ import FilterButton from '../../../components/FilterButton/FilterButton'
 import type { TagFilterBarProps } from './TagFilterBar.types'
 import styles from './TagFilterBar.module.css'
 
-export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarProps) {
+export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, onSelectTag, onSelectCorpusScope }: TagFilterBarProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
@@ -43,11 +43,13 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     onSuccess: (_result, id) => {
       const wasActiveFilter = activeTagId === id
       queryClient.invalidateQueries({ queryKey: ['tags'] })
-      // If this tag was the active filter, onSelectTag(null) below already triggers a fresh
+      // If this tag was the active filter, onSelectSavedScope() below already triggers a fresh
       // fetch under the new query key — refetching the about-to-be-abandoned key too would
       // just be a wasted request. Other cached quote pages are still marked stale either way.
       queryClient.invalidateQueries({ queryKey: ['quotes'], refetchType: wasActiveFilter ? 'none' : 'active' })
-      if (wasActiveFilter) onSelectTag(null)
+      // Falls back to "saved, no tag" rather than all the way to corpus scope — deleting the
+      // active filter shouldn't also kick the user out of the citations view they were in.
+      if (wasActiveFilter) onSelectSavedScope()
     },
     onError: () => {
       showToast(t('tagFilterBar.deleteErrorToast'))
@@ -92,14 +94,24 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
     deleteMutation.mutate(id)
   }
 
+  function handleSavedScopeClick() {
+    if (scope === 'saved' && activeTagId === null) onSelectCorpusScope()
+    else onSelectSavedScope()
+  }
+
+  function handleTagClick(tagId: string) {
+    if (scope === 'saved' && activeTagId === tagId) onSelectCorpusScope()
+    else onSelectTag(tagId)
+  }
+
   const tagList = tags ?? []
-  if (tagList.length === 0) return null
 
   return (
     <nav className={styles.root} aria-label={t('tagFilterBar.ariaLabel')}>
-      <FilterButton active={activeTagId === null} onClick={() => onSelectTag(null)}>
-        {t('tagFilterBar.allFilter')}
+      <FilterButton active={scope === 'saved' && activeTagId === null} onClick={handleSavedScopeClick}>
+        {t('tagFilterBar.savedScopeFilter')}
       </FilterButton>
+      {tagList.length > 0 && (
       <ul className={styles.list}>
         {tagList.map(tag => (
           <li key={tag.id} className={styles.item}>
@@ -116,7 +128,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
               />
             ) : (
               <>
-                <FilterButton active={activeTagId === tag.id} onClick={() => onSelectTag(tag.id)}>
+                <FilterButton active={scope === 'saved' && activeTagId === tag.id} onClick={() => handleTagClick(tag.id)}>
                   {tag.name}
                 </FilterButton>
                 <button
@@ -140,6 +152,7 @@ export default function TagFilterBar({ activeTagId, onSelectTag }: TagFilterBarP
           </li>
         ))}
       </ul>
+      )}
     </nav>
   )
 }

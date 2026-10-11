@@ -11,7 +11,7 @@ import ToastProvider from '../../../components/Toast/ToastProvider'
 import { quoteId } from './timelineTestFixtures'
 
 // TimelineBar is controlled (selectedVolumeId/onSelectVolume owned by the parent in real usage,
-// MyQuotesPage) — this feeds the prop back so tests can observe the effect of clicking a zone
+// SearchPage) — this feeds the prop back so tests can observe the effect of clicking a zone
 // directly in the bar, same pattern as any other controlled-component test in this codebase.
 function ControlledTimelineBar({ activeTagId }: { activeTagId: string | null }) {
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)

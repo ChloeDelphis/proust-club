@@ -64,7 +64,7 @@ export type QuoteSelectionListResponse = {
 }
 
 export function listQuotes(params: QuoteListParams = {}, signal?: AbortSignal): Promise<QuoteSelectionListResponse> {
-  const qs = buildQuery({ tagId: params.tagId, page: params.page, size: params.size })
+  const qs = buildQuery({ tagId: params.tagId, q: params.q, page: params.page, size: params.size })
   return apiFetch<QuoteSelectionListResponse>(`/api/quotes?${qs}`, { signal })
 }
 
@@ -100,6 +100,6 @@ export type TimelineResponse = {
 }
 
 export function getQuoteTimeline(params: TimelineParams = {}, signal?: AbortSignal): Promise<TimelineResponse> {
-  const qs = buildQuery({ tagId: params.tagId })
+  const qs = buildQuery({ tagId: params.tagId, q: params.q })
   return apiFetch<TimelineResponse>(`/api/quotes/timeline?${qs}`, { signal })
 }

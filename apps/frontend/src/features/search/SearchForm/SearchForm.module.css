@@ -43,8 +43,17 @@
   background: var(--color-accent-hover);
 }
 
-.error {
-  margin: var(--space-1-5) 0 0;
-  font-size: var(--text-sm);
-  color: var(--color-danger-text);
+.clearButton {
+  padding: 0 var(--space-2);
+  font-size: var(--text-xl);
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.clearButton:hover {
+  color: var(--color-text);
 }

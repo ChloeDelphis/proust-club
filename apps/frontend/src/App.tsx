@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import SearchPage from './features/search/SearchPage'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
@@ -7,7 +7,6 @@ import ForgotPasswordPage from './features/auth/ForgotPasswordPage'
 import ResetPasswordPage from './features/auth/ResetPasswordPage'
 import ConfirmEmailPage from './features/auth/ConfirmEmailPage'
 import AccountPage from './features/auth/AccountPage'
-import MyQuotesPage from './features/quotes/MyQuotesPage/MyQuotesPage'
 import Header from './components/Header/Header'
 import EmailVerificationBanner from './components/EmailVerificationBanner/EmailVerificationBanner'
 import ToastProvider from './components/Toast/ToastProvider'
@@ -29,7 +28,9 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/confirm-email" element={<ConfirmEmailPage />} />
             <Route path="/account" element={<AccountPage />} />
-            <Route path="/mes-citations" element={<MyQuotesPage />} />
+            {/* /mes-citations is now part of the unified search page (select the "saved citations"
+                scope there) — this redirect keeps the old URL from 404ing. */}
+            <Route path="/mes-citations" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </ToastProvider>

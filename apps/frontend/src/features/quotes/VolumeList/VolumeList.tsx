@@ -8,7 +8,7 @@ export default function VolumeList({ activeTagId, selectedVolumeId, onSelectVolu
   const { t } = useTranslation()
 
   // Same hook/query key as TimelineBar — TanStack Query dedupes the two calls into one request, no
-  // prop-drilling of `data` between the sibling components (same pattern MyQuotesPage already uses
+  // prop-drilling of `data` between the sibling components (same pattern SearchPage already uses
   // for its own, independent quote-list query).
   const { data, isPending, isError } = useTimeline(activeTagId)
 

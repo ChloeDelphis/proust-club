@@ -1,4 +1,9 @@
 export interface TagFilterBarProps {
+  scope: 'corpus' | 'saved'
   activeTagId: string | null
-  onSelectTag: (tagId: string | null) => void
+  // All three setters are idempotent (no internal toggle logic) — TagFilterBar itself decides
+  // when a click should toggle back to corpus scope (clicking the already-active entry again).
+  onSelectSavedScope: () => void
+  onSelectTag: (tagId: string) => void
+  onSelectCorpusScope: () => void
 }
