@@ -12,7 +12,11 @@
   --palette-bg: #fff1df;
   --palette-surface: #fffaf2;
   --palette-ink: #3a2430;
-  --palette-ink-soft: #8a7078;
+  /* Darkened ~15% from the source artifact's #8A7078 — the original value measured
+     4.05:1/4.33:1 against the page/surface backgrounds (real WCAG relative-luminance
+     calculation), below the 4.5:1 AA threshold for normal-size text. This value
+     clears it (4.76:1/5.09:1) while staying close to the original hue/tone. */
+  --palette-ink-soft: #7e656d;
   --palette-signature: #884d69;
   --palette-signature-hover: #6e3c54;
   --palette-accent-coral: #e78c6b;
