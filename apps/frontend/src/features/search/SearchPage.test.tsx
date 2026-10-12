@@ -182,7 +182,7 @@ function makeQuote(n: number): quoteApi.QuoteSelectionListResponse['results'][nu
 describe('connected', () => {
   beforeEach(() => {
     vi.mocked(authApi.getCurrentUser).mockResolvedValue(connectedUser)
-    vi.mocked(tagApi.listTags).mockResolvedValue([{ id: COMBRAY_TAG_ID, name: 'Combray' }])
+    vi.mocked(tagApi.listTags).mockResolvedValue([{ id: COMBRAY_TAG_ID, name: 'Combray', colorIndex: 0 }])
     vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes: [], quotes: [] })
   })
 
