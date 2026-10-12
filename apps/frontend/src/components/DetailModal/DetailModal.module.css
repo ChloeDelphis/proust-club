@@ -2,6 +2,10 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
+  /* Above TimelineBar's sticky frieze (z-index: 10) — without this, the frieze's own stacking
+     layer paints over the popup since both are positioned but only the frieze had an explicit
+     z-index. Matches TagPickerPopup's existing backdrop/popup z-index. */
+  z-index: 1000;
   animation: backdrop-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
@@ -18,6 +22,7 @@
   background: var(--color-surface);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
+  z-index: 1000;
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
