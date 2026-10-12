@@ -51,7 +51,7 @@ class QuoteService {
 
     @Transactional(readOnly = true)
     QuoteSelectionListResponse list(UUID userId, UUID tagId, String q, int page, int size) {
-        String normalizedQ = normalizeSearchQuery(q);
+        String normalizedQ = blankToNull(q);
         var quotes = quoteRepository.findByUserId(userId, tagId, normalizedQ, page, size);
         long total = quoteRepository.countByUserId(userId, tagId, normalizedQ);
 
@@ -67,7 +67,7 @@ class QuoteService {
 
     @Transactional(readOnly = true)
     TimelineResponse getTimeline(UUID userId, UUID tagId, String q) {
-        var entries = quoteRepository.findTimelineByUserId(userId, tagId, normalizeSearchQuery(q));
+        var entries = quoteRepository.findTimelineByUserId(userId, tagId, blankToNull(q));
         var volumes = quoteRepository.findVolumesWithPageRange();
 
         var quoteIds = entries.stream().map(TimelineEntry::id).toList();
@@ -89,7 +89,7 @@ class QuoteService {
 
     @Transactional
     QuoteSelectionResponse updateComment(UUID userId, UUID quoteId, String rawComment) {
-        String comment = normalizeComment(rawComment);
+        String comment = blankToNull(rawComment);
         var quote = quoteRepository.updateCommentForOwner(userId, quoteId, comment)
                 .orElseThrow(ApiException::quoteNotFound);
 
@@ -124,22 +124,13 @@ class QuoteService {
         return quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
     }
 
-    // Blank (empty/whitespace-only) clears the comment — NULL, not an empty string stored.
-    private static String normalizeComment(String rawComment) {
-        if (rawComment == null) {
+    // Blank (empty/whitespace-only) means "absent" — NULL, not an empty string. Used both to clear
+    // a comment and to normalize the `q` search filter to "no filter".
+    private static String blankToNull(String raw) {
+        if (raw == null) {
             return null;
         }
-        String trimmed = rawComment.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    // Blank (empty/whitespace-only) means "no text filter" — same normalization as the comment,
-    // kept separate since the two represent different concepts that just happen to share this rule.
-    private static String normalizeSearchQuery(String rawQuery) {
-        if (rawQuery == null) {
-            return null;
-        }
-        String trimmed = rawQuery.trim();
+        String trimmed = raw.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
 

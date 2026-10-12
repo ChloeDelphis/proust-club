@@ -37,7 +37,10 @@
   "searchPage": {
     "title": "Proust Club",
     "emptyState": "Aucun résultat pour « {{query}} ».",
-    "typeToSearch": "Tapez une recherche pour explorer l'œuvre."
+    "typeToSearch": "Tapez une recherche pour explorer l'œuvre.",
+    "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
+    "emptyStateNoTagMatch": "Aucune citation avec ce tag.",
+    "emptyStateNoTextMatch": "Aucune citation ne correspond à cette recherche."
   },
   "resultList": {
     "resultCount_one": "{{count}} résultat",
@@ -135,11 +138,6 @@
     "successMessage": "Votre adresse email a été confirmée.",
     "expiredLinkError": "Ce lien de confirmation est invalide ou a expiré.",
     "backHomeLink": "Retour à l’accueil"
-  },
-  "myQuotesPage": {
-    "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
-    "emptyStateNoTagMatch": "Aucune citation avec ce tag.",
-    "emptyStateNoTextMatch": "Aucune citation ne correspond à cette recherche."
   },
   "quoteCard": {
     "deleteErrorToast": "La citation n'a pas pu être supprimée.",

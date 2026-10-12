@@ -94,21 +94,23 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
     deleteMutation.mutate(id)
   }
 
-  function handleSavedScopeClick() {
-    if (scope === 'saved' && activeTagId === null) onSelectCorpusScope()
-    else onSelectSavedScope()
-  }
-
-  function handleTagClick(tagId: string) {
-    if (scope === 'saved' && activeTagId === tagId) onSelectCorpusScope()
-    else onSelectTag(tagId)
+  // Shared by the "saved citations" entry (tagId null) and real tag entries — clicking the
+  // already-active one toggles back to corpus scope, otherwise selects it.
+  function handleEntryClick(tagId: string | null) {
+    if (scope === 'saved' && activeTagId === tagId) {
+      onSelectCorpusScope()
+    } else if (tagId === null) {
+      onSelectSavedScope()
+    } else {
+      onSelectTag(tagId)
+    }
   }
 
   const tagList = tags ?? []
 
   return (
     <nav className={styles.root} aria-label={t('tagFilterBar.ariaLabel')}>
-      <FilterButton active={scope === 'saved' && activeTagId === null} onClick={handleSavedScopeClick}>
+      <FilterButton active={scope === 'saved' && activeTagId === null} onClick={() => handleEntryClick(null)}>
         {t('tagFilterBar.savedScopeFilter')}
       </FilterButton>
       {tagList.length > 0 && (
@@ -128,7 +130,7 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
               />
             ) : (
               <>
-                <FilterButton active={scope === 'saved' && activeTagId === tag.id} onClick={() => handleTagClick(tag.id)}>
+                <FilterButton active={scope === 'saved' && activeTagId === tag.id} onClick={() => handleEntryClick(tag.id)}>
                   {tag.name}
                 </FilterButton>
                 <button

@@ -7,11 +7,11 @@ import { listQuotes } from '../../api/quote'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import SearchForm from './SearchForm/SearchForm'
 import ResultList from './ResultList/ResultList'
+import ParagraphCard from './ParagraphCard/ParagraphCard'
 import TimelineBar from '../quotes/TimelineBar/TimelineBar'
 import VolumeList from '../quotes/VolumeList/VolumeList'
 import TagFilterBar from '../quotes/TagFilterBar/TagFilterBar'
 import QuoteCard from '../quotes/QuoteCard/QuoteCard'
-import Pagination from '../../components/Pagination/Pagination'
 import Spinner from '../../components/Spinner/Spinner'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import EmptyState from '../../components/EmptyState/EmptyState'
@@ -22,9 +22,9 @@ const PAGE_SIZE = 10
 // The text filter takes priority over "no tag selected" in the message: a query present means the
 // empty result is about the search, not about the (lack of a) tag filter.
 function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
-  if (query) return 'myQuotesPage.emptyStateNoTextMatch'
-  if (tagId === null) return 'myQuotesPage.emptyStateNoQuotes'
-  return 'myQuotesPage.emptyStateNoTagMatch'
+  if (query) return 'searchPage.emptyStateNoTextMatch'
+  if (tagId === null) return 'searchPage.emptyStateNoQuotes'
+  return 'searchPage.emptyStateNoTagMatch'
 }
 
 // Searches either the corpus or the connected user's own saved citations — scope follows
@@ -44,21 +44,9 @@ export default function SearchPage() {
     setPage(0)
   }
 
-  function handleSelectSavedScope() {
-    setScope('saved')
-    setTagId(null)
-    setPage(0)
-  }
-
-  function handleSelectTag(id: string) {
-    setScope('saved')
-    setTagId(id)
-    setPage(0)
-  }
-
-  function handleSelectCorpusScope() {
-    setScope('corpus')
-    setTagId(null)
+  function selectScope(nextScope: 'corpus' | 'saved', nextTagId: string | null = null) {
+    setScope(nextScope)
+    setTagId(nextTagId)
     setPage(0)
   }
 
@@ -99,6 +87,8 @@ export default function SearchPage() {
       content = (
         <ResultList
           results={corpusQuery.data.results}
+          getKey={hit => hit.paragraphId}
+          renderItem={hit => <ParagraphCard {...hit} />}
           total={corpusQuery.data.total}
           page={corpusQuery.data.page}
           size={corpusQuery.data.size}
@@ -115,16 +105,16 @@ export default function SearchPage() {
     content = <EmptyState message={t(savedScopeEmptyStateKey(tagId, query))} />
   } else {
     content = (
-      <>
-        <ul className={savedQuery.isFetching ? `${styles.list} ${styles.isFetching}` : styles.list}>
-          {savedQuery.data.results.map(quote => (
-            <li key={quote.id}>
-              <QuoteCard quote={quote} />
-            </li>
-          ))}
-        </ul>
-        <Pagination page={savedQuery.data.page} size={savedQuery.data.size} total={savedQuery.data.total} onPageChange={setPage} />
-      </>
+      <ResultList
+        results={savedQuery.data.results}
+        getKey={quote => quote.id}
+        renderItem={quote => <QuoteCard quote={quote} />}
+        total={savedQuery.data.total}
+        page={savedQuery.data.page}
+        size={savedQuery.data.size}
+        isFetching={savedQuery.isFetching}
+        onPageChange={setPage}
+      />
     )
   }
 
@@ -144,9 +134,9 @@ export default function SearchPage() {
             <TagFilterBar
               scope={scope}
               activeTagId={tagId}
-              onSelectSavedScope={handleSelectSavedScope}
-              onSelectTag={handleSelectTag}
-              onSelectCorpusScope={handleSelectCorpusScope}
+              onSelectSavedScope={() => selectScope('saved')}
+              onSelectTag={id => selectScope('saved', id)}
+              onSelectCorpusScope={() => selectScope('corpus')}
             />
           )}
           {content}
