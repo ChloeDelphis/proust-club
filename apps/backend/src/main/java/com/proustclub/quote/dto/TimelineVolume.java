@@ -7,7 +7,7 @@ public record TimelineVolume(
         @Schema(description = "Volume identifier", example = "2")
         int id,
 
-        @Schema(description = "Volume title", example = "À l'Ombre des Jeunes Filles en Fleurs")
+        @Schema(description = "Volume title", example = "À l'ombre des jeunes filles en fleurs")
         String title,
 
         @Schema(description = "Order of this volume in the work (1-based)", example = "2")

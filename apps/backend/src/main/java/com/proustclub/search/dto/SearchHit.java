@@ -16,7 +16,7 @@ public record SearchHit(
         @Schema(description = "End index of the match in the text (0-based, exclusive)", example = "12")
         int endOffset,
 
-        @Schema(description = "Volume title", example = "Du Côté de Chez Swann")
+        @Schema(description = "Volume title", example = "Du côté de chez Swann")
         String volume,
 
         @Schema(description = "Part title", example = "Combray")
