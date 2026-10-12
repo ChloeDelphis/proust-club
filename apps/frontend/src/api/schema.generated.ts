@@ -326,6 +326,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/paragraphs/{id}/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the paragraphs surrounding a given paragraph
+         * @description Returns up to `before`/`after` neighboring paragraphs within the same volume as the given paragraph, in reading order. Never crosses into a different volume: `hasMoreBefore`/`hasMoreAfter` tell the caller whether more context exists within the volume beyond what was returned, so a "load more" control can disable itself at the volume's edge.
+         */
+        get: operations["getContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me": {
         parameters: {
             query?: never;
@@ -770,6 +790,40 @@ export interface components {
              * @example 183
              */
             maxPage?: number;
+        };
+        /** @description A single neighboring paragraph returned as context */
+        ParagraphContextEntry: {
+            /**
+             * Format: int32
+             * @description Paragraph identifier
+             * @example 43
+             */
+            paragraphId?: number;
+            /** @description Paragraph text */
+            text?: string;
+            /**
+             * Format: int32
+             * @description Page this paragraph appears on
+             * @example 145
+             */
+            pageNumber?: number;
+        };
+        /** @description Paragraphs surrounding a given paragraph, within the same volume */
+        ParagraphContextResponse: {
+            /**
+             * Format: int32
+             * @description The paragraph this context is centered on
+             * @example 42
+             */
+            paragraphId?: number;
+            /** @description Paragraphs before the center, oldest first (reading order). Shorter than requested at the start of the volume. */
+            before?: components["schemas"]["ParagraphContextEntry"][];
+            /** @description Paragraphs after the center, nearest first (reading order). Shorter than requested at the end of the volume. */
+            after?: components["schemas"]["ParagraphContextEntry"][];
+            /** @description Whether more context exists before `before`, within the same volume */
+            hasMoreBefore?: boolean;
+            /** @description Whether more context exists after `after`, within the same volume */
+            hasMoreAfter?: boolean;
         };
     };
     responses: never;
@@ -1502,6 +1556,61 @@ export interface operations {
             };
             /** @description Invalid request parameters */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getContext: {
+        parameters: {
+            query?: {
+                /**
+                 * @description How many paragraphs to return before it, within the same volume (0-20, default 0)
+                 * @example 1
+                 */
+                before?: number;
+                /**
+                 * @description How many paragraphs to return after it, within the same volume (0-20, default 0)
+                 * @example 1
+                 */
+                after?: number;
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description Paragraph id to center the context on
+                 * @example 42
+                 */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Context around the paragraph */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParagraphContextResponse"];
+                };
+            };
+            /** @description Invalid request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Paragraph not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
