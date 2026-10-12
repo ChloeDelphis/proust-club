@@ -4,7 +4,6 @@ import type { TimelineVolume } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
 import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
 import QuoteHoverPreview from '../QuoteHoverPreview/QuoteHoverPreview'
-import QuoteDetailModal from '../QuoteDetailModal/QuoteDetailModal'
 import { useTimeline } from '../useTimeline'
 import { pageToPercent, positionTimelineQuotes } from './positionTimelineQuotes'
 import type { PageRange, TimelineGroup } from './positionTimelineQuotes'
@@ -154,13 +153,9 @@ function Bookmarks({
   )
 }
 
-export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVolume }: TimelineBarProps) {
+export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVolume, onOpenQuote }: TimelineBarProps) {
   const { t } = useTranslation()
   const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
-  // Stores an id, not the quote object itself, so the modal re-derives fresh data from the query
-  // cache below on every render — a mutation issued from inside the modal (comment/tags) just
-  // needs to invalidate ['quotes'] to show up here, no extra plumbing to patch local state.
-  const [openQuoteId, setOpenQuoteId] = useState<string | null>(null)
 
   const { data, isPending, isError } = useTimeline(activeTagId)
 
@@ -190,7 +185,6 @@ export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVol
   if (data.volumes.length === 0) return null
 
   const hoveredGroup = groups.find(g => g.quotes[0].id === hoveredQuoteId)
-  const openQuote = openQuoteId !== null ? (data.quotes.find(q => q.id === openQuoteId) ?? null) : null
 
   return (
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
@@ -203,7 +197,7 @@ export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVol
       >
         <VolumeZones volumes={data.volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} />
         <VolumeDelimiters volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} />
-        <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} t={t} />
+        <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} />
 
         {hoveredGroup && (
           <foreignObject
@@ -216,12 +210,6 @@ export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVol
           </foreignObject>
         )}
       </svg>
-
-      <QuoteDetailModal
-        quote={openQuote}
-        volumeTitle={openQuote ? volumesById.get(openQuote.volumeId)?.title : undefined}
-        onClose={() => setOpenQuoteId(null)}
-      />
     </section>
   )
 }

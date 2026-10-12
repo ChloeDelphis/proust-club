@@ -15,7 +15,7 @@ import { quoteId } from './timelineTestFixtures'
 // directly in the bar, same pattern as any other controlled-component test in this codebase.
 function ControlledTimelineBar({ activeTagId }: { activeTagId: string | null }) {
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
-  return <TimelineBar activeTagId={activeTagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
+  return <TimelineBar activeTagId={activeTagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} onOpenQuote={vi.fn()} />
 }
 
 vi.mock('../../../api/quote')
@@ -47,7 +47,7 @@ beforeEach(() => {
 it('shows a spinner while loading', () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockReturnValue(new Promise(() => {}))
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(screen.getByRole('status')).toBeInTheDocument()
 })
@@ -55,7 +55,7 @@ it('shows a spinner while loading', () => {
 it('shows an error message when the request fails', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockRejectedValue(new Error('HTTP 500'))
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('alert')).toBeInTheDocument()
 })
@@ -66,7 +66,7 @@ it('renders one bookmark per saved quote', async () => {
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
@@ -120,27 +120,28 @@ it('returns to the full view when selectedVolumeId goes back to null', async () 
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
 
-  const { rerender } = render(<TimelineBar activeTagId={null} selectedVolumeId={1} onSelectVolume={vi.fn()} />, { wrapper })
+  const { rerender } = render(<TimelineBar activeTagId={null} selectedVolumeId={1} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
   await screen.findByRole('button', { name: 'Citation page 9' })
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
 
-  rerender(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />)
+  rerender(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />)
 
   expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
 })
 
-it('clicking a bookmark opens the quote in a modal', async () => {
+it('clicking a bookmark reports which quote to the parent, which owns the detail modal', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
     volumes,
     quotes: [makeQuote(1, 9, 1, 'Il y avait déjà bien des années')],
   })
+  const onOpenQuote = vi.fn()
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
   await user.click(await screen.findByRole('button', { name: 'Citation page 9' }))
 
-  expect(screen.getByText('Il y avait déjà bien des années')).toBeInTheDocument()
+  expect(onOpenQuote).toHaveBeenCalledWith(quoteId(1))
 })
 
 it('hovering a bookmark shows a preview, leaving hides it', async () => {
@@ -150,7 +151,7 @@ it('hovering a bookmark shows a preview, leaving hides it', async () => {
   })
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
   const bookmark = await screen.findByRole('button', { name: 'Citation page 9' })
 
   await user.hover(bookmark)
@@ -164,7 +165,7 @@ it('refetches with the active tag filter', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
   const tagId = '00000000-0000-4000-8000-000000000101'
 
-  render(<TimelineBar activeTagId={tagId} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  render(<TimelineBar activeTagId={tagId} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   await waitFor(() => {
     expect(quoteApi.getQuoteTimeline).toHaveBeenCalledWith({ tagId }, expect.anything())

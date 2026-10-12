@@ -37,7 +37,7 @@ beforeEach(() => {
 })
 
 it('shows the selected text, tags and formatted date', () => {
-  render(<QuoteCard quote={quote} />, { wrapper })
+  render(<QuoteCard quote={quote} onOpenDetail={vi.fn()} />, { wrapper })
 
   expect(screen.getByText('hello world')).toBeInTheDocument()
   expect(screen.getByText('Combray')).toBeInTheDocument()
@@ -46,7 +46,7 @@ it('shows the selected text, tags and formatted date', () => {
 
 it('does nothing if the delete confirmation is declined', async () => {
   vi.spyOn(window, 'confirm').mockReturnValue(false)
-  render(<QuoteCard quote={quote} />, { wrapper })
+  render(<QuoteCard quote={quote} onOpenDetail={vi.fn()} />, { wrapper })
 
   await userEvent.click(screen.getByRole('button', { name: 'Supprimer' }))
 
@@ -56,7 +56,7 @@ it('does nothing if the delete confirmation is declined', async () => {
 it('deletes the quote when the confirmation is accepted', async () => {
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.mocked(quoteApi.deleteQuote).mockResolvedValue(undefined)
-  render(<QuoteCard quote={quote} />, { wrapper })
+  render(<QuoteCard quote={quote} onOpenDetail={vi.fn()} />, { wrapper })
 
   await userEvent.click(screen.getByRole('button', { name: 'Supprimer' }))
 
@@ -66,9 +66,18 @@ it('deletes the quote when the confirmation is accepted', async () => {
 it('shows an error toast if deletion fails', async () => {
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   vi.mocked(quoteApi.deleteQuote).mockRejectedValue(new Error('HTTP 500'))
-  render(<QuoteCard quote={quote} />, { wrapper })
+  render(<QuoteCard quote={quote} onOpenDetail={vi.fn()} />, { wrapper })
 
   await userEvent.click(screen.getByRole('button', { name: 'Supprimer' }))
 
   expect(await screen.findByText("La citation n'a pas pu être supprimée.")).toBeInTheDocument()
+})
+
+it('calls onOpenDetail with the quote id when the citation text is clicked', async () => {
+  const onOpenDetail = vi.fn()
+  render(<QuoteCard quote={quote} onOpenDetail={onOpenDetail} />, { wrapper })
+
+  await userEvent.click(screen.getByRole('button', { name: 'hello world' }))
+
+  expect(onOpenDetail).toHaveBeenCalledWith(QUOTE_ID)
 })

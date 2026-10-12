@@ -12,6 +12,8 @@ import TimelineBar from '../quotes/TimelineBar/TimelineBar'
 import VolumeList from '../quotes/VolumeList/VolumeList'
 import TagFilterBar from '../quotes/TagFilterBar/TagFilterBar'
 import QuoteCard from '../quotes/QuoteCard/QuoteCard'
+import QuoteDetailModal from '../quotes/QuoteDetailModal/QuoteDetailModal'
+import { useTimeline } from '../quotes/useTimeline'
 import Spinner from '../../components/Spinner/Spinner'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import EmptyState from '../../components/EmptyState/EmptyState'
@@ -38,6 +40,11 @@ export default function SearchPage() {
   const [tagId, setTagId] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
+  // Shared by the frieze (TimelineBar) and the saved-citations list (QuoteCard) — a single modal
+  // instance, opened from either entry point. Same queryKey as TimelineBar/VolumeList's own
+  // useTimeline call, so this doesn't add a second network request.
+  const [detailQuoteId, setDetailQuoteId] = useState<string | null>(null)
+  const timelineQuery = useTimeline(tagId, isConnected)
 
   function handleSearch(q: string) {
     setQuery(q)
@@ -55,6 +62,11 @@ export default function SearchPage() {
   function handleSelectVolume(id: number) {
     setSelectedVolumeId(current => (current === id ? null : id))
   }
+
+  const detailQuote = detailQuoteId !== null ? (timelineQuery.data?.quotes.find(q => q.id === detailQuoteId) ?? null) : null
+  const detailVolumeTitle = detailQuote
+    ? timelineQuery.data?.volumes.find(v => v.id === detailQuote.volumeId)?.title
+    : undefined
 
   const isQueryValid = query.trim().length >= 2
 
@@ -108,7 +120,7 @@ export default function SearchPage() {
       <ResultList
         results={savedQuery.data.results}
         getKey={quote => quote.id}
-        renderItem={quote => <QuoteCard quote={quote} />}
+        renderItem={quote => <QuoteCard quote={quote} onOpenDetail={setDetailQuoteId} />}
         total={savedQuery.data.total}
         page={savedQuery.data.page}
         size={savedQuery.data.size}
@@ -121,7 +133,14 @@ export default function SearchPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('searchPage.title')}</h1>
-      {isConnected && <TimelineBar activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={handleSelectVolume} />}
+      {isConnected && (
+        <TimelineBar
+          activeTagId={tagId}
+          selectedVolumeId={selectedVolumeId}
+          onSelectVolume={handleSelectVolume}
+          onOpenQuote={setDetailQuoteId}
+        />
+      )}
       <div className={isConnected ? styles.layout : undefined}>
         {isConnected && (
           <aside>
@@ -142,6 +161,9 @@ export default function SearchPage() {
           {content}
         </div>
       </div>
+      {isConnected && (
+        <QuoteDetailModal quote={detailQuote} volumeTitle={detailVolumeTitle} onClose={() => setDetailQuoteId(null)} />
+      )}
     </main>
   )
 }
