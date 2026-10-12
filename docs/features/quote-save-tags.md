@@ -117,7 +117,9 @@ A slow save can resolve after its `QuoteSelection` instance has unmounted (e.g. 
 
 ### Tag panel — `Dialog`-based, "Enregistrer" is the only save path
 
-`TagPickerPopup` uses `@base-ui/react`'s `Dialog` (`Dialog.Root`/`Portal`/`Backdrop`/`Popup`/`Close`) — the same primitive used by `QuoteDetailModal` (`ADR-009-base-ui-dependency.md`). Tag search/creation is staged locally: nothing is sent to the backend while the panel is open, and `POST /api/tags` is never called eagerly on "Créer « nom »" (would leave an orphaned tag if dismissed). **Only "Enregistrer" saves** (`onSave`, with zero, one, or several tag names — tags stay optional). Every other way of leaving the panel (×, backdrop click, Escape — all routed through one `Dialog.Root onOpenChange`) calls `onCancel` instead, and saves nothing at all, including any tag already checked. While a save is in flight (`isSaving`, from `createQuoteMutation.isPending`): "Enregistrer" and the × close button are both disabled, and `onOpenChange` ignores every dismiss attempt — the request has already been sent and can't actually be aborted, so "cancelling" mid-flight would only desync the UI from a save that's still going to complete.
+`TagPickerPopup` uses `@base-ui/react`'s `Dialog` (`Dialog.Root`/`Portal`/`Backdrop`/`Popup`/`Close`) — the same primitive used by `QuoteDetailModal` (`ADR-009-base-ui-dependency.md`). Its tag search/select/create UI (search box, selected chips, checkbox list, "Créer « nom »", "Enregistrer") lives in a separate presentation component, `TagPickerContent` (`TagPickerContent.tsx`, no `Dialog` of its own) — this lets `SearchResultDetailModal` (below) embed the same UI inline, in its own `DetailModal` side column, without nesting a second `Dialog` inside the first. `TagPickerPopup` itself is just the `Dialog` wrapper around it.
+
+Tag search/creation is staged locally: nothing is sent to the backend while the panel is open, and `POST /api/tags` is never called eagerly on "Créer « nom »" (would leave an orphaned tag if dismissed). **Only "Enregistrer" saves** (`onSave`, with zero, one, or several tag names — tags stay optional). In `TagPickerPopup`, every other way of leaving the panel (×, backdrop click, Escape — all routed through one `Dialog.Root onOpenChange`) calls `onCancel` instead, and saves nothing at all, including any tag already checked. While a save is in flight (`isSaving`, from `createQuoteMutation.isPending`): "Enregistrer" and the × close button are both disabled, and `onOpenChange` ignores every dismiss attempt — the request has already been sent and can't actually be aborted, so "cancelling" mid-flight would only desync the UI from a save that's still going to complete.
 
 ### Toast
 
@@ -125,14 +127,46 @@ A slow save can resolve after its `QuoteSelection` instance has unmounted (e.g. 
 
 ---
 
-## Frontend — browsing saved quotes and managing tags
+## Frontend — detail modal for an unsaved search result (`SearchResultDetailModal`)
 
-`SearchPage` displays saved quotes in its saved-citations scope, with the same search field used for corpus search. It requests a paginated, most-recent-first list, filtered by the selected tag and text query. `TagFilterBar` switches between corpus and saved-citations scopes, selects a tag, and provides tag rename and deletion. `QuoteCard` displays each saved quote and provides deletion; `ResultList` provides pagination. See [Search — Frontend](search-frontend.md) for the scope and query-state behavior.
+`src/features/search/SearchResultDetailModal/`, opened by a "Voir le détail" button in `ParagraphCard`'s header — not a click on the paragraph text itself, since that text is already a gesture target for native selection (`QuoteSelection`'s own "Sauvegarder" flow). `SearchPage` owns the open/close state (`detailHit: SearchHit | null`), the same "parent owns the single modal instance" pattern as `QuoteDetailModal`.
 
-The legacy `/mes-citations` URL redirects to `/`. The saved-citations scope is shown only to an authenticated user; the quote and tag API endpoints independently require an authenticated session.
+Same `DetailModal` layout as `QuoteDetailModal`, but for a paragraph that isn't saved yet: `centerContent` highlights the matched phrase (`buildHighlightSegments`, the same helper `ParagraphCard`/`QuoteSelection` use) instead of showing a bare `selectedText`, and `sideContent` is `TagPickerContent` directly (no second `Dialog`), wired to a local `createQuote` mutation instead of `onSave` bubbling up to a parent. On a successful save: invalidates `['quotes']`, shows the same toast as `QuoteSelection`'s own save flow (`quoteSelection.savedToast`/`saveErrorToast`), and closes the modal. `closeDisabled`/the `onOpenChange` guard mirror `TagPickerPopup`'s in-flight-save behavior above.
+
+Reading context is public — the modal itself (and its progressive context) is available to anonymous visitors too, same as `/api/search`/`/api/paragraphs/{id}/context`. Only the tag picker in the side panel is gated on `useCurrentUser()`, mirroring `QuoteSelection`'s own contextual "Sauvegarder" menu.
 
 ---
 
-## Frontend — editing an existing quote (`QuoteTagEditor`)
+## Frontend — browsing and managing my quotes (`QuoteCard`)
 
-`QuoteTagEditor` is used in the timeline detail modal (see [Personal timeline](personal-timeline.md)). Tag additions and removals are saved immediately. The personal comment is saved when the modal closes, after trimming; unchanged comments are not sent.
+No dedicated route or page component — `QuoteCard` (`src/features/quotes/QuoteCard/`) is rendered by `SearchPage`'s `ResultList` when the "saved citations" scope is active (`src/features/search/SearchPage.tsx`). `/mes-citations` redirects to `/`. See `docs/features/search-frontend.md` for the scope toggle, state model, and how `TagFilterBar` (`src/features/quotes/TagFilterBar/`) doubles as the saved-citations entry point plus one button per tag, with inline rename/delete.
+
+Anonymous visitors never reach this scope (`TagFilterBar`/`TimelineBar`/`VolumeList` are all gated on `isConnected` in `SearchPage`) — there's no separate route-level guard.
+
+**`QuoteCard`** shows a quote's `selectedText` (as a button — clicking it opens the detail modal, see below), its tags (plain chips, not clickable — filtering goes through `TagFilterBar`), a formatted `createdAt`, and a delete button (confirmation, then `DELETE /api/quotes/{id}`, invalidates `['quotes']`). `Pagination` (`src/components/Pagination/`) is owned by `ResultList`, shared by both scopes.
+
+---
+
+## Frontend — quote detail modal (`QuoteDetailModal`) and tag editing (`QuoteTagEditor`)
+
+`QuoteDetailModal` (`src/features/quotes/QuoteDetailModal/`) is opened two ways — clicking a bookmark on the frieze (`TimelineBar`), or clicking a citation's text in `QuoteCard` — both report just a quote id up to `SearchPage`, which owns the single modal instance and resolves it against `useTimeline()`'s already-fetched (deduplicated) data; see `docs/features/personal-timeline.md`. It delegates its two-column layout and progressive before/after context to the shared `DetailModal` component — see "Shared two-column layout" below — and owns only what's specific to an already-saved quote: the personal comment and `QuoteTagEditor`, passed as `sideContent`.
+
+Since `QuoteCard`'s quote objects don't carry `pageNumber`/`volumeId` (only the unpaginated timeline does — see `docs/features/personal-timeline.md`'s data flow), `QuoteDetailModal`'s meta line falls back to just the formatted date when those fields are absent, instead of `"{volume} — page {N} · {date}"`.
+
+### `QuoteTagEditor`
+
+`src/features/quotes/QuoteTagEditor/`, the first frontend consumer of `POST/DELETE /api/quotes/{id}/tags[/{tagId}]` — both endpoints existed since this feature's initial build but had no UI caller until `QuoteDetailModal` needed one. Live editing, not a staged batch: every add or remove calls the API immediately (`useMutation` + `queryClient.invalidateQueries({ queryKey: ['quotes'] })`, the same pattern already used by `TagFilterBar`'s rename/delete) — unlike `TagPickerPopup`, there's no "Terminer" step to collect changes before sending them, because the quote this component edits already exists server-side. The search/create-if-missing matching logic (`useTagSearch`, `src/hooks/`) is shared with `TagPickerPopup` — both search an existing tag list and offer to create one that doesn't match, `QuoteTagEditor` additionally excluding tags already attached to the quote from its suggestions.
+
+The personal comment field lives directly in `QuoteDetailModal` (no dedicated sub-component — a single `<textarea>`, one consumer). Saved when the modal closes (cross, backdrop click, or Escape — Base UI routes all three through one `onOpenChange` handler), not on blur: closing is the natural "done editing" signal for a field inside a modal, unlike inline editing outside one. Trimmed at save time, and skipped entirely if the trimmed value didn't actually change (no gratuitous `PATCH`). The draft resets from the server value whenever the modal opens on a different quote, and also when it reopens on the *same* quote — `QuoteDetailModal` stays mounted across opens/closes (only `DetailModal`'s `paragraphId` prop toggles), so the draft-reset logic resets the tracked quote id back to `null` on close too, not only when a new id arrives.
+
+---
+
+## Shared two-column layout and progressive context (`DetailModal`)
+
+`DetailModal` (`src/components/DetailModal/`) is the layout both `QuoteDetailModal` and `SearchResultDetailModal` (above) delegate to — a two-column Base UI `Dialog`: main column (context paragraphs + the center text the caller provides via `centerContent`) and a side column (`sideContent`, fully owned by the caller — comment/tags/delete for an existing quote, or the tag picker + "Enregistrer" for an unsaved search result). Lives directly in `src/components/` rather than a single feature's folder, since both consumers are real from the start.
+
+**Progressive context**: two arrow buttons (▲ above, ▼ below the center text) each request one more paragraph of context in that direction, backed by `GET /api/paragraphs/{id}/context?before=N&after=M` — see `docs/features/paragraph-context.md` for the endpoint. `before`/`after` are local component state that only grows (never shrinks) on each click; `useParagraphContext` (`src/hooks/useParagraphContext.ts`) re-fetches the whole window each time rather than appending client-side, so the response's `hasMoreBefore`/`hasMoreAfter` always reflect the current edge — no separate bookkeeping needed to know when to disable an arrow. An arrow is disabled while the query is pending too, not just at the volume boundary, to avoid a second click racing the first.
+
+The context window resets to `before: 0, after: 0` whenever `paragraphId` changes to a different value — `DetailModal` can stay mounted across different quotes/results opening in sequence (only `paragraphId` toggles), so this reset is explicit state logic, the same pattern `QuoteDetailModal`'s own comment draft uses.
+
+`closeDisabled` (optional prop) lets a caller block the × close button — used by `SearchResultDetailModal` while a save is in flight, for the same reason `TagPickerPopup` disables its own close button in that state: the request can't be aborted once sent.

@@ -6,7 +6,7 @@ How the search UI works: from user input to highlighted paragraph displayed on s
 
 ## What it does
 
-The user enters a phrase, submits the form, and sees a paginated list of matching paragraphs from *À la recherche du temps perdu*. Each result shows the paragraph with the matched phrase highlighted, and its position in the work (volume, part, approximate page).
+The user enters a phrase, submits the form, and sees a paginated list of matching paragraphs from *À la recherche du temps perdu*. Each result shows the paragraph with the matched phrase highlighted, and its position in the work (volume, part, approximate page). A "Voir le détail" button on each result opens it in a two-column modal with progressive before/after reading context (and, when connected, a save-with-tags flow) — `SearchResultDetailModal`, documented in `docs/features/quote-save-tags.md` alongside the shared `DetailModal` layout it builds on, not duplicated here.
 
 For a connected user, the same search box also filters their own saved citations instead, when the "saved citations" scope is active in `TagFilterBar` — see "Corpus vs. saved-citations scope" below.
 
