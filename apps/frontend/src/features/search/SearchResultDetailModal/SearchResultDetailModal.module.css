@@ -1,0 +1,20 @@
+.text {
+  margin: 0;
+  font-family: var(--font-reading);
+  font-size: var(--text-lg);
+  line-height: var(--line-height-loose);
+  color: var(--color-text);
+}
+
+.mark {
+  background: var(--color-highlight-bg);
+  color: inherit;
+  padding: 0 0.1em;
+  border-radius: var(--radius-sm);
+}
+
+.meta {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

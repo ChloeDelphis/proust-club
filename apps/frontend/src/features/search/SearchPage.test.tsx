@@ -7,6 +7,7 @@ import * as searchApi from '../../api/search'
 import * as authApi from '../../api/auth'
 import * as quoteApi from '../../api/quote'
 import * as tagApi from '../../api/tag'
+import * as paragraphApi from '../../api/paragraph'
 import { ApiError } from '../../api/client'
 import ToastProvider from '../../components/Toast/ToastProvider'
 import { quoteId } from '../quotes/TimelineBar/timelineTestFixtures'
@@ -15,6 +16,7 @@ vi.mock('../../api/search')
 vi.mock('../../api/auth')
 vi.mock('../../api/quote')
 vi.mock('../../api/tag')
+vi.mock('../../api/paragraph')
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({
@@ -47,6 +49,13 @@ const mockResponse: searchApi.SearchResponse = {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
+  vi.mocked(paragraphApi.getParagraphContext).mockResolvedValue({
+    paragraphId: mockHit.paragraphId,
+    before: [],
+    after: [],
+    hasMoreBefore: false,
+    hasMoreAfter: false,
+  })
 })
 
 describe('SearchPage', () => {
@@ -145,6 +154,21 @@ describe('SearchPage', () => {
 
     expect(screen.getByRole('searchbox')).toHaveValue('')
     expect(await screen.findByText("Tapez une recherche pour explorer l'œuvre.")).toBeInTheDocument()
+  })
+
+  it("ouvre le détail d'un résultat sans proposer de tags pour un visiteur non connecté", async () => {
+    vi.mocked(searchApi.searchParagraphs).mockResolvedValue(mockResponse)
+    const user = userEvent.setup()
+
+    render(<SearchPage />, { wrapper })
+    await userEvent.type(screen.getByRole('searchbox'), 'Longtemps')
+    await userEvent.click(screen.getByRole('button', { name: 'Chercher' }))
+    await screen.findByText(/Du côté de chez Swann/)
+
+    await user.click(screen.getByRole('button', { name: 'Voir le détail' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Résultat de recherche' })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Chercher un tag' })).not.toBeInTheDocument()
   })
 
   it('invite à taper une recherche tant que le champ est vide, sans frise ni filtre par tag', async () => {
@@ -255,5 +279,28 @@ describe('connected', () => {
     await user.click(screen.getByRole('button', { name: 'Combray' }))
 
     expect(await screen.findByText("Tapez une recherche pour explorer l'œuvre.")).toBeInTheDocument()
+  })
+
+  it('saves a search result with chosen tags from its detail modal, then closes it', async () => {
+    vi.mocked(searchApi.searchParagraphs).mockResolvedValue(mockResponse)
+    vi.mocked(quoteApi.createQuote).mockResolvedValue({} as quoteApi.QuoteSelectionResponse)
+    const user = userEvent.setup()
+
+    render(<SearchPage />, { wrapper })
+    await user.type(screen.getByRole('searchbox'), 'Longtemps')
+    await user.click(screen.getByRole('button', { name: 'Chercher' }))
+    await user.click(await screen.findByRole('button', { name: 'Voir le détail' }))
+
+    await user.click(await screen.findByRole('checkbox', { name: 'Combray' }))
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(quoteApi.createQuote).toHaveBeenCalledWith({
+      paragraphId: mockHit.paragraphId,
+      startOffset: mockHit.startOffset,
+      endOffset: mockHit.endOffset,
+      selectedText: mockHit.text.slice(mockHit.startOffset, mockHit.endOffset),
+      tagNames: ['Combray'],
+    })
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Résultat de recherche' })).not.toBeInTheDocument())
   })
 })

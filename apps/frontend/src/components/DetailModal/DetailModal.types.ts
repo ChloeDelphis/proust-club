@@ -6,4 +6,6 @@ export interface DetailModalProps {
   sideContent: ReactNode
   ariaLabel: string
   onOpenChange: (open: boolean) => void
+  /** Disables the × close button — for a caller with its own irreversible action in flight. */
+  closeDisabled?: boolean
 }

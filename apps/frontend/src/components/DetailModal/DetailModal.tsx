@@ -5,7 +5,7 @@ import { useParagraphContext } from '../../hooks/useParagraphContext'
 import type { DetailModalProps } from './DetailModal.types'
 import styles from './DetailModal.module.css'
 
-export default function DetailModal({ paragraphId, centerContent, sideContent, ariaLabel, onOpenChange }: DetailModalProps) {
+export default function DetailModal({ paragraphId, centerContent, sideContent, ariaLabel, onOpenChange, closeDisabled }: DetailModalProps) {
   const { t } = useTranslation()
 
   // Resets the context window when a different paragraph opens, without a useEffect — same
@@ -29,7 +29,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} />
         <Dialog.Popup className={styles.popup} aria-label={ariaLabel}>
-          <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')}>×</Dialog.Close>
+          <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')} disabled={closeDisabled}>×</Dialog.Close>
 
           {paragraphId !== null && (
             <div className={styles.layout}>

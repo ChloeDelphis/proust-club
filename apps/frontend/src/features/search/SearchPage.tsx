@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { searchParagraphs } from '../../api/search'
+import type { SearchHit } from '../../api/search'
 import { listQuotes } from '../../api/quote'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import SearchForm from './SearchForm/SearchForm'
@@ -13,6 +14,7 @@ import VolumeList from '../quotes/VolumeList/VolumeList'
 import TagFilterBar from '../quotes/TagFilterBar/TagFilterBar'
 import QuoteCard from '../quotes/QuoteCard/QuoteCard'
 import QuoteDetailModal from '../quotes/QuoteDetailModal/QuoteDetailModal'
+import SearchResultDetailModal from './SearchResultDetailModal/SearchResultDetailModal'
 import { useTimeline } from '../quotes/useTimeline'
 import Spinner from '../../components/Spinner/Spinner'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
@@ -45,6 +47,7 @@ export default function SearchPage() {
   // useTimeline call, so this doesn't add a second network request.
   const [detailQuoteId, setDetailQuoteId] = useState<string | null>(null)
   const timelineQuery = useTimeline(tagId, isConnected)
+  const [detailHit, setDetailHit] = useState<SearchHit | null>(null)
 
   function handleSearch(q: string) {
     setQuery(q)
@@ -100,7 +103,7 @@ export default function SearchPage() {
         <ResultList
           results={corpusQuery.data.results}
           getKey={hit => hit.paragraphId}
-          renderItem={hit => <ParagraphCard {...hit} />}
+          renderItem={hit => <ParagraphCard {...hit} onOpenDetail={setDetailHit} />}
           total={corpusQuery.data.total}
           page={corpusQuery.data.page}
           size={corpusQuery.data.size}
@@ -164,6 +167,7 @@ export default function SearchPage() {
       {isConnected && (
         <QuoteDetailModal quote={detailQuote} volumeTitle={detailVolumeTitle} onClose={() => setDetailQuoteId(null)} />
       )}
+      <SearchResultDetailModal hit={detailHit} onClose={() => setDetailHit(null)} />
     </main>
   )
 }
