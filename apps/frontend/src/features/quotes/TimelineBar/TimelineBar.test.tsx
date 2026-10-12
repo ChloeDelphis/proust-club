@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -8,6 +9,14 @@ import type { TimelineResponse } from '../../../api/quote'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
 import { quoteId } from './timelineTestFixtures'
+
+// TimelineBar is controlled (selectedVolumeId/onSelectVolume owned by the parent in real usage,
+// SearchPage) — this feeds the prop back so tests can observe the effect of clicking a zone
+// directly in the bar, same pattern as any other controlled-component test in this codebase.
+function ControlledTimelineBar({ activeTagId }: { activeTagId: string | null }) {
+  const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
+  return <TimelineBar activeTagId={activeTagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
+}
 
 vi.mock('../../../api/quote')
 vi.mock('../../../api/tag')
@@ -38,7 +47,7 @@ beforeEach(() => {
 it('shows a spinner while loading', () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockReturnValue(new Promise(() => {}))
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
 
   expect(screen.getByRole('status')).toBeInTheDocument()
 })
@@ -46,19 +55,9 @@ it('shows a spinner while loading', () => {
 it('shows an error message when the request fails', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockRejectedValue(new Error('HTTP 500'))
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('alert')).toBeInTheDocument()
-})
-
-it('always shows a filter button for every volume, plus "Tous les tomes"', async () => {
-  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
-
-  render(<TimelineBar activeTagId={null} />, { wrapper })
-
-  expect(await screen.findByRole('button', { name: 'Tous les tomes' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Du Côté de Chez Swann' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: "À l'Ombre des Jeunes Filles en Fleurs" })).toBeInTheDocument()
 })
 
 it('renders one bookmark per saved quote', async () => {
@@ -67,36 +66,20 @@ it('renders one bookmark per saved quote', async () => {
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
 })
 
-it('zooming on a volume hides bookmarks from other volumes', async () => {
+it('zooming by clicking directly on a volume zone in the bar hides bookmarks from other volumes', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
     volumes,
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
-  await screen.findByRole('button', { name: 'Citation page 150' })
-
-  await user.click(screen.getByRole('button', { name: 'Du Côté de Chez Swann' }))
-
-  expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
-})
-
-it('zooming by clicking directly on a volume zone in the bar also hides other volumes', async () => {
-  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
-    volumes,
-    quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
-  })
-  const user = userEvent.setup()
-
-  render(<TimelineBar activeTagId={null} />, { wrapper })
+  render(<ControlledTimelineBar activeTagId={null} />, { wrapper })
   await screen.findByRole('button', { name: 'Citation page 150' })
 
   await user.click(screen.getByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' }))
@@ -105,41 +88,43 @@ it('zooming by clicking directly on a volume zone in the bar also hides other vo
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
 })
 
-it('removes volume zones from the accessibility tree once zoomed, without unmounting them', async () => {
+it('keeps the selected volume zone reachable while hiding the others from the accessibility tree', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
     volumes,
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
   const user = userEvent.setup()
 
-  const { container } = render(<TimelineBar activeTagId={null} />, { wrapper })
+  const { container } = render(<ControlledTimelineBar activeTagId={null} />, { wrapper })
   await screen.findByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })
 
-  await user.click(screen.getByRole('button', { name: 'Du Côté de Chez Swann' }))
+  await user.click(screen.getByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' }))
 
-  // Unreachable via the accessible-role query — aria-hidden + tabIndex={-1} once hidden, not just
+  // The selected zone stays reachable — its accessible name now reflects that clicking it again
+  // zooms back out, not further in.
+  expect(screen.getByRole('button', { name: 'Revenir à tous les tomes' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })).not.toBeInTheDocument()
+
+  // The other volume's zone is unreachable via role query — aria-hidden + tabIndex={-1}, not just
   // visually faded via CSS pointer-events. Note: `{ hidden: true }` does *not* help here — per the
   // ARIA spec aria-hidden removes the element's exposed role entirely, so role-based queries can't
   // find it even with that option; a direct DOM query is the only way to check it is still mounted.
-  expect(screen.queryByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: "Zoomer sur À l'Ombre des Jeunes Filles en Fleurs" })).not.toBeInTheDocument()
-
   // ...but still physically in the DOM (kept mounted on purpose, for the CSS opacity transition).
-  expect(container.querySelector('[aria-label="Zoomer sur Du Côté de Chez Swann"]')).toBeInTheDocument()
   expect(container.querySelector('[aria-label="Zoomer sur À l\'Ombre des Jeunes Filles en Fleurs"]')).toBeInTheDocument()
 })
 
-it('returns to the full view when "Tous les tomes" is clicked again', async () => {
+it('returns to the full view when selectedVolumeId goes back to null', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
     volumes,
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
-  const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
-  await screen.findByRole('button', { name: 'Citation page 150' })
-  await user.click(screen.getByRole('button', { name: 'Du Côté de Chez Swann' }))
-  await user.click(screen.getByRole('button', { name: 'Tous les tomes' }))
+  const { rerender } = render(<TimelineBar activeTagId={null} selectedVolumeId={1} onSelectVolume={vi.fn()} />, { wrapper })
+  await screen.findByRole('button', { name: 'Citation page 9' })
+  expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
+
+  rerender(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />)
 
   expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
@@ -152,7 +137,7 @@ it('clicking a bookmark opens the quote in a modal', async () => {
   })
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
   await user.click(await screen.findByRole('button', { name: 'Citation page 9' }))
 
   expect(screen.getByText('Il y avait déjà bien des années')).toBeInTheDocument()
@@ -165,7 +150,7 @@ it('hovering a bookmark shows a preview, leaving hides it', async () => {
   })
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} />, { wrapper })
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
   const bookmark = await screen.findByRole('button', { name: 'Citation page 9' })
 
   await user.hover(bookmark)
@@ -179,7 +164,7 @@ it('refetches with the active tag filter', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
   const tagId = '00000000-0000-4000-8000-000000000101'
 
-  render(<TimelineBar activeTagId={tagId} />, { wrapper })
+  render(<TimelineBar activeTagId={tagId} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
 
   await waitFor(() => {
     expect(quoteApi.getQuoteTimeline).toHaveBeenCalledWith({ tagId }, expect.anything())

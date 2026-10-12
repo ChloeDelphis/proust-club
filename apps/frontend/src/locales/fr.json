@@ -15,7 +15,6 @@
   },
   "header": {
     "brand": "Proust Club",
-    "myQuotesLink": "Mes citations",
     "accountLink": "Mon compte",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
@@ -30,14 +29,18 @@
     "resendButton": "Renvoyer l'email de confirmation"
   },
   "searchForm": {
-    "tooShortError": "Saisissez au moins {{min}} caractères.",
     "placeholder": "Rechercher dans Proust…",
     "ariaLabel": "Rechercher un passage",
+    "clearButton": "Effacer la recherche",
     "submitButton": "Chercher"
   },
   "searchPage": {
     "title": "Proust Club",
-    "emptyState": "Aucun résultat pour « {{query}} »."
+    "emptyState": "Aucun résultat pour « {{query}} ».",
+    "typeToSearch": "Tapez une recherche pour explorer l'œuvre.",
+    "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
+    "emptyStateNoTagMatch": "Aucune citation avec ce tag.",
+    "emptyStateNoTextMatch": "Aucune citation ne correspond à cette recherche."
   },
   "resultList": {
     "resultCount_one": "{{count}} résultat",
@@ -136,11 +139,6 @@
     "expiredLinkError": "Ce lien de confirmation est invalide ou a expiré.",
     "backHomeLink": "Retour à l’accueil"
   },
-  "myQuotesPage": {
-    "title": "Mes citations",
-    "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
-    "emptyStateNoTagMatch": "Aucune citation avec ce tag."
-  },
   "quoteCard": {
     "deleteErrorToast": "La citation n'a pas pu être supprimée.",
     "deleteConfirm": "Supprimer cette citation ?",
@@ -165,7 +163,7 @@
     "deleteErrorToast": "Le tag n'a pas pu être supprimé.",
     "deleteConfirm": "Supprimer ce tag ?",
     "ariaLabel": "Filtrer par tag",
-    "allFilter": "Tous",
+    "savedScopeFilter": "Mes citations enregistrées",
     "renameTag": "Renommer {{name}}",
     "deleteTag": "Supprimer {{name}}"
   },
@@ -173,9 +171,9 @@
     "loadError": "La frise n'a pas pu être chargée.",
     "ariaLabel": "Frise de mes citations",
     "volumeFilterAriaLabel": "Filtrer par tome",
-    "allVolumesFilter": "Tous les tomes",
     "trackAriaLabel": "Positions des citations sauvegardées dans l'œuvre",
     "zoomOnVolume": "Zoomer sur {{title}}",
+    "zoomOutOfVolume": "Revenir à tous les tomes",
     "bookmarkAriaLabel": "Citation page {{page}}"
   }
 }

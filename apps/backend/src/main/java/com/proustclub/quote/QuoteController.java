@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -59,13 +60,16 @@ class QuoteController {
         return service.create(currentUser.resolveUuid(authentication), request);
     }
 
-    @Operation(summary = "List my quote selections", description = "Returns the authenticated user's quotes, most recent first. Filterable by tagId.")
+    @Operation(summary = "List my quote selections", description = "Returns the authenticated user's quotes, most recent first. Filterable by tagId and/or a free-text search within the saved selection's own text.")
     @ApiResponse(responseCode = "200", description = "Quote selections (empty list if none match)", content = @Content(schema = @Schema(implementation = QuoteSelectionListResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping(value = "/api/quotes", produces = MediaType.APPLICATION_JSON_VALUE)
     QuoteSelectionListResponse list(
         @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty list, not an error.", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
         @RequestParam(required = false) UUID tagId,
+
+        @Parameter(description = "Case-insensitive substring match against the quote's own saved text (not its comment). Blank/omitted means no text filter.", example = "madeleine")
+        @RequestParam(required = false) @Size(max = 500, message = "q must be at most {max} characters") String q,
 
         @Parameter(description = "Zero-based page index (default: 0)", example = "0")
         @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= {value}") int page,
@@ -75,10 +79,10 @@ class QuoteController {
 
         Authentication authentication
     ) {
-        return service.list(currentUser.resolveUuid(authentication), tagId, page, size);
+        return service.list(currentUser.resolveUuid(authentication), tagId, q, page, size);
     }
 
-    @Operation(summary = "Get my personal timeline", description = "Returns every one of the authenticated user's saved quotes, positioned on the work's structure (volume, page) — unpaginated, unlike list(). Filterable by tagId, same semantics as list().")
+    @Operation(summary = "Get my personal timeline", description = "Returns every one of the authenticated user's saved quotes, positioned on the work's structure (volume, page) — unpaginated, unlike list(). Filterable by tagId and q, same semantics as list().")
     @ApiResponse(responseCode = "200", description = "Timeline data (empty quotes list if none match; volumes are always present)", content = @Content(schema = @Schema(implementation = TimelineResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping(value = "/api/quotes/timeline", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -86,9 +90,12 @@ class QuoteController {
         @Parameter(description = "Only return quotes tagged with this tag id. A tagId that doesn't exist or belongs to another user yields an empty quotes list, not an error.", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
         @RequestParam(required = false) UUID tagId,
 
+        @Parameter(description = "Case-insensitive substring match against the quote's own saved text. Blank/omitted means no text filter.", example = "madeleine")
+        @RequestParam(required = false) @Size(max = 500, message = "q must be at most {max} characters") String q,
+
         Authentication authentication
     ) {
-        return service.getTimeline(currentUser.resolveUuid(authentication), tagId);
+        return service.getTimeline(currentUser.resolveUuid(authentication), tagId, q);
     }
 
     @Operation(summary = "Delete a quote selection", description = "Deletes a quote and all its tag associations. 404 if it doesn't exist or doesn't belong to the authenticated user.")

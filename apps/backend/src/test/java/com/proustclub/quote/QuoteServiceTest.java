@@ -96,11 +96,11 @@ class QuoteServiceTest {
                 new VolumeRange(1, "Du Côté de Chez Swann", 1, 1, 103),
                 new VolumeRange(2, "À l'Ombre des Jeunes Filles en Fleurs", 2, 104, 183)
         );
-        when(quoteRepository.findTimelineByUserId(userId, null)).thenReturn(entries);
+        when(quoteRepository.findTimelineByUserId(userId, null, null)).thenReturn(entries);
         when(quoteRepository.findVolumesWithPageRange()).thenReturn(volumes);
         when(quoteRepository.tagsForQuoteIds(List.of(quoteId1, quoteId2))).thenReturn(Map.of(quoteId1, List.of()));
 
-        var response = service.getTimeline(userId, null);
+        var response = service.getTimeline(userId, null, null);
 
         assertThat(response.volumes()).hasSize(2);
         assertThat(response.volumes().get(1).minPage()).isEqualTo(104);
@@ -134,6 +134,28 @@ class QuoteServiceTest {
 
         assertThat(response.comment()).isNull();
         verify(quoteRepository).updateCommentForOwner(userId, quoteId, null);
+    }
+
+    @Test
+    void listNormalizesBlankQueryToNull() {
+        when(quoteRepository.findByUserId(userId, null, null, 0, 10)).thenReturn(List.of());
+        when(quoteRepository.countByUserId(userId, null, null)).thenReturn(0L);
+
+        service.list(userId, null, "   ", 0, 10);
+
+        verify(quoteRepository).findByUserId(userId, null, null, 0, 10);
+        verify(quoteRepository).countByUserId(userId, null, null);
+    }
+
+    @Test
+    void listTrimsQueryBeforePassingToRepository() {
+        when(quoteRepository.findByUserId(userId, null, "madeleine", 0, 10)).thenReturn(List.of());
+        when(quoteRepository.countByUserId(userId, null, "madeleine")).thenReturn(0L);
+
+        service.list(userId, null, "  madeleine  ", 0, 10);
+
+        verify(quoteRepository).findByUserId(userId, null, "madeleine", 0, 10);
+        verify(quoteRepository).countByUserId(userId, null, "madeleine");
     }
 
     @Test

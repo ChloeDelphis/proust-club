@@ -20,4 +20,12 @@ describe('FilterButton', () => {
     rerender(<FilterButton active onClick={vi.fn()}>Tous</FilterButton>)
     expect(screen.getByRole('button', { name: 'Tous' }).className).toMatch(/isActive/)
   })
+
+  it('defaults to the pill variant, and switches shape with variant="list"', () => {
+    const { rerender } = render(<FilterButton active={false} onClick={vi.fn()}>Tous</FilterButton>)
+    expect(screen.getByRole('button', { name: 'Tous' }).className).toMatch(/pill/)
+
+    rerender(<FilterButton active={false} variant="list" onClick={vi.fn()}>Tous</FilterButton>)
+    expect(screen.getByRole('button', { name: 'Tous' }).className).toMatch(/list/)
+  })
 })

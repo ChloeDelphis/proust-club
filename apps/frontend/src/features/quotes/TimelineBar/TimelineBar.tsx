@@ -1,13 +1,11 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { getQuoteTimeline } from '../../../api/quote'
 import type { TimelineVolume } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
 import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
-import FilterButton from '../../../components/FilterButton/FilterButton'
 import QuoteHoverPreview from '../QuoteHoverPreview/QuoteHoverPreview'
 import QuoteDetailModal from '../QuoteDetailModal/QuoteDetailModal'
+import { useTimeline } from '../useTimeline'
 import { pageToPercent, positionTimelineQuotes } from './positionTimelineQuotes'
 import type { PageRange, TimelineGroup } from './positionTimelineQuotes'
 import type { TimelineBarProps } from './TimelineBar.types'
@@ -47,40 +45,55 @@ type TranslateFn = ReturnType<typeof useTranslation>['t']
 function VolumeZones({
   volumes,
   range,
-  isHidden,
+  selectedVolumeId,
   onSelect,
   t,
 }: {
   volumes: TimelineVolume[]
   range: PageRange
-  isHidden: boolean
+  selectedVolumeId: number | null
   onSelect: (id: number) => void
   t: TranslateFn
 }) {
-  const className = isHidden ? `${styles.volumeZone} ${styles.isHidden}` : styles.volumeZone
-
   return (
     <>
       {volumes.map(volume => {
         const x1 = percentToX(pageToPercent(volume.minPage, range))
         const x2 = percentToX(pageToPercent(volume.maxPage, range))
+        const width = Math.max(0, x2 - x1)
+        // Only the *other* volumes hide when one is selected — the selected one's own zone stays
+        // visible and interactive (now spanning the full track, since `range` narrows to its own
+        // page bounds), so clicking it again can toggle the zoom back off.
+        const isActive = volume.id === selectedVolumeId
+        const isHidden = selectedVolumeId !== null && !isActive
+        const zoneClassName = [styles.volumeZone, isActive && styles.isActiveZone, isHidden && styles.isHidden]
+          .filter(Boolean)
+          .join(' ')
+        const labelClassName = [styles.volumeLabel, isActive && styles.isActiveLabel, isHidden && styles.isHidden]
+          .filter(Boolean)
+          .join(' ')
         return (
-          <rect
-            key={volume.id}
-            x={x1}
-            y={TRACK_TOP}
-            width={Math.max(0, x2 - x1)}
-            height={TRACK_BOTTOM - TRACK_TOP}
-            className={className}
-            role="button"
-            // Hidden zones stay mounted (for a smooth opacity transition) but drop out of the tab
-            // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
-            tabIndex={isHidden ? -1 : 0}
-            aria-hidden={isHidden}
-            aria-label={t('timelineBar.zoomOnVolume', { title: volume.title })}
-            onClick={() => onSelect(volume.id)}
-            onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
-          />
+          <g key={volume.id}>
+            <rect
+              x={x1}
+              y={TRACK_TOP}
+              width={width}
+              height={TRACK_BOTTOM - TRACK_TOP}
+              className={zoneClassName}
+              role="button"
+              // Hidden zones stay mounted (for a smooth opacity transition) but drop out of the tab
+              // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
+              tabIndex={isHidden ? -1 : 0}
+              aria-hidden={isHidden}
+              aria-label={isActive ? t('timelineBar.zoomOutOfVolume') : t('timelineBar.zoomOnVolume', { title: volume.title })}
+              onClick={() => onSelect(volume.id)}
+              onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
+            />
+            {/* Purely decorative — the rect above already carries the full accessible name. */}
+            <foreignObject x={x1} y={TRACK_TOP} width={width} height={TRACK_BOTTOM - TRACK_TOP} className={labelClassName} aria-hidden="true">
+              <div className={styles.volumeLabelText}>{volume.title}</div>
+            </foreignObject>
+          </g>
         )
       })}
     </>
@@ -141,20 +154,15 @@ function Bookmarks({
   )
 }
 
-export default function TimelineBar({ activeTagId }: TimelineBarProps) {
+export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVolume }: TimelineBarProps) {
   const { t } = useTranslation()
-  const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
   const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
   // Stores an id, not the quote object itself, so the modal re-derives fresh data from the query
   // cache below on every render — a mutation issued from inside the modal (comment/tags) just
   // needs to invalidate ['quotes'] to show up here, no extra plumbing to patch local state.
   const [openQuoteId, setOpenQuoteId] = useState<string | null>(null)
 
-  const { data, isPending, isError } = useQuery({
-    queryKey: ['quotes', 'timeline', activeTagId],
-    queryFn: ({ signal }) => getQuoteTimeline({ tagId: activeTagId ?? undefined }, signal),
-    staleTime: 60_000,
-  })
+  const { data, isPending, isError } = useTimeline(activeTagId)
 
   // Hooks below must run unconditionally (before the isPending/isError/empty early returns),
   // so each guards against a still-undefined `data` internally rather than skipping the hook.
@@ -186,17 +194,6 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
 
   return (
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
-      <nav className={styles.volumeFilters} aria-label={t('timelineBar.volumeFilterAriaLabel')}>
-        <FilterButton active={selectedVolumeId === null} onClick={() => setSelectedVolumeId(null)}>
-          {t('timelineBar.allVolumesFilter')}
-        </FilterButton>
-        {data.volumes.map(volume => (
-          <FilterButton key={volume.id} active={selectedVolumeId === volume.id} onClick={() => setSelectedVolumeId(volume.id)}>
-            {volume.title}
-          </FilterButton>
-        ))}
-      </nav>
-
       <svg
         className={styles.track}
         viewBox={`0 0 ${VIEWBOX_WIDTH} 200`}
@@ -204,7 +201,7 @@ export default function TimelineBar({ activeTagId }: TimelineBarProps) {
         role="img"
         aria-label={t('timelineBar.trackAriaLabel')}
       >
-        <VolumeZones volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} onSelect={setSelectedVolumeId} t={t} />
+        <VolumeZones volumes={data.volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} />
         <VolumeDelimiters volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} />
         <Bookmarks groups={groups} onOpen={setOpenQuoteId} onHoverChange={setHoveredQuoteId} t={t} />
 

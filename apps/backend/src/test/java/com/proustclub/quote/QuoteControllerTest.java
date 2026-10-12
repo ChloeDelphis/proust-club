@@ -182,6 +182,64 @@ class QuoteControllerTest {
     }
 
     @Test
+    void listQuotesFiltersByTextCaseInsensitively() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        createQuote(session, paragraphId, 3, 12, "madeleine");
+        createQuote(session, paragraphId, 0, 2, "La");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("q", "MADELEINE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.results[0].selectedText").value("madeleine"));
+    }
+
+    @Test
+    void listQuotesCombinesTextAndTagFilters() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        MvcResult tagged = mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(createQuoteJson(paragraphId, 3, 12, "madeleine", List.of("Combray"))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(createQuoteJson(paragraphId, 3, 12, "madeleine", List.of("autre"))))
+                .andExpect(status().isCreated());
+        String tagId = objectMapper.readTree(tagged.getResponse().getContentAsString())
+                .get("tags").get(0).get("id").asText();
+
+        mockMvc.perform(get("/api/quotes").session(session).param("q", "madeleine").param("tagId", tagId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1));
+    }
+
+    @Test
+    void listQuotesWithNonMatchingTextReturnsEmpty() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        createQuote(session, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("q", "guermantes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void listQuotesBlankTextIsTreatedAsNoFilter() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        createQuote(session, paragraphId, 3, 12, "madeleine");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("q", "   "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1));
+    }
+
+    @Test
+    void listQuotesTextOverLimitReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("q", "a".repeat(501)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void listQuotesWithForeignTagIdReturnsEmptyNotNotFound() throws Exception {
         var alice = registerAndLogin("alice", "alice@example.com");
         var bob = registerAndLogin("bob", "bob@example.com");
@@ -286,6 +344,18 @@ class QuoteControllerTest {
                 .get("tags").get(0).get("id").asText();
 
         mockMvc.perform(get("/api/quotes/timeline").session(session).param("tagId", tagId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quotes.length()").value(1))
+                .andExpect(jsonPath("$.quotes[0].selectedText").value("madeleine"));
+    }
+
+    @Test
+    void timelineFiltersByText() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        createQuote(session, paragraphId, 3, 12, "madeleine");
+        createQuote(session, paragraphId, 0, 2, "La");
+
+        mockMvc.perform(get("/api/quotes/timeline").session(session).param("q", "MADELEINE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quotes.length()").value(1))
                 .andExpect(jsonPath("$.quotes[0].selectedText").value("madeleine"));
