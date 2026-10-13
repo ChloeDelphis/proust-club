@@ -1,6 +1,8 @@
 import { apiFetch, buildQuery } from './client'
 import type { operations } from './schema.generated'
 
+export const MAX_PARAGRAPH_CONTEXT = 20
+
 export type ParagraphContextEntry = {
   paragraphId: number
   text: string
