@@ -28,7 +28,7 @@ class SearchControllerTest {
 
     @BeforeEach
     void setUp() {
-        // volume_id=1 (Du Côté de Chez Swann), part_id=1 (Combray)
+        // volume_id=1 (Du côté de chez Swann), part_id=1 (Combray)
         // Paragraphe 1 : "madeleine" à startOffset=3, endOffset=12
         //   strpos(lower("La madeleine..."), "madeleine") = 4 (1-based) → 3 (0-based)
         // Paragraphe 2 : "madeleine" à startOffset=12, endOffset=21
@@ -71,7 +71,7 @@ class SearchControllerTest {
     void searchReturnsLocationMetadata() throws Exception {
         mockMvc.perform(get("/api/search").param("q", "madeleine"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.results[0].volume").value("Du Côté de Chez Swann"))
+                .andExpect(jsonPath("$.results[0].volume").value("Du côté de chez Swann"))
                 .andExpect(jsonPath("$.results[0].part").value("Combray"))
                 .andExpect(jsonPath("$.results[0].pageNumber").value(1));
     }
