@@ -1,7 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useCreateQuoteMutation } from '../useCreateQuoteMutation'
 import { useTranslation } from 'react-i18next'
-import { createQuote } from '../../../api/quote'
-import type { CreateQuoteParams } from '../../../api/quote'
 import { useToast } from '../../../components/Toast/useToast'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import DetailModal from '../../../components/DetailModal/DetailModal'
@@ -18,12 +16,8 @@ import styles from './SearchResultDetailModal.module.css'
 export default function SearchResultDetailModal({ hit, onClose }: SearchResultDetailModalProps) {
   const { t } = useTranslation()
   const { isSuccess: isConnected } = useCurrentUser()
-  const queryClient = useQueryClient()
   const showToast = useToast()
-
-  const createQuoteMutation = useMutation({
-    mutationFn: (params: CreateQuoteParams) => createQuote(params),
-  })
+  const createQuoteMutation = useCreateQuoteMutation()
 
   function handleSave(tagNames: string[]) {
     if (!hit) return
@@ -37,7 +31,6 @@ export default function SearchResultDetailModal({ hit, onClose }: SearchResultDe
       },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['quotes'] })
           showToast(t('quoteSelection.savedToast'))
           onClose()
         },

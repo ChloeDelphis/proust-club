@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useCurrentUser } from '../../auth/useCurrentUser'
 import { useToast } from '../../../components/Toast/useToast'
-import { createQuote } from '../../../api/quote'
-import type { CreateQuoteParams } from '../../../api/quote'
 import { computeSelectionPhase } from '../computeSelectionPhase'
 import { buildHighlightSegments } from '../paragraphSegments'
+import { useCreateQuoteMutation } from '../useCreateQuoteMutation'
 import TagPickerPopup from '../TagPickerPopup/TagPickerPopup'
 import type { QuoteSelectionProps, Phase } from './QuoteSelection.types'
 import styles from './QuoteSelection.module.css'
@@ -36,9 +34,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
 
   const segments = useMemo(() => buildHighlightSegments(text, highlightRange), [text, highlightRange])
 
-  const createQuoteMutation = useMutation({
-    mutationFn: (params: CreateQuoteParams) => createQuote(params),
-  })
+  const createQuoteMutation = useCreateQuoteMutation()
 
   // Native selection is unique per document — restricting this to a single paragraph, and only
   // ever having one active at a time across the whole results page, both fall out for free from
