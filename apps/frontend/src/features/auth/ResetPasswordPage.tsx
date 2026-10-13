@@ -38,11 +38,8 @@ export default function ResetPasswordPage() {
     )
   }
 
-  // 400 means the token itself is invalid/expired — anything else (500, network) is a real
-  // server-side failure, not a problem with the link, and shouldn't be reported as one. 422 means
-  // the token is still live — the same link works again with a different password (see
-  // PasswordResetService.checkNewPasswordNotCompromisedIfTokenLooksValid(), the token is never
-  // burned on this failure).
+  // 400 means the token itself is invalid/expired unless a machine-readable policy code identifies
+  // a rejected password. A policy rejection leaves the token usable for a corrected retry.
   const errorMessage = !mutation.isError
     ? null
     : apiErrorMessage(
@@ -52,6 +49,7 @@ export default function ResetPasswordPage() {
           422: t('auth.passwordCompromisedError'),
         },
         t('resetPasswordPage.genericError'),
+        { password_matches_identifier: t('passwordIdentifierValidation.matchesIdentifierError') },
       )
 
   return (

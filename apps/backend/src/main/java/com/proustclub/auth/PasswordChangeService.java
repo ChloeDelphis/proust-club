@@ -41,8 +41,19 @@ class PasswordChangeService {
         authService.checkPasswordNotCompromised(newPassword);
     }
 
+    void checkNewPasswordDistinctFromIdentifiers(String newPassword, ProustClubPrincipal principal) {
+        PasswordPolicy.requireDistinctFromIdentifiers(
+                newPassword, principal.getDisplayUsername(), principal.getUsername()
+        );
+    }
+
     @Transactional
     void changePassword(ProustClubPrincipal principal, String newPassword, String currentSessionId) {
+        // Keep the policy beside the write as well as in the controller pre-check, which runs
+        // before the external breach lookup.
+        PasswordPolicy.requireDistinctFromIdentifiers(
+                newPassword, principal.getDisplayUsername(), principal.getUsername()
+        );
         userRepository.updatePasswordHash(principal.getUserId(), passwordEncoder.encode(newPassword));
         log.info("Password changed: {}", principal.getUserId());
 

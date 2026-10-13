@@ -58,6 +58,19 @@ describe('apiFetch', () => {
     await expect(apiFetch('/api/whatever')).rejects.toMatchObject({ status: 401 })
   })
 
+  it('carries a machine-readable problem code on a non-ok response', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: 400,
+      code: 'password_matches_identifier',
+    }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/problem+json' },
+    }))
+
+    await expect(apiFetch('/api/auth/password-reset/confirm'))
+      .rejects.toMatchObject({ status: 400, code: 'password_matches_identifier' })
+  })
+
   it('returns undefined for a 204 No Content response instead of parsing an empty body', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
 

@@ -38,7 +38,7 @@ class PasswordChangeController {
                     + "Invalidates every other active session for the account; the current one stays open."
     )
     @ApiResponse(responseCode = "204", description = "Password changed")
-    @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid request body or password matches the account username/email (code: password_matches_identifier)", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "401", description = "Not authenticated, or current password incorrect", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "422", description = "New password found in a known data breach", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping("/api/auth/password")
@@ -53,6 +53,7 @@ class PasswordChangeController {
         // authentication.getName() is the email — exactly what AuthService.reauthenticate() needs
         // to feed back into AuthenticationManager (see ADR-013).
         service.verifyCurrentPassword(authentication.getName(), request.currentPassword());
+        service.checkNewPasswordDistinctFromIdentifiers(request.newPassword(), principal);
         service.checkNewPasswordNotCompromised(request.newPassword());
         service.changePassword(principal, request.newPassword(), currentSessionId);
     }

@@ -97,6 +97,18 @@ describe('ResetPasswordPage', () => {
     expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
   })
 
+  it('affiche la règle d’identifiant sans présenter le lien comme expiré', async () => {
+    vi.mocked(authApi.confirmPasswordReset).mockRejectedValue(new ApiError(400, 'password_matches_identifier'))
+
+    render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
+
+    await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
+    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+
+    expect(await screen.findByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.')).toBeInTheDocument()
+    expect(screen.queryByText('Ce lien de réinitialisation est invalide ou a expiré.')).not.toBeInTheDocument()
+  })
+
   it("affiche un message générique pour une erreur qui n'est pas un token invalide", async () => {
     vi.mocked(authApi.confirmPasswordReset).mockRejectedValue(new ApiError(500))
 

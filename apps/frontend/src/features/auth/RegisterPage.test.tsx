@@ -108,9 +108,9 @@ describe('RegisterPage', () => {
     expect(authApi.register).not.toHaveBeenCalled()
   })
 
-  // Residual server-side 400 (client check bypassed or stale) falls back to the generic message —
-  // several distinct backend validation failures share status 400, and the frontend never reads
-  // the ProblemDetail body, so a specific message here would risk misdiagnosing the real cause.
+  // Residual server-side 400 without a recognized code (client check bypassed or stale) falls
+  // back to the generic message — several distinct validation failures share status 400, so the
+  // frontend must not guess which one occurred.
   it('affiche le message générique si le backend rejette la requête (400)', async () => {
     vi.mocked(authApi.register).mockRejectedValue(new ApiError(400))
 

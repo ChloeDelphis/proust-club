@@ -12,7 +12,7 @@ import styles from './AuthPage.module.css'
 
 export default function AccountPage() {
   const { t } = useTranslation()
-  const { isPending: isUserPending, isSuccess: isConnected } = useCurrentUser()
+  const { data: currentUser, isPending: isUserPending, isSuccess: isConnected } = useCurrentUser()
   const showToast = useToast()
 
   const mutation = useMutation({
@@ -30,7 +30,7 @@ export default function AccountPage() {
     )
   }
 
-  if (!isConnected) {
+  if (!isConnected || !currentUser) {
     return <Navigate to="/login" replace />
   }
 
@@ -43,12 +43,17 @@ export default function AccountPage() {
           422: t('auth.passwordCompromisedError'),
         },
         t('accountPage.genericError'),
+        { password_matches_identifier: t('passwordIdentifierValidation.matchesIdentifierError') },
       )
 
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('accountPage.title')}</h1>
-      <ChangePasswordForm onSubmit={params => mutation.mutate(params)} />
+      <ChangePasswordForm
+        username={currentUser.username}
+        email={currentUser.email}
+        onSubmit={params => mutation.mutate(params)}
+      />
       {errorMessage && <ErrorMessage message={errorMessage} />}
     </main>
   )

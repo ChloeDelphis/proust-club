@@ -81,4 +81,16 @@ class PasswordChangeServiceTest {
         verify(sessionInvalidator).invalidateOtherSessions(principal, "current-session");
         verify(authService, never()).reauthenticate(any(), any());
     }
+
+    @Test
+    void changePasswordRechecksIdentifierPolicyBeforeUpdatingHash() {
+        var principal = new ProustClubPrincipal(USER_ID, "a-very-long-username", "marcel@example.com", "old-hash", "USER");
+
+        assertThatThrownBy(() -> service.changePassword(
+                principal, "A-VERY-LONG-USERNAME", "current-session"
+        )).isInstanceOf(ApiException.class);
+
+        verify(userRepository, never()).updatePasswordHash(any(), any());
+        verify(sessionInvalidator, never()).invalidateOtherSessions(any(), any());
+    }
 }

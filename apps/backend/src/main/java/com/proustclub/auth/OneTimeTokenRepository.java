@@ -51,7 +51,7 @@ class OneTimeTokenRepository {
                 .execute();
     }
 
-    // Shared by existsValidToken() and consumeValidToken() below — both need to agree on exactly
+    // Shared by findValidTokenUserId() and consumeValidToken() below — both need to agree on exactly
     // what "still valid" means, and a definition duplicated between a SELECT and an UPDATE would
     // silently drift if it ever changed (e.g. a future revoked_at column).
     private Condition validAndUnusedCondition(String tokenHash) {
@@ -66,8 +66,12 @@ class OneTimeTokenRepository {
     // state-changing statement stays that single UPDATE, executed unconditionally after this,
     // regardless of what this peek observed — two concurrent callers can both see "valid" here
     // and still only one of them will ever win the UPDATE.
-    boolean existsValidToken(String table, String tokenHash) {
-        return dsl.fetchExists(dsl.selectOne().from(DSL.table(table)).where(validAndUnusedCondition(tokenHash)));
+    Optional<UUID> findValidTokenUserId(String table, String tokenHash) {
+        var userIdField = DSL.field("user_id", UUID.class);
+        return dsl.select(userIdField)
+                .from(DSL.table(table))
+                .where(validAndUnusedCondition(tokenHash))
+                .fetchOptional(userIdField);
     }
 
     // Validate-and-burn in a single statement rather than a SELECT followed by an UPDATE — one

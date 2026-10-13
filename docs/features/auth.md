@@ -19,8 +19,8 @@ Register, login, logout, `me`, and the two email-confirmation endpoints. See Swa
 - `username`: 3–50 characters
 - `email`: valid email format, max 255 characters
 - `password`: 15–128 characters. Length over composition rules — no uppercase/digit/symbol requirement, passphrases and spaces are welcome (current NIST guidance: 15+ characters for a password used as the sole factor, since there's no MFA here). The upper bound is a sanity limit on hashing cost, not an algorithm quirk — Argon2id's cost scales with input size, so an unbounded password is a cheap way to make the server do expensive work
-- `password` must not be identical (case-insensitive) to `username` or to the normalized `email` — `400` if it is. Strict equality only, not a substring check: a passphrase that merely contains the username (e.g. `"Marcel se souvient de Combray"` for user `marcel`) stays accepted, since a "contains" rule would fight the passphrase-friendly design above. Enforced in `AuthService.register()`, mirrored client-side in `RegisterForm` for immediate feedback — the backend check is the only one that actually matters. Scoped to registration only for now; `PasswordChangeService`/`PasswordResetService` don't enforce this yet — a deliberate scope decision, tracked as a follow-up.
-- `password` must not appear in a known data breach — `422` if it does, checked against the [Have I Been Pwned](https://haveibeenpwned.com/) "Pwned Passwords" API (k-anonymity: only the first 5 characters of the SHA-1 hash ever leave the server) via Spring Security's `HaveIBeenPwnedRestApiPasswordChecker`, wrapped in `PasswordBreachChecker` (`auth/PasswordBreachChecker.java`). That wrapper deliberately does **not** implement Spring Security's `CompromisedPasswordChecker` interface and is not exposed as a bean of that type — doing so would make Spring Security auto-wire the check into every authentication (`login()` included, not just `register()`) via `InitializeUserDetailsBeanManagerConfigurer`, silently expanding scope and bypassing the fail-open behavior below. **Fails open**: if the HIBP API errors or times out (2s connect + 2s read), the check is skipped and registration proceeds — this is a defense-in-depth check, not a hard dependency. Scoped to registration only for now, same follow-up tracking as the identifier check above.
+- `password` must not be identical (case-insensitive) to `username` or to the normalized `email` — `400` with code `password_matches_identifier` if it is. Strict equality only, not a substring check: a passphrase that merely contains the username (e.g. `"Marcel se souvient de Combray"` for user `marcel`) stays accepted, since a "contains" rule would fight the passphrase-friendly design above. Enforced by the backend for registration, password change, and reset; the registration and signed-in change forms also mirror it client-side for immediate feedback. The backend is always authoritative. See [Password management](password-management.md) for the other flows.
+- `password` must not appear in a known data breach — `422` if it does, checked against the [Have I Been Pwned](https://haveibeenpwned.com/) "Pwned Passwords" API (k-anonymity: only the first 5 characters of the SHA-1 hash ever leave the server) via Spring Security's `HaveIBeenPwnedRestApiPasswordChecker`, wrapped in `PasswordBreachChecker` (`auth/PasswordBreachChecker.java`). That wrapper deliberately does **not** implement Spring Security's `CompromisedPasswordChecker` interface and is not exposed as a bean of that type — doing so would make Spring Security auto-wire the check into every authentication (`login()` included) via `InitializeUserDetailsBeanManagerConfigurer`, silently expanding scope and bypassing the fail-open behavior below. **Fails open**: if the HIBP API errors or times out (2s connect + 2s read), the check is skipped and the password update proceeds — this is a defense-in-depth check, not a hard dependency. Applied to registration, password change, and reset.
 
 **LoginRequest**
 ```json
@@ -109,3 +109,21 @@ LoginForm / RegisterForm (fields + client-side validation)
 `useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
+
+## Manual verification
+
+### Happy path
+
+- Register with a password that differs from the username and email: `POST /api/auth/register` returns `201` and opens a session.
+- Register with a passphrase that contains (but is not equal to) the username: the password policy accepts it, subject to the normal breach check.
+
+### Edge cases
+
+- Compare an identifier with different letter casing: exact case-insensitive equality is rejected for both username and normalized email.
+- Compare against an email with different letter casing: account email normalization is applied before the comparison.
+
+### Validation errors
+
+- Submit a password equal to the username or email (case-insensitive): `400`, ProblemDetail `code` is `password_matches_identifier`; the localized policy message is shown.
+- Submit malformed fields or a password outside 15–128 characters: `400`; the frontend shows the appropriate local validation when possible, otherwise its generic server error.
+- Submit a known-compromised password: `422` and the localized breach-check message.

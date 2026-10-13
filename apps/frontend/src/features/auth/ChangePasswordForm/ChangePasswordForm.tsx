@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { ChangePasswordFormProps } from './ChangePasswordForm.types'
 import FormField from '../FormField/FormField'
 import { passwordLengthError, passwordLengthHint } from '../passwordValidation'
+import { passwordMatchesIdentifierError } from '../passwordIdentifierValidation'
 import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from '../AuthForm.module.css'
 
@@ -10,7 +11,7 @@ const { newPassword: newPasswordConstraints } = validationConstraints.PasswordCh
 // Computed once at module scope — see RegisterForm.tsx for why this is safe at module load.
 const passwordHint = passwordLengthHint(newPasswordConstraints)
 
-export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps) {
+export default function ChangePasswordForm({ username, email, onSubmit }: ChangePasswordFormProps) {
   const { t } = useTranslation()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -21,6 +22,11 @@ export default function ChangePasswordForm({ onSubmit }: ChangePasswordFormProps
     const passwordError = passwordLengthError(newPassword, t('changePasswordForm.newPasswordSubject'), newPasswordConstraints)
     if (passwordError) {
       setError(passwordError)
+      return
+    }
+    const identifierError = passwordMatchesIdentifierError(newPassword, username, email)
+    if (identifierError) {
+      setError(identifierError)
       return
     }
     setError('')

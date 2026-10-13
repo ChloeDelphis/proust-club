@@ -1,9 +1,11 @@
 export class ApiError extends Error {
   status: number
+  code?: string
 
-  constructor(status: number) {
+  constructor(status: number, code?: string) {
     super(`HTTP ${status}`)
     this.status = status
+    this.code = code
   }
 }
 
@@ -32,7 +34,11 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
   const response = await fetch(path, { ...init, headers })
   if (!response.ok) {
-    throw new ApiError(response.status)
+    const body: unknown = await response.json().catch(() => null)
+    const code = body && typeof body === 'object' && 'code' in body && typeof body.code === 'string'
+      ? body.code
+      : undefined
+    throw new ApiError(response.status, code)
   }
   if (response.status === 204) {
     return undefined as T

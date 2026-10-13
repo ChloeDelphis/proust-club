@@ -7,7 +7,19 @@ import org.springframework.web.ErrorResponseException;
 class ApiException extends ErrorResponseException {
 
     private ApiException(HttpStatus status, String detail) {
-        super(status, ProblemDetail.forStatusAndDetail(status, detail), null);
+        this(status, detail, null);
+    }
+
+    private ApiException(HttpStatus status, String detail, String code) {
+        super(status, problemDetail(status, detail, code), null);
+    }
+
+    private static ProblemDetail problemDetail(HttpStatus status, String detail, String code) {
+        var problem = ProblemDetail.forStatusAndDetail(status, detail);
+        if (code != null) {
+            problem.setProperty("code", code);
+        }
+        return problem;
     }
 
     static ApiException usernameAlreadyExists() {
@@ -19,7 +31,11 @@ class ApiException extends ErrorResponseException {
     }
 
     static ApiException passwordMatchesIdentifier() {
-        return new ApiException(HttpStatus.BAD_REQUEST, "Password must not match the username or email.");
+        return new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "Password must not match the username or email.",
+                "password_matches_identifier"
+        );
     }
 
     static ApiException invalidCredentials() {
@@ -41,10 +57,9 @@ class ApiException extends ErrorResponseException {
         return new ApiException(HttpStatus.CONFLICT, "Email already verified.");
     }
 
-    // 422, not 400: the frontend deliberately excludes 400 from any specific error mapping (several
-    // distinct causes share that status, and the client never reads this detail — only the status,
-    // see RegisterPage.tsx), so this needed its own status to surface a precise, actionable message
-    // instead of falling into the generic "something went wrong" fallback.
+    // 422, not 400: this distinct status lets the frontend show an actionable breach-check message
+    // without confusing it with unrelated request-validation errors. The identifier policy uses a
+    // stable ProblemDetail code because it shares the 400 status with those other failures.
     static ApiException passwordCompromised() {
         return new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Password found in a known data breach.");
     }

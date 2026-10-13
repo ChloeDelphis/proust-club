@@ -28,7 +28,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 const connectedUser: authApi.UserResponse = {
   uuid: '11111111-1111-1111-1111-111111111111',
-  username: 'marcel',
+  username: 'marcel-long-username',
   email: 'marcel@example.com',
   role: 'USER',
   emailVerified: true,
@@ -59,6 +59,17 @@ describe('connected', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
 
     expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(authApi.changePassword).not.toHaveBeenCalled()
+  })
+
+  it('rejects a new password matching the username before calling the API', async () => {
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
+    await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'MARCEL-LONG-USERNAME')
+    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+
+    expect(screen.getByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.')).toBeInTheDocument()
     expect(authApi.changePassword).not.toHaveBeenCalled()
   })
 
@@ -100,6 +111,18 @@ describe('connected', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
 
     expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
+  })
+
+  it('shows the identifier policy message returned by the server', async () => {
+    vi.mocked(authApi.changePassword).mockRejectedValue(new ApiError(400, 'password_matches_identifier'))
+
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
+    await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'mot-de-passe-different')
+    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+
+    expect(await screen.findByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.')).toBeInTheDocument()
   })
 
   it('shows a generic message on an unexpected server error', async () => {
