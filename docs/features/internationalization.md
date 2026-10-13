@@ -1,4 +1,4 @@
-# Internationalisation — Technical Design
+# Internationalization — Technical Design
 
 How UI text is externalized from components into a translation catalog, and what that does and does not cover today.
 
