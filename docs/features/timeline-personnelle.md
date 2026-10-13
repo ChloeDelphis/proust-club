@@ -35,7 +35,7 @@ WHERE volumes.id = ranges.volume_id
 ```json
 {
   "volumes": [
-    { "id": 1, "title": "Du Côté de Chez Swann", "position": 1, "minPage": 1, "maxPage": 103 },
+    { "id": 1, "title": "Du côté de chez Swann", "position": 1, "minPage": 1, "maxPage": 103 },
     ...
   ],
   "quotes": [
