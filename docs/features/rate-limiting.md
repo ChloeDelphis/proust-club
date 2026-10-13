@@ -18,7 +18,7 @@ Token-bucket throttling across most auth endpoints and `GET /api/search`, backed
 | `POST /api/auth/password` (change password) | per account (authenticated) | 5 attempts / 15 minutes |
 | `POST /api/auth/email/confirm/resend` | per account (authenticated) | 3 requests / 15 minutes |
 
-`password-reset/confirm` has no account bucket (the account isn't known until the token is resolved) and `password` (change) / `email/confirm/resend` have no IP bucket (both already require an authenticated session, so an anonymous IP-based bucket adds nothing a session cookie doesn't already gate) — same "no bucket that adds nothing" reasoning applied per endpoint, not a uniform IP+account pair everywhere. `password-reset/confirm` specifically got a bucket once it started being able to trigger a real outbound HTTP call (the compromised-password check, see [ADR-011](../architecture/ADR-011-compromised-password-check.md)) — before that it only did cheap local DB work and needed none.
+`password-reset/confirm` has no account bucket (the account isn't known until the token is resolved) and `password` (change) / `email/confirm/resend` have no IP bucket (both already require an authenticated session, so an anonymous IP-based bucket adds nothing a session cookie doesn't already gate) — same "no bucket that adds nothing" reasoning applied per endpoint, not a uniform IP+account pair everywhere. `password-reset/confirm` has an IP bucket because it can trigger a real outbound HTTP call (the compromised-password check, see [ADR-011](../architecture/ADR-011-compromised-password-check.md)), unlike the cheap local-only DB work the rest of the endpoint does.
 
 Configurable under `rate-limit.*` in `application.yml` — never hardcoded scattered across controllers:
 
@@ -83,25 +83,13 @@ INFO login_attempt outcome=success
 WARN login_attempt outcome=failure
 ```
 
-No account/IP identifier, same reasoning as above. Purpose: establish a real-traffic baseline (volume, failure rate) before deciding on a threshold for anomaly detection — see `private/tickets/credential-stuffing-detection.md`, Phase A1. Deliberately scoped to this endpoint only, not to `AuthService.authenticate()`/`reauthenticate()`, which are also reached by `register()`'s auto-login and by password-change reauthentication — neither is a login attempt and counting them would skew the baseline. No counter, no sliding window, no threshold yet: this is pure per-attempt telemetry, aggregated after the fact (there is no log-aggregation/observability layer in the project today). A threshold-based `AUTH_LOGIN_ANOMALY` event is a separate, not-yet-started phase (A2), gated on having observed real traffic and having somewhere to actually consume the signal.
+No account/IP identifier, same reasoning as above. Purpose: establish a real-traffic baseline (volume, failure rate) to inform a future anomaly-detection threshold. Scoped to this endpoint only, not to `AuthService.authenticate()`/`reauthenticate()`, which are also reached by `register()`'s auto-login and by password-change reauthentication — neither is a login attempt and counting them would skew the baseline. No counter, no sliding window, no threshold yet: this is pure per-attempt telemetry, aggregated after the fact (there is no log-aggregation/observability layer in the project today). A threshold-based anomaly-detection event is a separate, not-yet-built capability, gated on having observed real traffic and having somewhere to actually consume the signal.
 
 A rate-limited login (`rate_limit_exceeded` above) also produces `login_attempt outcome=failure` — two log lines for one rejected request, deliberately: `rate_limit_exceeded` identifies which bucket tripped, `login_attempt` keeps the attempt in the overall baseline. Not a bug if both appear together.
 
 ---
 
-## What this deliberately does not do
+## Current limitations
 
 - **No hard account lockout.** A fixed "N failures → locked for 24h" rule would let anyone lock another user out on purpose. Token-bucket throttling with automatic refill avoids that failure mode.
 - **No distributed storage (Redis, etc.).** Not needed for a single instance; would only be revisited if multiple instances ever need to share the same limits — a separate decision from choosing Bucket4j itself (see ADR-003).
-
----
-
-## Manual verification
-
-- Make more than the configured number of registrations from the same machine within the window → `429` with `Retry-After`.
-- Same for login (per-IP) and search.
-- Attempt login against the same email from several different source IPs → the account-level limit trips even though no single IP limit does.
-- Log in successfully, then keep searching past the search limit from the same IP → still `429` (an authenticated session is not exempt).
-- Make more than the configured number of `password-reset/confirm` attempts from the same IP within the window (regardless of token validity) → `429` with `Retry-After`.
-- Wait past the refill window → requests succeed again without restarting the app.
-- Log in with valid credentials → console shows `login_attempt outcome=success`. Log in with wrong credentials → `login_attempt outcome=failure`. Trip the per-IP or per-account login limit → both `rate_limit_exceeded` and `login_attempt outcome=failure` appear for that request.

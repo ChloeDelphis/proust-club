@@ -16,7 +16,7 @@ A local script that checks the frontend's `pnpm-lock.yaml` against OSV's malicio
 
 Use `pnpm safe:add <pkg>` / `pnpm safe:update [<pkg>]` / `pnpm safe:install` / `pnpm safe:remove <pkg>` — never `pnpm add`/`update`/`install`/`remove` directly. `apps/frontend/.pnpmfile.mjs` blocks the raw commands outright, so this isn't just a convention to remember.
 
-The `safe:*` commands (`apps/frontend/scripts/safe-pnpm.ts`/`safePnpm.ts`) orchestrate the same sequence that used to be manual:
+The `safe:*` commands (`apps/frontend/scripts/safe-pnpm.ts`/`safePnpm.ts`) orchestrate this sequence:
 
 - **`safe:add`/`safe:update`** (these change the lockfile — the package/version isn't in it yet when the command starts, so checking the current lockfile first would check the wrong thing):
   1. `pnpm add <pkg> --lockfile-only --ignore-scripts` (or `update`) — resolve, write `pnpm-lock.yaml`, run nothing. `--lockfile-only` already prevents any real install (and therefore any lifecycle script) by itself; `--ignore-scripts` is added on top so that guarantee is explicit in the command itself.
@@ -67,25 +67,8 @@ This script must be able to run *before* `node_modules` exists — specifically,
 
 ---
 
-## What this deliberately does not do
+## Current limitations
 
 - **No CI wiring for the OSV check itself.** CI trusts the already-committed, already-reviewed lockfile rather than re-running `check:supply-chain` on every job — see `apps/frontend/.pnpmfile.mjs`'s doc comment and the frontend CI workflow's `PROUST_SAFE_PNPM` env var.
 - **No retry/backoff on the OSV call.** OSV documents no rate limit today; a failure fails the check closed instead of retrying.
 - **No handling for non-registry lockfile entries** (`git:`, `file:`, tarball URLs, `link:`) beyond the parser's generic fail-closed behavior — none exist in this project's lockfile today (all direct dependencies are exact-pinned registry versions per ADR-008).
-
----
-
-## Manual verification
-
-- `pnpm check:supply-chain` on the current lockfile → exit `0`, "No known malicious package/version found."
-- Point `queryMaliciousPackages` at a known-compromised pair (e.g. `eslint-config-prettier@8.10.1`, `MAL-2025-6022`) → detected, with the correct id and `osv.dev` link; an ordinary GHSA/CVE advisory on the same package is not reported.
-- An empty `packages:` block or a missing one → exit `0`, no network call.
-- An unrecognized `lockfileVersion` → exit `2`, explicit message, no best-effort parsing attempt.
-- OSV unreachable (e.g. no network) → exit `2`, explicit message distinct from "nothing found".
-
-Enforcement layer (`.pnpmfile.mjs` + `safe-pnpm.ts`):
-
-- `pnpm add <pkg>` (raw, no `PROUST_SAFE_PNPM` marker) → rejected before any write to `node_modules`/`pnpm-lock.yaml`/`package.json`.
-- `pnpm safe:add <pkg>` / `safe:update <pkg>` / `safe:install` / `safe:remove <pkg>` → each completes end-to-end, `check:supply-chain` runs at the expected point in the sequence.
-- `pnpm safe:install <pkg>` (misuse — pnpm treats `install <pkg>` as `add <pkg>`) → refused with a message pointing at `safe:add`, nothing written.
-- `pnpm safe:add -- --registry=https://example/` (flag-shaped argument) → refused before spawning anything.

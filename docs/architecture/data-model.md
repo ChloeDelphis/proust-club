@@ -55,7 +55,7 @@ erDiagram
 
 **`paragraphs.page_number`** comes from the source text file itself (line markers like `001 |`), not from an external edition reference. It is stable across imports.
 
-**`volumes.min_page`/`max_page`** are computed once by the corpus importer, right after paragraphs are inserted (`volumes` is seeded before any paragraph exists, so the bounds can't be known at seed time). Used by the personal timeline to position bookmarks and draw volume delimiters without recomputing an aggregate on every request. See [timeline-personnelle.md](../features/timeline-personnelle.md).
+**`volumes.min_page`/`max_page`** are computed once by the corpus importer, right after paragraphs are inserted (`volumes` is seeded before any paragraph exists, so the bounds can't be known at seed time). Used by the personal timeline to position bookmarks and draw volume delimiters without recomputing an aggregate on every request. See [personal-timeline.md](../features/personal-timeline.md).
 
 ---
 

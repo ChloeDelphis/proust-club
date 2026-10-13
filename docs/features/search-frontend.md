@@ -1,6 +1,6 @@
 # Search — Frontend
 
-How the search UI works: from user input to highlighted paragraph displayed on screen. `SearchPage` is now a **unified** page — it also hosts the connected user's saved citations (frieze, volume sidebar, tag/scope filter); see `docs/features/timeline-personnelle.md` for that half. This doc covers the search mechanics (corpus and saved-citations text search both reuse the same `SearchForm`).
+How the search UI works: from user input to highlighted paragraph displayed on screen. `SearchPage` is a **unified** page — it also hosts the connected user's saved citations (frieze, volume sidebar, tag/scope filter); see `docs/features/personal-timeline.md` for that half. This doc covers the search mechanics (corpus and saved-citations text search both reuse the same `SearchForm`).
 
 ---
 
@@ -83,18 +83,4 @@ No `dangerouslySetInnerHTML`. No string manipulation beyond `substring`.
 
 ## Pagination
 
-Backend-driven: `page` and `size` are query parameters; `total` is in the response. The frontend computes `totalPages = Math.ceil(total / size)` and renders Prev / Next controls. Page size is fixed at 10 for MVP.
-
----
-
-## Manual verification
-
-- Search for a known phrase (e.g., "petite madeleine") → results appear with the match highlighted (`--color-highlight-bg`, mint-toned) inside `<mark>`.
-- Navigate to page 2 → results change; previous results stay briefly visible during fetch (opacity transition).
-- Search for a phrase that does not exist → EmptyState message appears.
-- Submit an empty form or a single character in corpus scope → no HTTP request sent, "type something" placeholder shown instead (no hard validation error).
-- Disconnect the backend and search → ErrorMessage appears.
-- Verify `<mark>` wraps exactly the matched phrase, case-insensitively, with no surrounding whitespace.
-- Verify Prev button is disabled on page 1; Next button is disabled on the last page.
-- As a connected user: switch to the saved-citations scope, confirm the same search box now filters saved citations instead of the corpus; switch back to corpus, confirm the typed query is still there and still searches the corpus.
-- Click the search box's clear button while in saved-citations scope with an active text filter → filter clears, full saved-citations list (for the active tag, if any) reappears.
+Backend-driven: `page` and `size` are query parameters; `total` is in the response. The frontend computes `totalPages = Math.ceil(total / size)` and renders Prev / Next controls. Page size is fixed at 10.

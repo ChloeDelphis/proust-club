@@ -6,7 +6,7 @@ Vision, principles and vocabulary.
 
 ## [Features](features/)
 
-Technical design of each feature — how it works, why it is built this way.
+Current behavior and technical mechanisms of each feature. Keep decision history and the rationale for significant, durable choices in the ADRs.
 
 ## [Architecture Decision Records](architecture/)
 
