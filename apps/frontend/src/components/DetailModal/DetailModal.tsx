@@ -24,6 +24,9 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
   }
 
   const { data, isFetching } = useParagraphContext(paragraphId, before, after)
+  // keepPreviousData is useful when expanding context around the same paragraph, but its
+  // placeholder can belong to the paragraph that was open before this one.
+  const context = data?.paragraphId === paragraphId ? data : undefined
 
   return (
     <Dialog.Root open={paragraphId !== null} onOpenChange={onOpenChange}>
@@ -38,27 +41,27 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
                 <button
                   type="button"
                   className={styles.contextArrow}
-                  disabled={isFetching || before >= MAX_PARAGRAPH_CONTEXT || !data?.hasMoreBefore}
+                  disabled={isFetching || before >= MAX_PARAGRAPH_CONTEXT || !context?.hasMoreBefore}
                   onClick={() => setBefore(count => count + 1)}
                   aria-label={t('detailModal.showMoreBefore')}
                 >
                   ▲
                 </button>
 
-                {data?.before.map(entry => (
+                {context?.before.map(entry => (
                   <p key={entry.paragraphId} className={styles.contextParagraph}>{entry.text}</p>
                 ))}
 
                 <div className={styles.center}>{centerContent}</div>
 
-                {data?.after.map(entry => (
+                {context?.after.map(entry => (
                   <p key={entry.paragraphId} className={styles.contextParagraph}>{entry.text}</p>
                 ))}
 
                 <button
                   type="button"
                   className={styles.contextArrow}
-                  disabled={isFetching || after >= MAX_PARAGRAPH_CONTEXT || !data?.hasMoreAfter}
+                  disabled={isFetching || after >= MAX_PARAGRAPH_CONTEXT || !context?.hasMoreAfter}
                   onClick={() => setAfter(count => count + 1)}
                   aria-label={t('detailModal.showMoreAfter')}
                 >
