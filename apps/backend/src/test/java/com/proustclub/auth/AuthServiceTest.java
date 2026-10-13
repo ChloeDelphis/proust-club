@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -55,7 +56,7 @@ class AuthServiceTest {
         when(repository.existsByUsername("marcel")).thenReturn(false);
         when(repository.existsByEmail("marcel@example.com")).thenReturn(false);
         when(passwordEncoder.encode("hunter2222")).thenReturn("hashed-value");
-        when(repository.insert("marcel", "marcel@example.com", "hashed-value")).thenReturn(uuid);
+        when(repository.insertIfAbsent("marcel", "marcel@example.com", "hashed-value")).thenReturn(Optional.of(uuid));
 
         var response = service.register(request);
 
@@ -64,9 +65,41 @@ class AuthServiceTest {
         assertThat(response.email()).isEqualTo("marcel@example.com");
         assertThat(response.role()).isEqualTo("USER");
         assertThat(response.emailVerified()).isFalse();
-        verify(repository).insert(eq("marcel"), eq("marcel@example.com"), eq("hashed-value"));
-        verify(repository, never()).insert(any(), any(), eq("hunter2222"));
+        verify(repository).insertIfAbsent(eq("marcel"), eq("marcel@example.com"), eq("hashed-value"));
+        verify(repository, never()).insertIfAbsent(any(), any(), eq("hunter2222"));
         verify(emailVerificationService).sendVerification(uuid, "marcel@example.com");
+    }
+
+    @Test
+    void registerMapsConcurrentUsernameConflictToUsernameAlreadyExists() {
+        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
+        when(repository.existsByUsername("marcel")).thenReturn(false, true);
+        when(repository.existsByEmail("marcel@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("hunter2222")).thenReturn("hashed-value");
+        when(repository.insertIfAbsent("marcel", "marcel@example.com", "hashed-value")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.register(request))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ErrorResponseException) exception).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        verify(emailVerificationService, never()).sendVerification(any(), any());
+    }
+
+    @Test
+    void registerMapsConcurrentEmailConflictToEmailAlreadyExists() {
+        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
+        when(repository.existsByUsername("marcel")).thenReturn(false);
+        when(repository.existsByEmail("marcel@example.com")).thenReturn(false, true);
+        when(passwordEncoder.encode("hunter2222")).thenReturn("hashed-value");
+        when(repository.insertIfAbsent("marcel", "marcel@example.com", "hashed-value")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.register(request))
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ErrorResponseException) exception).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        verify(emailVerificationService, never()).sendVerification(any(), any());
     }
 
     @Test
@@ -78,7 +111,7 @@ class AuthServiceTest {
                 .isInstanceOf(ErrorResponseException.class)
                 .isInstanceOf(ApiException.class);
 
-        verify(repository, never()).insert(any(), any(), any());
+        verify(repository, never()).insertIfAbsent(any(), any(), any());
     }
 
     @Test
@@ -90,7 +123,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> service.register(request))
                 .isInstanceOf(ApiException.class);
 
-        verify(repository, never()).insert(any(), any(), any());
+        verify(repository, never()).insertIfAbsent(any(), any(), any());
     }
 
     @Test

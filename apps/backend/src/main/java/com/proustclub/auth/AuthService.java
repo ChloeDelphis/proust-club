@@ -90,7 +90,12 @@ class AuthService {
         var normalizedEmail = checkNoCheapConflicts(request);
 
         var passwordHash = passwordEncoder.encode(request.password());
-        var uuid = repository.insert(request.username(), normalizedEmail, passwordHash);
+        var insertedUuid = repository.insertIfAbsent(request.username(), normalizedEmail, passwordHash);
+        if (insertedUuid.isEmpty()) {
+            requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
+            throw new IllegalStateException("User insert conflicted without a matching username or email.");
+        }
+        var uuid = insertedUuid.get();
         log.info("User registered: {}", request.username());
 
         emailVerificationService.sendVerification(uuid, normalizedEmail);
