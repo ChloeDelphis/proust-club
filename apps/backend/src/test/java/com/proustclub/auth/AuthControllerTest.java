@@ -21,10 +21,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -131,6 +136,50 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("other", "Marcel@Example.com", "hunter2222password")))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void concurrentRegistrationsWithTheSameUsernameReturnOneCreatedAndOneConflict() throws Exception {
+        var bothAtInsert = new CountDownLatch(2);
+        var continueInsert = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            bothAtInsert.countDown();
+            if (!bothAtInsert.await(10, TimeUnit.SECONDS)) {
+                throw new AssertionError("Both registration requests did not reach the insert concurrently.");
+            }
+            if (!continueInsert.await(10, TimeUnit.SECONDS)) {
+                throw new AssertionError("Timed out waiting to release concurrent registration inserts.");
+            }
+            return invocation.callRealMethod();
+        }).when(userRepository).insertIfAbsent(anyString(), anyString(), anyString());
+
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var first = executor.submit(() -> mockMvc.perform(post("/api/auth/register").with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(registerJson("raceuser", "race-one@example.com", "hunter2222password")))
+                    .andReturn());
+            var second = executor.submit(() -> mockMvc.perform(post("/api/auth/register").with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(registerJson("raceuser", "race-two@example.com", "hunter2222password")))
+                    .andReturn());
+
+            assertThat(bothAtInsert.await(10, TimeUnit.SECONDS)).isTrue();
+            continueInsert.countDown();
+
+            var statuses = java.util.List.of(
+                    first.get(20, TimeUnit.SECONDS).getResponse().getStatus(),
+                    second.get(20, TimeUnit.SECONDS).getResponse().getStatus());
+            assertThat(statuses).containsExactlyInAnyOrder(201, 409);
+
+            Integer userCount = dsl.selectCount().from(DSL.table("users")).fetchOne(0, Integer.class);
+            assertThat(userCount).isEqualTo(1);
+            verify(mailService, times(1)).sendEmailConfirmation(anyString(), anyString());
+        } finally {
+            continueInsert.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(20, TimeUnit.SECONDS)).isTrue();
+        }
     }
 
     @Test

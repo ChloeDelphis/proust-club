@@ -33,12 +33,14 @@ class UserRepository {
         );
     }
 
-    UUID insert(String username, String email, String passwordHash) {
+    Optional<UUID> insertIfAbsent(String username, String email, String passwordHash) {
+        var uuid = DSL.field("uuid", UUID.class);
         return dsl.insertInto(DSL.table("users"),
                         DSL.field("username"), DSL.field("email"), DSL.field("password_hash"))
                 .values(username, email, passwordHash)
-                .returning(DSL.field("uuid", UUID.class))
-                .fetchOne(r -> r.get("uuid", UUID.class));
+                .onConflictDoNothing()
+                .returning(uuid)
+                .fetchOptional(uuid);
     }
 
     Optional<AuthUser> findByUuid(UUID uuid) {
