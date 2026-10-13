@@ -163,6 +163,36 @@ describe('DetailModal', () => {
     expect(paragraphApi.getParagraphContext).toHaveBeenLastCalledWith(99, { before: 0, after: 0 }, expect.anything())
   })
 
+  it('hides the previous paragraph context while the new context is loading', async () => {
+    let resolveRequest!: (value: paragraphApi.ParagraphContextResponse) => void
+    vi.mocked(paragraphApi.getParagraphContext)
+      .mockResolvedValueOnce({
+        ...baseResponse,
+        after: [{ paragraphId: 43, text: 'Ancien paragraphe voisin', pageNumber: 10 }],
+      })
+      .mockImplementationOnce(() => new Promise(resolve => { resolveRequest = resolve }))
+    const { rerender } = render(
+      <DetailModal paragraphId={42} centerContent="Texte 1" sideContent="Actions" ariaLabel="Détail" onOpenChange={vi.fn()} />,
+      { wrapper },
+    )
+
+    expect(await screen.findByText('Ancien paragraphe voisin')).toBeInTheDocument()
+
+    rerender(<DetailModal paragraphId={99} centerContent="Texte 2" sideContent="Actions" ariaLabel="Détail" onOpenChange={vi.fn()} />)
+
+    expect(paragraphApi.getParagraphContext).toHaveBeenLastCalledWith(99, { before: 0, after: 0 }, expect.anything())
+    expect(screen.queryByText('Ancien paragraphe voisin')).not.toBeInTheDocument()
+
+    resolveRequest({
+      ...baseResponse,
+      paragraphId: 99,
+      after: [{ paragraphId: 100, text: 'Nouveau paragraphe voisin', pageNumber: 20 }],
+    })
+
+    expect(await screen.findByText('Nouveau paragraphe voisin')).toBeInTheDocument()
+    expect(screen.queryByText('Ancien paragraphe voisin')).not.toBeInTheDocument()
+  })
+
   it('calls onOpenChange when the close button is pressed', async () => {
     vi.mocked(paragraphApi.getParagraphContext).mockResolvedValue(baseResponse)
     const onOpenChange = vi.fn()
