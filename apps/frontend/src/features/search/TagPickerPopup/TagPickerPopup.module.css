@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
-  z-index: 1000;
+  z-index: var(--z-index-modal);
   animation: backdrop-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
@@ -19,7 +19,7 @@
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: var(--z-index-modal);
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 

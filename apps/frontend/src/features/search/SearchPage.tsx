@@ -103,7 +103,7 @@ export default function SearchPage() {
         <ResultList
           results={corpusQuery.data.results}
           getKey={hit => hit.paragraphId}
-          renderItem={hit => <ParagraphCard {...hit} onOpenDetail={setDetailHit} />}
+          renderItem={hit => <ParagraphCard hit={hit} onOpenDetail={setDetailHit} />}
           total={corpusQuery.data.total}
           page={corpusQuery.data.page}
           size={corpusQuery.data.size}

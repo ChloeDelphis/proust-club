@@ -131,6 +131,10 @@
   /* Mirrors --color-accent at ~15% opacity. */
   --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--palette-signature) 15%, transparent);
 
+  /* A full-screen modal/dialog (backdrop + popup) must outrank any sticky element on the page
+     (e.g. TimelineBar's sticky frieze, z-index 10) — used by DetailModal and TagPickerPopup. */
+  --z-index-modal: 1000;
+
   /* Motion. "fast" covers hover/focus feedback and all current appearance
      transitions, modals included — nothing in this diff needs a slower
      tier, so one wasn't added speculatively. */

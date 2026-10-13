@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.ErrorResponseException;
 
 import java.util.List;
 import java.util.Optional;
@@ -77,6 +78,6 @@ class ParagraphServiceTest {
         when(repository.findAnchor(999)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getContext(999, 0, 0))
-                .isInstanceOf(ApiException.class);
+                .isInstanceOf(ErrorResponseException.class);
     }
 }

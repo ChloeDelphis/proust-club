@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.ErrorResponseException;
 
 import java.time.Instant;
 import java.util.List;
@@ -79,7 +80,7 @@ class QuoteServiceTest {
         when(quoteRepository.findParagraphText(999)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(userId, request))
-                .isInstanceOf(ApiException.class);
+                .isInstanceOf(ErrorResponseException.class);
 
         verify(quoteRepository, never()).insert(any(), anyInt(), anyInt(), anyInt(), any());
     }

@@ -10,10 +10,6 @@ class ApiException extends ErrorResponseException {
         super(status, ProblemDetail.forStatusAndDetail(status, detail), null);
     }
 
-    static ApiException paragraphNotFound() {
-        return new ApiException(HttpStatus.NOT_FOUND, "Paragraph not found.");
-    }
-
     static ApiException selectionMismatch() {
         return new ApiException(HttpStatus.BAD_REQUEST, "Selected text does not match the paragraph at the given offsets.");
     }

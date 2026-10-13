@@ -1,5 +1,6 @@
 package com.proustclub.quote;
 
+import com.proustclub.common.ParagraphExceptions;
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import com.proustclub.quote.dto.QuoteSelectionListResponse;
 import com.proustclub.quote.dto.QuoteSelectionResponse;
@@ -31,7 +32,7 @@ class QuoteService {
     @Transactional
     QuoteSelectionResponse create(UUID userId, CreateQuoteSelectionRequest request) {
         var paragraphText = quoteRepository.findParagraphText(request.paragraphId())
-                .orElseThrow(ApiException::paragraphNotFound);
+                .orElseThrow(ParagraphExceptions::notFound);
 
         validateSelection(paragraphText, request.startOffset(), request.endOffset(), request.selectedText());
 
