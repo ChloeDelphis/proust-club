@@ -110,6 +110,21 @@ class PasswordResetServiceTest {
     }
 
     @Test
+    void confirmResetRechecksIdentifierPolicyBeforeUpdatingHash() {
+        var uuid = UUID.randomUUID();
+        var token = new OneTimeToken(42L, uuid);
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER", true);
+        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.of(token));
+        when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.confirmReset("raw-token", "MARCEL@EXAMPLE.COM"))
+                .isInstanceOf(ApiException.class);
+
+        verify(userRepository, never()).updatePasswordHash(any(UUID.class), any());
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
     void confirmResetRejectsUnknownToken() {
         when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.empty());
 
@@ -120,20 +135,37 @@ class PasswordResetServiceTest {
     }
 
     @Test
-    void checkNewPasswordNotCompromisedIfTokenLooksValidSkipsBreachCheckOnDeadToken() {
-        when(tokenRepository.existsValidToken(eq("password_reset_tokens"), anyString())).thenReturn(false);
+    void checkNewPasswordPolicyIfTokenLooksValidSkipsChecksOnDeadToken() {
+        when(tokenRepository.findValidTokenUserId(eq("password_reset_tokens"), anyString())).thenReturn(Optional.empty());
 
-        service.checkNewPasswordNotCompromisedIfTokenLooksValid("raw-token", "new-password-long-enough");
+        service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "new-password-long-enough");
+
+        verify(authService, never()).checkPasswordNotCompromised(any());
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void checkNewPasswordPolicyIfTokenLooksValidRejectsIdentifierBeforeBreachCheck() {
+        var userId = UUID.randomUUID();
+        var user = new AuthUser(userId, "marcel", "marcel@example.com", "hashed", "USER", true);
+        when(tokenRepository.findValidTokenUserId(eq("password_reset_tokens"), anyString())).thenReturn(Optional.of(userId));
+        when(userRepository.findByUuid(userId)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "MARCEL@EXAMPLE.COM"))
+                .isInstanceOf(ApiException.class);
 
         verify(authService, never()).checkPasswordNotCompromised(any());
     }
 
     @Test
-    void checkNewPasswordNotCompromisedIfTokenLooksValidPropagatesCompromisedPasswordException() {
-        when(tokenRepository.existsValidToken(eq("password_reset_tokens"), anyString())).thenReturn(true);
+    void checkNewPasswordPolicyIfTokenLooksValidPropagatesCompromisedPasswordException() {
+        var userId = UUID.randomUUID();
+        var user = new AuthUser(userId, "marcel", "marcel@example.com", "hashed", "USER", true);
+        when(tokenRepository.findValidTokenUserId(eq("password_reset_tokens"), anyString())).thenReturn(Optional.of(userId));
+        when(userRepository.findByUuid(userId)).thenReturn(Optional.of(user));
         doThrow(ApiException.passwordCompromised()).when(authService).checkPasswordNotCompromised("compromised-password");
 
-        assertThatThrownBy(() -> service.checkNewPasswordNotCompromisedIfTokenLooksValid("raw-token", "compromised-password"))
+        assertThatThrownBy(() -> service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "compromised-password"))
                 .isInstanceOf(ApiException.class);
     }
 }

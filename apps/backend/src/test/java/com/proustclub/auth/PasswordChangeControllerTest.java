@@ -104,6 +104,21 @@ class PasswordChangeControllerTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void changePasswordMatchingUsernameIsRejectedBeforeBreachCheck() throws Exception {
+        MockHttpSession session = registerAndGetSession("averylongusername", "policy@example.com", "old-password-long-enough");
+        clearInvocations(passwordBreachChecker);
+
+        mockMvc.perform(changePassword(session, "old-password-long-enough", "AVERYLONGUSERNAME"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("password_matches_identifier"));
+
+        verify(passwordBreachChecker, never()).isCompromised(anyString());
+        mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("policy@example.com", "old-password-long-enough")))
+                .andExpect(status().isOk());
+    }
+
     // Verifies the ordering decided in phase 0: a wrong current password should never pay for the
     // HIBP round trip.
     @Test

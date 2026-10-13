@@ -7,7 +7,19 @@ import org.springframework.web.ErrorResponseException;
 class ApiException extends ErrorResponseException {
 
     private ApiException(HttpStatus status, String detail) {
-        super(status, ProblemDetail.forStatusAndDetail(status, detail), null);
+        this(status, detail, null);
+    }
+
+    private ApiException(HttpStatus status, String detail, String code) {
+        super(status, problemDetail(status, detail, code), null);
+    }
+
+    private static ProblemDetail problemDetail(HttpStatus status, String detail, String code) {
+        var problem = ProblemDetail.forStatusAndDetail(status, detail);
+        if (code != null) {
+            problem.setProperty("code", code);
+        }
+        return problem;
     }
 
     static ApiException usernameAlreadyExists() {
@@ -19,7 +31,11 @@ class ApiException extends ErrorResponseException {
     }
 
     static ApiException passwordMatchesIdentifier() {
-        return new ApiException(HttpStatus.BAD_REQUEST, "Password must not match the username or email.");
+        return new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "Password must not match the username or email.",
+                "password_matches_identifier"
+        );
     }
 
     static ApiException invalidCredentials() {

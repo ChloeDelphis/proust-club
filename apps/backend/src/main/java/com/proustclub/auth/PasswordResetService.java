@@ -61,7 +61,7 @@ class PasswordResetService {
     // AuthService.checkPasswordNotCompromised() for register(). Called from the controller before
     // confirmReset(), so the token is never burned on a password that gets rejected here.
     //
-    // Gated on a read-only peek (OneTimeTokenRepository.existsValidToken) rather than called
+    // Gated on a read-only token lookup rather than called
     // unconditionally: this endpoint is unauthenticated, so without the peek any request with a
     // made-up token would still pay for a real HIBP round trip. confirmReset() below still
     // revalidates and consumes the token atomically regardless of what this peek observed — the
@@ -69,10 +69,13 @@ class PasswordResetService {
     // never the actual source of truth on token validity. The decision lives here (not in the
     // controller) so PasswordResetController stays a flat sequence of service calls, like every
     // other controller in this package.
-    void checkNewPasswordNotCompromisedIfTokenLooksValid(String rawToken, String newPassword) {
-        if (tokenRepository.existsValidToken(TOKEN_TABLE, SecureToken.hash(rawToken))) {
-            authService.checkPasswordNotCompromised(newPassword);
-        }
+    void checkNewPasswordPolicyIfTokenLooksValid(String rawToken, String newPassword) {
+        tokenRepository.findValidTokenUserId(TOKEN_TABLE, SecureToken.hash(rawToken))
+                .flatMap(userRepository::findByUuid)
+                .ifPresent(user -> {
+                    PasswordPolicy.requireDistinctFromIdentifiers(newPassword, user.username(), user.email());
+                    authService.checkPasswordNotCompromised(newPassword);
+                });
     }
 
     // Returns the updated user so the caller can open a new session (auto-login, same intent as
@@ -90,6 +93,9 @@ class PasswordResetService {
         var user = userRepository.findByUuid(token.userId())
                 .orElseThrow(ApiException::invalidOrExpiredResetToken);
 
+        // Revalidate beside the write; the controller's earlier check exists to reject locally
+        // before HIBP, while this transaction guarantees the invariant at password update time.
+        PasswordPolicy.requireDistinctFromIdentifiers(newPassword, user.username(), user.email());
         var newPasswordHash = passwordEncoder.encode(newPassword);
         userRepository.updatePasswordHash(user.uuid(), newPasswordHash);
         log.info("Password reset confirmed");

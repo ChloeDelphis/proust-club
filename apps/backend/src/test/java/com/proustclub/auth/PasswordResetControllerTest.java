@@ -125,6 +125,22 @@ class PasswordResetControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void confirmResetRejectsAccountEmailWithoutBurningTokenOrCallingBreachCheck() throws Exception {
+        register("resetpolicy", "resetpolicy@example.com", "old-password-long-enough");
+        mockMvc.perform(requestReset("resetpolicy@example.com")).andExpect(status().isAccepted());
+        var token = capturedToken("resetpolicy@example.com");
+        org.mockito.Mockito.clearInvocations(passwordBreachChecker);
+
+        mockMvc.perform(confirmReset(token, "RESETPOLICY@EXAMPLE.COM"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("password_matches_identifier"));
+
+        verify(passwordBreachChecker, never()).isCompromised(anyString());
+        mockMvc.perform(confirmReset(token, "new-password-long-enough"))
+                .andExpect(status().isOk());
+    }
+
     // This path builds its Authentication directly (see PasswordResetController.confirmReset())
     // instead of going through AuthenticationManager/ProviderManager, so nothing calls
     // eraseCredentials() automatically — verifies the manual call actually happened, not just that

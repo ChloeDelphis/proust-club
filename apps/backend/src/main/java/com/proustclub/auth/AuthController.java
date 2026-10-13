@@ -58,7 +58,7 @@ class AuthController {
 
     @Operation(summary = "Create an account", description = "Creates a new account and immediately opens a session (auto-login).")
     @ApiResponse(responseCode = "201", description = "Account created and session opened", content = @Content(schema = @Schema(implementation = UserResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid request body or password matches the username/email (code: password_matches_identifier)", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "409", description = "Username or email already taken", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "422", description = "Password found in a known data breach", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/register", produces = MediaType.APPLICATION_JSON_VALUE)

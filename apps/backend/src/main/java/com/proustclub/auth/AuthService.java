@@ -80,7 +80,7 @@ class AuthService {
     // required to close the TOCTOU race on username/email uniqueness.
     String checkNoCheapConflicts(RegisterRequest request) {
         var normalizedEmail = EmailNormalizer.normalize(request.email());
-        requirePasswordDistinctFromIdentifiers(request.password(), request.username(), normalizedEmail);
+        PasswordPolicy.requireDistinctFromIdentifiers(request.password(), request.username(), normalizedEmail);
         requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
         return normalizedEmail;
     }
@@ -101,12 +101,6 @@ class AuthService {
         emailVerificationService.sendVerification(uuid, normalizedEmail);
 
         return new UserResponse(uuid, request.username(), normalizedEmail, "USER", false);
-    }
-
-    private void requirePasswordDistinctFromIdentifiers(String password, String username, String normalizedEmail) {
-        if (password.equalsIgnoreCase(username.trim()) || password.equalsIgnoreCase(normalizedEmail)) {
-            throw ApiException.passwordMatchesIdentifier();
-        }
     }
 
     private void requireUsernameAndEmailAvailable(String username, String normalizedEmail) {
