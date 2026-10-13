@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { MAX_PARAGRAPH_CONTEXT } from '../../api/paragraph'
 import { Dialog } from '@base-ui/react/dialog'
 import { useParagraphContext } from '../../hooks/useParagraphContext'
 import type { DetailModalProps } from './DetailModal.types'
@@ -22,7 +23,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
     setRenderedParagraphId(null)
   }
 
-  const { data, isPending } = useParagraphContext(paragraphId, before, after)
+  const { data, isFetching } = useParagraphContext(paragraphId, before, after)
 
   return (
     <Dialog.Root open={paragraphId !== null} onOpenChange={onOpenChange}>
@@ -37,7 +38,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
                 <button
                   type="button"
                   className={styles.contextArrow}
-                  disabled={isPending || !data?.hasMoreBefore}
+                  disabled={isFetching || before >= MAX_PARAGRAPH_CONTEXT || !data?.hasMoreBefore}
                   onClick={() => setBefore(count => count + 1)}
                   aria-label={t('detailModal.showMoreBefore')}
                 >
@@ -57,7 +58,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
                 <button
                   type="button"
                   className={styles.contextArrow}
-                  disabled={isPending || !data?.hasMoreAfter}
+                  disabled={isFetching || after >= MAX_PARAGRAPH_CONTEXT || !data?.hasMoreAfter}
                   onClick={() => setAfter(count => count + 1)}
                   aria-label={t('detailModal.showMoreAfter')}
                 >

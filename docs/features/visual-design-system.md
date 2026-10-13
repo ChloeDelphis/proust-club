@@ -45,13 +45,13 @@ Font files live under `apps/frontend/src/styles/fonts/` (`.woff2`, Latin subset 
 
 ## Current limitations
 
-- **No shared `Modal`/`Overlay` component.** `QuoteDetailModal` and `TagPickerPopup` duplicate their `.backdrop`/`.popup` structure (beyond the shared `@keyframes`, see below).
+- **Dialog structure is shared only by the detail views.** `DetailModal` provides the two-column layout and `.backdrop`/`.popup` structure for `QuoteDetailModal` and `SearchResultDetailModal`; `TagPickerPopup` keeps its own dialog structure.
 - **The 10-color personal-list palette and the coral/lavender/mint accent tokens** are defined but not wired into any semantic token — no feature consumes them yet.
 - **No dark mode.** The two-tier color token structure (raw palette → semantic names) allows a dark theme to be added later by re-pointing the semantic tier.
 
 ## Shared entrance animation
 
-`@keyframes backdrop-in`/`modal-in` are defined once in `tokens.css` (not per-component) and referenced by both `QuoteDetailModal` and `TagPickerPopup`.
+`@keyframes backdrop-in`/`modal-in` are defined once in `tokens.css` (not per-component) and referenced by `DetailModal` and `TagPickerPopup`.
 
 ## Accessibility
 

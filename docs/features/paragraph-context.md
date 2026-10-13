@@ -46,4 +46,4 @@ LIMIT :before + 1
 }
 ```
 
-`hasMoreBefore`/`hasMoreAfter` let the frontend disable an arrow exactly at the volume's edge, without comparing array lengths against what was requested (which alone couldn't distinguish "exactly `before` paragraphs exist" from "more exist beyond `before`").
+`hasMoreBefore`/`hasMoreAfter` distinguish the volume edge from a batch that has more rows beyond it. Requests are capped at 20 paragraphs per direction; the detail modal stops expanding at that limit even if a flag remains `true` because more rows exist in the volume.

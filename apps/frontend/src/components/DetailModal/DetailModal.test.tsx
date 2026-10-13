@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -87,6 +87,62 @@ describe('DetailModal', () => {
     await user.click(await screen.findByRole('button', { name: 'Afficher le paragraphe suivant' }))
 
     expect(paragraphApi.getParagraphContext).toHaveBeenLastCalledWith(42, { before: 0, after: 1 }, expect.anything())
+  })
+
+  it('disables both arrows at the 20-paragraph request limit even when more context exists', async () => {
+    vi.mocked(paragraphApi.getParagraphContext).mockResolvedValue({
+      ...baseResponse,
+      hasMoreBefore: true,
+      hasMoreAfter: true,
+    })
+    const user = userEvent.setup()
+    render(
+      <DetailModal paragraphId={42} centerContent="Texte" sideContent="Actions" ariaLabel="Détail" onOpenChange={vi.fn()} />,
+      { wrapper },
+    )
+
+    const afterButton = await screen.findByRole('button', { name: 'Afficher le paragraphe suivant' })
+    const beforeButton = screen.getByRole('button', { name: 'Afficher le paragraphe précédent' })
+    for (let count = 1; count <= 20; count++) {
+      await user.click(afterButton)
+      await waitFor(() => {
+        expect(paragraphApi.getParagraphContext).toHaveBeenLastCalledWith(42, { before: 0, after: count }, expect.anything())
+      })
+      if (count < 20) await waitFor(() => expect(afterButton).not.toBeDisabled())
+    }
+
+    expect(afterButton).toBeDisabled()
+    expect(beforeButton).not.toBeDisabled()
+
+    for (let count = 1; count <= 20; count++) {
+      await user.click(beforeButton)
+      await waitFor(() => {
+        expect(paragraphApi.getParagraphContext).toHaveBeenLastCalledWith(42, { before: count, after: 20 }, expect.anything())
+      })
+      if (count < 20) await waitFor(() => expect(beforeButton).not.toBeDisabled())
+    }
+
+    expect(beforeButton).toBeDisabled()
+    expect(paragraphApi.getParagraphContext).toHaveBeenCalledTimes(41)
+  })
+
+  it('disables the arrow while a context request is in flight', async () => {
+    let resolveRequest!: (value: paragraphApi.ParagraphContextResponse) => void
+    vi.mocked(paragraphApi.getParagraphContext)
+      .mockResolvedValueOnce({ ...baseResponse, hasMoreAfter: true })
+      .mockImplementationOnce(() => new Promise(resolve => { resolveRequest = resolve }))
+    const user = userEvent.setup()
+    render(
+      <DetailModal paragraphId={42} centerContent="Texte" sideContent="Actions" ariaLabel="Détail" onOpenChange={vi.fn()} />,
+      { wrapper },
+    )
+
+    const afterButton = await screen.findByRole('button', { name: 'Afficher le paragraphe suivant' })
+    await user.click(afterButton)
+
+    expect(afterButton).toBeDisabled()
+    resolveRequest({ ...baseResponse, after: [{ paragraphId: 43, text: 'Suivant', pageNumber: 10 }], hasMoreAfter: true })
+    await waitFor(() => expect(afterButton).not.toBeDisabled())
   })
 
   it('resets the context window when a different paragraph opens', async () => {
