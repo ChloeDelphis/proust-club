@@ -6,11 +6,13 @@ import QuoteDetailModal from './QuoteDetailModal'
 import type { TimelineQuote } from '../../../api/quote'
 import * as quoteApi from '../../../api/quote'
 import * as tagApi from '../../../api/tag'
+import * as paragraphApi from '../../../api/paragraph'
 import ToastProvider from '../../../components/Toast/ToastProvider'
 import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/quote')
 vi.mock('../../../api/tag')
+vi.mock('../../../api/paragraph')
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -38,12 +40,34 @@ const quote: TimelineQuote = {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(tagApi.listTags).mockResolvedValue([{ id: TAG_ID, name: 'Combray', colorIndex: 0 }])
+  vi.mocked(paragraphApi.getParagraphContext).mockResolvedValue({
+    paragraphId: quote.paragraphId,
+    before: [],
+    after: [],
+    hasMoreBefore: false,
+    hasMoreAfter: false,
+  })
 })
 
 describe('QuoteDetailModal', () => {
   it('renders nothing visible when there is no open quote', () => {
     render(<QuoteDetailModal quote={null} volumeTitle={undefined} onClose={vi.fn()} />, { wrapper })
     expect(screen.queryByText(quote.selectedText)).not.toBeInTheDocument()
+  })
+
+  it('falls back to just the date when the quote has no pageNumber (opened from the saved-citations list)', () => {
+    const quoteWithoutPosition = {
+      id: quote.id,
+      paragraphId: quote.paragraphId,
+      selectedText: quote.selectedText,
+      comment: quote.comment,
+      tags: quote.tags,
+      createdAt: quote.createdAt,
+    }
+    render(<QuoteDetailModal quote={quoteWithoutPosition} volumeTitle={undefined} onClose={vi.fn()} />, { wrapper })
+
+    expect(screen.getByText(quote.selectedText)).toBeInTheDocument()
+    expect(screen.getByText('7 août 2026')).toBeInTheDocument()
   })
 
   it('shows the full quote, tags and volume/page metadata when a quote is open', () => {

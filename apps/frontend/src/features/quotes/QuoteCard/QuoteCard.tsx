@@ -7,7 +7,7 @@ import styles from './QuoteCard.module.css'
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
-export default function QuoteCard({ quote }: QuoteCardProps) {
+export default function QuoteCard({ quote, onOpenDetail }: QuoteCardProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
@@ -29,7 +29,7 @@ export default function QuoteCard({ quote }: QuoteCardProps) {
 
   return (
     <article className={styles.root}>
-      <p className={styles.text}>{quote.selectedText}</p>
+      <button type="button" className={styles.text} onClick={() => onOpenDetail(quote.id)}>{quote.selectedText}</button>
       <footer className={styles.footer}>
         {quote.tags.length > 0 && (
           <ul className={styles.tags}>

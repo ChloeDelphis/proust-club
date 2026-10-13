@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Dialog } from '@base-ui/react/dialog'
 import { updateQuoteComment } from '../../../api/quote'
 import { useToast } from '../../../components/Toast/useToast'
+import DetailModal from '../../../components/DetailModal/DetailModal'
 import QuoteTagEditor from '../QuoteTagEditor/QuoteTagEditor'
 import type { QuoteDetailModalProps } from './QuoteDetailModal.types'
 import styles from './QuoteDetailModal.module.css'
@@ -17,11 +17,12 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
   const showToast = useToast()
 
   // Resets the draft when a different quote opens, without a useEffect: this component stays
-  // mounted across quote changes (only the Dialog's `open` prop toggles), so a plain useState
-  // initializer would only apply on this component's own first mount, not on every reopen.
-  // renderedQuoteId is reset to null on close (not just changed on a new id) so that reopening
-  // the SAME quote also re-syncs the draft from the current `quote.comment` — otherwise the
-  // leftover local draft from before closing would stick around instead of the saved value.
+  // mounted across quote changes (only DetailModal's `paragraphId` prop toggles), so a plain
+  // useState initializer would only apply on this component's own first mount, not on every
+  // reopen. renderedQuoteId is reset to null on close (not just changed on a new id) so that
+  // reopening the SAME quote also re-syncs the draft from the current `quote.comment` —
+  // otherwise the leftover local draft from before closing would stick around instead of the
+  // saved value.
   const [renderedQuoteId, setRenderedQuoteId] = useState<string | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
   if (quote && quote.id !== renderedQuoteId) {
@@ -41,8 +42,8 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
     },
   })
 
-  // Saved on close (cross/backdrop/Escape all route through this one Dialog.onOpenChange), not
-  // on textarea blur — closing is the natural "done editing" signal for a modal, unlike inline
+  // Saved on close (cross/backdrop/Escape all route through this one onOpenChange), not on
+  // textarea blur — closing is the natural "done editing" signal for a modal, unlike inline
   // editing outside one (see TagFilterBar's blur-commit pattern, which doesn't apply here).
   function handleClose() {
     if (quote) {
@@ -55,37 +56,35 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
   }
 
   return (
-    <Dialog.Root open={quote !== null} onOpenChange={open => { if (!open) handleClose() }}>
-      <Dialog.Portal>
-        <Dialog.Backdrop className={styles.backdrop} />
-        <Dialog.Popup className={styles.popup} aria-label={t('quoteDetailModal.ariaLabel')}>
-          <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')}>×</Dialog.Close>
-          {quote && (
-            <>
-              <p className={styles.text}>{quote.selectedText}</p>
+    <DetailModal
+      paragraphId={quote?.paragraphId ?? null}
+      ariaLabel={t('quoteDetailModal.ariaLabel')}
+      onOpenChange={open => { if (!open) handleClose() }}
+      centerContent={quote && <p className={styles.text}>{quote.selectedText}</p>}
+      sideContent={quote && (
+        <>
+          <textarea
+            className={styles.comment}
+            value={commentDraft}
+            onChange={event => setCommentDraft(event.target.value)}
+            maxLength={COMMENT_MAX_LENGTH}
+            placeholder={t('quoteDetailModal.commentPlaceholder')}
+            aria-label={t('quoteDetailModal.commentAriaLabel')}
+          />
 
-              <textarea
-                className={styles.comment}
-                value={commentDraft}
-                onChange={event => setCommentDraft(event.target.value)}
-                maxLength={COMMENT_MAX_LENGTH}
-                placeholder={t('quoteDetailModal.commentPlaceholder')}
-                aria-label={t('quoteDetailModal.commentAriaLabel')}
-              />
+          <QuoteTagEditor quoteId={quote.id} tags={quote.tags} />
 
-              <QuoteTagEditor quoteId={quote.id} tags={quote.tags} />
-
-              <p className={styles.meta}>
-                {t('quoteDetailModal.meta', {
+          <p className={styles.meta}>
+            {quote.pageNumber !== undefined
+              ? t('quoteDetailModal.meta', {
                   volumePrefix: volumeTitle ? `${volumeTitle} — ` : '',
                   page: quote.pageNumber,
                   date: dateFormatter.format(new Date(quote.createdAt)),
-                })}
-              </p>
-            </>
-          )}
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
+                })
+              : dateFormatter.format(new Date(quote.createdAt))}
+          </p>
+        </>
+      )}
+    />
   )
 }

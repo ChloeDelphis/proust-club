@@ -1,0 +1,80 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { createQuote } from '../../../api/quote'
+import type { CreateQuoteParams } from '../../../api/quote'
+import { useToast } from '../../../components/Toast/useToast'
+import { useCurrentUser } from '../../auth/useCurrentUser'
+import DetailModal from '../../../components/DetailModal/DetailModal'
+import TagPickerContent from '../TagPickerPopup/TagPickerContent'
+import { buildHighlightSegments } from '../paragraphSegments'
+import type { SearchResultDetailModalProps } from './SearchResultDetailModal.types'
+import styles from './SearchResultDetailModal.module.css'
+
+// The not-yet-saved counterpart to QuoteDetailModal: same two-column layout and progressive
+// context, but the side panel is the tag picker + "Enregistrer" (reusing TagPickerContent)
+// instead of an existing quote's comment/tags/delete. Reading context is public corpus data, so
+// the modal itself opens for anyone — only the save UI in the side panel needs a session, same
+// as the "Sauvegarder" contextual menu in QuoteSelection.
+export default function SearchResultDetailModal({ hit, onClose }: SearchResultDetailModalProps) {
+  const { t } = useTranslation()
+  const { isSuccess: isConnected } = useCurrentUser()
+  const queryClient = useQueryClient()
+  const showToast = useToast()
+
+  const createQuoteMutation = useMutation({
+    mutationFn: (params: CreateQuoteParams) => createQuote(params),
+  })
+
+  function handleSave(tagNames: string[]) {
+    if (!hit) return
+    createQuoteMutation.mutate(
+      {
+        paragraphId: hit.paragraphId,
+        startOffset: hit.startOffset,
+        endOffset: hit.endOffset,
+        selectedText: hit.text.slice(hit.startOffset, hit.endOffset),
+        tagNames,
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['quotes'] })
+          showToast(t('quoteSelection.savedToast'))
+          onClose()
+        },
+        onError: () => {
+          showToast(t('quoteSelection.saveErrorToast'))
+        },
+      },
+    )
+  }
+
+  const segments = hit ? buildHighlightSegments(hit.text, { start: hit.startOffset, end: hit.endOffset }) : []
+
+  return (
+    <DetailModal
+      paragraphId={hit?.paragraphId ?? null}
+      ariaLabel={t('searchResultDetailModal.ariaLabel')}
+      closeDisabled={createQuoteMutation.isPending}
+      // A save already in flight can't be aborted — same reasoning as TagPickerPopup's own guard,
+      // see that component for the full explanation.
+      onOpenChange={open => { if (!open && !createQuoteMutation.isPending) onClose() }}
+      centerContent={hit && (
+        <p className={styles.text}>
+          {segments.map((segment, index) =>
+            segment.highlighted ? (
+              <mark key={index} className={styles.mark}>{segment.text}</mark>
+            ) : (
+              <span key={index}>{segment.text}</span>
+            ),
+          )}
+        </p>
+      )}
+      sideContent={hit && (
+        <>
+          <p className={styles.meta}>{hit.volume} · {hit.part} · p.&nbsp;{hit.pageNumber}</p>
+          {isConnected && <TagPickerContent onSave={handleSave} isSaving={createQuoteMutation.isPending} />}
+        </>
+      )}
+    />
+  )
+}

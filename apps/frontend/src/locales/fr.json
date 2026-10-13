@@ -42,6 +42,16 @@
     "emptyStateNoTagMatch": "Aucune citation avec ce tag.",
     "emptyStateNoTextMatch": "Aucune citation ne correspond à cette recherche."
   },
+  "detailModal": {
+    "showMoreBefore": "Afficher le paragraphe précédent",
+    "showMoreAfter": "Afficher le paragraphe suivant"
+  },
+  "searchResultDetailModal": {
+    "ariaLabel": "Résultat de recherche"
+  },
+  "paragraphCard": {
+    "openDetailButton": "Voir le détail"
+  },
   "resultList": {
     "resultCount_one": "{{count}} résultat",
     "resultCount_other": "{{count}} résultats"

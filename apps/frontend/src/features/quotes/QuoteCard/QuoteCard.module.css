@@ -5,9 +5,22 @@
 }
 
 .text {
+  display: block;
+  width: 100%;
   margin: 0 0 var(--space-3);
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  color: inherit;
   font-family: var(--font-reading);
+  font-size: var(--text-md);
   font-style: italic;
+  cursor: pointer;
+}
+
+.text:hover {
+  color: var(--color-accent);
 }
 
 .footer {
