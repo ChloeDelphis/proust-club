@@ -22,11 +22,9 @@ export default function RegisterPage() {
     },
   })
 
-  // 400 is deliberately left out of the map: several distinct backend validation failures share
-  // that status (blank/invalid fields, password too short, password matching the identifier), and
-  // the frontend never reads the ProblemDetail body — only the status — so a specific message here
-  // would risk misdiagnosing the real cause. RegisterForm's own client-side checks already cover
-  // the common cases with an accurate message before any request is sent.
+  // 400 stays out of the status map because it covers several validation failures. The one
+  // password-identifier policy error carries a stable machine-readable code, so it can receive an
+  // accurate message without guessing from the status or parsing ProblemDetail.detail.
   //
   // 422 is its own status (distinct from the 400s above) specifically so the breach-check failure
   // can get an accurate, non-alarming message here — "found in a data breach" would be scary and
@@ -40,6 +38,7 @@ export default function RegisterPage() {
           422: t('auth.passwordCompromisedError'),
         },
         t('registerPage.genericError'),
+        { password_matches_identifier: t('passwordIdentifierValidation.matchesIdentifierError') },
       )
 
   return (
