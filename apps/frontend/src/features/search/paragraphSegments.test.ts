@@ -30,4 +30,11 @@ describe('buildHighlightSegments', () => {
       { text: 'abcdefghij', highlighted: true },
     ])
   })
+
+  it('highlights the correct substring after a supplementary character', () => {
+    expect(buildHighlightSegments('😀xneedle', { start: 3, end: 9 })).toEqual([
+      { text: '😀x', highlighted: false },
+      { text: 'needle', highlighted: true },
+    ])
+  })
 })

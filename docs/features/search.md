@@ -46,19 +46,19 @@ At 5 000 paragraphs the gain is modest. At 50 000 it becomes necessary. Adding t
 
 The frontend needs to know exactly where in the paragraph text the match starts and ends, in order to split the string into three parts: before / match / after.
 
-PostgreSQL's `strpos()` returns a **1-based** character position. We subtract 1 to get a **0-based** offset. For the current Proust corpus, whose text contains no supplementary Unicode characters, this position is usable by the Java and JavaScript string operations below. PostgreSQL character positions are not generally equivalent to Java/JavaScript UTF-16 indexes, so this assumption must be revisited if the corpus or supported text expands.
+PostgreSQL's `strpos()` returns a **1-based** character position. We subtract 1 to get a **0-based** character index, then convert that index to a **0-based UTF-16 code-unit offset** with `String.offsetByCodePoints`. This is the index unit used by Java `String.substring()` and JavaScript `String.slice()`, so supplementary characters before the match do not shift the highlight or saved quote.
 
 ```sql
 strpos(lower(p.text), lower('petite madeleine')) - 1  AS start_offset
 ```
 
-`end_offset` is derived in the application layer:
+`end_offset` is derived in the application layer in the same UTF-16 code-unit unit:
 
 ```java
 int endOffset = startOffset + query.length();
 ```
 
-The calculation assumes case conversion preserves the match's character positions and length in the supported corpus. The implementation does not convert PostgreSQL character positions to UTF-16 indexes; corpus or search changes that break this assumption require updating the offset calculation as well.
+The calculation assumes case conversion preserves the match's character positions and length in the supported corpus. Search tests cover a supplementary character before a match to protect the PostgreSQL-character-to-UTF-16 conversion and the frontend's use of the returned range.
 
 One edge case handled explicitly: the characters `%`, `_`, and `\` have special meaning in SQL LIKE patterns. They are escaped before the query is built.
 
