@@ -68,7 +68,7 @@ Every other active session for that account is invalidated (the new one is exclu
 
 ## CSRF
 
-Same invariant as the rest of the API: CSRF stays active on both endpoints even though they're `permitAll()` (anonymous access and CSRF protection are independent). The `/reset-password` page can be reached as a direct link from an email client, with no prior navigation on the site — the CSRF cookie is nonetheless already present by the time the form is submitted, because `Header` (rendered above every route) fires `GET /api/auth/me` on mount regardless of which page loaded first. Manually verified: see "Manual verification" below.
+Same invariant as the rest of the API: CSRF stays active on both endpoints even though they're `permitAll()` (anonymous access and CSRF protection are independent). The `/reset-password` page can be reached as a direct link from an email client, with no prior navigation on the site — the CSRF cookie is nonetheless already present by the time the form is submitted, because `Header` (rendered above every route) fires `GET /api/auth/me` on mount regardless of which page loaded first.
 
 ---
 
@@ -142,35 +142,3 @@ ChangePasswordForm (current password + new password fields)
 ```
 
 Route: `/account` (English in code — routes/identifiers stay in English project-wide even though the UI text is French; the page title and Header link both read "Compte"/"Mon compte"). Reachable via a "Mon compte" link in `Header`, next to "Mes citations", shown only when connected. `AccountPage` uses the same ad hoc protection pattern as `MyQuotesPage` (`useCurrentUser()` + redirect to `/login` if not connected) rather than a shared component — noted as a candidate for promotion once truly needed.
-
-### Manual verification — change password
-
-- Change with the correct current password → `204`, session making the request stays logged in.
-- Change with an incorrect current password → `401`, generic message (same as a failed login).
-- Change with a new password shorter than 15 characters → client-side validation blocks submission; server also rejects with `400` if bypassed.
-- Call the endpoint with no session → `401` (or `403` if the request also lacks a CSRF token — CSRF is checked before authentication in the filter chain).
-- Log in from a second session, change the password from the first → the second session's next request is rejected (`401`), the first stays valid. Re-verified end-to-end against the real server after the `ProustClubPrincipal`/`SessionInvalidator` redesign (see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md)) — done 2026-08-27.
-- Log in with the old password after a successful change → `401`. Log in with the new password → `200`.
-- Exceed 5 change attempts for the same account within 15 minutes → `429` with a `Retry-After` header.
-- Change with a new password found in a known data breach (correct current password) → `422`, current password stays valid (log in with it succeeds), password not written to the DB.
-- An incorrect current password never triggers the breach-check network call (order: current-password re-verification first, breach check second).
-
----
-
-## Manual verification — reset password
-
-- Request a reset for a known email → generic confirmation message, email appears in Mailhog (`http://localhost:8025` in dev).
-- Request a reset for an unknown email → identical generic message, no email sent.
-- Request a reset with an invalid email format → 400.
-- Click the link from the email in a **fresh browser tab with no prior navigation on the site** → the form loads and submits successfully (CSRF cookie already present via `Header`'s mount-time `/me` call — see "CSRF" above).
-- Submit a new password → redirected to `/`, logged in as the account owner, toast shown.
-- Log in with the old password afterward → 401.
-- Log in with the new password afterward → 200.
-- Submit the reset form with a token that was never issued → generic invalid/expired message.
-- Submit the reset form twice with the same (already-used) token → second attempt gets the generic invalid/expired message.
-- Submit a new password shorter than 15 characters → client-side validation blocks submission (no request sent); if bypassed, server also rejects with 400 and the token is **not** consumed (verify the same token still works with a valid password afterward).
-- Visit `/reset-password` with no `token` query parameter → "invalid link" message, no form shown.
-- Log in on a second device/browser, then complete a reset from a first device → the second device's session is rejected (401, `ProblemDetail`) on its next request; the reset itself stays logged in. Re-verified end-to-end against the real server (real Mailhog token) after the `ProustClubPrincipal`/`SessionInvalidator` redesign (see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md)) — done 2026-08-27.
-- Submit the reset form with a new password found in a known data breach, on a still-valid token → `422`, and the token is **not** consumed — verify the same token still works with a valid password immediately afterward.
-- A token that's already invalid/expired never triggers the breach-check network call for whatever password was submitted alongside it (skipped by the read-only peek).
-- Exceed 5 confirm attempts from the same IP within 1 hour (regardless of token validity) → `429` with a `Retry-After` header.

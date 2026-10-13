@@ -40,21 +40,15 @@ Most call sites use the `useTranslation()` hook. Three validation modules (`emai
 
 A key is reused across files only when the string plays the **same UI role** in both places — e.g. `common.genericError` (a generic "something went wrong, retry" fallback shown on two different pages), `tagPicker.close` (a dialog close button's aria-label, used by two different dialogs), or a form field's label reused between two forms that both collect the same field.
 
-Keys are **not** shared just because today's French text happens to coincide across different roles (a page title, a nav link, and a button, for example) — that class of sharing caused a real bug during review: a form field's label ("Nouveau mot de passe") was briefly reused as the grammatical subject of a validation sentence ("Le nouveau mot de passe doit contenir...", which needs the article), producing broken grammar. Each UI role gets its own key even when the wording is identical today, since a future translation is free to phrase a title, a nav link, and a button differently even where French did not need to.
+Keys are **not** shared just because today's French text happens to coincide across different roles (a page title, a nav link, and a button, for example): a form field's label ("Nouveau mot de passe") and the grammatical subject of a validation sentence about that field ("Le nouveau mot de passe doit contenir...", which needs the article) read identically in French but are different UI roles. Each UI role gets its own key even when the wording is identical today, since a future translation is free to phrase a title, a nav link, and a button differently even where French did not need to.
 
 ## Verifying nothing is left hardcoded
 
 No lint rule enforces this yet (deferred — see below). The check is a grep for accented French characters (and the curly apostrophe `'`) across `src/`, excluding test files (which intentionally still assert against the French catalog values), `src/api/schema.generated.ts` (generated from the backend OpenAPI spec, never hand-edited), and `src/locales/` itself — it's the catalog, it's expected to be full of accented French text.
 
-## What's deliberately out of scope
+## Current limitations
 
-- **A second language, and the language switcher** — tracked in `activation-multilingue`. `localStorage` is the agreed persistence mechanism for the chosen language once it exists; not implemented yet since there is nothing to persist with only one language.
-- **URL-based locale routing** (`/en/...`) — not needed while there's no SEO/shareable-link requirement for a per-language URL.
-- **Date/number formatting beyond what `Intl` already provides** — `QuoteCard`/`QuoteDetailModal` still hardcode `Intl.DateTimeFormat('fr-FR', ...)`; revisited when a second language exists.
-- **A dedicated ESLint rule** (e.g. `eslint-plugin-i18next`) to catch future hardcoded strings automatically — grep is enough for the app's current size.
-
-## Manual verification
-
-- Every page renders identically to before the extraction — no visible translation key, no `undefined`, no missing punctuation/article.
-- Toast messages, `window.confirm` dialogs, and aria-labels all resolve to real text, not raw keys.
-- The plural result count (`ResultList`) reads correctly for 0, 1, and N results.
+- **No second language or language switcher.** `localStorage` is the agreed persistence mechanism for the chosen language once it exists; not implemented yet since there is nothing to persist with only one language.
+- **No URL-based locale routing** (`/en/...`) — not needed while there's no SEO/shareable-link requirement for a per-language URL.
+- **Date/number formatting beyond what `Intl` already provides** — `QuoteCard`/`QuoteDetailModal` hardcode `Intl.DateTimeFormat('fr-FR', ...)`; revisited when a second language exists.
+- **No dedicated ESLint rule** (e.g. `eslint-plugin-i18next`) to catch future hardcoded strings automatically — grep is enough for the app's current size.
