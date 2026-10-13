@@ -46,7 +46,7 @@ At 5 000 paragraphs the gain is modest. At 50 000 it becomes necessary. Adding t
 
 The frontend needs to know exactly where in the paragraph text the match starts and ends, in order to split the string into three parts: before / match / after.
 
-PostgreSQL's `strpos()` returns a **1-based** position. We subtract 1 to get a **0-based** index compatible with JavaScript's `String.substring()` and Java's `String.substring()`.
+PostgreSQL's `strpos()` returns a **1-based** character position. We subtract 1 to get a **0-based** offset. For the current Proust corpus, whose text contains no supplementary Unicode characters, this position is usable by the Java and JavaScript string operations below. PostgreSQL character positions are not generally equivalent to Java/JavaScript UTF-16 indexes, so this assumption must be revisited if the corpus or supported text expands.
 
 ```sql
 strpos(lower(p.text), lower('petite madeleine')) - 1  AS start_offset
@@ -58,7 +58,7 @@ strpos(lower(p.text), lower('petite madeleine')) - 1  AS start_offset
 int endOffset = startOffset + query.length();
 ```
 
-This works because lowercasing preserves string length — the offset into the original text remains valid.
+The calculation assumes case conversion preserves the match's character positions and length in the supported corpus. The implementation does not convert PostgreSQL character positions to UTF-16 indexes; corpus or search changes that break this assumption require updating the offset calculation as well.
 
 One edge case handled explicitly: the characters `%`, `_`, and `\` have special meaning in SQL LIKE patterns. They are escaped before the query is built.
 

@@ -44,7 +44,7 @@ Keys are **not** shared just because today's French text happens to coincide acr
 
 ## Verifying nothing is left hardcoded
 
-No lint rule enforces this yet (deferred — see below). The check is a grep for accented French characters (and the curly apostrophe `'`) across `src/`, excluding test files (which intentionally still assert against the French catalog values), `src/api/schema.generated.ts` (generated from the backend OpenAPI spec, never hand-edited), and `src/locales/` itself — it's the catalog, it's expected to be full of accented French text.
+No lint rule enforces this yet. A grep for accented French characters and curly apostrophes across `src/` can help find likely hardcoded strings; tests, generated API types, and the locale catalog itself are excluded. This is only a heuristic: it misses French UI text without those characters and does not prove that every UI string comes from the catalog.
 
 ## Current limitations
 

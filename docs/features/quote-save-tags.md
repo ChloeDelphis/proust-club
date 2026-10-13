@@ -125,28 +125,14 @@ A slow save can resolve after its `QuoteSelection` instance has unmounted (e.g. 
 
 ---
 
-## Frontend — browsing and managing my quotes (`MyQuotesPage`)
+## Frontend — browsing saved quotes and managing tags
 
-`src/features/quotes/MyQuotesPage/`, routed at `/mes-citations`, linked from `Header` only when a session is active. Lists the authenticated user's saved quotes (most recent first), filterable by tag, with quote deletion and inline tag rename/delete — no separate page for tag management.
+`SearchPage` displays saved quotes in its saved-citations scope, with the same search field used for corpus search. It requests a paginated, most-recent-first list, filtered by the selected tag and text query. `TagFilterBar` switches between corpus and saved-citations scopes, selects a tag, and provides tag rename and deletion. `QuoteCard` displays each saved quote and provides deletion; `ResultList` provides pagination. See [Search — Frontend](search-frontend.md) for the scope and query-state behavior.
 
-### Route protection is ad hoc, not a `ProtectedRoute`
-
-`MyQuotesPage` checks `useCurrentUser()` itself and renders `<Navigate to="/login" replace />` if the session query resolves without a user (a `Spinner` is shown while it's still pending, to avoid a redirect flash before the session is known). This is the first "redirect if not authenticated" page in the app — `QuoteSelection` only conditionally renders UI, it never redirects. A generic `ProtectedRoute` wasn't extracted for a single consumer; it's expected to be worth it once the personal timeline (MVP step 7) needs the same guard. The check is UX only, not a security boundary — every underlying endpoint independently rejects an unauthenticated request with `401` regardless of what the frontend renders.
-
-### Composition
-
-- **`TagFilterBar`** (`src/features/quotes/TagFilterBar/`) — a "Tous" button plus one button per tag (`useTags()`, a hook shared with `TagPickerPopup` since this is its second consumer). Renaming is inline: a pencil icon turns the tag's name into a text `<input>` in place; Enter commits, Escape cancels, and losing focus (blur) also commits — a `suppressNextBlurRef` ref prevents Enter/Escape from double-committing through the blur that follows a `<input>` unmount. A `409` (name already taken) shows a toast and leaves the field in edit mode. Deleting a tag asks for confirmation (`window.confirm`) and, if the deleted tag was the active filter, resets the filter to "Tous" — the cache invalidation for `['quotes']` skips its own immediate refetch in that case (`refetchType: 'none'`) since the filter reset already triggers a fresh fetch under the new query key; other cached quote pages are still marked stale normally.
-- **`QuoteCard`** (`src/features/quotes/QuoteCard/`) — one quote's `selectedText`, its tags (plain chips, not clickable — filtering goes through `TagFilterBar`), a formatted `createdAt`, and a delete button (confirmation, then `DELETE /api/quotes/{id}`, invalidates `['quotes']`).
-- **`Pagination`** (`src/components/Pagination/`) — the shared page/size/total/prev-next block, consumed by both `MyQuotesPage` and `ResultList`.
-
-### Filter changes reset the page
-
-Selecting a different tag (or "Tous") resets `page` to `0` via a single wrapped handler (`handleSelectTag`) passed down as `onSelectTag` — unlike `SearchPage`'s selection reset, there's only one entry point that changes `tagId` here, so no render-time state-adjustment trick is needed.
+The legacy `/mes-citations` URL redirects to `/`. The saved-citations scope is shown only to an authenticated user; the quote and tag API endpoints independently require an authenticated session.
 
 ---
 
 ## Frontend — editing an existing quote (`QuoteTagEditor`)
 
-`src/features/quotes/QuoteTagEditor/`, the frontend consumer of `POST/DELETE /api/quotes/{id}/tags[/{tagId}]`, used from the timeline detail modal (`QuoteDetailModal`, see `docs/features/personal-timeline.md`). Live editing, not a staged batch: every add or remove calls the API immediately (`useMutation` + `queryClient.invalidateQueries({ queryKey: ['quotes'] })`, the same pattern already used by `TagFilterBar`'s rename/delete) — unlike `TagPickerPopup`, there's no "Terminer" step to collect changes before sending them, because the quote this component edits already exists server-side (nothing to defer until a later creation call). The search/create-if-missing matching logic (`useTagSearch`, `src/hooks/`) is shared with `TagPickerPopup` — both search an existing tag list and offer to create one that doesn't match, `QuoteTagEditor` additionally excluding tags already attached to the quote from its suggestions.
-
-The personal comment field lives directly in `QuoteDetailModal` (no dedicated sub-component — a single `<textarea>`, one consumer). Saved when the modal **closes** (cross, backdrop click, or Escape — Base UI routes all three through one `onOpenChange` handler), not on blur: closing is the natural "done editing" signal for a field inside a modal, unlike inline editing outside one. Trimmed at save time, and skipped entirely if the trimmed value didn't actually change (no gratuitous `PATCH`). The draft resets from the server value whenever the modal opens on a *different* quote, and also — this needs an explicit check, not just a quote-id comparison — when it **reopens on the same quote**, since `QuoteDetailModal` stays mounted across opens/closes (only the Dialog's `open` prop toggles); `renderedQuoteId` is reset back to `null` on close for exactly this reason, so a stale local draft from before closing never sticks around instead of the value actually on the server.
+`QuoteTagEditor` is used in the timeline detail modal (see [Personal timeline](personal-timeline.md)). Tag additions and removals are saved immediately. The personal comment is saved when the modal closes, after trimming; unchanged comments are not sent.

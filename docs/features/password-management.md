@@ -141,4 +141,4 @@ ChangePasswordForm (current password + new password fields)
     on any other error: generic failure message
 ```
 
-Route: `/account` (English in code — routes/identifiers stay in English project-wide even though the UI text is French; the page title and Header link both read "Compte"/"Mon compte"). Reachable via a "Mon compte" link in `Header`, next to "Mes citations", shown only when connected. `AccountPage` uses the same ad hoc protection pattern as `MyQuotesPage` (`useCurrentUser()` + redirect to `/login` if not connected) rather than a shared component — noted as a candidate for promotion once truly needed.
+Route: `/account`. Connected users reach it from the account menu in `Header`; `AccountPage` redirects unauthenticated users to `/login` after the current-user query resolves.
