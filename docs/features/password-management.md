@@ -35,7 +35,7 @@ Changing a password for an already-logged-in user (with the current password, no
 ```json
 { "token": "lCXCmUgFVwG7foD6O0jgNq1jQOt86aoF8CI9Nipo8f8", "newPassword": "Le cote de chez Swann" }
 ```
-- `newPassword`: same constraints as registration (15–128 characters, see [Auth](auth.md)), and — like registration — rejected with `422` if it's found in a known data breach (see [ADR-011](../architecture/ADR-011-compromised-password-check.md)). This check runs *before* the token is consumed: a rejected password never burns the reset link, see "Token lifecycle" below.
+- `newPassword`: same constraints as registration (15–128 characters, see [Auth](auth.md)); it must also differ from the account username and normalized email, otherwise the API returns `400` with code `password_matches_identifier`. If it appears in a known data breach, the API returns `422` (see [ADR-011](../architecture/ADR-011-compromised-password-check.md)). Both checks run *before* the token is consumed: a rejected password never burns the reset link, see "Token lifecycle" below.
 
 **Response** — `UserResponse`, same shape as register/login/me (see [Auth](auth.md)). Confirming a reset opens a session, same as auto-login after registration.
 
@@ -47,8 +47,8 @@ Changing a password for an already-logged-in user (with the current password, no
 - Stored **hashed** (SHA-256, not Argon2id) in a dedicated `password_reset_tokens` table (`user_id`, `token_hash`, `expires_at`, `used_at`). SHA-256 rather than Argon2id: the token is already 256 bits of random entropy and short-lived/single-use, so a fast hash is enough — Argon2id's deliberate slowness defends against guessing a human-chosen password, which doesn't apply here.
 - Valid for **30 minutes**.
 - A user only ever has one live token: requesting a new reset atomically overwrites any earlier unused token for that account in place (`OneTimeTokenRepository.insert()` is an upsert on a partial unique index `WHERE used_at IS NULL`, not a separate invalidate-then-insert — closes a race between two concurrent requests, e.g. a double click, that could otherwise both slip past a check for "no live token yet").
-- **Validated and burned in a single atomic `UPDATE ... RETURNING`** (`OneTimeTokenRepository.consumeValidToken`), not a separate check-then-set — this closes a race window between two concurrent confirm attempts presenting the same token. The token is spent only once both the request shape (`@Size(min=15, max=128)`) *and* the breach check have passed — a syntactically invalid password (a typo) or one rejected as compromised (`422`) never burns the link, so the same token can be retried with a corrected password. To decide whether the breach check is even worth its HTTP round trip, `confirmReset()` first calls a read-only peek (`OneTimeTokenRepository.existsValidToken()`, same WHERE-clause shape as `consumeValidToken()` but no side effect) — this is purely an optimization to skip the external call on a token that's already dead; the peek is never the source of truth on validity, `consumeValidToken()`'s atomic `UPDATE` still is.
-- The generic error `Invalid or expired reset token.` (400) never distinguishes "expired" from "already used" from "never existed."
+- **Validated and burned in a single atomic `UPDATE ... RETURNING`** (`OneTimeTokenRepository.consumeValidToken`), not a separate check-then-set — this closes a race window between two concurrent confirm attempts presenting the same token. The token is spent only once the request shape (`@Size(min=15, max=128)`), the identifier policy, and the breach check have passed. A syntactically invalid password, one matching the account identifier (`400`, code `password_matches_identifier`), or one rejected as compromised (`422`) never burns the link, so the same token can be retried with a corrected password. Before HIBP, `confirmReset()` does a read-only lookup (`findValidTokenUserId`) to resolve the server-side account and check the password policy; the final atomic `UPDATE` still decides whether the token is valid and usable.
+- The generic error `Invalid or expired reset token.` (400) never distinguishes "expired" from "already used" from "never existed." A valid-token policy rejection uses the same status with the machine-readable `code: "password_matches_identifier"`, so the client can distinguish it without parsing free-form text.
 
 ---
 
@@ -90,6 +90,7 @@ ResetPasswordForm (new password field)
   → ResetPasswordPage (reads ?token= via useSearchParams)
   → confirmPasswordReset()        src/api/auth.ts
   → POST /api/auth/password-reset/confirm
+  → on password_matches_identifier: show localized policy message; token remains usable
   → on success: writes the returned user into the ['auth', 'me'] query cache
     (same pattern as login/register), shows a toast, redirects to /
 ```
@@ -114,13 +115,13 @@ No new Flyway migration — `users.password_hash` already exists (V4).
 ```json
 { "currentPassword": "Les madeleines de Combray", "newPassword": "Le cote de chez Swann" }
 ```
-- `newPassword`: same constraints as registration/reset (15–128 characters, see [Auth](auth.md)).
+- `newPassword`: same constraints as registration/reset (15–128 characters, see [Auth](auth.md)); must differ from the current account's username and normalized email (`400`, code `password_matches_identifier`) and must not appear in a known data breach (`422`).
 
 **Response** — `204 No Content`, no body. Unlike register/confirm-reset, this endpoint never opens a new session (one is already open) and nothing about the caller's identity changes — there's nothing to return.
 
 ### Current password re-verification
 
-Goes through the same `AuthenticationManager` round-trip as login (`AuthService.reauthenticate`, extracted from `AuthService.authenticate` so the "User logged in" log line — accurate for an actual login — isn't emitted for what is really a re-verification on an already-open session). A wrong current password returns the exact same generic `401 Invalid email or password.` as a failed login — no distinct error code or message that would tell a caller *why* it failed beyond "the endpoint requires proof of the current password." The current session's own principal already carries the email `reauthenticate()` needs (see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md)), so this re-verification doesn't need a password field lookup of its own.
+Goes through the same `AuthenticationManager` round-trip as login (`AuthService.reauthenticate`, extracted from `AuthService.authenticate` so the "User logged in" log line — accurate for an actual login — isn't emitted for what is really a re-verification on an already-open session). A wrong current password returns the exact same generic `401 Invalid email or password.` as a failed login — no distinct error code or message that would tell a caller *why* it failed beyond "the endpoint requires proof of the current password." The current session's own principal carries both the display username and normalized email; the password policy checks those server-resolved values after re-authentication and before HIBP.
 
 ### Session handling
 
@@ -138,7 +139,29 @@ ChangePasswordForm (current password + new password fields)
   → changePassword()              src/api/auth.ts
   → POST /api/auth/password
   → on success: toast; on 401: "Mot de passe actuel incorrect.";
+    on password_matches_identifier: localized policy message;
     on any other error: generic failure message
 ```
 
 Route: `/account`. Connected users reach it from the account menu in `Header`; `AccountPage` redirects unauthenticated users to `/login` after the current-user query resolves.
+
+## Manual verification
+
+### Happy path
+
+- Change password with the correct current password and a new password distinct from both account identifiers: `POST /api/auth/password` returns `204`; the current session remains open and other sessions are invalidated.
+- Confirm a reset with a live token and a new password distinct from both identifiers: `POST /api/auth/password-reset/confirm` returns `200` and opens a session.
+
+### Edge cases
+
+- Use a password containing an identifier as part of a longer passphrase: it remains allowed; the rule is exact equality, not a substring check.
+- Reject a reset password equal to the account identifier, then retry the same token with a valid password: the first response is `400` with `code: password_matches_identifier`; the retry succeeds, demonstrating the rejected password did not spend the token.
+- Change or reset to a known-compromised password: `422`; retry with a different password without losing the current session/reset link.
+
+### Validation errors
+
+- Change password while unauthenticated: `401`.
+- Change password with an incorrect current password: `401`; the password is unchanged.
+- Confirm reset with an unknown, expired, or used token: generic `400` (`Invalid or expired reset token.`).
+- Submit a new password equal to the username or normalized email (case-insensitive): `400` with `code: password_matches_identifier`; the UI shows the localized policy message rather than reporting an invalid/expired link.
+- Submit a new password outside 15–128 characters: `400`; a malformed request is rejected before token consumption.

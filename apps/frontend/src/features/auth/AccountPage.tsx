@@ -30,7 +30,7 @@ export default function AccountPage() {
     )
   }
 
-  if (!isConnected) {
+  if (!isConnected || !currentUser) {
     return <Navigate to="/login" replace />
   }
 
@@ -50,8 +50,8 @@ export default function AccountPage() {
     <main className={styles.root}>
       <h1 className={styles.title}>{t('accountPage.title')}</h1>
       <ChangePasswordForm
-        username={currentUser!.username}
-        email={currentUser!.email}
+        username={currentUser.username}
+        email={currentUser.email}
         onSubmit={params => mutation.mutate(params)}
       />
       {errorMessage && <ErrorMessage message={errorMessage} />}
