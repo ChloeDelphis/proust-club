@@ -56,7 +56,8 @@
   },
   "resultList": {
     "resultCount_one": "{{count}} résultat",
-    "resultCount_other": "{{count}} résultats"
+    "resultCount_other": "{{count}} résultats",
+    "refreshing": "Mise à jour des résultats…"
   },
   "quoteSelection": {
     "savedToast": "Citation enregistrée.",
