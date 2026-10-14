@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { MAX_PARAGRAPH_CONTEXT } from '../../api/paragraph'
 import { Dialog } from '@base-ui/react/dialog'
 import { useParagraphContext } from '../../hooks/useParagraphContext'
+import Spinner from '../Spinner/Spinner'
+import ErrorMessage from '../ErrorMessage/ErrorMessage'
 import type { DetailModalProps } from './DetailModal.types'
 import styles from './DetailModal.module.css'
 
@@ -23,7 +25,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
     setRenderedParagraphId(null)
   }
 
-  const { data, isFetching } = useParagraphContext(paragraphId, before, after)
+  const { data, isFetching, isError, refetch } = useParagraphContext(paragraphId, before, after)
   // keepPreviousData is useful when expanding context around the same paragraph, but its
   // placeholder can belong to the paragraph that was open before this one.
   const context = data?.paragraphId === paragraphId ? data : undefined
@@ -37,7 +39,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
 
           {paragraphId !== null && (
             <div className={styles.layout}>
-              <div className={styles.main}>
+              <div className={styles.main} aria-busy={isFetching}>
                 <button
                   type="button"
                   className={styles.contextArrow}
@@ -53,6 +55,16 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
                 ))}
 
                 <div className={styles.center}>{centerContent}</div>
+
+                {isFetching && <Spinner />}
+                {isError && (
+                  <>
+                    <ErrorMessage message={t('detailModal.contextLoadError')} />
+                    <button type="button" className={styles.contextArrow} onClick={() => { void refetch() }}>
+                      {t('detailModal.retryContext')}
+                    </button>
+                  </>
+                )}
 
                 {context?.after.map(entry => (
                   <p key={entry.paragraphId} className={styles.contextParagraph}>{entry.text}</p>
