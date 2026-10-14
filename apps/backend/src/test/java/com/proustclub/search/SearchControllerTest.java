@@ -181,7 +181,7 @@ class SearchControllerTest {
     }
 
     private void assertSearchPage(int page, List<Integer> paragraphIds, List<String> texts) throws Exception {
-        mockMvc.perform(get("/api/search")
+        var result = mockMvc.perform(get("/api/search")
                         .param("q", "pagination-contract-match")
                         .param("page", Integer.toString(page))
                         .param("size", "2"))
@@ -189,7 +189,11 @@ class SearchControllerTest {
                 .andExpect(jsonPath("$.total").value(5))
                 .andExpect(jsonPath("$.page").value(page))
                 .andExpect(jsonPath("$.size").value(2))
-                .andExpect(jsonPath("$.results[*].paragraphId").value(paragraphIds))
-                .andExpect(jsonPath("$.results[*].text").value(texts));
+                .andExpect(jsonPath("$.results.length()").value(paragraphIds.size()));
+
+        for (int index = 0; index < paragraphIds.size(); index++) {
+            result.andExpect(jsonPath("$.results[" + index + "].paragraphId").value(paragraphIds.get(index)))
+                    .andExpect(jsonPath("$.results[" + index + "].text").value(texts.get(index)));
+        }
     }
 }
