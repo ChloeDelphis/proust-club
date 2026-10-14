@@ -12,6 +12,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -117,6 +119,23 @@ class SearchControllerTest {
     }
 
     @Test
+    void searchPaginationPreservesParagraphIdentityAndReadingOrderAcrossPages() throws Exception {
+        int fifthId = insertParagraph(105, "Fifth pagination-contract-match paragraph.");
+        int firstId = insertParagraph(101, "First pagination-contract-match paragraph.");
+        int thirdId = insertParagraph(103, "Third pagination-contract-match paragraph.");
+        int secondId = insertParagraph(102, "Second pagination-contract-match paragraph.");
+        int fourthId = insertParagraph(104, "Fourth pagination-contract-match paragraph.");
+
+        assertSearchPage(0, List.of(firstId, secondId), List.of(
+                "First pagination-contract-match paragraph.",
+                "Second pagination-contract-match paragraph."));
+        assertSearchPage(1, List.of(thirdId, fourthId), List.of(
+                "Third pagination-contract-match paragraph.",
+                "Fourth pagination-contract-match paragraph."));
+        assertSearchPage(2, List.of(fifthId), List.of("Fifth pagination-contract-match paragraph."));
+    }
+
+    @Test
     void searchEscapesLikeSpecialChars() throws Exception {
         mockMvc.perform(get("/api/search").param("q", "100% Proust"))
                 .andExpect(status().isOk())
@@ -147,5 +166,34 @@ class SearchControllerTest {
     void searchMissingQueryReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/api/search"))
                 .andExpect(status().isBadRequest());
+    }
+
+    private int insertParagraph(int position, String text) {
+        dsl.insertInto(DSL.table("paragraphs"),
+                        DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
+                        DSL.field("page_number"), DSL.field("text"))
+                .values(1, 1, position, 10, text)
+                .execute();
+        return dsl.select(DSL.field("id", Integer.class))
+                .from(DSL.table("paragraphs"))
+                .where(DSL.field("position", Integer.class).eq(position))
+                .fetchOne(0, int.class);
+    }
+
+    private void assertSearchPage(int page, List<Integer> paragraphIds, List<String> texts) throws Exception {
+        var result = mockMvc.perform(get("/api/search")
+                        .param("q", "pagination-contract-match")
+                        .param("page", Integer.toString(page))
+                        .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(5))
+                .andExpect(jsonPath("$.page").value(page))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.results.length()").value(paragraphIds.size()));
+
+        for (int index = 0; index < paragraphIds.size(); index++) {
+            result.andExpect(jsonPath("$.results[" + index + "].paragraphId").value(paragraphIds.get(index)))
+                    .andExpect(jsonPath("$.results[" + index + "].text").value(texts.get(index)));
+        }
     }
 }
