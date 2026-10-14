@@ -12,7 +12,7 @@ import styles from './AuthPage.module.css'
 
 export default function AccountPage() {
   const { t } = useTranslation()
-  const { data: currentUser, isPending: isUserPending, isSuccess: isConnected } = useCurrentUser()
+  const { data: currentUser, isPending: isUserPending, isError: isUserError } = useCurrentUser()
   const showToast = useToast()
 
   const mutation = useMutation({
@@ -30,7 +30,15 @@ export default function AccountPage() {
     )
   }
 
-  if (!isConnected || !currentUser) {
+  if (isUserError) {
+    return (
+      <main className={styles.root}>
+        <ErrorMessage message={t('common.genericError')} />
+      </main>
+    )
+  }
+
+  if (!currentUser) {
     return <Navigate to="/login" replace />
   }
 

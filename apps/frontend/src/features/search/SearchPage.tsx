@@ -36,7 +36,8 @@ function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
 // defaulting to corpus search. Not route-split: this is one page, matching the reference mockup.
 export default function SearchPage() {
   const { t } = useTranslation()
-  const { isSuccess: isConnected } = useCurrentUser()
+  const { data: currentUser, isError: currentUserError } = useCurrentUser()
+  const isConnected = currentUser !== null && currentUser !== undefined
   const [query, setQuery] = useState('')
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
   const [tagId, setTagId] = useState<string | null>(null)
@@ -82,7 +83,15 @@ export default function SearchPage() {
 
   const savedQuery = useQuery({
     queryKey: ['quotes', tagId, query, page],
-    queryFn: ({ signal }) => listQuotes({ tagId: tagId ?? undefined, q: query || undefined, page, size: PAGE_SIZE }, signal),
+    queryFn: async ({ signal }) => {
+      const params = { tagId: tagId ?? undefined, q: query || undefined, page, size: PAGE_SIZE }
+      const response = await listQuotes(params, signal)
+      const lastPage = Math.max(0, Math.ceil(response.total / response.size) - 1)
+      if (response.total > 0 && page > lastPage) {
+        return listQuotes({ ...params, page: lastPage }, signal)
+      }
+      return response
+    },
     enabled: scope === 'saved' && isConnected,
     placeholderData: keepPreviousData,
   })
@@ -136,6 +145,7 @@ export default function SearchPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('searchPage.title')}</h1>
+      {currentUserError && <ErrorMessage message={t('common.genericError')} />}
       {isConnected && (
         <TimelineBar
           activeTagId={tagId}

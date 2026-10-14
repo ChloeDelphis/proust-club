@@ -23,7 +23,8 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
   const addMutation = useMutation({
     mutationFn: (name: string) => addTagToQuote(quoteId, { name }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes'] })
+      void queryClient.invalidateQueries({ queryKey: ['quotes'] })
+      void queryClient.invalidateQueries({ queryKey: ['tags'] })
       setSearch('')
     },
     onError: error => {
