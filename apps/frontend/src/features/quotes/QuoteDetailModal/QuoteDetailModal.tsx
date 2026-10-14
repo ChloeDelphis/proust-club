@@ -46,10 +46,15 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
   // textarea blur — closing is the natural "done editing" signal for a modal, unlike inline
   // editing outside one (see TagFilterBar's blur-commit pattern, which doesn't apply here).
   function handleClose() {
+    if (updateCommentMutation.isPending) return
     if (quote) {
       const trimmed = commentDraft.trim()
       if (trimmed !== (quote.comment ?? '')) {
-        updateCommentMutation.mutate({ quoteId: quote.id, comment: trimmed })
+        updateCommentMutation.mutate(
+          { quoteId: quote.id, comment: trimmed },
+          { onSuccess: onClose },
+        )
+        return
       }
     }
     onClose()
@@ -60,6 +65,7 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
       paragraphId={quote?.paragraphId ?? null}
       ariaLabel={t('quoteDetailModal.ariaLabel')}
       onOpenChange={open => { if (!open) handleClose() }}
+      closeDisabled={updateCommentMutation.isPending}
       centerContent={quote && <p className={styles.text}>{quote.selectedText}</p>}
       sideContent={quote && (
         <>

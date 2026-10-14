@@ -10,7 +10,7 @@ import styles from './EmailVerificationBanner.module.css'
 
 export default function EmailVerificationBanner() {
   const { t } = useTranslation()
-  const { data: user, isSuccess } = useCurrentUser()
+  const { data: user } = useCurrentUser()
   const showToast = useToast()
   const queryClient = useQueryClient()
 
@@ -30,7 +30,7 @@ export default function EmailVerificationBanner() {
     },
   })
 
-  if (!isSuccess || user.emailVerified) {
+  if (!user || user.emailVerified) {
     return null
   }
 

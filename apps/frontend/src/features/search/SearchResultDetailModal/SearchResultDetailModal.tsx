@@ -15,7 +15,8 @@ import styles from './SearchResultDetailModal.module.css'
 // as the "Sauvegarder" contextual menu in QuoteSelection.
 export default function SearchResultDetailModal({ hit, onClose }: SearchResultDetailModalProps) {
   const { t } = useTranslation()
-  const { isSuccess: isConnected } = useCurrentUser()
+  const { data: currentUser } = useCurrentUser()
+  const isConnected = currentUser !== null && currentUser !== undefined
   const showToast = useToast()
   const createQuoteMutation = useCreateQuoteMutation()
 

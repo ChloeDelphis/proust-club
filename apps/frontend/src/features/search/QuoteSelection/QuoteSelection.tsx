@@ -11,7 +11,8 @@ import styles from './QuoteSelection.module.css'
 
 export default function QuoteSelection({ paragraphId, text, highlightRange }: QuoteSelectionProps) {
   const { t } = useTranslation()
-  const { isSuccess: isConnected } = useCurrentUser()
+  const { data: currentUser } = useCurrentUser()
+  const isConnected = currentUser !== null && currentUser !== undefined
   const showToast = useToast()
   const containerRef = useRef<HTMLParagraphElement>(null)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
