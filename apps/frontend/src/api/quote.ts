@@ -1,8 +1,10 @@
 import { apiFetch, buildQuery } from './client'
+import { validationConstraints } from './generated/validationConstraints.generated'
 import type { operations } from './schema.generated'
 import type { TagResponse } from './tag'
 
 export type CreateQuoteParams = operations['create_1']['requestBody']['content']['application/json']
+export const MAX_TAGS_PER_QUOTE = validationConstraints.CreateQuoteSelectionRequest.tagNames.maxItems
 
 // QuoteSelectionResponse fields are non-optional here on purpose, unlike the generated schema —
 // same reasoning already applied to SearchHit/UserResponse (springdoc can't mark response fields

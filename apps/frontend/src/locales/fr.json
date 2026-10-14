@@ -68,6 +68,7 @@
     "searchPlaceholder": "Chercher un tag...",
     "searchAriaLabel": "Chercher un tag",
     "createButton": "Créer « {{name}} »",
+    "maxTagsReached": "Maximum : {{max}} tags par citation.",
     "saveButton": "Enregistrer"
   },
   "auth": {

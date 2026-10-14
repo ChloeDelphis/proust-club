@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTags } from '../../../hooks/useTags'
 import { useTagSearch } from '../../../hooks/useTagSearch'
+import { MAX_TAGS_PER_QUOTE } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
 import type { TagPickerContentProps } from './TagPickerContent.types'
 import styles from './TagPickerContent.module.css'
@@ -14,6 +15,7 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
   const { data: tags, isPending } = useTags()
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
+  const tagLimitReached = selectedNames.size >= MAX_TAGS_PER_QUOTE
 
   const { matches: filteredTags, canCreate } = useTagSearch(tags ?? [], search)
 
@@ -21,14 +23,17 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
     setSelectedNames(current => {
       const next = new Set(current)
       if (next.has(name)) next.delete(name)
-      else next.add(name)
+      else if (next.size < MAX_TAGS_PER_QUOTE) next.add(name)
       return next
     })
   }
 
   function createFromSearch() {
     const name = search.trim()
-    setSelectedNames(current => new Set(current).add(name))
+    setSelectedNames(current => {
+      if (current.size >= MAX_TAGS_PER_QUOTE) return current
+      return new Set(current).add(name)
+    })
     setSearch('')
   }
 
@@ -47,6 +52,12 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
         </ul>
       )}
 
+      {tagLimitReached && (
+        <p className={styles.limitMessage} role="status" aria-live="polite">
+          {t('tagPicker.maxTagsReached', { max: MAX_TAGS_PER_QUOTE })}
+        </p>
+      )}
+
       <input
         type="text"
         value={search}
@@ -63,7 +74,12 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
           {filteredTags.map(tag => (
             <li key={tag.id}>
               <label className={styles.tagOption}>
-                <input type="checkbox" checked={selectedNames.has(tag.name)} onChange={() => toggleTag(tag.name)} />
+                <input
+                  type="checkbox"
+                  checked={selectedNames.has(tag.name)}
+                  disabled={!selectedNames.has(tag.name) && tagLimitReached}
+                  onChange={() => toggleTag(tag.name)}
+                />
                 {tag.name}
               </label>
             </li>
@@ -72,7 +88,7 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
       )}
 
       {canCreate && (
-        <button type="button" className={styles.createButton} onClick={createFromSearch}>
+        <button type="button" className={styles.createButton} disabled={tagLimitReached} onClick={createFromSearch}>
           {t('tagPicker.createButton', { name: search.trim() })}
         </button>
       )}

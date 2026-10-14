@@ -116,9 +116,10 @@ class QuoteController {
         return service.updateComment(currentUser.resolveUuid(authentication), id, request.comment());
     }
 
-    @Operation(summary = "Add a tag to a quote", description = "Attaches a tag (by name, created if it doesn't exist yet) to an existing quote. Idempotent: adding a tag already attached does nothing.")
+    @Operation(summary = "Add a tag to a quote", description = "Attaches a tag (by name, created if it doesn't exist yet) to an existing quote. Idempotent: adding a tag already attached does nothing. A quote can have at most 20 tags; adding a new tag at that limit returns 409.")
     @ApiResponse(responseCode = "200", description = "Updated quote selection", content = @Content(schema = @Schema(implementation = QuoteSelectionResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Quote already has the maximum number of tags", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "Quote not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/quotes/{id}/tags", produces = MediaType.APPLICATION_JSON_VALUE)
     QuoteSelectionResponse addTag(@PathVariable UUID id, @Valid @RequestBody AddTagRequest request, Authentication authentication) {

@@ -108,6 +108,14 @@ class QuoteService {
     QuoteSelectionResponse addTag(UUID userId, UUID quoteId, String tagName) {
         var quote = quoteRepository.findByIdAndUserId(quoteId, userId).orElseThrow(ApiException::quoteNotFound);
 
+        if (quoteRepository.countTagsForQuote(quoteId) >= CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE) {
+            var existingTagId = tagRepository.findIdByUserIdAndNormalizedName(userId, tagName.trim());
+            if (existingTagId.isPresent() && quoteRepository.hasTagForOwner(userId, quoteId, existingTagId.get())) {
+                return toResponse(quote, tagsFor(quoteId));
+            }
+            throw ApiException.quoteTagLimitReached();
+        }
+
         UUID tagId = tagRepository.upsertByName(userId, tagName);
         quoteRepository.addTagForOwner(userId, quoteId, tagId);
 

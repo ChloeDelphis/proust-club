@@ -64,7 +64,7 @@ export interface paths {
         put?: never;
         /**
          * Add a tag to a quote
-         * @description Attaches a tag (by name, created if it doesn't exist yet) to an existing quote. Idempotent: adding a tag already attached does nothing.
+         * @description Attaches a tag (by name, created if it doesn't exist yet) to an existing quote. Idempotent: adding a tag already attached does nothing. A quote can have at most 20 tags; adding a new tag at that limit returns 409.
          */
         post: operations["addTag"];
         delete?: never;
@@ -650,7 +650,7 @@ export interface components {
             endOffset?: number;
             /**
              * @description Volume title
-             * @example Du Côté de Chez Swann
+             * @example Du côté de chez Swann
              */
             volume?: string;
             /**
@@ -769,7 +769,7 @@ export interface components {
             id?: number;
             /**
              * @description Volume title
-             * @example À l'Ombre des Jeunes Filles en Fleurs
+             * @example À l'ombre des jeunes filles en fleurs
              */
             title?: string;
             /**
@@ -1030,6 +1030,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetail"];
                 };
             };
+            /** @description Quote already has the maximum number of tags */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
         };
     };
     register: {
@@ -1054,7 +1063,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserResponse"];
                 };
             };
-            /** @description Invalid request body */
+            /** @description Invalid request body or password matches the username/email (code: password_matches_identifier) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1103,7 +1112,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid request body */
+            /** @description Invalid request body or password matches the account username/email (code: password_matches_identifier) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1187,7 +1196,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserResponse"];
                 };
             };
-            /** @description Invalid request body, or invalid/expired token */
+            /** @description Invalid request body or token, or password matches the account username/email (code: password_matches_identifier) */
             400: {
                 headers: {
                     [name: string]: unknown;

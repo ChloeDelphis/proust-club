@@ -35,6 +35,40 @@ describe('extractValidationConstraints', () => {
     })
   })
 
+  it('extracts collection item bounds from a component schema property', () => {
+    const doc = {
+      components: {
+        schemas: {
+          CreateQuoteSelectionRequest: {
+            properties: {
+              tagNames: { minItems: 1, maxItems: 20 },
+            },
+          },
+        },
+      },
+    }
+    expect(extractValidationConstraints(doc)).toEqual({
+      CreateQuoteSelectionRequest: { tagNames: { minItems: 1, maxItems: 20 } },
+    })
+  })
+
+  it('omits minItems when minItems === 0', () => {
+    const doc = {
+      components: {
+        schemas: {
+          CreateQuoteSelectionRequest: {
+            properties: {
+              tagNames: { minItems: 0, maxItems: 20 },
+            },
+          },
+        },
+      },
+    }
+    expect(extractValidationConstraints(doc)).toEqual({
+      CreateQuoteSelectionRequest: { tagNames: { maxItems: 20 } },
+    })
+  })
+
   it('omits minLength when minLength === 0', () => {
     // swagger-core adds minLength: 0 by default to any String field without an explicit lower
     // bound — not a real constraint, every string trivially satisfies it.

@@ -1,31 +1,35 @@
 // Minimal shape of the OpenAPI document — only the fields this function reads. Not reusing
-// openapi-typescript's own SchemaObject/ParameterObject types: they don't model minLength/maxLength
-// at all (out of scope for what that package needs), so they'd offer no real type safety here.
-interface LengthSchema {
+// openapi-typescript's own SchemaObject/ParameterObject types: they don't model the validation
+// bounds needed here, so they'd offer no real type safety for this projection.
+interface ConstraintSchema {
   minLength?: number
   maxLength?: number
+  minItems?: number
+  maxItems?: number
 }
 
 interface OpenApiDocument {
   components?: {
-    schemas?: Record<string, { properties?: Record<string, LengthSchema> }>
+    schemas?: Record<string, { properties?: Record<string, ConstraintSchema> }>
   }
   paths?: Record<string, Record<string, {
     operationId?: string
-    parameters?: { name: string; in: string; schema?: LengthSchema }[]
+    parameters?: { name: string; in: string; schema?: ConstraintSchema }[]
   }>>
 }
 
-export interface LengthConstraint {
+export interface ValidationConstraint {
   minLength?: number
   maxLength?: number
+  minItems?: number
+  maxItems?: number
 }
 
-export type ValidationConstraints = Record<string, Record<string, LengthConstraint>>
+export type ValidationConstraints = Record<string, Record<string, ValidationConstraint>>
 
-function toConstraint(schema: LengthSchema | undefined): LengthConstraint | null {
+function toConstraint(schema: ConstraintSchema | undefined): ValidationConstraint | null {
   if (!schema) return null
-  const constraint: LengthConstraint = {}
+  const constraint: ValidationConstraint = {}
   // minLength: 0 is not a real constraint (every string trivially satisfies it) — swagger-core
   // adds it by default to any String field without an explicit lower bound.
   if (typeof schema.minLength === 'number' && schema.minLength > 0) {
@@ -33,6 +37,12 @@ function toConstraint(schema: LengthSchema | undefined): LengthConstraint | null
   }
   if (typeof schema.maxLength === 'number') {
     constraint.maxLength = schema.maxLength
+  }
+  if (typeof schema.minItems === 'number' && schema.minItems > 0) {
+    constraint.minItems = schema.minItems
+  }
+  if (typeof schema.maxItems === 'number') {
+    constraint.maxItems = schema.maxItems
   }
   return Object.keys(constraint).length > 0 ? constraint : null
 }
@@ -51,7 +61,7 @@ export function extractValidationConstraints(doc: OpenApiDocument): ValidationCo
   // merging two unrelated fields into one object.
   const groupSource: Record<string, GroupSource> = Object.create(null)
 
-  function addConstraint(groupKey: string, fieldKey: string, schema: LengthSchema | undefined, source: GroupSource) {
+  function addConstraint(groupKey: string, fieldKey: string, schema: ConstraintSchema | undefined, source: GroupSource) {
     const constraint = toConstraint(schema)
     if (!constraint) return
     // Object.create(null) above only protects this function's own internal bookkeeping. The

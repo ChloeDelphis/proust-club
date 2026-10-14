@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proustclub.TestcontainersConfiguration;
 import com.proustclub.auth.PasswordBreachCheckerTestConfig;
 import com.proustclub.auth.dto.RegisterRequest;
+import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -97,6 +99,36 @@ class QuoteControllerTest {
                         .content(createQuoteJson(paragraphId, 3, 12, "madeleine", List.of())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.tags.length()").value(0));
+    }
+
+    @Test
+    void createQuoteWithMaximumNumberOfTagsSucceeds() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        var tagNames = IntStream.rangeClosed(1, CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE)
+                .mapToObj(index -> "Tag " + index)
+                .toList();
+
+        mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(createQuoteJson(paragraphId, 3, 12, "madeleine", tagNames)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tags.length()").value(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE));
+    }
+
+    @Test
+    void createQuoteWithMoreThanMaximumNumberOfTagsReturnsBadRequestWithoutWriting() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        var tagNames = IntStream.rangeClosed(1, CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE + 1)
+                .mapToObj(index -> "Tag " + index)
+                .toList();
+
+        mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(createQuoteJson(paragraphId, 3, 12, "madeleine", tagNames)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/quotes").session(session))
+                .andExpect(jsonPath("$.total").value(0));
+        mockMvc.perform(get("/api/tags").session(session))
+                .andExpect(jsonPath("$[0]").doesNotExist());
     }
 
     @Test
@@ -517,6 +549,35 @@ class QuoteControllerTest {
                         .content("{\"name\":\"combray\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tags.length()").value(1));
+    }
+
+    @Test
+    void addTagToQuoteAtMaximumRejectsNewTagButKeepsDuplicateIdempotent() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        var tagNames = IntStream.rangeClosed(1, CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE)
+                .mapToObj(index -> "Tag " + index)
+                .toList();
+        MvcResult result = mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(createQuoteJson(paragraphId, 3, 12, "madeleine", tagNames)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String quoteId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(post("/api/quotes/" + quoteId + "/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Tag 21\"}"))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(get("/api/quotes").session(session))
+                .andExpect(jsonPath("$.results[0].tags.length()")
+                        .value(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE));
+        mockMvc.perform(get("/api/tags").session(session))
+                .andExpect(jsonPath("$.length()")
+                        .value(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE));
+
+        mockMvc.perform(post("/api/quotes/" + quoteId + "/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"tag 1\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tags.length()").value(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE));
     }
 
     @Test
