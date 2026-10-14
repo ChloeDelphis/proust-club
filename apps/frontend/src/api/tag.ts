@@ -1,5 +1,8 @@
 import { apiFetch } from './client'
+import { validationConstraints } from './generated/validationConstraints.generated'
 import type { operations } from './schema.generated'
+
+export const MAX_TAG_NAME_LENGTH = validationConstraints.CreateTagRequest.name.maxLength
 
 export type TagResponse = {
   id: string

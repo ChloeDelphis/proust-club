@@ -2,11 +2,13 @@ import { useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { deleteTag, renameTag } from '../../../api/tag'
+import { deleteTag, MAX_TAG_NAME_LENGTH, renameTag } from '../../../api/tag'
 import { ApiError } from '../../../api/client'
 import { useTags } from '../../../hooks/useTags'
 import { useToast } from '../../../components/Toast/useToast'
 import FilterButton from '../../../components/FilterButton/FilterButton'
+import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
+import Spinner from '../../../components/Spinner/Spinner'
 import type { TagFilterBarProps } from './TagFilterBar.types'
 import styles from './TagFilterBar.module.css'
 
@@ -14,7 +16,7 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
-  const { data: tags } = useTags()
+  const { data: tags, isPending: tagsPending, isError: tagsError } = useTags()
 
   const [editingTagId, setEditingTagId] = useState<string | null>(null)
   const [editingValue, setEditingValue] = useState('')
@@ -110,6 +112,8 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
 
   return (
     <nav className={styles.root} aria-label={t('tagFilterBar.ariaLabel')}>
+      {tagsPending && <Spinner />}
+      {tagsError && <ErrorMessage message={t('common.genericError')} />}
       <FilterButton active={scope === 'saved' && activeTagId === null} onClick={() => handleEntryClick(null)}>
         {t('tagFilterBar.savedScopeFilter')}
       </FilterButton>
@@ -124,6 +128,7 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
                 value={editingValue}
                 autoFocus
                 aria-label={t('tagFilterBar.renameTag', { name: tag.name })}
+                maxLength={MAX_TAG_NAME_LENGTH}
                 onChange={event => setEditingValue(event.target.value)}
                 onBlur={() => handleBlur(tag.id)}
                 onKeyDown={event => handleKeyDown(event, tag.id)}

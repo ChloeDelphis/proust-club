@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../api/client'
+import { MAX_TAG_NAME_LENGTH } from '../../../api/tag'
 import { addTagToQuote, MAX_TAGS_PER_QUOTE, removeTagFromQuote } from '../../../api/quote'
 import { useTags } from '../../../hooks/useTags'
 import { useTagSearch } from '../../../hooks/useTagSearch'
 import { useToast } from '../../../components/Toast/useToast'
 import Spinner from '../../../components/Spinner/Spinner'
+import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
 import type { QuoteTagEditorProps } from './QuoteTagEditor.types'
 import styles from './QuoteTagEditor.module.css'
 
@@ -17,7 +19,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
-  const { data: allTags, isPending } = useTags()
+  const { data: allTags, isPending, isError } = useTags()
   const [search, setSearch] = useState('')
 
   const addMutation = useMutation({
@@ -89,22 +91,26 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
         className={styles.searchInput}
         aria-label={t('quoteTagEditor.addAriaLabel')}
         disabled={tagLimitReached || addMutation.isPending}
+        maxLength={MAX_TAG_NAME_LENGTH}
       />
 
       {isPending ? (
         <Spinner />
       ) : (
-        candidateTags.length > 0 && (
-          <ul className={styles.suggestions}>
-            {candidateTags.map(tag => (
-              <li key={tag.id}>
-                <button type="button" disabled={tagLimitReached || addMutation.isPending} onClick={() => addMutation.mutate(tag.name)}>
-                  {tag.name}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )
+        <>
+          {isError && <ErrorMessage message={t('common.genericError')} />}
+          {candidateTags.length > 0 && (
+            <ul className={styles.suggestions}>
+              {candidateTags.map(tag => (
+                <li key={tag.id}>
+                  <button type="button" disabled={tagLimitReached || addMutation.isPending} onClick={() => addMutation.mutate(tag.name)}>
+                    {tag.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       {canCreate && (
