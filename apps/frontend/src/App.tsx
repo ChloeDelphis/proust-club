@@ -10,8 +10,18 @@ import AccountPage from './features/auth/AccountPage'
 import Header from './components/Header/Header'
 import EmailVerificationBanner from './components/EmailVerificationBanner/EmailVerificationBanner'
 import ToastProvider from './components/Toast/ToastProvider'
+import { useTranslation } from 'react-i18next'
+import { useCurrentUser } from './features/auth/useCurrentUser'
+import ErrorMessage from './components/ErrorMessage/ErrorMessage'
 
 const queryClient = new QueryClient()
+
+function CurrentUserErrorNotice() {
+  const { t } = useTranslation()
+  const { isError } = useCurrentUser()
+
+  return isError ? <ErrorMessage message={t('common.genericError')} /> : null
+}
 
 export default function App() {
   return (
@@ -19,6 +29,7 @@ export default function App() {
       <ToastProvider>
         <BrowserRouter>
           <Header />
+          <CurrentUserErrorNotice />
           <EmailVerificationBanner />
           <Routes>
             <Route path="/" element={<SearchPage />} />

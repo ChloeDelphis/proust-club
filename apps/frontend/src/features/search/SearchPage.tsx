@@ -36,7 +36,7 @@ function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
 // defaulting to corpus search. Not route-split: this is one page, matching the reference mockup.
 export default function SearchPage() {
   const { t } = useTranslation()
-  const { data: currentUser, isError: currentUserError } = useCurrentUser()
+  const { data: currentUser } = useCurrentUser()
   const isConnected = currentUser !== null && currentUser !== undefined
   const [query, setQuery] = useState('')
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
@@ -145,7 +145,6 @@ export default function SearchPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('searchPage.title')}</h1>
-      {currentUserError && <ErrorMessage message={t('common.genericError')} />}
       {isConnected && (
         <TimelineBar
           activeTagId={tagId}

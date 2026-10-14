@@ -33,7 +33,7 @@ export default function AccountPage() {
   if (isUserError) {
     return (
       <main className={styles.root}>
-        <ErrorMessage message={t('common.genericError')} />
+        <h1 className={styles.title}>{t('accountPage.title')}</h1>
       </main>
     )
   }
