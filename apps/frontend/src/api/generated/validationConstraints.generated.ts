@@ -12,6 +12,9 @@ export const validationConstraints = {
   "CreateQuoteSelectionRequest": {
     "selectedText": {
       "minLength": 1
+    },
+    "tagNames": {
+      "maxItems": 20
     }
   },
   "AddTagRequest": {

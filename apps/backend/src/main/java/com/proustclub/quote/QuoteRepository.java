@@ -62,10 +62,13 @@ class QuoteRepository {
         var commentField = DSL.field("comment", String.class);
         var createdAtField = DSL.field("created_at", Instant.class);
 
+        // addTag() holds this lock through its count-and-insert transaction so concurrent tag
+        // additions to the same quote cannot both claim the final slot.
         return dsl.select(idField, paragraphIdField, startOffsetField, endOffsetField, selectedTextField, commentField, createdAtField)
                 .from(DSL.table("quote_selections"))
                 .where(idField.eq(quoteId))
                 .and(DSL.field("user_id", UUID.class).eq(userId))
+                .forUpdate()
                 .fetchOptional(r -> new QuoteSelection(
                         r.get(idField), r.get(paragraphIdField),
                         r.get(startOffsetField), r.get(endOffsetField),
@@ -247,6 +250,25 @@ class QuoteRepository {
                         .and(qUserIdField.eq(userId)))
                 .onConflictDoNothing()
                 .execute();
+    }
+
+    int countTagsForQuote(UUID quoteId) {
+        return dsl.selectCount()
+                .from(DSL.table("quote_selection_tags"))
+                .where(DSL.field("quote_selection_id", UUID.class).eq(quoteId))
+                .fetchOne(0, int.class);
+    }
+
+    boolean hasTagForOwner(UUID userId, UUID quoteId, UUID tagId) {
+        var qst = DSL.table("quote_selection_tags").as("qst");
+        var quote = DSL.table("quote_selections").as("q");
+
+        return dsl.fetchExists(dsl.selectOne()
+                .from(qst)
+                .join(quote).on(DSL.field("qst.quote_selection_id", UUID.class).eq(DSL.field("q.id", UUID.class)))
+                .where(DSL.field("q.id", UUID.class).eq(quoteId))
+                .and(DSL.field("q.user_id", UUID.class).eq(userId))
+                .and(DSL.field("qst.tag_id", UUID.class).eq(tagId)));
     }
 
     // Same principle as addTagForOwner: user_id is part of the DELETE itself. A quoteId not

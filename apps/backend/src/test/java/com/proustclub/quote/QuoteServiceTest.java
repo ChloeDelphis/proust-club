@@ -1,6 +1,7 @@
 package com.proustclub.quote;
 
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
+import com.proustclub.quote.dto.TagResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -176,5 +177,37 @@ class QuoteServiceTest {
 
         assertThatThrownBy(() -> service.removeTag(userId, quoteId, tagId))
                 .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void addTagRejectsNewTagWhenQuoteAlreadyHasMaximum() {
+        var quoteId = UUID.randomUUID();
+        var quote = new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now());
+        when(quoteRepository.findByIdAndUserId(quoteId, userId)).thenReturn(Optional.of(quote));
+        when(quoteRepository.countTagsForQuote(quoteId)).thenReturn(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE);
+        when(tagRepository.findIdByUserIdAndNormalizedName(userId, "Guermantes")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.addTag(userId, quoteId, "Guermantes"))
+                .isInstanceOf(ApiException.class);
+
+        verify(tagRepository, never()).upsertByName(any(), any());
+    }
+
+    @Test
+    void addTagRemainsIdempotentAtMaximum() {
+        var quoteId = UUID.randomUUID();
+        var tagId = UUID.randomUUID();
+        var quote = new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now());
+        var tag = new TagResponse(tagId, "Combray", 0);
+        when(quoteRepository.findByIdAndUserId(quoteId, userId)).thenReturn(Optional.of(quote));
+        when(quoteRepository.countTagsForQuote(quoteId)).thenReturn(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE);
+        when(tagRepository.findIdByUserIdAndNormalizedName(userId, "combray")).thenReturn(Optional.of(tagId));
+        when(quoteRepository.hasTagForOwner(userId, quoteId, tagId)).thenReturn(true);
+        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of(quoteId, List.of(tag)));
+
+        var response = service.addTag(userId, quoteId, "combray");
+
+        assertThat(response.tags()).containsExactly(tag);
+        verify(tagRepository, never()).upsertByName(any(), any());
     }
 }

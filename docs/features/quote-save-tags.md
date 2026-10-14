@@ -31,7 +31,7 @@ The client sends `paragraphId`, `startOffset`, `endOffset` and `selectedText` to
 
 ### Tagging is optional, and tag creation is dual
 
-A quote can be saved with zero, one, or several tags — there is no floor. Tags can be created two ways, both landing on the same upsert-by-name behavior:
+A quote can have zero to twenty tags. Tag names are limited to 50 characters. `POST /api/quotes` rejects more than twenty tag names before writing the quote or any tags. `POST /api/quotes/{id}/tags` returns `409` when a new tag would exceed the same per-quote limit; adding a tag already attached remains idempotent. Both frontend tag editors prevent adding tags at the limit while leaving removals available. Tags can be created two ways, both landing on the same upsert-by-name behavior:
 
 - **Explicit**: `POST /api/tags` creates a tag ahead of time. Returns `409` if a tag with that name (case-insensitive, after trimming) already exists for the user — the intent here is unambiguous ("create a new resource"), so a collision is a real error.
 - **Implicit**: `POST /api/quotes` (via `tagNames`) and `POST /api/quotes/{id}/tags` (via `name`) reuse an existing tag if one matches, or create it otherwise. No error on a "collision" — this is the expected, idempotent path for everyday tagging.
@@ -77,8 +77,6 @@ A tag created by mistake (typically a typo caught by the implicit upsert, e.g. "
 - **`DELETE /api/tags/{id}`** deletes the tag outright. The `quote_selection_tags.tag_id` foreign key has `ON DELETE CASCADE` (`V5__quote_selections_and_tags.sql`), so every quote that had this tag loses it automatically — the quotes themselves are untouched, only their tag list shrinks. There is no "tag still in use" guard: this cascade is the same behavior already accepted for `DELETE /api/quotes/{id}` on the quote side, applied symmetrically to tags.
 
 Both endpoints follow the same ownership discipline as the rest of this feature: `user_id` is embedded directly in the `UPDATE`/`DELETE`'s `WHERE` clause, and a tag that doesn't exist or belongs to another user returns `404`, never `403`.
-
----
 
 ## Response shapes
 
@@ -170,3 +168,10 @@ The personal comment field lives directly in `QuoteDetailModal` (no dedicated su
 The context window resets to `before: 0, after: 0` whenever `paragraphId` changes to a different value — `DetailModal` can stay mounted across different quotes/results opening in sequence (only `paragraphId` toggles), so this reset is explicit state logic, the same pattern `QuoteDetailModal`'s own comment draft uses.
 
 `closeDisabled` (optional prop) lets a caller block the × close button — used by `SearchResultDetailModal` while a save is in flight, for the same reason `TagPickerPopup` disables its own close button in that state: the request can't be aborted once sent.
+
+---
+
+## Manual verification
+
+- Open the quote tag picker, select twenty tags, and confirm that further existing tags and new tag creation are disabled while selected tags can still be removed. Open an existing quote with twenty tags and confirm tag additions are disabled while removals remain available.
+- Submit a quote request with twenty tags and confirm it succeeds; submit one with twenty-one tags and confirm it returns `400` without creating a quote or tags.

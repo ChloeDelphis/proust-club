@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import TagPickerPopup from './TagPickerPopup'
 import * as tagApi from '../../../api/tag'
+import { MAX_TAGS_PER_QUOTE } from '../../../api/quote'
 
 vi.mock('../../../api/tag')
 
@@ -91,6 +92,39 @@ describe('TagPickerPopup', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(onSave).toHaveBeenCalledWith(['Guermantes'])
+  })
+
+  it('prevents selecting or creating more than the maximum number of tags', async () => {
+    const onSave = vi.fn()
+    const tags = Array.from({ length: MAX_TAGS_PER_QUOTE + 1 }, (_, index) => ({
+      id: `tag-${index + 1}`,
+      name: `Tag ${index + 1}`,
+      colorIndex: index % 10,
+    }))
+    vi.mocked(tagApi.listTags).mockResolvedValue(tags)
+    render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
+
+    for (const tag of tags.slice(0, MAX_TAGS_PER_QUOTE)) {
+      await userEvent.click(await screen.findByRole('checkbox', { name: tag.name }))
+    }
+
+    expect(screen.getByRole('status')).toHaveTextContent(`Maximum : ${MAX_TAGS_PER_QUOTE} tags par citation.`)
+    expect(screen.getByRole('checkbox', { name: `Tag ${MAX_TAGS_PER_QUOTE + 1}` })).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Retirer Tag 1' }))
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: `Tag ${MAX_TAGS_PER_QUOTE + 1}` })).toBeEnabled()
+    await userEvent.click(screen.getByRole('checkbox', { name: `Tag ${MAX_TAGS_PER_QUOTE + 1}` }))
+
+    await userEvent.type(screen.getByRole('textbox', { name: 'Chercher un tag' }), 'Nouveau')
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Créer « Nouveau »' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(onSave).toHaveBeenCalledWith([
+      ...tags.slice(1, MAX_TAGS_PER_QUOTE).map(tag => tag.name),
+      tags[MAX_TAGS_PER_QUOTE].name,
+    ])
   })
 
   it('removes a selected chip when its × is clicked', async () => {

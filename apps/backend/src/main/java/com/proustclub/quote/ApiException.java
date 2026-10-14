@@ -25,4 +25,8 @@ class ApiException extends ErrorResponseException {
     static ApiException tagAlreadyExists() {
         return new ApiException(HttpStatus.CONFLICT, "Tag already exists.");
     }
+
+    static ApiException quoteTagLimitReached() {
+        return new ApiException(HttpStatus.CONFLICT, "Quote already has the maximum number of tags.");
+    }
 }

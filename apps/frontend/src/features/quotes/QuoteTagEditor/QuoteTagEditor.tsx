@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { addTagToQuote, removeTagFromQuote } from '../../../api/quote'
+import { ApiError } from '../../../api/client'
+import { addTagToQuote, MAX_TAGS_PER_QUOTE, removeTagFromQuote } from '../../../api/quote'
 import { useTags } from '../../../hooks/useTags'
 import { useTagSearch } from '../../../hooks/useTagSearch'
 import { useToast } from '../../../components/Toast/useToast'
@@ -25,7 +26,12 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
       setSearch('')
     },
-    onError: () => {
+    onError: error => {
+      if (error instanceof ApiError && error.status === 409) {
+        queryClient.invalidateQueries({ queryKey: ['quotes'] })
+        showToast(t('tagPicker.maxTagsReached', { max: MAX_TAGS_PER_QUOTE }))
+        return
+      }
       showToast(t('quoteTagEditor.addErrorToast'))
     },
   })
@@ -41,6 +47,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
   })
 
   const attachedNames = new Set(tags.map(tag => tag.name.toLowerCase()))
+  const tagLimitReached = tags.length >= MAX_TAGS_PER_QUOTE
   const { matches: candidateTags, canCreate } = useTagSearch(
     allTags ?? [],
     search,
@@ -67,6 +74,12 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
         </ul>
       )}
 
+      {tagLimitReached && (
+        <p className={styles.limitMessage} role="status" aria-live="polite">
+          {t('tagPicker.maxTagsReached', { max: MAX_TAGS_PER_QUOTE })}
+        </p>
+      )}
+
       <input
         type="text"
         value={search}
@@ -74,6 +87,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
         placeholder={t('quoteTagEditor.addPlaceholder')}
         className={styles.searchInput}
         aria-label={t('quoteTagEditor.addAriaLabel')}
+        disabled={tagLimitReached || addMutation.isPending}
       />
 
       {isPending ? (
@@ -83,7 +97,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
           <ul className={styles.suggestions}>
             {candidateTags.map(tag => (
               <li key={tag.id}>
-                <button type="button" onClick={() => addMutation.mutate(tag.name)}>
+                <button type="button" disabled={tagLimitReached || addMutation.isPending} onClick={() => addMutation.mutate(tag.name)}>
                   {tag.name}
                 </button>
               </li>
@@ -93,7 +107,7 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
       )}
 
       {canCreate && (
-        <button type="button" className={styles.createButton} onClick={() => addMutation.mutate(search.trim())}>
+        <button type="button" className={styles.createButton} disabled={tagLimitReached || addMutation.isPending} onClick={() => addMutation.mutate(search.trim())}>
           {t('tagPicker.createButton', { name: search.trim() })}
         </button>
       )}

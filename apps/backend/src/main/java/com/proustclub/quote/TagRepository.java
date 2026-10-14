@@ -57,7 +57,7 @@ class TagRepository {
                 .fetchOptional(r -> new TagResponse(r.get(idField), trimmedName, r.get(colorIndexField)));
     }
 
-    private Optional<UUID> findIdByUserIdAndNormalizedName(UUID userId, String trimmedName) {
+    Optional<UUID> findIdByUserIdAndNormalizedName(UUID userId, String trimmedName) {
         var idField = DSL.field("id", UUID.class);
         var nameField = DSL.field("name", String.class);
 
