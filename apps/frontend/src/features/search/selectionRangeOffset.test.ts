@@ -80,6 +80,20 @@ describe('getSelectionOffsets', () => {
     expect(getSelectionOffsets(container, range)).toEqual({ start: 2, end: 14 })
   })
 
+  it('uses UTF-16 offsets after a supplementary character', () => {
+    const container = document.createElement('p')
+    const text = document.createTextNode('😀 needle')
+    container.append(text)
+    const range = document.createRange()
+    range.setStart(text, 3) // the emoji occupies two UTF-16 code units, followed by a space
+    range.setEnd(text, 9)
+
+    const offsets = getSelectionOffsets(container, range)
+
+    expect(offsets).toEqual({ start: 3, end: 9 })
+    expect(text.textContent?.slice(offsets!.start, offsets!.end)).toBe('needle')
+  })
+
   it('returns null when the range extends outside the container', () => {
     const { container } = buildParagraph()
     const outside = document.createTextNode('elsewhere')

@@ -68,6 +68,22 @@ class SearchControllerTest {
     }
 
     @Test
+    void searchOffsetsUseUtf16IndexesAfterSupplementaryCharacters() throws Exception {
+        String text = "😀xneedle";
+        dsl.insertInto(DSL.table("paragraphs"),
+                        DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
+                        DSL.field("page_number"), DSL.field("text"))
+                .values(1, 1, 4, 2, text)
+                .execute();
+
+        mockMvc.perform(get("/api/search").param("q", "needle"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results[0].text").value(text))
+                .andExpect(jsonPath("$.results[0].startOffset").value(3))
+                .andExpect(jsonPath("$.results[0].endOffset").value(9));
+    }
+
+    @Test
     void searchReturnsLocationMetadata() throws Exception {
         mockMvc.perform(get("/api/search").param("q", "madeleine"))
                 .andExpect(status().isOk())

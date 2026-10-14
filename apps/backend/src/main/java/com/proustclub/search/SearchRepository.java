@@ -43,10 +43,14 @@ class SearchRepository {
                 .limit(size)
                 .offset((long) page * size)
                 .fetch(r -> {
-                    int startOffset = r.get("start_offset", Integer.class);
+                    String text = r.get("text", String.class);
+                    int startCharacterOffset = r.get("start_offset", Integer.class);
+                    // PostgreSQL counts Unicode characters; Java and the frontend index strings
+                    // in UTF-16 code units. Convert before returning offsets used by substring/slice.
+                    int startOffset = text.offsetByCodePoints(0, startCharacterOffset);
                     return new SearchHit(
                             r.get("paragraph_id", Integer.class),
-                            r.get("text", String.class),
+                            text,
                             startOffset,
                             startOffset + query.length(),
                             r.get("volume_title", String.class),
