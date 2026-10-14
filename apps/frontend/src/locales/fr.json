@@ -44,7 +44,9 @@
   },
   "detailModal": {
     "showMoreBefore": "Afficher le paragraphe précédent",
-    "showMoreAfter": "Afficher le paragraphe suivant"
+    "showMoreAfter": "Afficher le paragraphe suivant",
+    "contextLoadError": "Le contexte du paragraphe n'a pas pu être chargé.",
+    "retryContext": "Réessayer"
   },
   "searchResultDetailModal": {
     "ariaLabel": "Résultat de recherche"
