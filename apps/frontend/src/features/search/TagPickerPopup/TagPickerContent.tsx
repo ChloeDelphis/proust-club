@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { useTags } from '../../../hooks/useTags'
 import { useTagSearch } from '../../../hooks/useTagSearch'
 import { MAX_TAGS_PER_QUOTE } from '../../../api/quote'
+import { MAX_TAG_NAME_LENGTH } from '../../../api/tag'
 import Spinner from '../../../components/Spinner/Spinner'
+import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
 import type { TagPickerContentProps } from './TagPickerContent.types'
 import styles from './TagPickerContent.module.css'
 
@@ -12,7 +14,7 @@ import styles from './TagPickerContent.module.css'
 // flow; a two-column detail modal's side panel embeds it directly instead.
 export default function TagPickerContent({ onSave, isSaving }: TagPickerContentProps) {
   const { t } = useTranslation()
-  const { data: tags, isPending } = useTags()
+  const { data: tags, isPending, isError } = useTags()
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
   const tagLimitReached = selectedNames.size >= MAX_TAGS_PER_QUOTE
@@ -65,26 +67,30 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
         placeholder={t('tagPicker.searchPlaceholder')}
         className={styles.searchInput}
         aria-label={t('tagPicker.searchAriaLabel')}
+        maxLength={MAX_TAG_NAME_LENGTH}
       />
 
       {isPending ? (
         <Spinner />
       ) : (
-        <ul className={styles.tagList}>
-          {filteredTags.map(tag => (
-            <li key={tag.id}>
-              <label className={styles.tagOption}>
-                <input
-                  type="checkbox"
-                  checked={selectedNames.has(tag.name)}
-                  disabled={!selectedNames.has(tag.name) && tagLimitReached}
-                  onChange={() => toggleTag(tag.name)}
-                />
-                {tag.name}
-              </label>
-            </li>
-          ))}
-        </ul>
+        <>
+          {isError && <ErrorMessage message={t('common.genericError')} />}
+          <ul className={styles.tagList}>
+            {filteredTags.map(tag => (
+              <li key={tag.id}>
+                <label className={styles.tagOption}>
+                  <input
+                    type="checkbox"
+                    checked={selectedNames.has(tag.name)}
+                    disabled={!selectedNames.has(tag.name) && tagLimitReached}
+                    onChange={() => toggleTag(tag.name)}
+                  />
+                  {tag.name}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {canCreate && (
