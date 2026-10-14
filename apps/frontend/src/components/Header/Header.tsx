@@ -8,7 +8,7 @@ import styles from './Header.module.css'
 
 export default function Header() {
   const { t } = useTranslation()
-  const { data: user, isSuccess, isError } = useCurrentUser()
+  const { data: user, isSuccess } = useCurrentUser()
   const queryClient = useQueryClient()
 
   const logoutMutation = useMutation({
@@ -50,7 +50,6 @@ export default function Header() {
           <Link to="/register">{t('header.register')}</Link>
         </nav>
       )}
-      {isError && <span role="status">{t('common.genericError')}</span>}
     </header>
   )
 }
