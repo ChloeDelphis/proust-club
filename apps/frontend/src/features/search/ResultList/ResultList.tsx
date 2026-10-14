@@ -19,16 +19,26 @@ interface ResultListProps<T> {
 export default function ResultList<T>({ results, getKey, renderItem, total, page, size, isFetching, onPageChange }: ResultListProps<T>) {
   const { t } = useTranslation()
   return (
-    <section className={isFetching ? `${styles.root} ${styles.isFetching}` : styles.root}>
-      <p className={styles.count}>
-        {t('resultList.resultCount', { count: total })}
-      </p>
-      <ul className={styles.list}>
-        {results.map(item => (
-          <li key={getKey(item)}>{renderItem(item)}</li>
-        ))}
-      </ul>
-      <Pagination page={page} size={size} total={total} onPageChange={onPageChange} />
-    </section>
+    <>
+      {isFetching && (
+        <span className={styles.visuallyHidden} role="status">
+          {t('resultList.refreshing')}
+        </span>
+      )}
+      <section
+        className={isFetching ? `${styles.root} ${styles.isFetching}` : styles.root}
+        aria-busy={isFetching}
+      >
+        <p className={styles.count}>
+          {t('resultList.resultCount', { count: total })}
+        </p>
+        <ul className={styles.list}>
+          {results.map(item => (
+            <li key={getKey(item)}>{renderItem(item)}</li>
+          ))}
+        </ul>
+        <Pagination page={page} size={size} total={total} onPageChange={onPageChange} />
+      </section>
+    </>
   )
 }

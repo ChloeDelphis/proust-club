@@ -104,6 +104,39 @@ describe('SearchPage', () => {
     await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
   })
 
+  it('announces a result refresh while keeping prior results visible', async () => {
+    let settleNextPage: ((response: searchApi.SearchResponse) => void) | undefined
+    vi.mocked(searchApi.searchParagraphs)
+      .mockResolvedValueOnce({ ...mockResponse, total: 11 })
+      .mockImplementationOnce(
+        () => new Promise(resolve => { settleNextPage = resolve }),
+      )
+    const user = userEvent.setup()
+
+    render(<SearchPage />, { wrapper })
+    await user.type(screen.getByRole('searchbox'), 'Longtemps')
+    await user.click(screen.getByRole('button', { name: 'Chercher' }))
+    await screen.findByText(/Du côté de chez Swann/)
+
+    await user.click(screen.getByRole('button', { name: 'Suivant →' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Mise à jour des résultats…')
+    expect(screen.getByText('Longtemps').closest('section')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText(/Du côté de chez Swann/)).toBeInTheDocument()
+
+    expect(settleNextPage).toBeDefined()
+    settleNextPage?.({
+      results: [{ ...mockHit, paragraphId: 2, text: 'La page suivante.' }],
+      total: 11,
+      page: 1,
+      size: 10,
+    })
+
+    expect(await screen.findByText('La page s')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    expect(screen.getByText('La page s').closest('section')).toHaveAttribute('aria-busy', 'false')
+  })
+
   it("affiche un message d'erreur si l'API échoue", async () => {
     vi.mocked(searchApi.searchParagraphs).mockRejectedValue(new Error('HTTP 500'))
 
