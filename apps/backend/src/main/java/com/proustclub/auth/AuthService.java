@@ -64,7 +64,7 @@ class AuthService {
             // not MailException), different logging need (the full exception is safe to log here —
             // unlike an email address, nothing about this exception leaks the password), and a
             // different role (this is a defensive fallback for a bug, not the primary fail-open path).
-            log.warn("Compromised password check failed, allowing registration to proceed", e);
+            log.warn("Compromised password check failed, allowing the request to proceed", e);
             return;
         }
         if (compromised) {

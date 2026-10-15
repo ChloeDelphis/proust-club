@@ -13,7 +13,7 @@ import java.time.Duration;
 // rather than exposing it as a CompromisedPasswordChecker @Bean. If a bean of that exact type
 // existed in the context, Spring Security's InitializeUserDetailsBeanManagerConfigurer auto-wires
 // it into the default DaoAuthenticationProvider for every authentication — silently extending
-// this check to login() (not just register(), the only flow this ticket scoped it to) and
+// this check to login() rather than keeping it limited to new-password flows, and
 // bypassing the fail-open behavior below entirely. Confirmed by decompiling
 // spring-security-config 7.1.0; not documented anywhere found.
 @Component
