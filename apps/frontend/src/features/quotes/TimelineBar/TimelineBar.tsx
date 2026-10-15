@@ -123,10 +123,21 @@ function Bookmarks({
   onHoverChange: (id: string | null) => void
   t: TranslateFn
 }) {
+  const pageCounts = new Map<number, number>()
+  for (const group of groups) {
+    const page = group.quotes[0].pageNumber
+    pageCounts.set(page, (pageCounts.get(page) ?? 0) + 1)
+  }
+  const pageIndexes = new Map<number, number>()
+
   return (
     <>
       {groups.map(group => {
         const quote = group.quotes[0]
+        const page = quote.pageNumber
+        const pageIndex = (pageIndexes.get(page) ?? 0) + 1
+        pageIndexes.set(page, pageIndex)
+        const pageCount = pageCounts.get(page) ?? 1
         const x = percentToX(group.offsetPercent)
         const height = group.isExtended ? BOOKMARK_HEIGHT_EXTENDED : BOOKMARK_HEIGHT_NORMAL
         return (
@@ -139,7 +150,9 @@ function Bookmarks({
             className={styles.bookmark}
             role="button"
             tabIndex={0}
-            aria-label={t('timelineBar.bookmarkAriaLabel', { page: quote.pageNumber })}
+            aria-label={pageCount > 1
+              ? t('timelineBar.bookmarkDuplicatePageAriaLabel', { page, index: pageIndex, total: pageCount })
+              : t('timelineBar.bookmarkAriaLabel', { page })}
             onClick={() => onOpen(quote.id)}
             onKeyDown={activateOnEnterOrSpace(() => onOpen(quote.id))}
             onMouseEnter={() => onHoverChange(quote.id)}

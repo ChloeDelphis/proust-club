@@ -72,6 +72,27 @@ it('renders one bookmark per saved quote', async () => {
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
 })
 
+it('keeps multiple bookmarks on the same page independently clickable and identifiable', async () => {
+  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
+    volumes,
+    quotes: [makeQuote(1, 9, 1), makeQuote(2, 9, 1)],
+  })
+  const onOpenQuote = vi.fn()
+  const user = userEvent.setup()
+
+  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
+
+  const firstBookmark = await screen.findByRole('button', { name: 'Citation page 9, 1 sur 2' })
+  const secondBookmark = screen.getByRole('button', { name: 'Citation page 9, 2 sur 2' })
+  expect(firstBookmark.getAttribute('x')).not.toBe(secondBookmark.getAttribute('x'))
+
+  await user.click(firstBookmark)
+  await user.click(secondBookmark)
+
+  expect(onOpenQuote).toHaveBeenNthCalledWith(1, quoteId(1))
+  expect(onOpenQuote).toHaveBeenNthCalledWith(2, quoteId(2))
+})
+
 it('zooming by clicking directly on a volume zone in the bar hides bookmarks from other volumes', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
     volumes,
