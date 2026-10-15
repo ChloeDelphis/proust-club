@@ -1,74 +1,22 @@
-# ADR-007: Server state — TanStack Query + apiFetch with AbortSignal
+# ADR-007: Server state — TanStack Query and `apiFetch`
 
 ## Decision
 
-**TanStack Query (React Query) + a thin `apiFetch<T>()` wrapper.**
+Use TanStack Query for server state and a thin generic `apiFetch<T>()` wrapper around native `fetch`.
 
-## Context
+## Context and rationale
 
-The frontend needs to handle network calls to the Spring Boot backend: loading, errors, caching, cancelling stale requests. The HTTP layer needs to stay typed and predictable.
+The frontend needs request state, caching, deduplication, and cancellation. TanStack Query owns query and mutation state; domain functions in `src/api/*.ts` own endpoint details; `apiFetch` owns shared HTTP behavior. Query functions pass TanStack Query's `AbortSignal` through the API layer to `fetch`.
 
-**Option A — Native `fetch` + `useState`/`useEffect`**
-Zero dependency. But verbose: loading/error/data state has to be rewritten in every component, no cache, no request dedup, manual cancellation is tedious.
+This avoids duplicating loading, error, caching, and cancellation logic in components. Native `fetch` remains the transport; `apiFetch` does not contain domain behavior.
 
-**Option B — TanStack Query + a wrapped fetch**
-Handles the loading/error/cache/dedup lifecycle automatically. The de facto standard for React server state in 2026. Integrates naturally with `AbortSignal` for cancellation.
+## UI state convention
 
-**Option C — SWR**
-Lighter, same principle. Fewer features, less ecosystem traction.
+Use `isPending` for the initial load with no data and `isFetching` for background refreshes. Keep existing data visible while a refresh runs. The MVP uses explicit loading and error states rather than Suspense.
 
-## Why Option B
+## Trade-off
 
-```
-React component
-  → TanStack Query (useQuery / useMutation)
-  → domain functions  src/api/*.ts
-  → apiFetch<T>()
-  → native fetch
-  → Spring Boot
-```
-
-`apiFetch` accepts an optional `AbortSignal`, threaded through to native `fetch`. Domain functions propagate it consistently:
-
-```ts
-// src/api/client.ts
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> { ... }
-
-// src/api/search.ts
-export function searchParagraphs(params: SearchParams, signal?: AbortSignal) {
-  return apiFetch<SearchResponse>(`/api/search?...`, { signal })
-}
-```
-
-TanStack Query passes its own `signal` to the `queryFn`:
-
-```ts
-queryFn: ({ signal }) => searchParagraphs(params, signal)
-```
-
-Stale requests (e.g. a new keystroke before the previous response arrives) are cancelled automatically.
-
-## State convention
-
-Distinguish `isPending` from `isFetching`:
-
-- `isPending` — no data yet → show the initial loading state.
-- `isFetching` — a request is in flight but data is already available → keep showing the results, a subtle indicator only.
-
-Don't do `if (isFetching) return <Spinner />` — it would wipe already-visible data on every refetch.
-
-```tsx
-if (isPending) return <Spinner />
-if (isError) return <ErrorMessage message="..." />
-if (!data.results.length) return <EmptyState message="..." />
-return <ResultList results={data.results} isFetching={isFetching} />
-```
-
-No Suspense for the MVP: explicit state handling is more readable and sufficient.
-
-## Tradeoff accepted
-
-TanStack Query is a runtime dependency (light, ~13 kB gzipped). `apiFetch` stays generic — it knows nothing about the domain, only HTTP. `AbortSignal` support is built in from day one, so no refactor is needed if cancellation becomes critical later.
+TanStack Query adds a runtime dependency. The API wrapper remains generic and the domain modules provide typed request functions.
 
 ## Date
 
