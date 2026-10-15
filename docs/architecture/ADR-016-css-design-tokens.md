@@ -9,10 +9,10 @@
 An audit of the existing frontend (2026-10-09) found no design system at all: 25 `.module.css` files each re-declared colors, font sizes, spacing, radii, and shadows as literals. Several values that should have been identical had drifted into near-duplicates — e.g. three purple hover shades (`#6b3fa0`/`#5a3490`/`#4a2b70`), 13 distinct `font-size` values where several differed by under a pixel, three "large overlay" shadows that only differed by a fraction of their blur radius. There was no mechanism to notice or prevent this drift.
 
 **Option A — Tailwind CSS**
-Would give a token system and a utility-class workflow in one dependency. Rejected: the project has no utility-class convention anywhere in the frontend (CSS Modules throughout, `CLAUDE.md`'s CSS conventions section is written entirely in terms of `.module.css` files), and adopting Tailwind now would mean rewriting every component's markup, not just its styles — far beyond the scope of consolidating existing values.
+Would give a token system and a utility-class workflow in one dependency. Rejected: the project has no utility-class convention anywhere in the frontend (CSS Modules throughout), and adopting Tailwind now would mean rewriting every component's markup, not just its styles — far beyond the scope of consolidating existing values.
 
 **Option B — CSS-in-JS (e.g. a theming library with a JS token object)**
-Rejected outright: the project's CSP conventions already forbid libraries that inject styles dynamically into `<head>` (see `CLAUDE.md`, "Contraintes CSP"). Any CSS-in-JS runtime theming solution would violate that constraint.
+Rejected outright: the project's CSP conventions already forbid libraries that inject styles dynamically into `<head>`. Any CSS-in-JS runtime theming solution would violate that constraint.
 
 **Option C — Plain CSS custom properties (chosen)**
 No new dependency, no new build step, works natively with CSS Modules (`var(--token)` inside any `.module.css`), and keeps every existing styling convention (BEM-free class names, `is`/`has` state prefixes) unchanged — only the right-hand side of each declaration changes.
@@ -26,7 +26,7 @@ No new dependency, no new build step, works natively with CSS Modules (`var(--to
 
 ## Tradeoff accepted
 
-No build-time enforcement that a future component actually uses the tokens instead of a new literal — unlike Tailwind, which makes an arbitrary value visually stand out in JSX, a plain CSS custom property is just as easy to type as a literal. This is mitigated by convention (`CLAUDE.md`'s CSS Modules section now says new styles must consume `tokens.css`) rather than tooling, consistent with how this project already handles most conventions (documented and checked at review time, not lint-enforced) — see `CLAUDE.md`'s note on `max-lines-per-function`-style lint rules being deliberately avoided in favor of qualitative review.
+No build-time enforcement that a future component actually uses the tokens instead of a new literal — unlike Tailwind, which makes an arbitrary value visually stand out in JSX, a plain CSS custom property is just as easy to type as a literal. This is mitigated by convention: new styles must consume `tokens.css`, and conventions are checked at review time rather than through lint rules.
 
 ## Date
 
