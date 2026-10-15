@@ -172,3 +172,24 @@ it('deletes a tag when the confirmation is accepted, falling back to the saved s
   expect(tagApi.deleteTag).toHaveBeenCalledWith(COMBRAY_ID)
   expect(onSelectSavedScope).toHaveBeenCalled()
 })
+
+it('disables tag deletion while the request is pending to prevent repeated deletes', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  let finishDeletion: (() => void) | undefined
+  vi.mocked(tagApi.deleteTag).mockImplementation(() => new Promise<void>(resolve => { finishDeletion = () => resolve() }))
+  const user = userEvent.setup()
+  render(
+    <TagFilterBar scope="corpus" activeTagId={null} onSelectSavedScope={noop} onSelectTag={noop} onSelectCorpusScope={noop} />,
+    { wrapper },
+  )
+
+  const deleteButton = await screen.findByRole('button', { name: 'Supprimer Combray' })
+  await user.click(deleteButton)
+
+  expect(deleteButton).toBeDisabled()
+  await user.click(deleteButton)
+  expect(tagApi.deleteTag).toHaveBeenCalledTimes(1)
+  expect(window.confirm).toHaveBeenCalledTimes(1)
+
+  finishDeletion?.()
+})

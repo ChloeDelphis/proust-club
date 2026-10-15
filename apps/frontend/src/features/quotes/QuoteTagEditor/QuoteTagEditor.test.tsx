@@ -103,6 +103,22 @@ it('removes a tag when its chip button is clicked', async () => {
   expect(quoteApi.removeTagFromQuote).toHaveBeenCalledWith(QUOTE_ID, COMBRAY_ID)
 })
 
+it('disables removal while the request is pending to prevent repeated deletes', async () => {
+  let finishRemoval: (() => void) | undefined
+  vi.mocked(quoteApi.removeTagFromQuote).mockImplementation(() => new Promise<void>(resolve => { finishRemoval = () => resolve() }))
+  const user = userEvent.setup()
+  render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[{ id: COMBRAY_ID, name: 'Combray', colorIndex: 0 }]} />, { wrapper })
+
+  const removeButton = screen.getByRole('button', { name: 'Retirer Combray' })
+  await user.click(removeButton)
+
+  expect(removeButton).toBeDisabled()
+  await user.click(removeButton)
+  expect(quoteApi.removeTagFromQuote).toHaveBeenCalledTimes(1)
+
+  finishRemoval?.()
+})
+
 it('shows an error toast when adding a tag fails', async () => {
   vi.mocked(quoteApi.addTagToQuote).mockRejectedValue(new Error('network error'))
   render(<QuoteTagEditor quoteId={QUOTE_ID} tags={[]} />, { wrapper })

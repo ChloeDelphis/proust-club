@@ -69,6 +69,7 @@ export default function QuoteTagEditor({ quoteId, tags, onTagsChange }: QuoteTag
                 type="button"
                 className={styles.removeButton}
                 onClick={() => removeMutation.mutate(tag.id)}
+                disabled={removeMutation.isPending}
                 aria-label={t('tagPicker.removeTag', { name: tag.name })}
               >
                 ×

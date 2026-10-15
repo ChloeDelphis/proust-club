@@ -150,6 +150,7 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
                   type="button"
                   className={styles.iconButton}
                   onClick={() => handleDelete(tag.id)}
+                  disabled={deleteMutation.isPending}
                   aria-label={t('tagFilterBar.deleteTag', { name: tag.name })}
                 >
                   ×
