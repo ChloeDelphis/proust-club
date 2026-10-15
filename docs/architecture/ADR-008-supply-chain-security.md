@@ -73,7 +73,7 @@ Everything above is active scanning this project runs itself. This addendum reco
 
 ## Addendum (2026-09-02) — `check:supply-chain` (Addendum 2026-08-31, second entry) is now enforced, not just documented
 
-The OSV `MAL-*` check (`pnpm check:supply-chain`, see `docs/features/supply-chain-check.md`) shipped as a script developers and Claude were expected to remember to run before `pnpm add`/`update`/`install`. This addendum records the mechanism that makes it structurally hard to skip.
+The OSV `MAL-*` check (`pnpm check:supply-chain`, see `docs/features/supply-chain-check.md`) shipped as a script developers were expected to remember to run before `pnpm add`/`update`/`install`. This addendum records the mechanism that makes it structurally hard to skip.
 
 **Decision:** `apps/frontend/.pnpmfile.mjs`, a `preResolution` hook, blocks any `pnpm add`/`update`/`install`/`remove` invocation that doesn't carry a `PROUST_SAFE_PNPM=1` environment marker. `apps/frontend/scripts/safe-pnpm.ts`/`safePnpm.ts` — exposed as `pnpm safe:add`/`safe:update`/`safe:install`/`safe:remove` — set that marker and run `check:supply-chain` between resolving a change and materializing it, the same sequence the earlier addendum described manually.
 
@@ -87,7 +87,6 @@ The OSV `MAL-*` check (`pnpm check:supply-chain`, see `docs/features/supply-chai
 
 - The marker (`PROUST_SAFE_PNPM`) is a provenance signal, not a credential — its job is to distinguish "went through the orchestrator" from "typed directly," not to resist someone deliberately working around it.
 - `pnpm --ignore-pnpmfile` bypasses `.pnpmfile.mjs` entirely — a known, accepted gap. This mechanism is not meant to resist a deliberate, adversarial bypass (that person could edit `.pnpmfile.mjs` itself just as easily); it exists to stop a reflexive `pnpm add <pkg>` — typed by habit, or suggested by untrusted content an AI agent might act on — from installing something unchecked.
-- A second, explicitly non-load-bearing layer (`.claude/hooks/block-raw-pnpm.mjs`, a Claude Code `PreToolUse` hook) denies the same raw commands before they even reach pnpm, giving Claude a fast, specific explanation instead of an opaque `.pnpmfile.mjs` stack trace. It is pattern-matching on the command string, not adversary-proof, and isn't meant to be — `.pnpmfile.mjs` is the actual gate.
 - CI (`frontend-ci.yml`) sets the marker on the `pnpm/setup` step, scoped to that step only. CI trusts the already-committed, already-reviewed lockfile rather than re-running `check:supply-chain` on every job — consistent with the acceptable-gap language already in `docs/features/supply-chain-check.md`, and with the fact that a CI-time check is structurally too late anyway (it would run after the lockfile was already merged).
 
 **Discovered along the way, not previously documented in this ADR:**

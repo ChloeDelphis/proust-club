@@ -25,7 +25,7 @@ The `safe:*` commands (`apps/frontend/scripts/safe-pnpm.ts`/`safePnpm.ts`) orche
 - **`safe:install`** (lockfile already resolved, `package.json` unchanged): `pnpm check:supply-chain` then `pnpm install`. Takes **no arguments at all** — `pnpm install <pkg>` is actually an alias for `pnpm add <pkg>` in pnpm, so any argument (a package name, an install flag like `--frozen-lockfile`, anything) is refused outright rather than risking a silent, unchecked install. There is currently no way to pass install flags through `safe:install`; if that's ever needed, it has to be added deliberately (e.g. an explicit flag allowlist), not assumed to already work.
 - **`safe:remove`** just runs `pnpm remove <pkg>` — nothing new is being installed, so there's nothing to check. It only exists because `.pnpmfile.mjs`'s guard can't distinguish `remove` from the others.
 
-This sequence — not just running the script — is the actual mechanism; the script alone only answers "is this lockfile clean", it doesn't know which command produced it. See `apps/frontend/.pnpmfile.mjs` for how the sequence is enforced (a `preResolution` hook that rejects any pnpm add/update/install/remove invocation not carrying the orchestrator's `PROUST_SAFE_PNPM=1` marker) and `.claude/hooks/block-raw-pnpm.mjs` for the secondary, non-load-bearing layer that gives Claude a clear denial instead of hitting that block blind.
+This sequence — not just running the script — is the actual mechanism; the script alone only answers "is this lockfile clean", it doesn't know which command produced it. See `apps/frontend/.pnpmfile.mjs` for how the sequence is enforced: a `preResolution` hook rejects any pnpm add/update/install/remove invocation not carrying the orchestrator's `PROUST_SAFE_PNPM=1` marker.
 
 ---
 

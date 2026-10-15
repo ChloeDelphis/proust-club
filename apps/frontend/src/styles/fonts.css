@@ -2,7 +2,7 @@
  * Self-hosted fonts for the direction B visual identity — Latin subset only
  * (covers French diacritics), fetched from Google Fonts' CSS2 API and hosted
  * locally rather than linked externally, per this project's CSP constraints
- * (see CLAUDE.md). Only the weights/styles actually consumed by a token in
+ * (per the project's CSP constraints). Only the weights/styles actually consumed by a token in
  * tokens.css are included.
  */
 
