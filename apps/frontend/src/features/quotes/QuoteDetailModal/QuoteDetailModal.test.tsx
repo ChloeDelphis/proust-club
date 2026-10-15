@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { afterEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import QuoteDetailModal from './QuoteDetailModal'
@@ -47,6 +48,10 @@ beforeEach(() => {
     hasMoreBefore: false,
     hasMoreAfter: false,
   })
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe('QuoteDetailModal', () => {
@@ -136,6 +141,25 @@ describe('QuoteDetailModal', () => {
     await user.click(screen.getByRole('button', { name: 'Fermer' }))
 
     expect(quoteApi.updateQuoteComment).toHaveBeenCalledWith(QUOTE_ID, { comment: 'Un souvenir marquant.' })
+  })
+
+  it('waits for quote queries to refresh before closing after saving a comment', async () => {
+    vi.mocked(quoteApi.updateQuoteComment).mockResolvedValue({} as quoteApi.QuoteSelectionResponse)
+    let resolveInvalidation: () => void = () => {}
+    const invalidation = new Promise<void>(resolve => { resolveInvalidation = resolve })
+    const invalidateQueries = vi.spyOn(QueryClient.prototype, 'invalidateQueries').mockReturnValue(invalidation)
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(<QuoteDetailModal quote={quote} volumeTitle={undefined} onClose={onClose} />, { wrapper })
+
+    await user.type(screen.getByRole('textbox', { name: 'Commentaire personnel' }), 'Un souvenir marquant.')
+    await user.click(screen.getByRole('button', { name: 'Fermer' }))
+
+    await vi.waitFor(() => expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['quotes'] }))
+    expect(onClose).not.toHaveBeenCalled()
+
+    resolveInvalidation()
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalled())
   })
 
   it('saves a trimmed comment when closing via Escape', async () => {
