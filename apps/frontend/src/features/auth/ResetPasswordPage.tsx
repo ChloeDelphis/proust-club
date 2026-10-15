@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { confirmPasswordReset } from '../../api/auth'
 import { apiErrorMessage } from './apiErrorMessage'
-import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
+import { setAuthenticatedUser } from './useCurrentUser'
 import { useToast } from '../../components/Toast/useToast'
 import ResetPasswordForm from './ResetPasswordForm/ResetPasswordForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
   const mutation = useMutation({
     mutationFn: (newPassword: string) => confirmPasswordReset({ token: token ?? '', newPassword }),
     onSuccess: user => {
-      queryClient.setQueryData(CURRENT_USER_QUERY_KEY, user)
+      setAuthenticatedUser(queryClient, user)
       showToast(t('resetPasswordPage.successToast'))
       navigate('/')
     },

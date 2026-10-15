@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router'
 import { register } from '../../api/auth'
 import type { RegisterParams } from '../../api/auth'
-import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
+import { setAuthenticatedUser } from './useCurrentUser'
 import { apiErrorMessage } from './apiErrorMessage'
 import RegisterForm from './RegisterForm/RegisterForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const mutation = useMutation({
     mutationFn: (params: RegisterParams) => register(params),
     onSuccess: user => {
-      queryClient.setQueryData(CURRENT_USER_QUERY_KEY, user)
+      setAuthenticatedUser(queryClient, user)
       navigate('/')
     },
   })

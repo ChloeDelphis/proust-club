@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router'
 import { login } from '../../api/auth'
 import type { LoginParams } from '../../api/auth'
-import { CURRENT_USER_QUERY_KEY } from './useCurrentUser'
+import { setAuthenticatedUser } from './useCurrentUser'
 import LoginForm from './LoginForm/LoginForm'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import styles from './AuthPage.module.css'
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const mutation = useMutation({
     mutationFn: (params: LoginParams) => login(params),
     onSuccess: user => {
-      queryClient.setQueryData(CURRENT_USER_QUERY_KEY, user)
+      setAuthenticatedUser(queryClient, user)
       navigate('/')
     },
   })
