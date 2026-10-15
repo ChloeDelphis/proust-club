@@ -72,6 +72,29 @@ describe('DetailModal', () => {
     expect(screen.getByRole('button', { name: 'Afficher le paragraphe suivant' })).not.toBeDisabled()
   })
 
+  it('announces a context load error and retries successfully', async () => {
+    vi.mocked(paragraphApi.getParagraphContext)
+      .mockRejectedValueOnce(new Error('HTTP 500'))
+      .mockResolvedValueOnce({
+        ...baseResponse,
+        after: [{ paragraphId: 43, text: 'Contexte après reprise', pageNumber: 10 }],
+      })
+    const user = userEvent.setup()
+
+    render(
+      <DetailModal paragraphId={42} centerContent="Texte" sideContent="Actions" ariaLabel="Détail" onOpenChange={vi.fn()} />,
+      { wrapper },
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Le contexte du paragraphe n\'a pas pu être chargé.')
+
+    await user.click(screen.getByRole('button', { name: 'Réessayer' }))
+
+    expect(await screen.findByText('Contexte après reprise')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(paragraphApi.getParagraphContext).toHaveBeenCalledTimes(2)
+  })
+
   it('clicking the after arrow requests one more paragraph of context', async () => {
     vi.mocked(paragraphApi.getParagraphContext).mockResolvedValue({
       ...baseResponse,

@@ -13,12 +13,15 @@ describe('FilterButton', () => {
     expect(onClick).toHaveBeenCalled()
   })
 
-  it('reflects the active state in its accessible pressed styling class', () => {
+  it('exposes its active state visually and through aria-pressed', () => {
     const { rerender } = render(<FilterButton active={false} onClick={vi.fn()}>Tous</FilterButton>)
-    expect(screen.getByRole('button', { name: 'Tous' }).className).not.toMatch(/isActive/)
+    const button = screen.getByRole('button', { name: 'Tous' })
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+    expect(button.className).not.toMatch(/isActive/)
 
     rerender(<FilterButton active onClick={vi.fn()}>Tous</FilterButton>)
-    expect(screen.getByRole('button', { name: 'Tous' }).className).toMatch(/isActive/)
+    expect(button).toHaveAttribute('aria-pressed', 'true')
+    expect(button.className).toMatch(/isActive/)
   })
 
   it('defaults to the pill variant, and switches shape with variant="list"', () => {
