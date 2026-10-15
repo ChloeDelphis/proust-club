@@ -73,11 +73,11 @@ it('shows an error toast if deletion fails', async () => {
   expect(await screen.findByText("La citation n'a pas pu être supprimée.")).toBeInTheDocument()
 })
 
-it('calls onOpenDetail with the quote id when the citation text is clicked', async () => {
+it('passes the selected quote to onOpenDetail when its text is clicked', async () => {
   const onOpenDetail = vi.fn()
   render(<QuoteCard quote={quote} onOpenDetail={onOpenDetail} />, { wrapper })
 
   await userEvent.click(screen.getByRole('button', { name: 'hello world' }))
 
-  expect(onOpenDetail).toHaveBeenCalledWith(QUOTE_ID)
+  expect(onOpenDetail).toHaveBeenCalledWith(quote)
 })

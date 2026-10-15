@@ -11,7 +11,7 @@ import styles from './QuoteDetailModal.module.css'
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 const COMMENT_MAX_LENGTH = 2000
 
-export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteDetailModalProps) {
+export default function QuoteDetailModal({ quote, volumeTitle, onTagsChange, onClose }: QuoteDetailModalProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
@@ -78,7 +78,7 @@ export default function QuoteDetailModal({ quote, volumeTitle, onClose }: QuoteD
             aria-label={t('quoteDetailModal.commentAriaLabel')}
           />
 
-          <QuoteTagEditor quoteId={quote.id} tags={quote.tags} />
+          <QuoteTagEditor quoteId={quote.id} tags={quote.tags} onTagsChange={onTagsChange} />
 
           <p className={styles.meta}>
             {quote.pageNumber !== undefined

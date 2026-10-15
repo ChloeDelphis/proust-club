@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { searchParagraphs } from '../../api/search'
 import type { SearchHit } from '../../api/search'
 import { listQuotes } from '../../api/quote'
+import type { QuoteSelectionResponse } from '../../api/quote'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import SearchForm from './SearchForm/SearchForm'
 import ResultList from './ResultList/ResultList'
@@ -14,6 +15,7 @@ import VolumeList from '../quotes/VolumeList/VolumeList'
 import TagFilterBar from '../quotes/TagFilterBar/TagFilterBar'
 import QuoteCard from '../quotes/QuoteCard/QuoteCard'
 import QuoteDetailModal from '../quotes/QuoteDetailModal/QuoteDetailModal'
+import type { QuoteDetailModalQuote } from '../quotes/QuoteDetailModal/QuoteDetailModal.types'
 import SearchResultDetailModal from './SearchResultDetailModal/SearchResultDetailModal'
 import { useTimeline } from '../quotes/useTimeline'
 import Spinner from '../../components/Spinner/Spinner'
@@ -43,10 +45,10 @@ export default function SearchPage() {
   const [tagId, setTagId] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
-  // Shared by the frieze (TimelineBar) and the saved-citations list (QuoteCard) — a single modal
-  // instance, opened from either entry point. Same queryKey as TimelineBar/VolumeList's own
-  // useTimeline call, so this doesn't add a second network request.
-  const [detailQuoteId, setDetailQuoteId] = useState<string | null>(null)
+  // The selected quote is a snapshot owned by the modal, not a pointer into a filtered query.
+  // It must remain available if removing a tag makes the quote disappear from the frieze/list, or
+  // if the frieze request fails after a quote was opened from the saved-citations list.
+  const [selectedDetailQuote, setSelectedDetailQuote] = useState<{ userId: string; quote: QuoteDetailModalQuote } | null>(null)
   const timelineQuery = useTimeline(tagId, isConnected)
   const [detailHit, setDetailHit] = useState<SearchHit | null>(null)
 
@@ -67,10 +69,25 @@ export default function SearchPage() {
     setSelectedVolumeId(current => (current === id ? null : id))
   }
 
-  const detailQuote = detailQuoteId !== null ? (timelineQuery.data?.quotes.find(q => q.id === detailQuoteId) ?? null) : null
-  const detailVolumeTitle = detailQuote
-    ? timelineQuery.data?.volumes.find(v => v.id === detailQuote.volumeId)?.title
-    : undefined
+  function handleOpenQuote(quoteId: string) {
+    const quote = timelineQuery.data?.quotes.find(item => item.id === quoteId)
+    if (quote && currentUser) setSelectedDetailQuote({ userId: currentUser.uuid, quote })
+  }
+
+  function handleOpenSavedQuote(quote: QuoteSelectionResponse) {
+    if (!currentUser) return
+    setSelectedDetailQuote({
+      userId: currentUser.uuid,
+      quote: timelineQuery.data?.quotes.find(item => item.id === quote.id) ?? quote,
+    })
+  }
+
+  function handleDetailTagsChange(tags: QuoteDetailModalQuote['tags']) {
+    if (!currentUser) return
+    setSelectedDetailQuote(current => current?.userId === currentUser.uuid
+      ? { ...current, quote: { ...current.quote, tags } }
+      : current)
+  }
 
   const isQueryValid = query.trim().length >= 2
 
@@ -95,6 +112,14 @@ export default function SearchPage() {
     enabled: scope === 'saved' && isConnected,
     placeholderData: keepPreviousData,
   })
+
+  const activeSelectedQuote = selectedDetailQuote && selectedDetailQuote.userId === currentUser?.uuid
+    ? selectedDetailQuote.quote
+    : null
+  const detailQuote = activeSelectedQuote
+  const detailVolumeTitle = detailQuote && 'volumeId' in detailQuote
+    ? timelineQuery.data?.volumes.find(v => v.id === detailQuote.volumeId)?.title
+    : undefined
 
   let content: ReactNode = null
 
@@ -132,7 +157,7 @@ export default function SearchPage() {
       <ResultList
         results={savedQuery.data.results}
         getKey={quote => quote.id}
-        renderItem={quote => <QuoteCard quote={quote} onOpenDetail={setDetailQuoteId} />}
+        renderItem={quote => <QuoteCard quote={quote} onOpenDetail={handleOpenSavedQuote} />}
         total={savedQuery.data.total}
         page={savedQuery.data.page}
         size={savedQuery.data.size}
@@ -150,7 +175,7 @@ export default function SearchPage() {
           activeTagId={tagId}
           selectedVolumeId={selectedVolumeId}
           onSelectVolume={handleSelectVolume}
-          onOpenQuote={setDetailQuoteId}
+          onOpenQuote={handleOpenQuote}
         />
       )}
       <div className={isConnected ? styles.layout : undefined}>
@@ -174,7 +199,12 @@ export default function SearchPage() {
         </div>
       </div>
       {isConnected && (
-        <QuoteDetailModal quote={detailQuote} volumeTitle={detailVolumeTitle} onClose={() => setDetailQuoteId(null)} />
+        <QuoteDetailModal
+          quote={detailQuote}
+          volumeTitle={detailVolumeTitle}
+          onTagsChange={handleDetailTagsChange}
+          onClose={() => setSelectedDetailQuote(null)}
+        />
       )}
       <SearchResultDetailModal hit={detailHit} onClose={() => setDetailHit(null)} />
     </main>

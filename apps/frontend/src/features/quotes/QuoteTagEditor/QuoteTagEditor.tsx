@@ -15,16 +15,16 @@ import styles from './QuoteTagEditor.module.css'
 // Live editing, unlike TagPickerPopup: every add/remove hits the API immediately (no "Terminer"
 // step to collect a batch) — this quote already exists server-side, so there's nothing to defer
 // until a later creation call.
-export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
+export default function QuoteTagEditor({ quoteId, tags, onTagsChange }: QuoteTagEditorProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
   const { data: allTags, isPending, isError } = useTags()
   const [search, setSearch] = useState('')
-
   const addMutation = useMutation({
     mutationFn: (name: string) => addTagToQuote(quoteId, { name }),
-    onSuccess: () => {
+    onSuccess: updatedQuote => {
+      if (updatedQuote.tags) onTagsChange?.(updatedQuote.tags)
       void queryClient.invalidateQueries({ queryKey: ['quotes'] })
       void queryClient.invalidateQueries({ queryKey: ['tags'] })
       setSearch('')
@@ -41,7 +41,8 @@ export default function QuoteTagEditor({ quoteId, tags }: QuoteTagEditorProps) {
 
   const removeMutation = useMutation({
     mutationFn: (tagId: string) => removeTagFromQuote(quoteId, tagId),
-    onSuccess: () => {
+    onSuccess: (_result, tagId) => {
+      onTagsChange?.(tags.filter(tag => tag.id !== tagId))
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
