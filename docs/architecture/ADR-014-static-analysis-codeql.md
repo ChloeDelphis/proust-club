@@ -10,7 +10,7 @@ CI already covered build, tests, lint, dependency audit (`pnpm audit`, see [ADR-
 
 ## Tool: CodeQL vs Semgrep
 
-**CodeQL (chosen)** — native to GitHub, free without limit on a public repo, supports Java and JavaScript/TypeScript with no custom rules to write, integrates into the same Security tab already used for Dependabot alerts (see ADR-008 addendum).
+**CodeQL (chosen)** — native to GitHub, free without limit on a public repo, supports Java and JavaScript/TypeScript with no custom rules to write, integrates into the same Security tab already used for Dependabot alerts (see ADR-008).
 
 **Semgrep** — faster to write/adapt custom rules, same language coverage, but needs either a Semgrep Cloud account (free with limits) or self-managed OSS rules, and no native integration with the Security tab already in use. Not chosen, staying within GitHub-native tooling rather than adding a third-party service; can be reconsidered later if CodeQL proves insufficient for a specific language/pattern.
 

@@ -10,4 +10,4 @@ Current behavior and technical mechanisms of each feature. Keep decision history
 
 ## [Architecture Decision Records](architecture/)
 
-Why each significant technical choice was made. One file per decision (`ADR-NNN-short-title.md`). A file's decision/reasoning content is never rewritten retroactively — a changed decision gets a dated addendum at the bottom instead. A pure factual correction (a stale code reference, a dead link, a typo) may still be fixed in place.
+Why each significant technical choice was made. One file per decision (`ADR-NNN-short-title.md`). Keep ADRs concise and current: revise the decision and rationale in place when they change, date significant revisions, and retain earlier choices only when they help explain the current one. Put operational detail in living feature or strategy documentation.
