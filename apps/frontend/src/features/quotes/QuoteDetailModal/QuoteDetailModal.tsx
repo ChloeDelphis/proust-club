@@ -34,8 +34,8 @@ export default function QuoteDetailModal({ quote, volumeTitle, onTagsChange, onC
 
   const updateCommentMutation = useMutation({
     mutationFn: ({ quoteId, comment }: { quoteId: string; comment: string }) => updateQuoteComment(quoteId, { comment }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['quotes'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
       showToast(t('quoteDetailModal.commentSaveErrorToast'))
