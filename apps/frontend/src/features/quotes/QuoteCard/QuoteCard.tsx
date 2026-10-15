@@ -29,7 +29,7 @@ export default function QuoteCard({ quote, onOpenDetail }: QuoteCardProps) {
 
   return (
     <article className={styles.root}>
-      <button type="button" className={styles.text} onClick={() => onOpenDetail(quote.id)}>{quote.selectedText}</button>
+      <button type="button" className={styles.text} onClick={() => onOpenDetail(quote)}>{quote.selectedText}</button>
       <footer className={styles.footer}>
         {quote.tags.length > 0 && (
           <ul className={styles.tags}>

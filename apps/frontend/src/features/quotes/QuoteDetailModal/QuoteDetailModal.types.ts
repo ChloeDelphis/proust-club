@@ -17,5 +17,6 @@ export interface QuoteDetailModalQuote {
 export interface QuoteDetailModalProps {
   quote: QuoteDetailModalQuote | null
   volumeTitle: string | undefined
+  onTagsChange?: (tags: TagResponse[]) => void
   onClose: () => void
 }
