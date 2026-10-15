@@ -28,9 +28,17 @@ describe('positionTimelineQuotes', () => {
     expect(groups.map((g) => g.quotes[0].id)).toEqual([quoteId(1), quoteId(2)])
   })
 
-  it('keeps every quote in its own group (no merging in v1)', () => {
+  it('keeps same-page quotes separate and gives them distinct bookmark positions', () => {
     const groups = positionTimelineQuotes([quote(1, 50), quote(2, 50)], { minPage: 1, maxPage: 486 })
     expect(groups).toHaveLength(2)
+    expect(groups[0].offsetPercent).not.toBe(groups[1].offsetPercent)
+    expect(Math.abs(groups[1].offsetPercent - groups[0].offsetPercent)).toBeCloseTo(1.6)
+  })
+
+  it('spreads same-page quotes inward at the range boundary without merging targets', () => {
+    const groups = positionTimelineQuotes([quote(1, 1), quote(2, 1), quote(3, 1)], { minPage: 1, maxPage: 486 })
+
+    expect(groups.map(group => group.offsetPercent)).toEqual([0, 1.6, 3.2])
   })
 
   it('marks close quotes as extended, alternating so consecutive close bars differ', () => {

@@ -16,6 +16,7 @@ export interface TimelineGroup {
 }
 
 const DEFAULT_OVERLAP_THRESHOLD_PERCENT = 1.5
+const SAME_PAGE_BOOKMARK_SPACING_PERCENT = 1.6
 
 // Shared by bookmark positioning and volume delimiter placement — both are "where does this
 // page fall between minPage and maxPage" in the end.
@@ -39,6 +40,25 @@ export function positionTimelineQuotes(
     offsetPercent: pageToPercent(quote.pageNumber, pageRange),
     isExtended: false,
   }))
+
+  // A group stays one quote wide, but quotes on the same page need distinct hit targets. Spread
+  // them around their true page position; at either edge, shift the whole run inward to avoid
+  // clamping multiple bookmarks onto the same x coordinate.
+  for (let start = 0; start < groups.length;) {
+    let end = start + 1
+    while (end < groups.length && groups[end].quotes[0].pageNumber === groups[start].quotes[0].pageNumber) end++
+
+    const count = end - start
+    if (count > 1) {
+      const span = (count - 1) * SAME_PAGE_BOOKMARK_SPACING_PERCENT
+      const center = groups[start].offsetPercent
+      const firstOffset = Math.min(Math.max(center - span / 2, 0), 100 - span)
+      for (let index = start; index < end; index++) {
+        groups[index].offsetPercent = firstOffset + (index - start) * SAME_PAGE_BOOKMARK_SPACING_PERCENT
+      }
+    }
+    start = end
+  }
 
   for (let i = 1; i < groups.length; i++) {
     const distance = groups[i].offsetPercent - groups[i - 1].offsetPercent

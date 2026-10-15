@@ -188,6 +188,7 @@
     "trackAriaLabel": "Positions des citations sauvegardées dans l'œuvre",
     "zoomOnVolume": "Zoomer sur {{title}}",
     "zoomOutOfVolume": "Revenir à tous les tomes",
-    "bookmarkAriaLabel": "Citation page {{page}}"
+    "bookmarkAriaLabel": "Citation page {{page}}",
+    "bookmarkDuplicatePageAriaLabel": "Citation page {{page}}, {{index}} sur {{total}}"
   }
 }
