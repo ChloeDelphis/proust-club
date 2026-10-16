@@ -142,7 +142,9 @@ class TagControllerTest {
         mockMvc.perform(get("/api/tags").session(alice))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("AliceTag"));
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$[0].name").value("AliceTag"))
+                .andExpect(jsonPath("$[0].colorIndex").value(0));
     }
 
     @Test

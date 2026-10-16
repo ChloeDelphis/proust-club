@@ -1,7 +1,6 @@
 package com.proustclub.search;
 
 import com.proustclub.common.LikePatterns;
-import com.proustclub.search.dto.SearchHit;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
@@ -17,7 +16,7 @@ class SearchRepository {
         this.dsl = dsl;
     }
 
-    List<SearchHit> search(String query, Integer volumeId, int page, int size) {
+    List<SearchResult> search(String query, Integer volumeId, int page, int size) {
         String pattern = "%" + LikePatterns.escape(query) + "%";
         var pText = DSL.field("p.text", String.class);
         var pVolumeId = DSL.field("p.volume_id", Integer.class);
@@ -50,7 +49,7 @@ class SearchRepository {
                     // PostgreSQL counts Unicode characters; Java and the frontend index strings
                     // in UTF-16 code units. Convert before returning offsets used by substring/slice.
                     int startOffset = text.offsetByCodePoints(0, startCharacterOffset);
-                    return new SearchHit(
+                    return new SearchResult(
                             r.get("paragraph_id", Integer.class),
                             text,
                             startOffset,
