@@ -18,7 +18,9 @@ export default function ParagraphCard({ hit, onOpenDetail }: ParagraphCardProps)
   return (
     <article className={styles.root}>
       <header className={styles.header}>
-        <span className={styles.location}>{volume} · {part} · p.&nbsp;{pageNumber}</span>
+        <span className={styles.location}>
+          {t('searchPage.resultLocation', { volume, part, page: pageNumber })}
+        </span>
         <button type="button" className={styles.detailButton} onClick={() => onOpenDetail(hit)}>
           {t('paragraphCard.openDetailButton')}
         </button>
