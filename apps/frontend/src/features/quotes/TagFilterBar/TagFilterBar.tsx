@@ -118,48 +118,48 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
         {t('tagFilterBar.savedScopeFilter')}
       </FilterButton>
       {tagList.length > 0 && (
-      <ul className={styles.list}>
-        {tagList.map(tag => (
-          <li key={tag.id} className={styles.item}>
-            {editingTagId === tag.id ? (
-              <input
-                type="text"
-                className={styles.editInput}
-                value={editingValue}
-                autoFocus
-                aria-label={t('tagFilterBar.renameTag', { name: tag.name })}
-                maxLength={MAX_TAG_NAME_LENGTH}
-                onChange={event => setEditingValue(event.target.value)}
-                onBlur={() => handleBlur(tag.id)}
-                onKeyDown={event => handleKeyDown(event, tag.id)}
-              />
-            ) : (
-              <>
-                <FilterButton active={scope === 'saved' && activeTagId === tag.id} onClick={() => handleEntryClick(tag.id)}>
-                  {tag.name}
-                </FilterButton>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  onClick={() => startEditing(tag.id, tag.name)}
+        <ul className={styles.list}>
+          {tagList.map(tag => (
+            <li key={tag.id} className={styles.item}>
+              {editingTagId === tag.id ? (
+                <input
+                  type="text"
+                  className={styles.editInput}
+                  value={editingValue}
+                  autoFocus
                   aria-label={t('tagFilterBar.renameTag', { name: tag.name })}
-                >
-                  ✎
-                </button>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  onClick={() => handleDelete(tag.id)}
-                  disabled={deleteMutation.isPending}
-                  aria-label={t('tagFilterBar.deleteTag', { name: tag.name })}
-                >
-                  ×
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+                  maxLength={MAX_TAG_NAME_LENGTH}
+                  onChange={event => setEditingValue(event.target.value)}
+                  onBlur={() => handleBlur(tag.id)}
+                  onKeyDown={event => handleKeyDown(event, tag.id)}
+                />
+              ) : (
+                <>
+                  <FilterButton active={scope === 'saved' && activeTagId === tag.id} onClick={() => handleEntryClick(tag.id)}>
+                    {tag.name}
+                  </FilterButton>
+                  <button
+                    type="button"
+                    className={styles.iconButton}
+                    onClick={() => startEditing(tag.id, tag.name)}
+                    aria-label={t('tagFilterBar.renameTag', { name: tag.name })}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.iconButton}
+                    onClick={() => handleDelete(tag.id)}
+                    disabled={deleteMutation.isPending}
+                    aria-label={t('tagFilterBar.deleteTag', { name: tag.name })}
+                  >
+                    ×
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
     </nav>
   )

@@ -269,6 +269,33 @@ describe('connected', () => {
     expect(quoteApi.listQuotes).toHaveBeenCalledWith({ tagId: undefined, q: undefined, page: 0, size: 10 }, expect.anything())
   })
 
+  it('refetches the last valid page when saved citations shrink during pagination', async () => {
+    vi.mocked(quoteApi.listQuotes)
+      .mockResolvedValueOnce({ results: [makeQuote(1)], total: 11, page: 0, size: 10 })
+      .mockResolvedValueOnce({ results: [], total: 1, page: 1, size: 10 })
+      .mockResolvedValueOnce({ results: [makeQuote(5)], total: 1, page: 0, size: 10 })
+    const user = userEvent.setup()
+
+    render(<SearchPage />, { wrapper })
+    await user.click(await screen.findByRole('button', { name: 'Mes citations enregistrées' }))
+    expect(await screen.findByText('citation 1')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Suivant →' }))
+
+    expect(await screen.findByText('citation 5')).toBeInTheDocument()
+    await waitFor(() => expect(quoteApi.listQuotes).toHaveBeenCalledTimes(3))
+    expect(quoteApi.listQuotes).toHaveBeenNthCalledWith(
+      2,
+      { tagId: undefined, q: undefined, page: 1, size: 10 },
+      expect.anything(),
+    )
+    expect(quoteApi.listQuotes).toHaveBeenNthCalledWith(
+      3,
+      { tagId: undefined, q: undefined, page: 0, size: 10 },
+      expect.anything(),
+    )
+  })
+
   it('opens a saved quote from its list even when the timeline request fails', async () => {
     vi.mocked(quoteApi.listQuotes).mockResolvedValue({ results: [makeQuote(3)], total: 1, page: 0, size: 10 })
     vi.mocked(quoteApi.getQuoteTimeline).mockRejectedValue(new Error('HTTP 500'))

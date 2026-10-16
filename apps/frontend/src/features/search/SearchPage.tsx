@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { searchParagraphs } from '../../api/search'
 import type { SearchHit } from '../../api/search'
-import { listQuotes } from '../../api/quote'
 import type { QuoteSelectionResponse } from '../../api/quote'
 import { useCurrentUser } from '../auth/useCurrentUser'
 import SearchForm from './SearchForm/SearchForm'
@@ -22,8 +19,8 @@ import Spinner from '../../components/Spinner/Spinner'
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import styles from './SearchPage.module.css'
-
-const PAGE_SIZE = 10
+import { useCorpusSearchQuery } from './useCorpusSearchQuery'
+import { useSavedQuotesQuery } from './useSavedQuotesQuery'
 
 // The text filter takes priority over "no tag selected" in the message: a query present means the
 // empty result is about the search, not about the (lack of a) tag filter.
@@ -92,26 +89,19 @@ export default function SearchPage() {
 
   const isQueryValid = query.trim().length >= 2
 
-  const corpusQuery = useQuery({
-    queryKey: ['search', query, selectedVolumeId, page],
-    queryFn: ({ signal }) => searchParagraphs({ q: query, volumeId: selectedVolumeId ?? undefined, page, size: PAGE_SIZE }, signal),
+  const corpusQuery = useCorpusSearchQuery({
+    query,
+    volumeId: selectedVolumeId,
+    page,
     enabled: scope === 'corpus' && isQueryValid,
-    placeholderData: keepPreviousData,
   })
 
-  const savedQuery = useQuery({
-    queryKey: ['quotes', tagId, query, selectedVolumeId, page],
-    queryFn: async ({ signal }) => {
-      const params = { tagId: tagId ?? undefined, q: query || undefined, volumeId: selectedVolumeId ?? undefined, page, size: PAGE_SIZE }
-      const response = await listQuotes(params, signal)
-      const lastPage = Math.max(0, Math.ceil(response.total / response.size) - 1)
-      if (response.total > 0 && page > lastPage) {
-        return listQuotes({ ...params, page: lastPage }, signal)
-      }
-      return response
-    },
+  const savedQuery = useSavedQuotesQuery({
+    tagId,
+    query,
+    volumeId: selectedVolumeId,
+    page,
     enabled: scope === 'saved' && isConnected,
-    placeholderData: keepPreviousData,
   })
 
   const activeSelectedQuote = selectedDetailQuote && selectedDetailQuote.userId === currentUser?.uuid
