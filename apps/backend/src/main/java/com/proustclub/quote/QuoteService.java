@@ -22,10 +22,19 @@ class QuoteService {
     private static final Logger log = LoggerFactory.getLogger(QuoteService.class);
 
     private final QuoteRepository quoteRepository;
+    private final QuoteTimelineRepository timelineRepository;
+    private final QuoteTagRepository quoteTagRepository;
     private final TagRepository tagRepository;
 
-    QuoteService(QuoteRepository quoteRepository, TagRepository tagRepository) {
+    QuoteService(
+            QuoteRepository quoteRepository,
+            QuoteTimelineRepository timelineRepository,
+            QuoteTagRepository quoteTagRepository,
+            TagRepository tagRepository
+    ) {
         this.quoteRepository = quoteRepository;
+        this.timelineRepository = timelineRepository;
+        this.quoteTagRepository = quoteTagRepository;
         this.tagRepository = tagRepository;
     }
 
@@ -42,7 +51,7 @@ class QuoteService {
         var tagNames = request.tagNames() == null ? List.<String>of() : request.tagNames();
         for (String tagName : tagNames) {
             UUID tagId = tagRepository.upsertByName(userId, tagName);
-            quoteRepository.addTagForOwner(userId, quote.id(), tagId);
+            quoteTagRepository.addForOwner(userId, quote.id(), tagId);
         }
 
         log.info("Quote saved: user={} paragraphId={}", userId, request.paragraphId());
@@ -57,10 +66,11 @@ class QuoteService {
         long total = quoteRepository.countByUserId(userId, tagId, normalizedQ, volumeId);
 
         var quoteIds = quotes.stream().map(QuoteSelection::id).toList();
-        var tagsByQuoteId = quoteRepository.tagsForQuoteIds(quoteIds);
+        var tagsByQuoteId = quoteTagRepository.findByQuoteIds(quoteIds);
 
         var results = quotes.stream()
-                .map(quote -> toResponse(quote, tagsByQuoteId.getOrDefault(quote.id(), List.of())))
+                .map(quote -> toResponse(
+                        quote, toTagResponses(tagsByQuoteId.getOrDefault(quote.id(), List.of()))))
                 .toList();
 
         return new QuoteSelectionListResponse(results, total, page, size);
@@ -68,16 +78,17 @@ class QuoteService {
 
     @Transactional(readOnly = true)
     TimelineResponse getTimeline(UUID userId, UUID tagId, String q) {
-        var entries = quoteRepository.findTimelineByUserId(userId, tagId, blankToNull(q));
-        var volumes = quoteRepository.findVolumesWithPageRange();
+        var entries = timelineRepository.findByUserId(userId, tagId, blankToNull(q));
+        var volumes = timelineRepository.findVolumesWithPageRange();
 
         var quoteIds = entries.stream().map(TimelineEntry::id).toList();
-        var tagsByQuoteId = quoteRepository.tagsForQuoteIds(quoteIds);
+        var tagsByQuoteId = quoteTagRepository.findByQuoteIds(quoteIds);
 
         var quotes = entries.stream()
                 .map(entry -> new TimelineQuote(
                         entry.id(), entry.paragraphId(), entry.pageNumber(), entry.volumeId(),
-                        entry.selectedText(), entry.comment(), tagsByQuoteId.getOrDefault(entry.id(), List.of()), entry.createdAt()
+                        entry.selectedText(), entry.comment(),
+                        toTagResponses(tagsByQuoteId.getOrDefault(entry.id(), List.of())), entry.createdAt()
                 ))
                 .toList();
 
@@ -108,29 +119,35 @@ class QuoteService {
     QuoteSelectionResponse addTag(UUID userId, UUID quoteId, String tagName) {
         var quote = quoteRepository.findByIdAndUserId(quoteId, userId).orElseThrow(ApiException::quoteNotFound);
 
-        if (quoteRepository.countTagsForQuote(quoteId) >= CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE) {
+        if (quoteTagRepository.countForQuote(quoteId) >= CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE) {
             var existingTagId = tagRepository.findIdByUserIdAndNormalizedName(userId, tagName.trim());
-            if (existingTagId.isPresent() && quoteRepository.hasTagForOwner(userId, quoteId, existingTagId.get())) {
+            if (existingTagId.isPresent() && quoteTagRepository.hasForOwner(userId, quoteId, existingTagId.get())) {
                 return toResponse(quote, tagsFor(quoteId));
             }
             throw ApiException.quoteTagLimitReached();
         }
 
         UUID tagId = tagRepository.upsertByName(userId, tagName);
-        quoteRepository.addTagForOwner(userId, quoteId, tagId);
+        quoteTagRepository.addForOwner(userId, quoteId, tagId);
 
         return toResponse(quote, tagsFor(quoteId));
     }
 
     @Transactional
     void removeTag(UUID userId, UUID quoteId, UUID tagId) {
-        if (quoteRepository.removeTagForOwner(userId, quoteId, tagId) == 0) {
+        if (quoteTagRepository.removeForOwner(userId, quoteId, tagId) == 0) {
             throw ApiException.tagNotFound();
         }
     }
 
     private List<TagResponse> tagsFor(UUID quoteId) {
-        return quoteRepository.tagsForQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of());
+        return toTagResponses(quoteTagRepository.findByQuoteIds(List.of(quoteId)).getOrDefault(quoteId, List.of()));
+    }
+
+    private static List<TagResponse> toTagResponses(List<QuoteTag> tags) {
+        return tags.stream()
+                .map(tag -> new TagResponse(tag.id(), tag.name(), tag.colorIndex()))
+                .toList();
     }
 
     // Blank (empty/whitespace-only) means "absent" — NULL, not an empty string. Used both to clear
