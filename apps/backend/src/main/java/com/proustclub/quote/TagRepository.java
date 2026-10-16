@@ -1,6 +1,5 @@
 package com.proustclub.quote;
 
-import com.proustclub.quote.dto.TagResponse;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
@@ -19,7 +18,7 @@ class TagRepository {
         this.dsl = dsl;
     }
 
-    List<TagResponse> findByUserId(UUID userId) {
+    List<TagData> findByUserId(UUID userId) {
         var idField = DSL.field("id", UUID.class);
         var nameField = DSL.field("name", String.class);
         var colorIndexField = DSL.field("color_index", Integer.class);
@@ -28,7 +27,7 @@ class TagRepository {
                 .from(DSL.table("tags"))
                 .where(DSL.field("user_id", UUID.class).eq(userId))
                 .orderBy(DSL.lower(nameField), idField)
-                .fetch(r -> new TagResponse(r.get(idField), r.get(nameField), r.get(colorIndexField)));
+                .fetch(r -> new TagData(r.get(idField), r.get(nameField), r.get(colorIndexField)));
     }
 
     // Shared primitive for TagService.create() (409 on conflict) and upsertByName() (reuse on
@@ -37,7 +36,7 @@ class TagRepository {
     // ever non-null from the explicit "create a tag" endpoint — upsertByName()'s implicit creation
     // (while tagging a quote) never has a color to choose, and omitting the column (rather than
     // passing an explicit NULL) lets the DB's own DEFAULT 0 apply.
-    Optional<TagResponse> insertIfAbsent(UUID userId, String trimmedName, Integer colorIndex) {
+    Optional<TagData> insertIfAbsent(UUID userId, String trimmedName, Integer colorIndex) {
         var userIdField = DSL.field("user_id", UUID.class);
         var nameField = DSL.field("name", String.class);
         var idField = DSL.field("id", UUID.class);
@@ -54,7 +53,7 @@ class TagRepository {
                 .onConflict(userIdField, DSL.lower(nameField))
                 .doNothing()
                 .returning(idField, colorIndexField)
-                .fetchOptional(r -> new TagResponse(r.get(idField), trimmedName, r.get(colorIndexField)));
+                .fetchOptional(r -> new TagData(r.get(idField), trimmedName, r.get(colorIndexField)));
     }
 
     Optional<UUID> findIdByUserIdAndNormalizedName(UUID userId, String trimmedName) {
@@ -71,7 +70,7 @@ class TagRepository {
     UUID upsertByName(UUID userId, String rawName) {
         String trimmed = rawName.trim();
         return insertIfAbsent(userId, trimmed, null)
-                .map(TagResponse::id)
+                .map(TagData::id)
                 .orElseGet(() -> findIdByUserIdAndNormalizedName(userId, trimmed)
                         .orElseThrow(() -> new IllegalStateException("Tag conflict detected but row not found: " + trimmed)));
     }

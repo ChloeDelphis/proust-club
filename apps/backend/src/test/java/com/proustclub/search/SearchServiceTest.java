@@ -23,13 +23,14 @@ class SearchServiceTest {
 
     @Test
     void searchAssemblesResponse() {
-        var hit = new SearchHit(1, "La madeleine est un symbole.", 3, 12, "Du CÃ´tÃ© de Chez Swann", "Combray", 1);
-        when(repository.search("madeleine", null, 0, 10)).thenReturn(List.of(hit));
+        var result = new SearchResult(1, "La madeleine est un symbole.", 3, 12, "Du CÃ´tÃ© de Chez Swann", "Combray", 1);
+        var expectedHit = new SearchHit(1, "La madeleine est un symbole.", 3, 12, "Du CÃ´tÃ© de Chez Swann", "Combray", 1);
+        when(repository.search("madeleine", null, 0, 10)).thenReturn(List.of(result));
         when(repository.count("madeleine", null)).thenReturn(1L);
 
         var response = service.search("madeleine", null, 0, 10);
 
-        assertThat(response.results()).containsExactly(hit);
+        assertThat(response.results()).containsExactly(expectedHit);
         assertThat(response.total()).isEqualTo(1L);
         assertThat(response.page()).isEqualTo(0);
         assertThat(response.size()).isEqualTo(10);

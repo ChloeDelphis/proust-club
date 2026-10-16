@@ -20,12 +20,15 @@ class TagService {
     TagResponse create(UUID userId, String name, Integer colorIndex) {
         String trimmed = name.trim();
         return repository.insertIfAbsent(userId, trimmed, colorIndex)
+                .map(TagService::toResponse)
                 .orElseThrow(ApiException::tagAlreadyExists);
     }
 
     @Transactional(readOnly = true)
     List<TagResponse> list(UUID userId) {
-        return repository.findByUserId(userId);
+        return repository.findByUserId(userId).stream()
+                .map(TagService::toResponse)
+                .toList();
     }
 
     @Transactional
@@ -46,5 +49,9 @@ class TagService {
         if (!repository.deleteForOwner(userId, tagId)) {
             throw ApiException.tagNotFound();
         }
+    }
+
+    private static TagResponse toResponse(TagData tag) {
+        return new TagResponse(tag.id(), tag.name(), tag.colorIndex());
     }
 }
