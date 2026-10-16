@@ -69,6 +69,11 @@ describe('SearchPage', () => {
 
     expect(await screen.findByText(/Du côté de chez Swann/)).toBeInTheDocument()
     expect(screen.getByText(/Longtemps/)).toBeInTheDocument()
+    const resultLocation = /Du côté de chez Swann · Combray · p\. 1/
+    expect(screen.getByText(resultLocation)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Voir le détail' }))
+    expect(await screen.findAllByText(resultLocation)).toHaveLength(2)
   })
 
   it('transmet les bons paramètres à searchParagraphs', async () => {

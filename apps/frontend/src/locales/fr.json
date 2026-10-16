@@ -36,6 +36,7 @@
   },
   "searchPage": {
     "title": "Proust Club",
+    "resultLocation": "{{volume}} · {{part}} · p. {{page}}",
     "emptyState": "Aucun résultat pour « {{query}} ».",
     "typeToSearch": "Tapez une recherche pour explorer l'œuvre.",
     "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
