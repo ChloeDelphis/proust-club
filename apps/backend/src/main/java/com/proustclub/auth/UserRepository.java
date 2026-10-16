@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
+import static com.proustclub.jooq.Tables.USERS;
+
 @Repository
 class UserRepository {
 
@@ -20,69 +22,67 @@ class UserRepository {
     boolean existsByUsername(String username) {
         return dsl.fetchExists(
                 DSL.selectOne()
-                        .from(DSL.table("users"))
-                        .where(DSL.field("username", String.class).eq(username))
+                        .from(USERS)
+                        .where(USERS.USERNAME.eq(username))
         );
     }
 
     boolean existsByEmail(String email) {
         return dsl.fetchExists(
                 DSL.selectOne()
-                        .from(DSL.table("users"))
-                        .where(DSL.field("email", String.class).eq(email))
+                        .from(USERS)
+                        .where(USERS.EMAIL.eq(email))
         );
     }
 
     Optional<UUID> insertIfAbsent(String username, String email, String passwordHash) {
-        var uuid = DSL.field("uuid", UUID.class);
-        return dsl.insertInto(DSL.table("users"),
-                        DSL.field("username"), DSL.field("email"), DSL.field("password_hash"))
+        return dsl.insertInto(USERS, USERS.USERNAME, USERS.EMAIL, USERS.PASSWORD_HASH)
                 .values(username, email, passwordHash)
                 .onConflictDoNothing()
-                .returning(uuid)
-                .fetchOptional(uuid);
+                .returning(USERS.UUID)
+                .fetchOptional(USERS.UUID);
     }
 
     Optional<AuthUser> findByUuid(UUID uuid) {
-        return findOneWhere(DSL.field("uuid", UUID.class).eq(uuid));
+        return findOneWhere(USERS.UUID.eq(uuid));
     }
 
     Optional<AuthUser> findByEmail(String email) {
-        return findOneWhere(DSL.field("email", String.class).eq(email));
+        return findOneWhere(USERS.EMAIL.eq(email));
     }
 
     private Optional<AuthUser> findOneWhere(Condition condition) {
         return dsl.select(
-                        DSL.field("uuid", UUID.class),
-                        DSL.field("username", String.class),
-                        DSL.field("email", String.class),
-                        DSL.field("password_hash", String.class),
-                        DSL.field("role", String.class),
-                        DSL.field("email_verified", Boolean.class)
+                        USERS.UUID,
+                        USERS.USERNAME,
+                        USERS.EMAIL,
+                        USERS.PASSWORD_HASH,
+                        USERS.ROLE,
+                        USERS.EMAIL_VERIFIED
                 )
-                .from(DSL.table("users"))
+                .from(USERS)
                 .where(condition)
                 .fetchOptional(r -> new AuthUser(
-                        r.get("uuid", UUID.class),
-                        r.get("username", String.class),
-                        r.get("email", String.class),
-                        r.get("password_hash", String.class),
-                        r.get("role", String.class),
-                        r.get("email_verified", Boolean.class)
+                        r.get(USERS.UUID),
+                        r.get(USERS.USERNAME),
+                        r.get(USERS.EMAIL),
+                        r.get(USERS.PASSWORD_HASH),
+                        r.get(USERS.ROLE),
+                        r.get(USERS.EMAIL_VERIFIED)
                 ));
     }
 
     void markEmailVerified(UUID uuid) {
-        dsl.update(DSL.table("users"))
-                .set(DSL.field("email_verified", Boolean.class), true)
-                .where(DSL.field("uuid", UUID.class).eq(uuid))
+        dsl.update(USERS)
+                .set(USERS.EMAIL_VERIFIED, true)
+                .where(USERS.UUID.eq(uuid))
                 .execute();
     }
 
     void updatePasswordHash(UUID uuid, String passwordHash) {
-        dsl.update(DSL.table("users"))
-                .set(DSL.field("password_hash", String.class), passwordHash)
-                .where(DSL.field("uuid", UUID.class).eq(uuid))
+        dsl.update(USERS)
+                .set(USERS.PASSWORD_HASH, passwordHash)
+                .where(USERS.UUID.eq(uuid))
                 .execute();
     }
 }

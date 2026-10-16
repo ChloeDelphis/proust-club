@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import static com.proustclub.jooq.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.Tables.PARTS;
+import static com.proustclub.jooq.Tables.VOLUMES;
+
 @Repository
 class SearchRepository {
 
@@ -18,29 +22,32 @@ class SearchRepository {
 
     List<SearchResult> search(String query, Integer volumeId, int page, int size) {
         String pattern = "%" + LikePatterns.escape(query) + "%";
-        var pText = DSL.field("p.text", String.class);
-        var pVolumeId = DSL.field("p.volume_id", Integer.class);
+        var paragraph = PARAGRAPHS.as("p");
+        var part = PARTS.as("pt");
+        var volume = VOLUMES.as("v");
+        var pText = paragraph.TEXT;
+        var pVolumeId = paragraph.VOLUME_ID;
 
         return dsl
                 .select(
-                        DSL.field("p.id", Integer.class).as("paragraph_id"),
+                        paragraph.ID.as("paragraph_id"),
                         pText.as("text"),
-                        DSL.field("p.page_number", Integer.class).as("page_number"),
-                        DSL.field("v.title", String.class).as("volume_title"),
-                        DSL.field("pt.title", String.class).as("part_title"),
+                        paragraph.PAGE_NUMBER.as("page_number"),
+                        volume.TITLE.as("volume_title"),
+                        part.TITLE.as("part_title"),
                         DSL.function("strpos", Integer.class,
                                 DSL.lower(pText),
                                 DSL.lower(DSL.val(query))
                         ).sub(1).as("start_offset")
                 )
-                .from(DSL.table("paragraphs").as("p"))
-                .join(DSL.table("parts").as("pt"))
-                        .on(DSL.field("p.part_id", Integer.class).eq(DSL.field("pt.id", Integer.class)))
-                .join(DSL.table("volumes").as("v"))
-                        .on(DSL.field("p.volume_id", Integer.class).eq(DSL.field("v.id", Integer.class)))
+                .from(paragraph)
+                .join(part)
+                        .on(paragraph.PART_ID.eq(part.ID))
+                .join(volume)
+                        .on(paragraph.VOLUME_ID.eq(volume.ID))
                 .where(pText.likeIgnoreCase(pattern, '\\'))
                 .and(volumeId == null ? DSL.noCondition() : pVolumeId.eq(volumeId))
-                .orderBy(DSL.field("p.position"))
+                .orderBy(paragraph.POSITION)
                 .limit(size)
                 .offset((long) page * size)
                 .fetch(r -> {
@@ -65,11 +72,11 @@ class SearchRepository {
         String pattern = "%" + LikePatterns.escape(query) + "%";
         var volumeCondition = volumeId == null
                 ? DSL.noCondition()
-                : DSL.field("volume_id", Integer.class).eq(volumeId);
+                : PARAGRAPHS.VOLUME_ID.eq(volumeId);
         return dsl
                 .selectCount()
-                .from(DSL.table("paragraphs"))
-                .where(DSL.field("text", String.class).likeIgnoreCase(pattern, '\\'))
+                .from(PARAGRAPHS)
+                .where(PARAGRAPHS.TEXT.likeIgnoreCase(pattern, '\\'))
                 .and(volumeCondition)
                 .fetchOne(0, Long.class);
     }

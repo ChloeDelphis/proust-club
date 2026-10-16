@@ -15,7 +15,7 @@ class EmailVerificationService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailVerificationService.class);
     private static final Duration TOKEN_TTL = Duration.ofHours(24);
-    private static final String TOKEN_TABLE = "email_verification_tokens";
+    private static final OneTimeTokenTable TOKEN_TABLE = OneTimeTokenTable.EMAIL_VERIFICATION;
 
     private final OneTimeTokenRepository tokenRepository;
     private final UserRepository userRepository;

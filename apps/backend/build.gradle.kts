@@ -3,6 +3,7 @@ plugins {
 	jacoco
 	id("org.springframework.boot") version "4.1.0"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("org.jooq.jooq-codegen-gradle") version "3.21.5"
 }
 
 group = "com.proustclub"
@@ -18,7 +19,15 @@ repositories {
 	mavenCentral()
 }
 
+val schemaMigrator by sourceSets.creating
+configurations[schemaMigrator.implementationConfigurationName]
+	.extendsFrom(configurations.getByName("implementation"))
+configurations[schemaMigrator.runtimeOnlyConfigurationName]
+	.extendsFrom(configurations.getByName("runtimeOnly"))
+
 dependencies {
+	jooqCodegen("org.postgresql:postgresql:42.7.11")
+
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.springframework.boot:spring-boot-starter-jooq")
@@ -47,6 +56,51 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+jooq {
+	configuration {
+		jdbc {
+			driver = "org.postgresql.Driver"
+			url = System.getenv("JOOQ_DB_URL") ?: "jdbc:postgresql://localhost:5432/proustclub"
+			user = System.getenv("JOOQ_DB_USERNAME") ?: "proustclub"
+			password = System.getenv("JOOQ_DB_PASSWORD") ?: "proustclub_dev"
+		}
+		generator {
+			name = "org.jooq.codegen.JavaGenerator"
+			database {
+				name = "org.jooq.meta.postgres.PostgresDatabase"
+				inputSchema = "public"
+				excludes = "flyway_schema_history"
+			}
+			generate {
+				isPojos = false
+				isDaos = false
+				isRoutines = false
+				isSequences = false
+			}
+			target {
+				packageName = "com.proustclub.jooq"
+				directory = "build/generated-src/jooq/main"
+			}
+		}
+	}
+}
+
+val migrateSchemaForCodegen by tasks.registering(JavaExec::class) {
+	group = "jooq"
+	description = "Applies pending Flyway migrations before jOOQ code generation"
+	dependsOn(tasks.named(schemaMigrator.classesTaskName))
+	classpath = schemaMigrator.runtimeClasspath
+	mainClass.set("com.proustclub.codegen.MigrateSchemaForCodegen")
+}
+
+tasks.named("jooqCodegen") {
+	dependsOn(migrateSchemaForCodegen)
+}
+
+tasks.named("compileJava") {
+	dependsOn(tasks.named("jooqCodegen"))
+}
+
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
@@ -62,6 +116,11 @@ tasks.withType<Test> {
 // ---------------------------------------------------------------------------
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
+	classDirectories.setFrom(
+		sourceSets.main.get().output.asFileTree.matching {
+			exclude("com/proustclub/jooq/**")
+		}
+	)
 	reports {
 		xml.required = true
 		html.required = true
@@ -70,6 +129,11 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
 	dependsOn(tasks.jacocoTestReport)
+	classDirectories.setFrom(
+		sourceSets.main.get().output.asFileTree.matching {
+			exclude("com/proustclub/jooq/**")
+		}
+	)
 	violationRules {
 		rule {
 			limit {
@@ -99,9 +163,7 @@ tasks.register<JavaExec>("importProust") {
 }
 
 // ---------------------------------------------------------------------------
-// jOOQ code generation — À configurer
-// Le plugin nu.studer.jooq doit être ajouté dans le bloc plugins{}.
-// Version compatible Gradle 9.x à vérifier sur :
-//   https://plugins.gradle.org/plugin/nu.studer.jooq
-// Workflow : docker compose up -d → ./gradlew generateJooq → ./gradlew bootRun
+// jOOQ code generation
+// A PostgreSQL database must be available; Flyway migrations are applied before
+// code generation. Run docker compose up -d postgres, then ./gradlew jooqCodegen.
 // ---------------------------------------------------------------------------

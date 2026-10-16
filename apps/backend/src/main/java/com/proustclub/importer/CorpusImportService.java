@@ -11,6 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.proustclub.jooq.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.Tables.PARTS;
+import static com.proustclub.jooq.Tables.VOLUMES;
+
 @Service
 public class CorpusImportService {
 
@@ -23,7 +27,7 @@ public class CorpusImportService {
     }
 
     public boolean isAlreadyImported() {
-        return dsl.fetchCount(DSL.table("paragraphs")) > 0;
+        return dsl.fetchCount(PARAGRAPHS) > 0;
     }
 
     @Transactional
@@ -42,18 +46,18 @@ public class CorpusImportService {
 
     private void updateVolumePageRanges() {
         var ranges = dsl.select(
-                        DSL.field("volume_id", Integer.class),
-                        DSL.min(DSL.field("page_number", Integer.class)).as("min_page_agg"),
-                        DSL.max(DSL.field("page_number", Integer.class)).as("max_page_agg"))
-                .from(DSL.table("paragraphs"))
-                .groupBy(DSL.field("volume_id"))
+                        PARAGRAPHS.VOLUME_ID,
+                        DSL.min(PARAGRAPHS.PAGE_NUMBER).as("min_page_agg"),
+                        DSL.max(PARAGRAPHS.PAGE_NUMBER).as("max_page_agg"))
+                .from(PARAGRAPHS)
+                .groupBy(PARAGRAPHS.VOLUME_ID)
                 .asTable("ranges");
 
-        dsl.update(DSL.table("volumes"))
-                .set(DSL.field("min_page", Integer.class), ranges.field("min_page_agg", Integer.class))
-                .set(DSL.field("max_page", Integer.class), ranges.field("max_page_agg", Integer.class))
+        dsl.update(VOLUMES)
+                .set(VOLUMES.MIN_PAGE, ranges.field("min_page_agg", Integer.class))
+                .set(VOLUMES.MAX_PAGE, ranges.field("max_page_agg", Integer.class))
                 .from(ranges)
-                .where(DSL.field("volumes.id", Integer.class).eq(ranges.field("volume_id", Integer.class)))
+                .where(VOLUMES.ID.eq(ranges.field(PARAGRAPHS.VOLUME_ID)))
                 .execute();
 
         log.info("Bornes de page des tomes recalculées");
@@ -61,11 +65,11 @@ public class CorpusImportService {
 
     private List<PartRange> loadPartRanges() {
         return dsl.select(
-                        DSL.field("id", Integer.class),
-                        DSL.field("volume_id", Integer.class),
-                        DSL.field("start_page", Integer.class))
-                .from(DSL.table("parts"))
-                .orderBy(DSL.field("start_page").desc())
+                        PARTS.ID,
+                        PARTS.VOLUME_ID,
+                        PARTS.START_PAGE)
+                .from(PARTS)
+                .orderBy(PARTS.START_PAGE.desc())
                 .fetch(r -> new PartRange(r.value1(), r.value2(), r.value3()));
     }
 
@@ -90,12 +94,12 @@ public class CorpusImportService {
     private void batchInsert(List<ParagraphData> data) {
         List<Query> queries = new ArrayList<>(data.size());
         for (var p : data) {
-            queries.add(dsl.insertInto(DSL.table("paragraphs"),
-                    DSL.field("volume_id"),
-                    DSL.field("part_id"),
-                    DSL.field("position"),
-                    DSL.field("page_number"),
-                    DSL.field("text"))
+            queries.add(dsl.insertInto(PARAGRAPHS,
+                    PARAGRAPHS.VOLUME_ID,
+                    PARAGRAPHS.PART_ID,
+                    PARAGRAPHS.POSITION,
+                    PARAGRAPHS.PAGE_NUMBER,
+                    PARAGRAPHS.TEXT)
                     .values(p.volumeId(), p.partId(), p.position(), p.pageNumber(), p.text()));
         }
         dsl.batch(queries).execute();
