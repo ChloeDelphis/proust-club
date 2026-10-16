@@ -4,11 +4,12 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.SortField;
-import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+
+import static com.proustclub.jooq.Tables.PARAGRAPHS;
 
 @Repository
 class ParagraphRepository {
@@ -23,15 +24,15 @@ class ParagraphRepository {
 
     record Row(int id, String text, int pageNumber) {}
 
-    private static final Field<Integer> ID = DSL.field("id", Integer.class);
-    private static final Field<String> TEXT = DSL.field("text", String.class);
-    private static final Field<Integer> PAGE_NUMBER = DSL.field("page_number", Integer.class);
-    private static final Field<Integer> POSITION = DSL.field("position", Integer.class);
-    private static final Field<Integer> VOLUME_ID = DSL.field("volume_id", Integer.class);
+    private static final Field<Integer> ID = PARAGRAPHS.ID;
+    private static final Field<String> TEXT = PARAGRAPHS.TEXT;
+    private static final Field<Integer> PAGE_NUMBER = PARAGRAPHS.PAGE_NUMBER;
+    private static final Field<Integer> POSITION = PARAGRAPHS.POSITION;
+    private static final Field<Integer> VOLUME_ID = PARAGRAPHS.VOLUME_ID;
 
     Optional<Anchor> findAnchor(int paragraphId) {
         return dsl.select(VOLUME_ID, POSITION)
-                .from(DSL.table("paragraphs"))
+                .from(PARAGRAPHS)
                 .where(ID.eq(paragraphId))
                 .fetchOptional(r -> new Anchor(r.get(VOLUME_ID), r.get(POSITION)));
     }
@@ -53,7 +54,7 @@ class ParagraphRepository {
 
     private List<Row> findNeighbors(int volumeId, Condition positionCondition, SortField<Integer> order, int limit) {
         return dsl.select(ID, TEXT, PAGE_NUMBER)
-                .from(DSL.table("paragraphs"))
+                .from(PARAGRAPHS)
                 .where(VOLUME_ID.eq(volumeId))
                 .and(positionCondition)
                 .orderBy(order)

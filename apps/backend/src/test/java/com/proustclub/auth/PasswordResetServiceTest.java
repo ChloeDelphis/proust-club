@@ -54,7 +54,7 @@ class PasswordResetServiceTest {
 
         service.requestReset("marcel@example.com");
 
-        verify(tokenRepository).insert(eq("password_reset_tokens"), eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).insert(eq(OneTimeTokenTable.PASSWORD_RESET), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendPasswordResetEmail(eq("marcel@example.com"), anyString());
     }
 
@@ -70,7 +70,7 @@ class PasswordResetServiceTest {
 
         assertThatCode(() -> service.requestReset("marcel@example.com")).doesNotThrowAnyException();
 
-        verify(tokenRepository).insert(eq("password_reset_tokens"), eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).insert(eq(OneTimeTokenTable.PASSWORD_RESET), eq(uuid), anyString(), any(Instant.class));
     }
 
     @Test
@@ -98,7 +98,7 @@ class PasswordResetServiceTest {
         var token = new OneTimeToken(42L, uuid);
         var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER", true);
 
-        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.of(token));
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.of(token));
         when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
         when(passwordEncoder.encode("new-password-long-enough")).thenReturn("new-hash");
 
@@ -114,7 +114,7 @@ class PasswordResetServiceTest {
         var uuid = UUID.randomUUID();
         var token = new OneTimeToken(42L, uuid);
         var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER", true);
-        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.of(token));
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.of(token));
         when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> service.confirmReset("raw-token", "MARCEL@EXAMPLE.COM"))
@@ -126,7 +126,7 @@ class PasswordResetServiceTest {
 
     @Test
     void confirmResetRejectsUnknownToken() {
-        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.empty());
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.confirmReset("garbage-token", "new-password-long-enough"))
                 .isInstanceOf(ApiException.class);
@@ -136,7 +136,7 @@ class PasswordResetServiceTest {
 
     @Test
     void checkNewPasswordPolicyIfTokenLooksValidSkipsChecksOnDeadToken() {
-        when(tokenRepository.findValidTokenUserId(eq("password_reset_tokens"), anyString())).thenReturn(Optional.empty());
+        when(tokenRepository.findValidTokenUserId(eq(OneTimeTokenTable.PASSWORD_RESET), anyString())).thenReturn(Optional.empty());
 
         service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "new-password-long-enough");
 
@@ -148,7 +148,7 @@ class PasswordResetServiceTest {
     void checkNewPasswordPolicyIfTokenLooksValidRejectsIdentifierBeforeBreachCheck() {
         var userId = UUID.randomUUID();
         var user = new AuthUser(userId, "marcel", "marcel@example.com", "hashed", "USER", true);
-        when(tokenRepository.findValidTokenUserId(eq("password_reset_tokens"), anyString())).thenReturn(Optional.of(userId));
+        when(tokenRepository.findValidTokenUserId(eq(OneTimeTokenTable.PASSWORD_RESET), anyString())).thenReturn(Optional.of(userId));
         when(userRepository.findByUuid(userId)).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "MARCEL@EXAMPLE.COM"))
@@ -161,7 +161,7 @@ class PasswordResetServiceTest {
     void checkNewPasswordPolicyIfTokenLooksValidPropagatesCompromisedPasswordException() {
         var userId = UUID.randomUUID();
         var user = new AuthUser(userId, "marcel", "marcel@example.com", "hashed", "USER", true);
-        when(tokenRepository.findValidTokenUserId(eq("password_reset_tokens"), anyString())).thenReturn(Optional.of(userId));
+        when(tokenRepository.findValidTokenUserId(eq(OneTimeTokenTable.PASSWORD_RESET), anyString())).thenReturn(Optional.of(userId));
         when(userRepository.findByUuid(userId)).thenReturn(Optional.of(user));
         doThrow(ApiException.passwordCompromised()).when(authService).checkPasswordNotCompromised("compromised-password");
 

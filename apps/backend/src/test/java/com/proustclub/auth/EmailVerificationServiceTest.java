@@ -43,7 +43,7 @@ class EmailVerificationServiceTest {
 
         service.sendVerification(uuid, "marcel@example.com");
 
-        verify(tokenRepository).insert(eq("email_verification_tokens"), eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).insert(eq(OneTimeTokenTable.EMAIL_VERIFICATION), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendEmailConfirmation(eq("marcel@example.com"), anyString());
     }
 
@@ -56,7 +56,7 @@ class EmailVerificationServiceTest {
 
         assertThatCode(() -> service.sendVerification(uuid, "marcel@example.com")).doesNotThrowAnyException();
 
-        verify(tokenRepository).insert(eq("email_verification_tokens"), eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).insert(eq(OneTimeTokenTable.EMAIL_VERIFICATION), eq(uuid), anyString(), any(Instant.class));
     }
 
     @Test
@@ -67,7 +67,7 @@ class EmailVerificationServiceTest {
 
         service.resendVerification(uuid);
 
-        verify(tokenRepository).insert(eq("email_verification_tokens"), eq(uuid), anyString(), any(Instant.class));
+        verify(tokenRepository).insert(eq(OneTimeTokenTable.EMAIL_VERIFICATION), eq(uuid), anyString(), any(Instant.class));
         verify(mailService).sendEmailConfirmation(eq("marcel@example.com"), anyString());
     }
 
@@ -80,7 +80,7 @@ class EmailVerificationServiceTest {
         assertThatThrownBy(() -> service.resendVerification(uuid))
                 .isInstanceOf(ApiException.class);
 
-        verify(tokenRepository, never()).insert(anyString(), any(), anyString(), any());
+        verify(tokenRepository, never()).insert(any(OneTimeTokenTable.class), any(), anyString(), any());
         verify(mailService, never()).sendEmailConfirmation(anyString(), anyString());
     }
 
@@ -88,7 +88,7 @@ class EmailVerificationServiceTest {
     void confirmVerificationMarksEmailVerified() {
         var uuid = UUID.randomUUID();
         var token = new OneTimeToken(42L, uuid);
-        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.of(token));
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.of(token));
 
         service.confirmVerification("raw-token");
 
@@ -97,7 +97,7 @@ class EmailVerificationServiceTest {
 
     @Test
     void confirmVerificationRejectsUnknownToken() {
-        when(tokenRepository.consumeValidToken(anyString(), anyString())).thenReturn(Optional.empty());
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.confirmVerification("garbage-token"))
                 .isInstanceOf(ApiException.class);

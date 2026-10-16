@@ -15,7 +15,7 @@ class PasswordResetService {
 
     private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
     private static final Duration TOKEN_TTL = Duration.ofMinutes(30);
-    private static final String TOKEN_TABLE = "password_reset_tokens";
+    private static final OneTimeTokenTable TOKEN_TABLE = OneTimeTokenTable.PASSWORD_RESET;
 
     private final OneTimeTokenRepository tokenRepository;
     private final UserRepository userRepository;

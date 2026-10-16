@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.proustclub.jooq.Tables.QUOTE_SELECTIONS;
+import static com.proustclub.jooq.Tables.QUOTE_SELECTION_TAGS;
+import static com.proustclub.jooq.Tables.TAGS;
+
 @Repository
 class QuoteTagRepository {
 
@@ -24,15 +28,16 @@ class QuoteTagRepository {
             return Map.of();
         }
 
-        var quoteIdField = DSL.field("qst.quote_selection_id", UUID.class);
-        var tagIdField = DSL.field("t.id", UUID.class);
-        var nameField = DSL.field("t.name", String.class);
-        var colorIndexField = DSL.field("t.color_index", Integer.class);
+        var quoteSelectionTags = QUOTE_SELECTION_TAGS.as("qst");
+        var tags = TAGS.as("t");
+        var quoteIdField = quoteSelectionTags.QUOTE_SELECTION_ID;
+        var tagIdField = tags.ID;
+        var nameField = tags.NAME;
+        var colorIndexField = tags.COLOR_INDEX;
 
         var rows = dsl.select(quoteIdField, tagIdField, nameField, colorIndexField)
-                .from(DSL.table("quote_selection_tags").as("qst"))
-                .join(DSL.table("tags").as("t"))
-                        .on(tagIdField.eq(DSL.field("qst.tag_id", UUID.class)))
+                .from(quoteSelectionTags)
+                .join(tags).on(tagIdField.eq(quoteSelectionTags.TAG_ID))
                 .where(quoteIdField.in(quoteIds))
                 .orderBy(DSL.lower(nameField), tagIdField)
                 .fetch();
@@ -47,50 +52,47 @@ class QuoteTagRepository {
 
     // user_id is embedded in the mutation's own SELECT, not just checked by a separate read.
     void addForOwner(UUID userId, UUID quoteId, UUID tagId) {
-        var quotes = DSL.table("quote_selections").as("q");
-        var qIdField = DSL.field("q.id", UUID.class);
-        var qUserIdField = DSL.field("q.user_id", UUID.class);
+        var quotes = QUOTE_SELECTIONS.as("q");
 
-        dsl.insertInto(DSL.table("quote_selection_tags"),
-                        DSL.field("quote_selection_id", UUID.class), DSL.field("tag_id", UUID.class))
-                .select(dsl.select(qIdField, DSL.val(tagId))
+        dsl.insertInto(QUOTE_SELECTION_TAGS, QUOTE_SELECTION_TAGS.QUOTE_SELECTION_ID, QUOTE_SELECTION_TAGS.TAG_ID)
+                .select(dsl.select(quotes.ID, DSL.val(tagId))
                         .from(quotes)
-                        .where(qIdField.eq(quoteId))
-                        .and(qUserIdField.eq(userId)))
+                        .where(quotes.ID.eq(quoteId))
+                        .and(quotes.USER_ID.eq(userId)))
                 .onConflictDoNothing()
                 .execute();
     }
 
     int countForQuote(UUID quoteId) {
         return dsl.selectCount()
-                .from(DSL.table("quote_selection_tags"))
-                .where(DSL.field("quote_selection_id", UUID.class).eq(quoteId))
+                .from(QUOTE_SELECTION_TAGS)
+                .where(QUOTE_SELECTION_TAGS.QUOTE_SELECTION_ID.eq(quoteId))
                 .fetchOne(0, int.class);
     }
 
     boolean hasForOwner(UUID userId, UUID quoteId, UUID tagId) {
-        var quoteTags = DSL.table("quote_selection_tags").as("qst");
-        var quotes = DSL.table("quote_selections").as("q");
+        var quoteTags = QUOTE_SELECTION_TAGS.as("qst");
+        var quotes = QUOTE_SELECTIONS.as("q");
 
         return dsl.fetchExists(dsl.selectOne()
                 .from(quoteTags)
-                .join(quotes).on(DSL.field("qst.quote_selection_id", UUID.class).eq(DSL.field("q.id", UUID.class)))
-                .where(DSL.field("q.id", UUID.class).eq(quoteId))
-                .and(DSL.field("q.user_id", UUID.class).eq(userId))
-                .and(DSL.field("qst.tag_id", UUID.class).eq(tagId)));
+                .join(quotes).on(quoteTags.QUOTE_SELECTION_ID.eq(quotes.ID))
+                .where(quotes.ID.eq(quoteId))
+                .and(quotes.USER_ID.eq(userId))
+                .and(quoteTags.TAG_ID.eq(tagId)));
     }
 
     // user_id is part of the DELETE itself; callers cannot detach another user's association.
     int removeForOwner(UUID userId, UUID quoteId, UUID tagId) {
-        var quoteTags = DSL.table("quote_selection_tags").as("qst");
-        var quotes = DSL.table("quote_selections").as("q");
+        var quoteTags = QUOTE_SELECTION_TAGS.as("qst");
+        var quotes = QUOTE_SELECTIONS.as("q");
 
         return dsl.deleteFrom(quoteTags)
                 .using(quotes)
-                .where(DSL.field("qst.quote_selection_id", UUID.class).eq(DSL.field("q.id", UUID.class)))
-                .and(DSL.field("q.id", UUID.class).eq(quoteId))
-                .and(DSL.field("q.user_id", UUID.class).eq(userId))
-                .and(DSL.field("qst.tag_id", UUID.class).eq(tagId))
+                .where(quoteTags.QUOTE_SELECTION_ID.eq(quotes.ID))
+                .and(quotes.ID.eq(quoteId))
+                .and(quotes.USER_ID.eq(userId))
+                .and(quoteTags.TAG_ID.eq(tagId))
                 .execute();
     }
 }

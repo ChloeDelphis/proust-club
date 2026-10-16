@@ -21,7 +21,7 @@ QuoteSelection (search results — native text selection, see below)
       2. re-validate: paragraph.text.substring(startOffset, endOffset) == selectedText
       3. insert the quote_selections row
       4. for each tagName: upsert the tag, attach it to the quote
-  → QuoteRepository / QuoteTagRepository / TagRepository (jOOQ, no codegen — raw table/column references)
+  → QuoteRepository / QuoteTagRepository / TagRepository (jOOQ with generated table/column references)
   → PostgreSQL
 ```
 
