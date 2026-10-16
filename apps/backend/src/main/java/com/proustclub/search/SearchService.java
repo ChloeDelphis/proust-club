@@ -12,9 +12,9 @@ class SearchService {
         this.repository = repository;
     }
 
-    SearchResponse search(String query, int page, int size) {
-        var results = repository.search(query, page, size);
-        long total = repository.count(query);
+    SearchResponse search(String query, Integer volumeId, int page, int size) {
+        var results = repository.search(query, volumeId, page, size);
+        long total = repository.count(query, volumeId);
         return new SearchResponse(results, total, page, size);
     }
 }

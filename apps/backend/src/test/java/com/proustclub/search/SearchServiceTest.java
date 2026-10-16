@@ -24,10 +24,10 @@ class SearchServiceTest {
     @Test
     void searchAssemblesResponse() {
         var hit = new SearchHit(1, "La madeleine est un symbole.", 3, 12, "Du CÃ´tÃ© de Chez Swann", "Combray", 1);
-        when(repository.search("madeleine", 0, 10)).thenReturn(List.of(hit));
-        when(repository.count("madeleine")).thenReturn(1L);
+        when(repository.search("madeleine", null, 0, 10)).thenReturn(List.of(hit));
+        when(repository.count("madeleine", null)).thenReturn(1L);
 
-        var response = service.search("madeleine", 0, 10);
+        var response = service.search("madeleine", null, 0, 10);
 
         assertThat(response.results()).containsExactly(hit);
         assertThat(response.total()).isEqualTo(1L);
@@ -37,10 +37,10 @@ class SearchServiceTest {
 
     @Test
     void searchReturnsEmptyResponseWhenNoResults() {
-        when(repository.search("DostoÃ¯evski", 0, 10)).thenReturn(List.of());
-        when(repository.count("DostoÃ¯evski")).thenReturn(0L);
+        when(repository.search("DostoÃ¯evski", null, 0, 10)).thenReturn(List.of());
+        when(repository.count("DostoÃ¯evski", null)).thenReturn(0L);
 
-        var response = service.search("DostoÃ¯evski", 0, 10);
+        var response = service.search("DostoÃ¯evski", null, 0, 10);
 
         assertThat(response.results()).isEmpty();
         assertThat(response.total()).isEqualTo(0L);

@@ -13,9 +13,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 // SpringBootTest.WebEnvironment.RANDOM_PORT + a real embedded server, not MockMvc: an unhandled
@@ -40,9 +40,9 @@ class SearchControllerErrorTest {
 
     @Test
     void unexpectedRepositoryFailureReturns500WithoutLeakingInternalDetails() throws Exception {
-        when(searchRepository.search(anyString(), anyInt(), anyInt()))
+        when(searchRepository.search(anyString(), isNull(), anyInt(), anyInt()))
                 .thenThrow(new RuntimeException("SELECT * FROM paragraphs failed unexpectedly (simulated)"));
-        when(searchRepository.count(any())).thenReturn(0L);
+        when(searchRepository.count(anyString(), isNull())).thenReturn(0L);
 
         HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
         HttpRequest request = HttpRequest.newBuilder()

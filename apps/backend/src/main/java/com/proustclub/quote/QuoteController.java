@@ -1,6 +1,7 @@
 package com.proustclub.quote;
 
 import com.proustclub.auth.CurrentUser;
+import com.proustclub.common.ProustVolumes;
 import com.proustclub.quote.dto.AddTagRequest;
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import com.proustclub.quote.dto.QuoteSelectionListResponse;
@@ -60,7 +61,7 @@ class QuoteController {
         return service.create(currentUser.resolveUuid(authentication), request);
     }
 
-    @Operation(summary = "List my quote selections", description = "Returns the authenticated user's quotes, most recent first. Filterable by tagId and/or a free-text search within the saved selection's own text.")
+    @Operation(summary = "List my quote selections", description = "Returns the authenticated user's quotes, most recent first. Filterable by volumeId, tagId, and/or a free-text search within the saved selection's own text.")
     @ApiResponse(responseCode = "200", description = "Quote selections (empty list if none match)", content = @Content(schema = @Schema(implementation = QuoteSelectionListResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping(value = "/api/quotes", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -71,6 +72,9 @@ class QuoteController {
         @Parameter(description = "Case-insensitive substring match against the quote's own saved text (not its comment). Blank/omitted means no text filter.", example = "madeleine")
         @RequestParam(required = false) @Size(max = 500, message = "q must be at most {max} characters") String q,
 
+        @Parameter(description = "Only return quotes from this volume (1–7)", example = "1")
+        @RequestParam(required = false) @Min(value = 1, message = "volumeId must be >= {value}") @Max(value = ProustVolumes.COUNT, message = "volumeId must be <= {value}") Integer volumeId,
+
         @Parameter(description = "Zero-based page index (default: 0)", example = "0")
         @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= {value}") int page,
 
@@ -79,7 +83,7 @@ class QuoteController {
 
         Authentication authentication
     ) {
-        return service.list(currentUser.resolveUuid(authentication), tagId, q, page, size);
+        return service.list(currentUser.resolveUuid(authentication), tagId, q, volumeId, page, size);
     }
 
     @Operation(summary = "Get my personal timeline", description = "Returns every one of the authenticated user's saved quotes, positioned on the work's structure (volume, page) — unpaginated, unlike list(). Filterable by tagId and q, same semantics as list().")

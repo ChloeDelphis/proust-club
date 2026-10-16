@@ -186,8 +186,8 @@
     "ariaLabel": "Frise de mes citations",
     "volumeFilterAriaLabel": "Filtrer par tome",
     "trackAriaLabel": "Positions des citations sauvegardées dans l'œuvre",
-    "zoomOnVolume": "Zoomer sur {{title}}",
-    "zoomOutOfVolume": "Revenir à tous les tomes",
+    "zoomOnVolume": "Filtrer les résultats sur {{title}} et zoomer sur ce tome",
+    "zoomOutOfVolume": "Afficher les résultats de tous les tomes",
     "bookmarkAriaLabel": "Citation page {{page}}",
     "bookmarkDuplicatePageAriaLabel": "Citation page {{page}}, {{index}} sur {{total}}"
   }

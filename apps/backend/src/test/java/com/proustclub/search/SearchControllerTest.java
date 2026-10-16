@@ -119,6 +119,35 @@ class SearchControllerTest {
     }
 
     @Test
+    void searchFiltersByVolumeBeforePaginationAndCounting() throws Exception {
+        insertParagraphInVolume(2, 4, "Une madeleine dans un autre tome.");
+
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("volumeId", "2").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.results.length()").value(1))
+                .andExpect(jsonPath("$.results[0].text").value("Une madeleine dans un autre tome."));
+
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("volumeId", "1").param("page", "1").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.results.length()").value(1));
+    }
+
+    @Test
+    void searchRejectsVolumeIdsOutsideCorpusRange() throws Exception {
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("volumeId", "0"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("volumeId", "8"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("volumeId", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
     void searchPaginationPreservesParagraphIdentityAndReadingOrderAcrossPages() throws Exception {
         int fifthId = insertParagraph(105, "Fifth pagination-contract-match paragraph.");
         int firstId = insertParagraph(101, "First pagination-contract-match paragraph.");
@@ -169,10 +198,14 @@ class SearchControllerTest {
     }
 
     private int insertParagraph(int position, String text) {
+        return insertParagraphInVolume(1, position, text);
+    }
+
+    private int insertParagraphInVolume(int volumeId, int position, String text) {
         dsl.insertInto(DSL.table("paragraphs"),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
-                .values(1, 1, position, 10, text)
+                .values(volumeId, 1, position, 10, text)
                 .execute();
         return dsl.select(DSL.field("id", Integer.class))
                 .from(DSL.table("paragraphs"))

@@ -17,9 +17,10 @@ class SearchRepository {
         this.dsl = dsl;
     }
 
-    List<SearchHit> search(String query, int page, int size) {
+    List<SearchHit> search(String query, Integer volumeId, int page, int size) {
         String pattern = "%" + LikePatterns.escape(query) + "%";
         var pText = DSL.field("p.text", String.class);
+        var pVolumeId = DSL.field("p.volume_id", Integer.class);
 
         return dsl
                 .select(
@@ -39,6 +40,7 @@ class SearchRepository {
                 .join(DSL.table("volumes").as("v"))
                         .on(DSL.field("p.volume_id", Integer.class).eq(DSL.field("v.id", Integer.class)))
                 .where(pText.likeIgnoreCase(pattern, '\\'))
+                .and(volumeId == null ? DSL.noCondition() : pVolumeId.eq(volumeId))
                 .orderBy(DSL.field("p.position"))
                 .limit(size)
                 .offset((long) page * size)
@@ -60,12 +62,16 @@ class SearchRepository {
                 });
     }
 
-    long count(String query) {
+    long count(String query, Integer volumeId) {
         String pattern = "%" + LikePatterns.escape(query) + "%";
+        var volumeCondition = volumeId == null
+                ? DSL.noCondition()
+                : DSL.field("volume_id", Integer.class).eq(volumeId);
         return dsl
                 .selectCount()
                 .from(DSL.table("paragraphs"))
                 .where(DSL.field("text", String.class).likeIgnoreCase(pattern, '\\'))
+                .and(volumeCondition)
                 .fetchOne(0, Long.class);
     }
 }
