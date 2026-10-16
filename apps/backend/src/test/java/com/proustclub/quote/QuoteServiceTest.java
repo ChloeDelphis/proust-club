@@ -30,6 +30,12 @@ class QuoteServiceTest {
     QuoteRepository quoteRepository;
 
     @Mock
+    QuoteTimelineRepository timelineRepository;
+
+    @Mock
+    QuoteTagRepository quoteTagRepository;
+
+    @Mock
     TagRepository tagRepository;
 
     @InjectMocks
@@ -44,7 +50,7 @@ class QuoteServiceTest {
         when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("La madeleine est un symbole fort."));
         when(quoteRepository.insert(userId, 1, 3, 12, "madeleine"))
                 .thenReturn(new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now()));
-        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of());
+        when(quoteTagRepository.findByQuoteIds(List.of(quoteId))).thenReturn(Map.of());
 
         var response = service.create(userId, request);
 
@@ -98,9 +104,9 @@ class QuoteServiceTest {
                 new VolumeRange(1, "Du Côté de Chez Swann", 1, 1, 103),
                 new VolumeRange(2, "À l'Ombre des Jeunes Filles en Fleurs", 2, 104, 183)
         );
-        when(quoteRepository.findTimelineByUserId(userId, null, null)).thenReturn(entries);
-        when(quoteRepository.findVolumesWithPageRange()).thenReturn(volumes);
-        when(quoteRepository.tagsForQuoteIds(List.of(quoteId1, quoteId2))).thenReturn(Map.of(quoteId1, List.of()));
+        when(timelineRepository.findByUserId(userId, null, null)).thenReturn(entries);
+        when(timelineRepository.findVolumesWithPageRange()).thenReturn(volumes);
+        when(quoteTagRepository.findByQuoteIds(List.of(quoteId1, quoteId2))).thenReturn(Map.of(quoteId1, List.of()));
 
         var response = service.getTimeline(userId, null, null);
 
@@ -117,7 +123,7 @@ class QuoteServiceTest {
         var quoteId = UUID.randomUUID();
         when(quoteRepository.updateCommentForOwner(userId, quoteId, "Un souvenir d'enfance."))
                 .thenReturn(Optional.of(new QuoteSelection(quoteId, 10, 0, 5, "madeleine", "Un souvenir d'enfance.", Instant.now())));
-        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of());
+        when(quoteTagRepository.findByQuoteIds(List.of(quoteId))).thenReturn(Map.of());
 
         var response = service.updateComment(userId, quoteId, "  Un souvenir d'enfance.  ");
 
@@ -130,7 +136,7 @@ class QuoteServiceTest {
         var quoteId = UUID.randomUUID();
         when(quoteRepository.updateCommentForOwner(userId, quoteId, null))
                 .thenReturn(Optional.of(new QuoteSelection(quoteId, 10, 0, 5, "madeleine", null, Instant.now())));
-        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of());
+        when(quoteTagRepository.findByQuoteIds(List.of(quoteId))).thenReturn(Map.of());
 
         var response = service.updateComment(userId, quoteId, "   ");
 
@@ -184,7 +190,7 @@ class QuoteServiceTest {
     void removeTagThrowsWhenNoAssociationWasRemoved() {
         var quoteId = UUID.randomUUID();
         var tagId = UUID.randomUUID();
-        when(quoteRepository.removeTagForOwner(userId, quoteId, tagId)).thenReturn(0);
+        when(quoteTagRepository.removeForOwner(userId, quoteId, tagId)).thenReturn(0);
 
         assertThatThrownBy(() -> service.removeTag(userId, quoteId, tagId))
                 .isInstanceOf(ApiException.class);
@@ -195,7 +201,7 @@ class QuoteServiceTest {
         var quoteId = UUID.randomUUID();
         var quote = new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now());
         when(quoteRepository.findByIdAndUserId(quoteId, userId)).thenReturn(Optional.of(quote));
-        when(quoteRepository.countTagsForQuote(quoteId)).thenReturn(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE);
+        when(quoteTagRepository.countForQuote(quoteId)).thenReturn(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE);
         when(tagRepository.findIdByUserIdAndNormalizedName(userId, "Guermantes")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.addTag(userId, quoteId, "Guermantes"))
@@ -209,16 +215,16 @@ class QuoteServiceTest {
         var quoteId = UUID.randomUUID();
         var tagId = UUID.randomUUID();
         var quote = new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now());
-        var tag = new TagResponse(tagId, "Combray", 0);
+        var tag = new QuoteTag(tagId, "Combray", 0);
         when(quoteRepository.findByIdAndUserId(quoteId, userId)).thenReturn(Optional.of(quote));
-        when(quoteRepository.countTagsForQuote(quoteId)).thenReturn(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE);
+        when(quoteTagRepository.countForQuote(quoteId)).thenReturn(CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE);
         when(tagRepository.findIdByUserIdAndNormalizedName(userId, "combray")).thenReturn(Optional.of(tagId));
-        when(quoteRepository.hasTagForOwner(userId, quoteId, tagId)).thenReturn(true);
-        when(quoteRepository.tagsForQuoteIds(List.of(quoteId))).thenReturn(Map.of(quoteId, List.of(tag)));
+        when(quoteTagRepository.hasForOwner(userId, quoteId, tagId)).thenReturn(true);
+        when(quoteTagRepository.findByQuoteIds(List.of(quoteId))).thenReturn(Map.of(quoteId, List.of(tag)));
 
         var response = service.addTag(userId, quoteId, "combray");
 
-        assertThat(response.tags()).containsExactly(tag);
+        assertThat(response.tags()).containsExactly(new TagResponse(tagId, "Combray", 0));
         verify(tagRepository, never()).upsertByName(any(), any());
     }
 }

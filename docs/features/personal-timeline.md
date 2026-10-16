@@ -10,9 +10,9 @@ A graphical bar, shown to connected users on the unified search/citations page (
 GET /api/quotes/timeline?tagId=   (unpaginated — needs every quote at once to place every bookmark)
   → QuoteController.timeline()
   → QuoteService.getTimeline(userId, tagId)
-    → QuoteRepository.findTimelineByUserId  (quote_selections ⋈ paragraphs, ordered by paragraphs.position)
-    → QuoteRepository.findVolumesWithPageRange  (volumes.min_page/max_page — see below)
-    → QuoteRepository.tagsForQuoteIds  (same batch pattern as list())
+    → QuoteTimelineRepository.findByUserId  (quote_selections ⋈ paragraphs, ordered by paragraphs.position)
+    → QuoteTimelineRepository.findVolumesWithPageRange  (volumes.min_page/max_page — see below)
+    → QuoteTagRepository.findByQuoteIds  (same batch pattern as list())
   → TimelineResponse { volumes: TimelineVolume[7], quotes: TimelineQuote[] }
 ```
 

@@ -21,7 +21,7 @@ QuoteSelection (search results — native text selection, see below)
       2. re-validate: paragraph.text.substring(startOffset, endOffset) == selectedText
       3. insert the quote_selections row
       4. for each tagName: upsert the tag, attach it to the quote
-  → QuoteRepository / TagRepository (jOOQ, no codegen — raw table/column references)
+  → QuoteRepository / QuoteTagRepository / TagRepository (jOOQ, no codegen — raw table/column references)
   → PostgreSQL
 ```
 
@@ -64,7 +64,7 @@ The `comment` field is always present in `QuoteSelectionResponse`/`TimelineQuote
 
 ### Filtering by text — `q`
 
-`GET /api/quotes?q=...` (and `GET /api/quotes/timeline?q=...`) does a case-insensitive substring match against the quote's own saved text (`selected_text`) — not the personal comment. Combines with `tagId` (both conditions apply). Blank/omitted is "no text filter," not an error — same normalization as the comment field (trim, empty → no filter). Implemented with `LIKE ... ESCAPE '\'` via jOOQ (`QuoteRepository`'s shared `conditions()` helper), reusing the same pattern (and the same `LikePatterns.escape()` helper, promoted to `com.proustclub.common` once this became its second consumer) `SearchRepository` already used for corpus search — not PostgreSQL full-text search, consistent with that existing choice. This is what powers the unified search page's "saved citations" scope — see `docs/features/search-frontend.md`.
+`GET /api/quotes?q=...` (and `GET /api/quotes/timeline?q=...`) does a case-insensitive substring match against the quote's own saved text (`selected_text`) — not the personal comment. Combines with `tagId` (both conditions apply). Blank/omitted is "no text filter," not an error — same normalization as the comment field (trim, empty → no filter). Implemented with `LIKE ... ESCAPE '\'` via jOOQ (`QuoteQueryConditions`, shared by `QuoteRepository` and `QuoteTimelineRepository`), reusing the same pattern (and the same `LikePatterns.escape()` helper, promoted to `com.proustclub.common` once this became its second consumer) `SearchRepository` already used for corpus search — not PostgreSQL full-text search, consistent with that existing choice. This is what powers the unified search page's "saved citations" scope — see `docs/features/search-frontend.md`.
 
 ### Renaming and deleting a tag
 
