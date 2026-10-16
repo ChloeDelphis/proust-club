@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: proustclub
       POSTGRES_USER: proustclub
@@ -8,7 +8,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata-pg18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U proustclub -d proustclub"]
       interval: 5s
@@ -24,4 +24,4 @@ services:
       - "8025:8025"
 
 volumes:
-  pgdata:
+  pgdata-pg18:
