@@ -103,7 +103,7 @@ it('zooming by clicking directly on a volume zone in the bar hides bookmarks fro
   render(<ControlledTimelineBar activeTagId={null} />, { wrapper })
   await screen.findByRole('button', { name: 'Citation page 150' })
 
-  await user.click(screen.getByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' }))
+  await user.click(screen.getByRole('button', { name: 'Filtrer les résultats sur Du Côté de Chez Swann et zoomer sur ce tome' }))
 
   expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
@@ -117,22 +117,22 @@ it('keeps the selected volume zone reachable while hiding the others from the ac
   const user = userEvent.setup()
 
   const { container } = render(<ControlledTimelineBar activeTagId={null} />, { wrapper })
-  await screen.findByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })
+  await screen.findByRole('button', { name: 'Filtrer les résultats sur Du Côté de Chez Swann et zoomer sur ce tome' })
 
-  await user.click(screen.getByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' }))
+  await user.click(screen.getByRole('button', { name: 'Filtrer les résultats sur Du Côté de Chez Swann et zoomer sur ce tome' }))
 
   // The selected zone stays reachable — its accessible name now reflects that clicking it again
   // zooms back out, not further in.
-  expect(screen.getByRole('button', { name: 'Revenir à tous les tomes' })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Zoomer sur Du Côté de Chez Swann' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Afficher les résultats de tous les tomes' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Filtrer les résultats sur Du Côté de Chez Swann et zoomer sur ce tome' })).not.toBeInTheDocument()
 
   // The other volume's zone is unreachable via role query — aria-hidden + tabIndex={-1}, not just
   // visually faded via CSS pointer-events. Note: `{ hidden: true }` does *not* help here — per the
   // ARIA spec aria-hidden removes the element's exposed role entirely, so role-based queries can't
   // find it even with that option; a direct DOM query is the only way to check it is still mounted.
-  expect(screen.queryByRole('button', { name: "Zoomer sur À l'Ombre des Jeunes Filles en Fleurs" })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: "Filtrer les résultats sur À l'Ombre des Jeunes Filles en Fleurs et zoomer sur ce tome" })).not.toBeInTheDocument()
   // ...but still physically in the DOM (kept mounted on purpose, for the CSS opacity transition).
-  expect(container.querySelector('[aria-label="Zoomer sur À l\'Ombre des Jeunes Filles en Fleurs"]')).toBeInTheDocument()
+  expect(container.querySelector('[aria-label="Filtrer les résultats sur À l\'Ombre des Jeunes Filles en Fleurs et zoomer sur ce tome"]')).toBeInTheDocument()
 })
 
 it('returns to the full view when selectedVolumeId goes back to null', async () => {

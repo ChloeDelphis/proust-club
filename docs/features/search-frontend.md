@@ -20,8 +20,8 @@ SearchForm (user input, no validation of its own)
   → searchParagraphs()  src/api/search.ts         (corpus scope)
   → listQuotes()        src/api/quote.ts          (saved-citations scope)
   → apiFetch<...>()
-  → GET /api/search?q=...&page=...&size=...       (corpus scope)
-  → GET /api/quotes?q=...&tagId=...&page=...       (saved-citations scope)
+  → GET /api/search?q=...&volumeId=...&page=...&size=...       (corpus scope)
+  → GET /api/quotes?q=...&tagId=...&volumeId=...&page=... (saved-citations scope)
   → Spring Boot → PostgreSQL
 ```
 
@@ -35,6 +35,8 @@ Types are derived from `schema.generated.ts`, generated from the backend OpenAPI
 
 Anonymous visitors never see the scope toggle (`TagFilterBar`/`VolumeList`/`TimelineBar` are all gated on `isConnected`) — the page behaves exactly like corpus-only search always did.
 
+Selecting a tome from the sidebar or its zone in the frieze applies the same `selectedVolumeId` filter to the active results scope. `GET /api/search` and `GET /api/quotes` apply `volumeId` in the backend before pagination and counting, so `total` and every page describe only that tome. The filter combines with the existing phrase and tag filters. Selecting the active tome again clears it. Both changes reset `page` to `0`; the frieze still fetches its complete timeline and zooms its visible bookmarks locally.
+
 ---
 
 ## State model
@@ -44,11 +46,12 @@ State lives in `SearchPage`:
 - `query` — the last submitted phrase (not what the user is currently typing), shared by both scopes
 - `scope` — `'corpus' | 'saved'`
 - `tagId` — which real tag is active, meaningful only in `'saved'` scope
-- `page` — current page index (0-based; reset to 0 on each new search or scope/tag change)
+- `selectedVolumeId` — optional tome filter shared by the sidebar and frieze; valid IDs are 1–7
+- `page` — current page index (0-based; reset to 0 on each new search or scope/tag/volume change)
 
 `SearchForm` manages its own input value locally and has no minimum-length validation of its own — submitting (or clicking its clear button) always calls `onSubmit(q)` as-is, including an empty string. The 2-character floor only applies to corpus search, enforced by `SearchPage` itself (`isQueryValid`), since an empty or 1-character query is meaningful in the saved-citations scope (it means "no text filter").
 
-TanStack Query derives loading state, data, errors, and caching — `['search', query, page]` for corpus, `['quotes', tagId, query, page]` for saved.
+TanStack Query derives loading state, data, errors, and caching — `['search', query, selectedVolumeId, page]` for corpus, `['quotes', tagId, query, selectedVolumeId, page]` for saved.
 
 ---
 
@@ -83,4 +86,12 @@ No `dangerouslySetInnerHTML`. No string manipulation beyond `substring`.
 
 ## Pagination
 
-Backend-driven: `page` and `size` are query parameters; `total` is in the response. The frontend computes `totalPages = Math.ceil(total / size)` and renders Prev / Next controls. Page size is fixed at 10.
+Backend-driven: `page`, `size`, and optional `volumeId` are query parameters; `total` is counted after all active filters. The frontend computes `totalPages = Math.ceil(total / size)` and renders Prev / Next controls. Page size is fixed at 10. Applying or clearing a tome filter resets pagination before issuing the new request.
+
+## Manual verification
+
+- **Happy path — corpus:** submit a phrase present in more than one tome, select a tome from the sidebar, and confirm every result belongs to that tome and pagination reflects only its matches. Repeat by selecting the tome zone in the frieze.
+- **Happy path — saved citations:** switch to saved citations, select a tome, and confirm the list contains only that tome's quotes; combine the tome with a tag and a text query.
+- **Toggle and pagination:** move to page 2, select a tome in either control, and confirm the first filtered page appears. Select the same tome again and confirm all-tome results return on page 1.
+- **Empty result:** select a valid tome with no match for the submitted phrase (or no saved citations) and confirm the empty state and `total: 0`.
+- **Validation:** `GET /api/search` and authenticated `GET /api/quotes` with `volumeId=0` or `volumeId=8` return `400`; omitted `volumeId` retains all-tome behavior.

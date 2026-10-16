@@ -82,7 +82,7 @@ Both endpoints follow the same ownership discipline as the rest of this feature:
 
 **`QuoteSelectionResponse`**: `id`, `paragraphId`, `startOffset`, `endOffset`, `selectedText`, `comment` (nullable), `tags` (a list of `TagResponse`, not bare names — a tag is a real resource with its own id, needed by the frontend to call the detach endpoint without a round trip to look it up), `createdAt`.
 
-**`QuoteSelectionListResponse`**: `results`, `total`, `page`, `size` — same pagination envelope as `/api/search`. Ordered by `createdAt` descending, `id` descending as a tiebreaker (two quotes saved in the same instant still need a total order, or `LIMIT`/`OFFSET` pagination could skip or repeat a row across pages).
+**`QuoteSelectionListResponse`**: `results`, `total`, `page`, `size` — same pagination envelope as `/api/search`. `GET /api/quotes` accepts optional `volumeId` (1–7), `tagId`, and `q`; the filters combine, and volume membership is resolved through each quote's paragraph. Filtering and `total` are computed in the backend before pagination, so page boundaries and counts stay correct. `GET /api/quotes/timeline` remains unpaginated and does not accept `volumeId`; the frieze needs all saved quotes to render its full work axis. Ordered by `createdAt` descending, `id` descending as a tiebreaker (two quotes saved in the same instant still need a total order, or `LIMIT`/`OFFSET` pagination could skip or repeat a row across pages).
 
 **`TagResponse`**: `id`, `name` (as the user typed it, trimmed — casing is preserved, only the uniqueness check ignores it), `colorIndex` (an `int` 0-9, the tag's position in a predefined 10-color palette — the palette itself lives in the frontend, not the backend, which only stores and validates the index; see [data model](../architecture/data-model.md#user-data)). Optional on `POST /api/tags`, defaults to `0` when omitted; immutable after creation — no endpoint changes an existing tag's color.
 
@@ -175,3 +175,6 @@ The context window resets to `before: 0, after: 0` whenever `paragraphId` change
 
 - Open the quote tag picker, select twenty tags, and confirm that further existing tags and new tag creation are disabled while selected tags can still be removed. Open an existing quote with twenty tags and confirm tag additions are disabled while removals remain available.
 - Submit a quote request with twenty tags and confirm it succeeds; submit one with twenty-one tags and confirm it returns `400` without creating a quote or tags.
+- **Volume filter and pagination:** authenticate, save quotes from two volumes, then call `GET /api/quotes?volumeId=1&page=0&size=1`; confirm results and `total` include only matching quotes and that tag/text filters can be combined with `volumeId`.
+- **Empty and unfiltered results:** request a valid tome with no quotes and confirm `results: []` and `total: 0`; omit `volumeId` and confirm quotes from all tomes remain eligible.
+- **Volume validation:** `GET /api/quotes?volumeId=0` and `GET /api/quotes?volumeId=8` return `400`.

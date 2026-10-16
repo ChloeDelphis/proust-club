@@ -140,24 +140,35 @@ class QuoteServiceTest {
 
     @Test
     void listNormalizesBlankQueryToNull() {
-        when(quoteRepository.findByUserId(userId, null, null, 0, 10)).thenReturn(List.of());
-        when(quoteRepository.countByUserId(userId, null, null)).thenReturn(0L);
+        when(quoteRepository.findByUserId(userId, null, null, null, 0, 10)).thenReturn(List.of());
+        when(quoteRepository.countByUserId(userId, null, null, null)).thenReturn(0L);
 
-        service.list(userId, null, "   ", 0, 10);
+        service.list(userId, null, "   ", null, 0, 10);
 
-        verify(quoteRepository).findByUserId(userId, null, null, 0, 10);
-        verify(quoteRepository).countByUserId(userId, null, null);
+        verify(quoteRepository).findByUserId(userId, null, null, null, 0, 10);
+        verify(quoteRepository).countByUserId(userId, null, null, null);
     }
 
     @Test
     void listTrimsQueryBeforePassingToRepository() {
-        when(quoteRepository.findByUserId(userId, null, "madeleine", 0, 10)).thenReturn(List.of());
-        when(quoteRepository.countByUserId(userId, null, "madeleine")).thenReturn(0L);
+        when(quoteRepository.findByUserId(userId, null, "madeleine", null, 0, 10)).thenReturn(List.of());
+        when(quoteRepository.countByUserId(userId, null, "madeleine", null)).thenReturn(0L);
 
-        service.list(userId, null, "  madeleine  ", 0, 10);
+        service.list(userId, null, "  madeleine  ", null, 0, 10);
 
-        verify(quoteRepository).findByUserId(userId, null, "madeleine", 0, 10);
-        verify(quoteRepository).countByUserId(userId, null, "madeleine");
+        verify(quoteRepository).findByUserId(userId, null, "madeleine", null, 0, 10);
+        verify(quoteRepository).countByUserId(userId, null, "madeleine", null);
+    }
+
+    @Test
+    void listPassesVolumeFilterToRepositoryAndCount() {
+        when(quoteRepository.findByUserId(userId, null, "madeleine", 2, 0, 10)).thenReturn(List.of());
+        when(quoteRepository.countByUserId(userId, null, "madeleine", 2)).thenReturn(0L);
+
+        service.list(userId, null, "madeleine", 2, 0, 10);
+
+        verify(quoteRepository).findByUserId(userId, null, "madeleine", 2, 0, 10);
+        verify(quoteRepository).countByUserId(userId, null, "madeleine", 2);
     }
 
     @Test

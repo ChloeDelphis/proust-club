@@ -67,6 +67,7 @@ export default function SearchPage() {
   // entry both call this, there's no separate "Tous les tomes" control.
   function handleSelectVolume(id: number) {
     setSelectedVolumeId(current => (current === id ? null : id))
+    setPage(0)
   }
 
   function handleOpenQuote(quoteId: string) {
@@ -92,16 +93,16 @@ export default function SearchPage() {
   const isQueryValid = query.trim().length >= 2
 
   const corpusQuery = useQuery({
-    queryKey: ['search', query, page],
-    queryFn: ({ signal }) => searchParagraphs({ q: query, page, size: PAGE_SIZE }, signal),
+    queryKey: ['search', query, selectedVolumeId, page],
+    queryFn: ({ signal }) => searchParagraphs({ q: query, volumeId: selectedVolumeId ?? undefined, page, size: PAGE_SIZE }, signal),
     enabled: scope === 'corpus' && isQueryValid,
     placeholderData: keepPreviousData,
   })
 
   const savedQuery = useQuery({
-    queryKey: ['quotes', tagId, query, page],
+    queryKey: ['quotes', tagId, query, selectedVolumeId, page],
     queryFn: async ({ signal }) => {
-      const params = { tagId: tagId ?? undefined, q: query || undefined, page, size: PAGE_SIZE }
+      const params = { tagId: tagId ?? undefined, q: query || undefined, volumeId: selectedVolumeId ?? undefined, page, size: PAGE_SIZE }
       const response = await listQuotes(params, signal)
       const lastPage = Math.max(0, Math.ceil(response.total / response.size) - 1)
       if (response.total > 0 && page > lastPage) {

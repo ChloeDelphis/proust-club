@@ -1,4 +1,5 @@
 import { apiFetch, buildQuery } from './client'
+import { assertVolumeIdInRange } from './volume'
 import { validationConstraints } from './generated/validationConstraints.generated'
 import type { operations } from './schema.generated'
 import type { TagResponse } from './tag'
@@ -66,7 +67,8 @@ export type QuoteSelectionListResponse = {
 }
 
 export function listQuotes(params: QuoteListParams = {}, signal?: AbortSignal): Promise<QuoteSelectionListResponse> {
-  const qs = buildQuery({ tagId: params.tagId, q: params.q, page: params.page, size: params.size })
+  assertVolumeIdInRange(params.volumeId)
+  const qs = buildQuery({ tagId: params.tagId, q: params.q, volumeId: params.volumeId, page: params.page, size: params.size })
   return apiFetch<QuoteSelectionListResponse>(`/api/quotes?${qs}`, { signal })
 }
 

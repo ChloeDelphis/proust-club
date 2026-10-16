@@ -244,6 +244,46 @@ class QuoteControllerTest {
     }
 
     @Test
+    void listQuotesFiltersByVolumeBeforePaginationAndCounting() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        int secondVolumeParagraphId = insertParagraphInVolume(2, 2, "Le souvenir revient.");
+        createQuote(session, paragraphId, 3, 12, "madeleine");
+        createQuote(session, paragraphId, 0, 2, "La");
+        createQuote(session, secondVolumeParagraphId, 3, 11, "souvenir");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("volumeId", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.results.length()").value(1))
+                .andExpect(jsonPath("$.results[0].selectedText").value("souvenir"));
+
+        mockMvc.perform(get("/api/quotes").session(session).param("volumeId", "1").param("page", "1").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.results.length()").value(1));
+
+        mockMvc.perform(get("/api/quotes").session(session).param("volumeId", "3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0))
+                .andExpect(jsonPath("$.results.length()").value(0));
+    }
+
+    @Test
+    void listQuotesRejectsVolumeIdsOutsideCorpusRange() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("volumeId", "0"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/quotes").session(session).param("volumeId", "8"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/quotes").session(session).param("volumeId", "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
     void listQuotesWithNonMatchingTextReturnsEmpty() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
         createQuote(session, paragraphId, 3, 12, "madeleine");
@@ -690,6 +730,15 @@ class QuoteControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private int insertParagraphInVolume(int volumeId, int position, String text) {
+        return dsl.insertInto(DSL.table("paragraphs"),
+                        DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
+                        DSL.field("page_number"), DSL.field("text"))
+                .values(volumeId, 1, position, 1, text)
+                .returning(DSL.field("id", Integer.class))
+                .fetchOne(DSL.field("id", Integer.class));
     }
 
     private String createQuoteJson(int paragraphId, int startOffset, int endOffset, String selectedText, List<String> tagNames) throws Exception {

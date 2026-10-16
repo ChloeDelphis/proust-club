@@ -37,7 +37,7 @@ export interface paths {
         };
         /**
          * List my quote selections
-         * @description Returns the authenticated user's quotes, most recent first. Filterable by tagId and/or a free-text search within the saved selection's own text.
+         * @description Returns the authenticated user's quotes, most recent first. Filterable by volumeId, tagId, and/or a free-text search within the saved selection's own text.
          */
         get: operations["list_1"];
         put?: never;
@@ -290,7 +290,7 @@ export interface paths {
         };
         /**
          * Search the corpus
-         * @description Returns paragraphs containing the requested phrase (case-insensitive exact match).
+         * @description Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to one of the corpus volumes.
          *
          *     Each result includes the `startOffset` (inclusive) and `endOffset` (exclusive)
          *     using 0-based indexes, ready to use with `String.substring()` in Java or JavaScript.
@@ -910,6 +910,11 @@ export interface operations {
                  */
                 q?: string;
                 /**
+                 * @description Only return quotes from this volume (1–7)
+                 * @example 1
+                 */
+                volumeId?: number;
+                /**
                  * @description Zero-based page index (default: 0)
                  * @example 0
                  */
@@ -1497,6 +1502,11 @@ export interface operations {
                  * @example petite madeleine
                  */
                 q: string;
+                /**
+                 * @description Only search paragraphs in this volume (1–7)
+                 * @example 1
+                 */
+                volumeId?: number;
                 /**
                  * @description Zero-based page index (default: 0). This paginates the search results, not the book's page numbers.
                  * @example 0
