@@ -22,13 +22,13 @@ The local PostgreSQL 18 service uses the `pgdata-pg18` named volume mounted at `
 To preserve an existing local database during an upgrade, create a custom-format dump before replacing the PostgreSQL 16 container, keep that dump outside the repository, start PostgreSQL 18 on its separate volume, and restore into the initialized `proustclub` database:
 
 ```bash
-docker exec proust-club-postgres-1 pg_dump -U proustclub -d proustclub -Fc -f /tmp/proustclub.dump
-docker cp proust-club-postgres-1:/tmp/proustclub.dump "$HOME/proustclub.dump"
+docker compose exec -T postgres pg_dump -U proustclub -d proustclub -Fc -f /tmp/proustclub.dump
+docker compose cp postgres:/tmp/proustclub.dump "$HOME/proustclub.dump"
 docker compose stop postgres
 # Update the compose service to PostgreSQL 18 and its separate pgdata-pg18 volume.
 docker compose up -d postgres
-docker cp "$HOME/proustclub.dump" proust-club-postgres-1:/tmp/proustclub.dump
-docker exec proust-club-postgres-1 pg_restore -U proustclub --no-owner --exit-on-error -d proustclub /tmp/proustclub.dump
+docker compose cp "$HOME/proustclub.dump" postgres:/tmp/proustclub.dump
+docker compose exec -T postgres pg_restore -U proustclub --no-owner --exit-on-error -d proustclub /tmp/proustclub.dump
 ```
 
 Verify the restored data and the application before removing the old PostgreSQL 16 volume or the temporary dump. Delete the dump from `$HOME` only after verification. Do not use `docker compose down -v` as part of the upgrade. The corpus import command only imports the literary corpus; it does not restore user accounts, saved quotes, or tags.
