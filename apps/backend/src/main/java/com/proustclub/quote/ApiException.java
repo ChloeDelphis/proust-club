@@ -26,7 +26,15 @@ class ApiException extends ErrorResponseException {
         return new ApiException(HttpStatus.CONFLICT, "Tag already exists.");
     }
 
+    static ApiException tagNameBlank() {
+        return new ApiException(HttpStatus.BAD_REQUEST, "Tag name must not be blank.");
+    }
+
     static ApiException quoteTagLimitReached() {
         return new ApiException(HttpStatus.CONFLICT, "Quote already has the maximum number of tags.");
+    }
+
+    static ApiException tooManyTagsInRequest() {
+        return new ApiException(HttpStatus.BAD_REQUEST, "A quote cannot have more than 20 tags.");
     }
 }

@@ -40,6 +40,12 @@ class QuoteService {
 
     @Transactional
     QuoteSelectionResponse create(UUID userId, CreateQuoteSelectionRequest request) {
+        int requestedTagCount = (request.tagNames() == null ? 0 : request.tagNames().size())
+                + (request.newTagName() == null ? 0 : 1);
+        if (requestedTagCount > CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE) {
+            throw ApiException.tooManyTagsInRequest();
+        }
+
         var paragraphText = quoteRepository.findParagraphText(request.paragraphId())
                 .orElseThrow(ParagraphExceptions::notFound);
 
@@ -48,15 +54,27 @@ class QuoteService {
         var quote = quoteRepository.insert(
                 userId, request.paragraphId(), request.startOffset(), request.endOffset(), request.selectedText());
 
+        attachTags(userId, quote, request);
+
+        log.info("Quote saved: user={} paragraphId={}", userId, request.paragraphId());
+
+        return toResponse(quote, tagsFor(quote.id()));
+    }
+
+    private void attachTags(UUID userId, QuoteSelection quote, CreateQuoteSelectionRequest request) {
         var tagNames = request.tagNames() == null ? List.<String>of() : request.tagNames();
         for (String tagName : tagNames) {
             UUID tagId = tagRepository.upsertByName(userId, tagName);
             quoteTagRepository.addForOwner(userId, quote.id(), tagId);
         }
 
-        log.info("Quote saved: user={} paragraphId={}", userId, request.paragraphId());
-
-        return toResponse(quote, tagsFor(quote.id()));
+        if (request.newTagName() == null) return;
+        String trimmedName = request.newTagName().trim();
+        if (trimmedName.isEmpty()) throw ApiException.tagNameBlank();
+        UUID tagId = tagRepository.insertIfAbsent(userId, trimmedName, null)
+                .map(TagData::id)
+                .orElseThrow(ApiException::tagAlreadyExists);
+        quoteTagRepository.addForOwner(userId, quote.id(), tagId);
     }
 
     @Transactional(readOnly = true)

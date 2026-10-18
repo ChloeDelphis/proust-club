@@ -49,12 +49,14 @@ class QuoteController {
         summary = "Save a quote selection",
         description = """
             Saves a selection of text found in a paragraph (whole paragraph or a substring),
-            with optional tags. The server re-validates that `selectedText` matches the \
-            paragraph's actual text at the given offsets, rejecting the request otherwise."""
+            with optional tags. A supplied `newTagName` is created strictly and returns 409 if the \
+            authenticated user already has that name. The server re-validates that `selectedText` \
+            matches the paragraph's actual text at the given offsets, rejecting the request otherwise."""
     )
     @ApiResponse(responseCode = "201", description = "Quote saved", content = @Content(schema = @Schema(implementation = QuoteSelectionResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body, or selectedText/offsets don't match the paragraph", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "404", description = "Paragraph not found", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "newTagName already exists for the authenticated user", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/quotes", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     QuoteSelectionResponse create(@Valid @RequestBody CreateQuoteSelectionRequest request, Authentication authentication) {

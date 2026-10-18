@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,7 +47,7 @@ class QuoteServiceTest {
     @Test
     void createSavesQuoteWhenSelectedTextMatchesParagraph() {
         var quoteId = UUID.randomUUID();
-        var request = new CreateQuoteSelectionRequest(1, 3, 12, "madeleine", List.of());
+        var request = new CreateQuoteSelectionRequest(1, 3, 12, "madeleine", List.of(), null);
         when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("La madeleine est un symbole fort."));
         when(quoteRepository.insert(userId, 1, 3, 12, "madeleine"))
                 .thenReturn(new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now()));
@@ -60,8 +61,55 @@ class QuoteServiceTest {
     }
 
     @Test
+    void createTrimsAndRequiresANewTagWhenRequested() {
+        var quoteId = UUID.randomUUID();
+        var tagId = UUID.randomUUID();
+        var request = new CreateQuoteSelectionRequest(1, 3, 12, "madeleine", List.of(), "  Combray  ");
+        when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("La madeleine est un symbole fort."));
+        when(quoteRepository.insert(userId, 1, 3, 12, "madeleine"))
+                .thenReturn(new QuoteSelection(quoteId, 1, 3, 12, "madeleine", null, Instant.now()));
+        when(tagRepository.insertIfAbsent(userId, "Combray", null))
+                .thenReturn(Optional.of(new TagData(tagId, "Combray", 0)));
+        when(quoteTagRepository.findByQuoteIds(List.of(quoteId)))
+                .thenReturn(Map.of(quoteId, List.of(new QuoteTag(tagId, "Combray", 0))));
+
+        var response = service.create(userId, request);
+
+        assertThat(response.tags()).containsExactly(new TagResponse(tagId, "Combray", 0));
+        verify(quoteTagRepository).addForOwner(userId, quoteId, tagId);
+    }
+
+    @Test
+    void createRejectsAlreadyExistingNewTag() {
+        var request = new CreateQuoteSelectionRequest(1, 3, 12, "madeleine", List.of(), "Combray");
+        when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("La madeleine est un symbole fort."));
+        when(quoteRepository.insert(userId, 1, 3, 12, "madeleine"))
+                .thenReturn(new QuoteSelection(UUID.randomUUID(), 1, 3, 12, "madeleine", null, Instant.now()));
+        when(tagRepository.insertIfAbsent(userId, "Combray", null)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.create(userId, request))
+                .isInstanceOf(ApiException.class);
+
+        verify(quoteTagRepository, never()).addForOwner(any(), any(), any());
+    }
+
+    @Test
+    void createCountsNewTagAgainstMaximumTagCountBeforeWriting() {
+        var tagNames = IntStream.range(0, CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE)
+                .mapToObj(index -> "Tag " + index)
+                .toList();
+        var request = new CreateQuoteSelectionRequest(1, 3, 12, "madeleine", tagNames, "Combray");
+
+        assertThatThrownBy(() -> service.create(userId, request))
+                .isInstanceOf(ApiException.class);
+
+        verify(quoteRepository, never()).findParagraphText(anyInt());
+        verify(quoteRepository, never()).insert(any(), anyInt(), anyInt(), anyInt(), any());
+    }
+
+    @Test
     void createRejectsMismatchedSelectedText() {
-        var request = new CreateQuoteSelectionRequest(1, 3, 12, "wrong-text", List.of());
+        var request = new CreateQuoteSelectionRequest(1, 3, 12, "wrong-text", List.of(), null);
         when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("La madeleine est un symbole fort."));
 
         assertThatThrownBy(() -> service.create(userId, request))
@@ -72,7 +120,7 @@ class QuoteServiceTest {
 
     @Test
     void createRejectsOffsetsOutOfBounds() {
-        var request = new CreateQuoteSelectionRequest(1, 0, 1000, "does not matter", List.of());
+        var request = new CreateQuoteSelectionRequest(1, 0, 1000, "does not matter", List.of(), null);
         when(quoteRepository.findParagraphText(1)).thenReturn(Optional.of("Short paragraph."));
 
         assertThatThrownBy(() -> service.create(userId, request))
@@ -83,7 +131,7 @@ class QuoteServiceTest {
 
     @Test
     void createRejectsUnknownParagraph() {
-        var request = new CreateQuoteSelectionRequest(999, 0, 5, "hello", List.of());
+        var request = new CreateQuoteSelectionRequest(999, 0, 5, "hello", List.of(), null);
         when(quoteRepository.findParagraphText(999)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(userId, request))
