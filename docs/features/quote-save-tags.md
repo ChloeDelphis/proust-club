@@ -14,13 +14,14 @@ Lets an authenticated user save a selection of text found in a paragraph (the wh
 
 ```
 QuoteSelection (search results — native text selection, see below)
-  → POST /api/quotes { paragraphId, startOffset, endOffset, selectedText, tagNames? }
+  → POST /api/quotes { paragraphId, startOffset, endOffset, selectedText, tagNames?, newTagName? }
   → QuoteController          resolves user_id from the session (never from the request body)
   → QuoteService.create()
       1. load the paragraph's real text (404 if the paragraph doesn't exist)
       2. re-validate: paragraph.text.substring(startOffset, endOffset) == selectedText
       3. insert the quote_selections row
       4. for each tagName: upsert the tag, attach it to the quote
+      5. if newTagName is present: insert only if absent, attach it, or fail with 409 (transaction rollback)
   → QuoteRepository / QuoteTagRepository / TagRepository (jOOQ with generated table/column references)
   → PostgreSQL
 ```
@@ -31,12 +32,14 @@ The client sends `paragraphId`, `startOffset`, `endOffset` and `selectedText` to
 
 ### Tagging is optional, and tag creation is dual
 
-A quote can have zero to twenty tags. Tag names are limited to 50 characters. `POST /api/quotes` rejects more than twenty tag names before writing the quote or any tags. `POST /api/quotes/{id}/tags` returns `409` when a new tag would exceed the same per-quote limit; adding a tag already attached remains idempotent. Both frontend tag editors prevent adding tags at the limit while leaving removals available. Tags can be created two ways, both landing on the same upsert-by-name behavior:
+A quote can have zero to twenty tags. Tag names are limited to 50 characters. `POST /api/quotes` rejects more than twenty combined `tagNames` and `newTagName` values before writing the quote or any tags. `POST /api/quotes/{id}/tags` returns `409` when a new tag would exceed the same per-quote limit; adding a tag already attached remains idempotent. Both frontend tag editors prevent adding tags at the limit while leaving removals available. Tags can be created two ways, both landing on the same upsert-by-name behavior:
 
 - **Explicit**: `POST /api/tags` creates a tag ahead of time. Returns `409` if a tag with that name (case-insensitive, after trimming) already exists for the user — the intent here is unambiguous ("create a new resource"), so a collision is a real error.
 - **Implicit**: `POST /api/quotes` (via `tagNames`) and `POST /api/quotes/{id}/tags` (via `name`) reuse an existing tag if one matches, or create it otherwise. No error on a "collision" — this is the expected, idempotent path for everyday tagging.
 
 Both paths share the same repository primitive: an `INSERT ... ON CONFLICT (user_id, LOWER(name)) DO NOTHING RETURNING id`, targeted precisely at the unique index backing this constraint (not a broad catch of "any unique violation"). Explicit creation treats an empty result as `409`; implicit upsert falls back to a `SELECT` for the existing row's id.
+
+`POST /api/quotes` also accepts the optional `newTagName` field for the guest-authentication handoff described below. It is trimmed and treated as a strict create: a case-insensitive name collision returns `409` instead of reusing an existing tag. Quote insertion and strict tag insertion share the service transaction, so a conflict leaves neither a quote nor a partial association behind. The existing `tagNames` field keeps its reuse-on-conflict behavior for normal authenticated tagging.
 
 ### Ownership is enforced inside every mutating query, not just checked beforehand
 
@@ -109,13 +112,17 @@ Saving a quote starts from the browser's native `Selection`/`Range` API (drag-se
 
 ### Selection lifecycle
 
-`QuoteSelection`'s `Phase` is `idle` | `selected` (a stabilized, word-extended selection, contextual menu showing) | `tagPanel` (open, saving). A `document`-level `selectionchange` listener recomputes `Phase` on every firing, but a single functional `setPhase` update short-circuits to `current` unchanged whenever `current.kind === 'tagPanel'` — without this, a `selectionchange` firing while the panel is open (e.g. from interacting with its own inputs) would yank it away mid-save. The "Sauvegarder" button also needs its own `onMouseDown={e => e.preventDefault()}`: without it, the button's own mousedown collapses the native selection before its `onClick` fires (default browser behavior for a mousedown outside the current selection), flipping `Phase` back to `idle` before the click is ever handled.
+`QuoteSelection`'s `Phase` is `idle` | `selected` (a stabilized, word-extended selection, contextual menu showing) | `tagPanel` (open, saving) | `authPrompt` (open, authentication choices). A `document`-level `selectionchange` listener recomputes `Phase` on every firing, but short-circuits while either dialog is open — without this, a `selectionchange` firing while a dialog is open (e.g. from interacting with its inputs) would yank it away. The "Sauvegarder" button also needs its own `onMouseDown={e => e.preventDefault()}`: without this, its mousedown collapses the native selection before its `onClick` fires.
 
 A slow save can resolve after its `QuoteSelection` instance has unmounted (e.g. the search query changed while the request was in flight) — `resetToIdle()` guards its one call to `window.getSelection()?.removeAllRanges()` (a document-wide side effect, unlike React's own `setPhase`, which the framework already no-ops safely on an unmounted component) behind an `isMountedRef`. That ref is reset to `true` on the tracking effect's own setup, not only `false` on its cleanup — React 18 StrictMode's dev-only mount→cleanup→mount double-invoke would otherwise leave it stuck at `false` for the component's entire real lifetime.
 
 ### Tag panel — `Dialog`-based, "Enregistrer" is the only save path
 
 `TagPickerPopup` uses `@base-ui/react`'s `Dialog` (`Dialog.Root`/`Portal`/`Backdrop`/`Popup`/`Close`) — the same primitive used by `QuoteDetailModal` (`ADR-009-base-ui-dependency.md`). Its tag search/select/create UI (search box, selected chips, checkbox list, "Créer « nom »", "Enregistrer") lives in a separate presentation component, `TagPickerContent` (`TagPickerContent.tsx`, no `Dialog` of its own) — this lets `SearchResultDetailModal` (below) embed the same UI inline, in its own `DetailModal` side column, without nesting a second `Dialog` inside the first. `TagPickerPopup` itself is just the `Dialog` wrapper around it.
+
+Anonymous visitors can also select text. Their contextual menu opens a name-only list form; saving that form stages the selection and trimmed list name in an in-memory `GuestQuoteSaveProvider`, then opens an explanatory authentication prompt with signup and login actions. The pending draft stores only the search query, page, optional volume filter, paragraph id, selection offsets/text, list name, and scroll position. It survives route changes to Login/Register but is intentionally lost on reload or tab close. Closing either dialog clears the draft without saving.
+
+Login and successful registration return to `/`. `SearchPage` restores the search parameters, and `QuoteSelection` rebuilds the native browser `Range` from the saved offsets. It shows the save action again but never submits automatically. The user must reopen the list form and click "Enregistrer". A 409 from `newTagName` is shown in the form while retaining both selection and list name, so the user can choose a different name. A ref guard and the disabled submit button prevent repeat requests while a save is in flight.
 
 Tag search/creation is staged locally: nothing is sent to the backend while the panel is open, and `POST /api/tags` is never called eagerly on "Créer « nom »" (would leave an orphaned tag if dismissed). **Only "Enregistrer" saves** (`onSave`, with zero, one, or several tag names — tags stay optional). In `TagPickerPopup`, every other way of leaving the panel (×, backdrop click, Escape — all routed through one `Dialog.Root onOpenChange`) calls `onCancel` instead, and saves nothing at all, including any tag already checked. While a save is in flight (`isSaving`, from `createQuoteMutation.isPending`): "Enregistrer" and the × close button are both disabled, and `onOpenChange` ignores every dismiss attempt — the request has already been sent and can't actually be aborted, so "cancelling" mid-flight would only desync the UI from a save that's still going to complete.
 
@@ -172,6 +179,24 @@ The context window resets to `before: 0, after: 0` whenever `paragraphId` change
 ---
 
 ## Manual verification
+
+### Happy path
+
+- As an anonymous visitor, search and select a passage, open the list form, enter a name, and save the form. Confirm the explanatory prompt offers signup and login. Close it and confirm no quote or tag was created.
+- Repeat through signup and login separately. After success, confirm the same search, result page, volume filter, selected passage, scroll position, and list name return. Confirm nothing has been saved yet. Reopen the list form and confirm `POST /api/quotes` returns `201`, the quote appears once, and the trimmed list name is attached.
+
+### Edge cases
+
+- Cause a signup or login error, then return to the search. Confirm the auth form showed its error and the same selection/name can still be resumed.
+- Submit the save action repeatedly or navigate back and forward through the auth flow. Confirm only one `POST /api/quotes` is sent for a single explicit confirmation and the quote appears once.
+- Dismiss either the list form or authentication prompt via close, Escape, or backdrop. Confirm no API write occurs.
+
+### Validation errors
+
+- Submit a name already present on the account, including different casing: `POST /api/quotes` returns `409`; the form stays open with the name intact and no quote is created.
+- Submit a whitespace-only `newTagName` directly to `POST /api/quotes`: expect `400` and no quote or tag write.
+- Submit a unique list name with leading/trailing spaces: expect `201` and the returned tag name trimmed.
+- Call `POST /api/quotes` without a session: expect `401`.
 
 - Open the quote tag picker, select twenty tags, and confirm that further existing tags and new tag creation are disabled while selected tags can still be removed. Open an existing quote with twenty tags and confirm tag additions are disabled while removals remain available.
 - Submit a quote request with twenty tags and confirm it succeeds; submit one with twenty-one tags and confirm it returns `400` without creating a quote or tags.

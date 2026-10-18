@@ -6,15 +6,16 @@ import styles from './SearchForm.module.css'
 const { q: queryConstraints } = validationConstraints.search
 
 interface SearchFormProps {
+  initialValue?: string
   onSubmit: (query: string) => void
 }
 
 // No minimum-length validation here on purpose — a short/empty query is meaningful (it's how a
 // saved-citations text filter gets cleared, see SearchPage). The 2-character floor only applies to
 // corpus search, and that's already handled there (empty-state placeholder, no request fired).
-export default function SearchForm({ onSubmit }: SearchFormProps) {
+export default function SearchForm({ initialValue = '', onSubmit }: SearchFormProps) {
   const { t } = useTranslation()
-  const [value, setValue] = useState('')
+  const [value, setValue] = useState(initialValue)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

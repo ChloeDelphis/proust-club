@@ -15,6 +15,9 @@ export const validationConstraints = {
     },
     "tagNames": {
       "maxItems": 20
+    },
+    "newTagName": {
+      "maxLength": 50
     }
   },
   "AddTagRequest": {

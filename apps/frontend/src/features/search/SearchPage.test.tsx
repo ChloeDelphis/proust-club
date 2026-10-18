@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router'
 import type { ReactNode } from 'react'
 import SearchPage from './SearchPage'
 import * as searchApi from '../../api/search'
@@ -11,6 +12,9 @@ import * as paragraphApi from '../../api/paragraph'
 import { ApiError } from '../../api/client'
 import ToastProvider from '../../components/Toast/ToastProvider'
 import { quoteId } from '../quotes/TimelineBar/timelineTestFixtures'
+import GuestQuoteSaveProvider from './GuestQuoteSaveProvider'
+import { GuestQuoteSaveContext } from './guestQuoteSaveContext'
+import type { GuestQuoteSaveDraft } from './guestQuoteSaveContext'
 
 vi.mock('../../api/search')
 vi.mock('../../api/auth')
@@ -24,7 +28,11 @@ function wrapper({ children }: { children: ReactNode }) {
   })
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>{children}</ToastProvider>
+      <MemoryRouter>
+        <GuestQuoteSaveProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </GuestQuoteSaveProvider>
+      </MemoryRouter>
     </QueryClientProvider>
   )
 }
@@ -59,6 +67,35 @@ beforeEach(() => {
 })
 
 describe('SearchPage', () => {
+  it('restores the guest draft search, page, and volume after authentication', async () => {
+    vi.mocked(searchApi.searchParagraphs).mockResolvedValue(mockResponse)
+    const draft: GuestQuoteSaveDraft = {
+      paragraphId: mockHit.paragraphId, start: 0, end: 9, selectedText: 'Longtemps', listName: 'Combray',
+      query: 'Longtemps', page: 2, volumeId: 1, scrollY: 0,
+    }
+    function resumeWrapper({ children }: { children: ReactNode }) {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      return (
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <GuestQuoteSaveContext.Provider value={{ draft, setDraft: vi.fn(), clearDraft: vi.fn() }}>
+              <ToastProvider>{children}</ToastProvider>
+            </GuestQuoteSaveContext.Provider>
+          </MemoryRouter>
+        </QueryClientProvider>
+      )
+    }
+
+    render(<SearchPage />, { wrapper: resumeWrapper })
+
+    expect(screen.getByRole('searchbox')).toHaveValue('Longtemps')
+    await screen.findByText(/Du côté de chez Swann/)
+    expect(searchApi.searchParagraphs).toHaveBeenCalledWith(
+      { q: 'Longtemps', volumeId: 1, page: 2, size: 10 },
+      expect.any(AbortSignal),
+    )
+  })
+
   it('affiche les résultats après une recherche', async () => {
     vi.mocked(searchApi.searchParagraphs).mockResolvedValue(mockResponse)
 

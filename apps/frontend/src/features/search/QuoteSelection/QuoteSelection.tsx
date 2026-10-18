@@ -1,21 +1,37 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../auth/useCurrentUser'
+import { ApiError } from '../../../api/client'
 import { useToast } from '../../../components/Toast/useToast'
 import { computeSelectionPhase } from '../computeSelectionPhase'
 import { buildHighlightSegments } from '../paragraphSegments'
 import { useCreateQuoteMutation } from '../useCreateQuoteMutation'
 import TagPickerPopup from '../TagPickerPopup/TagPickerPopup'
+import AuthenticationPrompt from '../TagPickerPopup/AuthenticationPrompt'
+import { createRangeForOffsets } from '../selectionRangeOffset'
+import { useGuestQuoteSave } from '../useGuestQuoteSave'
 import type { QuoteSelectionProps, Phase } from './QuoteSelection.types'
 import styles from './QuoteSelection.module.css'
 
-export default function QuoteSelection({ paragraphId, text, highlightRange }: QuoteSelectionProps) {
+export default function QuoteSelection({ paragraphId, text, highlightRange, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null } }: QuoteSelectionProps) {
   const { t } = useTranslation()
-  const { data: currentUser } = useCurrentUser()
+  const { data: currentUser, isPending: isUserPending } = useCurrentUser()
+  const navigate = useNavigate()
+  const { setDraft, clearDraft } = useGuestQuoteSave()
   const isConnected = currentUser !== null && currentUser !== undefined
+  const isAuthResolved = !isUserPending
   const showToast = useToast()
   const containerRef = useRef<HTMLParagraphElement>(null)
+  const saveInFlightRef = useRef(false)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
+  const phaseRef = useRef(phase)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  function updatePhase(next: Phase) {
+    phaseRef.current = next
+    setPhase(next)
+  }
 
   // A slow save can resolve after this instance has unmounted (e.g. the user changed the search
   // query or page while it was in flight) — `createQuoteMutation`'s callbacks are plain functions,
@@ -48,16 +64,30 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
     function handleSelectionChange() {
       const container = containerRef.current
       const selection = window.getSelection()
-      setPhase(current => computeSelectionPhase(current, container, selection, text))
+      const nextPhase = computeSelectionPhase(phaseRef.current, container, selection, text)
+      updatePhase(nextPhase)
+      if (resumeDraft && nextPhase.kind === 'selected'
+        && (nextPhase.start !== resumeDraft.start || nextPhase.end !== resumeDraft.end)) clearDraft()
     }
 
     document.addEventListener('selectionchange', handleSelectionChange)
     return () => document.removeEventListener('selectionchange', handleSelectionChange)
-  }, [text])
+  }, [text, resumeDraft, clearDraft])
+
+  useEffect(() => {
+    if (!resumeDraft || resumeDraft.paragraphId !== paragraphId || !containerRef.current) return
+    const range = createRangeForOffsets(containerRef.current, resumeDraft.start, resumeDraft.end)
+    if (!range || range.toString() !== resumeDraft.selectedText) return
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+    document.dispatchEvent(new Event('selectionchange'))
+    if (resumeDraft.scrollY > 0) window.scrollTo({ top: resumeDraft.scrollY })
+  }, [paragraphId, resumeDraft, text])
 
   function handleSaveClick() {
     if (phase.kind !== 'selected') return
-    setPhase({ kind: 'tagPanel', start: phase.start, end: phase.end })
+    updatePhase({ kind: 'tagPanel', start: phase.start, end: phase.end })
   }
 
   // The native selection is deliberately left intact while the tag panel is open (see the
@@ -65,22 +95,45 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
   // visible highlight with no menu to act on it.
   function resetToIdle() {
     if (isMountedRef.current) window.getSelection()?.removeAllRanges()
-    setPhase({ kind: 'idle' })
+    updatePhase({ kind: 'idle' })
+    setSaveError(null)
   }
 
-  function handleSave(tagNames: string[]) {
-    if (phase.kind !== 'tagPanel') return
+  function handleSave(tagNames: string[], newTagName?: string) {
+    if (phase.kind !== 'tagPanel' || saveInFlightRef.current) return
     const { start, end } = phase
+    if (!isConnected) {
+      if (newTagName === undefined || !newTagName.trim()) return
+      setDraft({
+        paragraphId, start, end, selectedText: text.slice(start, end), listName: newTagName.trim(),
+        query: searchContext.query, page: searchContext.page, volumeId: searchContext.volumeId, scrollY: window.scrollY,
+      })
+      updatePhase({ kind: 'authPrompt', start, end })
+      return
+    }
+
+    setSaveError(null)
+    saveInFlightRef.current = true
     createQuoteMutation.mutate(
-      { paragraphId, startOffset: start, endOffset: end, selectedText: text.slice(start, end), tagNames },
+      {
+        paragraphId, startOffset: start, endOffset: end, selectedText: text.slice(start, end), tagNames,
+        ...(newTagName === undefined ? {} : { newTagName: newTagName.trim() }),
+      },
       {
         onSuccess: () => {
+          saveInFlightRef.current = false
           showToast(t('quoteSelection.savedToast'))
+          clearDraft()
           resetToIdle()
         },
-        onError: () => {
+        onError: error => {
+          saveInFlightRef.current = false
+          if (newTagName !== undefined && error instanceof ApiError && error.status === 409) {
+            setSaveError(t('quoteSelection.duplicateListNameError'))
+            return
+          }
           showToast(t('quoteSelection.saveErrorToast'))
-          setPhase({ kind: 'selected', start, end })
+          updatePhase({ kind: 'selected', start, end })
         },
       },
     )
@@ -88,7 +141,18 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
 
   function handleCancelPanel() {
     if (phase.kind !== 'tagPanel') return
+    clearDraft()
     resetToIdle()
+  }
+
+  function handleCancelAuthPrompt() {
+    if (phase.kind !== 'authPrompt') return
+    clearDraft()
+    updatePhase({ kind: 'selected', start: phase.start, end: phase.end })
+  }
+
+  function continueToAuthentication(path: '/login' | '/register') {
+    navigate(path)
   }
 
   return (
@@ -103,7 +167,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
         )}
       </p>
 
-      {isConnected && phase.kind === 'selected' && (
+      {isAuthResolved && phase.kind === 'selected' && (
         <div className={styles.contextualMenu}>
           <button
             type="button"
@@ -120,7 +184,20 @@ export default function QuoteSelection({ paragraphId, text, highlightRange }: Qu
       )}
 
       {phase.kind === 'tagPanel' && (
-        <TagPickerPopup onSave={handleSave} onCancel={handleCancelPanel} isSaving={createQuoteMutation.isPending} />
+        <TagPickerPopup
+          onSave={handleSave}
+          onCancel={handleCancelPanel}
+          isSaving={createQuoteMutation.isPending}
+          initialNewListName={isConnected ? resumeDraft?.listName : ''}
+          errorMessage={saveError}
+        />
+      )}
+      {phase.kind === 'authPrompt' && (
+        <AuthenticationPrompt
+          onRegister={() => continueToAuthentication('/register')}
+          onLogin={() => continueToAuthentication('/login')}
+          onCancel={handleCancelAuthPrompt}
+        />
       )}
     </div>
   )

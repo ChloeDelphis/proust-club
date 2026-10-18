@@ -1,4 +1,4 @@
-import { characterOffsetForRangeBoundary, getSelectionOffsets } from './selectionRangeOffset'
+import { characterOffsetForRangeBoundary, createRangeForOffsets, getSelectionOffsets } from './selectionRangeOffset'
 
 // Mirrors how QuoteSelection actually renders a paragraph's segments: every run (plain or
 // highlighted) is wrapped in its own element (<span> or <mark>) — there are no bare text-node
@@ -104,5 +104,21 @@ describe('getSelectionOffsets', () => {
 
     expect(getSelectionOffsets(container, range)).toBeNull()
     outside.remove()
+  })
+})
+
+describe('createRangeForOffsets', () => {
+  it('rebuilds a native range across highlighted and plain text nodes', () => {
+    const { container } = buildParagraph()
+    const range = createRangeForOffsets(container, 6, 11)
+
+    expect(range?.toString()).toBe('world')
+  })
+
+  it('rejects empty or out-of-bounds offsets', () => {
+    const { container } = buildParagraph()
+
+    expect(createRangeForOffsets(container, 6, 6)).toBeNull()
+    expect(createRangeForOffsets(container, 0, 18)).toBeNull()
   })
 })
