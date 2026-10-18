@@ -63,7 +63,12 @@
   "quoteSelection": {
     "savedToast": "Citation enregistrée.",
     "saveErrorToast": "La citation n'a pas pu être enregistrée.",
-    "saveButton": "Sauvegarder"
+    "saveButton": "Sauvegarder",
+    "authenticationPromptTitle": "Pour sauvegarder votre citation",
+    "authenticationPromptMessage": "Créez un compte ou connectez-vous pour continuer. Votre sélection et le nom de la liste seront conservés pendant cette étape. Rien ne sera enregistré avant que vous confirmiez l’ajout après votre retour.",
+    "registerButton": "S’inscrire",
+    "loginButton": "Se connecter",
+    "duplicateListNameError": "Ce nom de liste est déjà utilisé. Choisissez un autre nom."
   },
   "tagPicker": {
     "ariaLabel": "Choisir des tags",
@@ -73,7 +78,8 @@
     "searchAriaLabel": "Chercher un tag",
     "createButton": "Créer « {{name}} »",
     "maxTagsReached": "Maximum : {{max}} tags par citation.",
-    "saveButton": "Enregistrer"
+    "saveButton": "Enregistrer",
+    "newListLabel": "Nom de la liste"
   },
   "auth": {
     "passwordCompromisedError": "Ce mot de passe est trop commun. Choisissez-en un autre."

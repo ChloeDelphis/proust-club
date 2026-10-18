@@ -27,7 +27,11 @@ public record CreateQuoteSelectionRequest(
 
         @Schema(description = "Tag names to attach, created if they don't exist yet for this user. Optional — a quote can be saved without any tag.")
         @Size(max = MAX_TAGS_PER_QUOTE)
-        List<@NotBlank @Size(max = 50) String> tagNames
+        List<@NotBlank @Size(max = 50) String> tagNames,
+
+        @Schema(description = "Optional tag name that must be newly created. A name already used by this user returns 409.")
+        @Size(max = 50)
+        String newTagName
 ) {
     public static final int MAX_TAGS_PER_QUOTE = 20;
 }

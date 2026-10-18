@@ -12,11 +12,12 @@ import styles from './TagPickerContent.module.css'
 // The tag search/select/create UI, with no opinion on how it's framed (own Dialog vs. embedded
 // inline in another layout) — TagPickerPopup wraps this in its own Dialog for the QuoteSelection
 // flow; a two-column detail modal's side panel embeds it directly instead.
-export default function TagPickerContent({ onSave, isSaving }: TagPickerContentProps) {
+export default function TagPickerContent({ onSave, isSaving, initialNewListName, errorMessage }: TagPickerContentProps) {
   const { t } = useTranslation()
-  const { data: tags, isPending, isError } = useTags()
+  const { data: tags, isPending, isError } = useTags(initialNewListName === undefined)
   const [search, setSearch] = useState('')
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
+  const [newListName, setNewListName] = useState(initialNewListName ?? '')
   const tagLimitReached = selectedNames.size >= MAX_TAGS_PER_QUOTE
 
   const { matches: filteredTags, canCreate } = useTagSearch(tags ?? [], search)
@@ -41,6 +42,30 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
 
   return (
     <>
+      {initialNewListName !== undefined ? (
+        <>
+          <label className={styles.searchLabel}>
+            {t('tagPicker.newListLabel')}
+            <input
+              type="text"
+              value={newListName}
+              onChange={event => setNewListName(event.target.value)}
+              className={styles.searchInput}
+              maxLength={MAX_TAG_NAME_LENGTH}
+            />
+          </label>
+          {errorMessage && <ErrorMessage message={errorMessage} />}
+          <button
+            type="button"
+            className={styles.saveButton}
+            disabled={isSaving || newListName.trim().length === 0}
+            onClick={() => onSave([], newListName.trim())}
+          >
+            {t('tagPicker.saveButton')}
+          </button>
+        </>
+      ) : (
+        <>
       {selectedNames.size > 0 && (
         <ul className={styles.selectedList}>
           {Array.from(selectedNames).map(name => (
@@ -107,6 +132,8 @@ export default function TagPickerContent({ onSave, isSaving }: TagPickerContentP
       >
         {t('tagPicker.saveButton')}
       </button>
+        </>
+      )}
     </>
   )
 }

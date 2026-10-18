@@ -1,6 +1,7 @@
 import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import type { ReactNode } from 'react'
 import QuoteSelection from './QuoteSelection'
 import * as authApi from '../../../api/auth'
@@ -9,6 +10,8 @@ import * as quoteApi from '../../../api/quote'
 import * as selectionRangeOffset from '../selectionRangeOffset'
 import { ApiError } from '../../../api/client'
 import ToastProvider from '../../../components/Toast/ToastProvider'
+import GuestQuoteSaveProvider from '../GuestQuoteSaveProvider'
+import { useGuestQuoteSave } from '../useGuestQuoteSave'
 
 vi.mock('../../../api/auth')
 vi.mock('../../../api/tag')
@@ -19,7 +22,11 @@ function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>{children}</ToastProvider>
+      <MemoryRouter>
+        <GuestQuoteSaveProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </GuestQuoteSaveProvider>
+      </MemoryRouter>
     </QueryClientProvider>
   )
 }
@@ -56,6 +63,11 @@ function fakeSelection(collapsed: boolean): Selection {
   } as unknown as Selection
 }
 
+function DraftProbe() {
+  const { draft } = useGuestQuoteSave()
+  return <output data-testid="auth-route-draft">{draft ? `${draft.listName}|${draft.query}|${draft.page}|${draft.volumeId}` : 'empty'}</output>
+}
+
 function setSelection(rawOffsets: { start: number; end: number } | null) {
   if (rawOffsets === null) {
     vi.spyOn(window, 'getSelection').mockReturnValue(fakeSelection(true))
@@ -75,14 +87,129 @@ beforeEach(() => {
 })
 
 describe('QuoteSelection — not connected', () => {
-  it('shows the plain highlighted text and no contextual menu, even with a selection', async () => {
+  it('shows the contextual menu for an anonymous visitor with a selection', async () => {
     vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
     render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
 
     expect(await screen.findByText('world')).toBeInTheDocument()
     setSelection({ start: 0, end: 5 })
 
-    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
+  })
+
+  it('asks the visitor to authenticate and does not save when the prompt is dismissed', async () => {
+    vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
+    setSelection({ start: 8, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Nom de la liste' }), ' Combray ')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(await screen.findByText(/Créez un compte ou connectez-vous/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'S’inscrire' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Se connecter' })).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+
+    expect(quoteApi.createQuote).not.toHaveBeenCalled()
+  })
+
+  it('keeps the trimmed draft in memory while navigating to login', async () => {
+    vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
+    function flowWrapper({ children }: { children: ReactNode }) {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      return (
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/']}>
+            <GuestQuoteSaveProvider>
+              <ToastProvider>
+                <Routes>
+                  <Route path="/" element={children} />
+                  <Route path="/login" element={<DraftProbe />} />
+                </Routes>
+              </ToastProvider>
+            </GuestQuoteSaveProvider>
+          </MemoryRouter>
+        </QueryClientProvider>
+      )
+    }
+
+    render(
+      <QuoteSelection
+        paragraphId={PARAGRAPH_ID}
+        text={TEXT}
+        highlightRange={HIGHLIGHT}
+        searchContext={{ query: 'madeleine', page: 1, volumeId: 2 }}
+      />,
+      { wrapper: flowWrapper },
+    )
+    await screen.findByText('world')
+    setSelection({ start: 8, end: 9 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    await userEvent.type(await screen.findByRole('textbox', { name: 'Nom de la liste' }), ' Combray ')
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Se connecter' }))
+
+    expect(await screen.findByTestId('auth-route-draft')).toHaveTextContent('Combray|madeleine|1|2')
+    expect(quoteApi.createQuote).not.toHaveBeenCalled()
+  })
+
+  it('restores the saved selection and list name without saving until the user confirms again', async () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    vi.mocked(quoteApi.createQuote).mockResolvedValue({
+      id: QUOTE_ID, paragraphId: PARAGRAPH_ID, startOffset: 6, endOffset: 11,
+      selectedText: 'world', comment: null, tags: [], createdAt: '2026-08-16T00:00:00Z',
+    })
+    vi.mocked(selectionRangeOffset.createRangeForOffsets).mockReturnValue({ toString: () => 'world' } as Range)
+    vi.mocked(selectionRangeOffset.getSelectionOffsets).mockReturnValue({ start: 6, end: 11 })
+    vi.spyOn(window, 'getSelection').mockReturnValue({
+      ...fakeSelection(false), addRange: vi.fn(),
+    } as unknown as Selection)
+    const resumeDraft = {
+      paragraphId: PARAGRAPH_ID, start: 6, end: 11, selectedText: 'world', listName: 'Combray',
+      query: 'madeleine', page: 2, volumeId: 1, scrollY: 300,
+    }
+    render(
+      <QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} resumeDraft={resumeDraft} />,
+      { wrapper },
+    )
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    const nameInput = await screen.findByRole('textbox', { name: 'Nom de la liste' })
+    expect(nameInput).toHaveValue('Combray')
+    expect(quoteApi.createQuote).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(quoteApi.createQuote).toHaveBeenCalledWith(expect.objectContaining({
+      paragraphId: PARAGRAPH_ID,
+      startOffset: 6,
+      endOffset: 11,
+      selectedText: 'world',
+      newTagName: 'Combray',
+    }))
+  })
+
+  it('keeps the draft open and shows the backend duplicate-name error', async () => {
+    vi.mocked(quoteApi.createQuote).mockRejectedValue(new ApiError(409))
+    vi.mocked(selectionRangeOffset.createRangeForOffsets).mockReturnValue({ toString: () => 'world' } as Range)
+    vi.mocked(selectionRangeOffset.getSelectionOffsets).mockReturnValue({ start: 6, end: 11 })
+    vi.spyOn(window, 'getSelection').mockReturnValue({
+      ...fakeSelection(false), addRange: vi.fn(),
+    } as unknown as Selection)
+    const resumeDraft = {
+      paragraphId: PARAGRAPH_ID, start: 6, end: 11, selectedText: 'world', listName: 'Combray',
+      query: 'madeleine', page: 0, volumeId: null, scrollY: 0,
+    }
+    render(
+      <QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} resumeDraft={resumeDraft} />,
+      { wrapper },
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Enregistrer' }))
+
+    expect(await screen.findByText('Ce nom de liste est déjà utilisé. Choisissez un autre nom.')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Nom de la liste' })).toHaveValue('Combray')
   })
 })
 

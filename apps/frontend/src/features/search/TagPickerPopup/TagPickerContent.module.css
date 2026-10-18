@@ -40,6 +40,12 @@
   margin-bottom: var(--space-3);
 }
 
+.searchLabel {
+  display: block;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+}
+
 .tagList {
   list-style: none;
   padding: 0;

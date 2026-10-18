@@ -461,6 +461,8 @@ export interface components {
             selectedText: string;
             /** @description Tag names to attach, created if they don't exist yet for this user. Optional — a quote can be saved without any tag. */
             tagNames?: string[];
+            /** @description Optional tag name that must be newly created. A name already used by this user returns 409. */
+            newTagName?: string;
         };
         /** @description A saved quote selection */
         QuoteSelectionResponse: {
@@ -984,6 +986,15 @@ export interface operations {
             };
             /** @description Paragraph not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description newTagName already exists for the authenticated user */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -102,6 +102,84 @@ class QuoteControllerTest {
     }
 
     @Test
+    void createQuoteWithNewTagTrimsNameAndAttachesIt() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        var body = new LinkedHashMap<String, Object>();
+        body.put("paragraphId", paragraphId);
+        body.put("startOffset", 3);
+        body.put("endOffset", 12);
+        body.put("selectedText", "madeleine");
+        body.put("newTagName", "  Combray  ");
+
+        mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tags.length()").value(1))
+                .andExpect(jsonPath("$.tags[0].name").value("Combray"));
+    }
+
+    @Test
+    void createQuoteWithExistingNewTagReturnsConflictWithoutSavingQuote() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        mockMvc.perform(post("/api/tags").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Combray\"}"))
+                .andExpect(status().isCreated());
+        var body = new LinkedHashMap<String, Object>();
+        body.put("paragraphId", paragraphId);
+        body.put("startOffset", 3);
+        body.put("endOffset", 12);
+        body.put("selectedText", "madeleine");
+        body.put("newTagName", "combray");
+
+        mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(get("/api/quotes").session(session))
+                .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void createQuoteWithBlankNewTagNameReturnsBadRequestWithoutSavingQuote() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        var body = new LinkedHashMap<String, Object>();
+        body.put("paragraphId", paragraphId);
+        body.put("startOffset", 3);
+        body.put("endOffset", 12);
+        body.put("selectedText", "madeleine");
+        body.put("newTagName", "   ");
+
+        mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/quotes").session(session))
+                .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void createQuoteWithMoreThanMaximumCombinedTagsReturnsBadRequest() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        var body = new LinkedHashMap<String, Object>();
+        body.put("paragraphId", paragraphId);
+        body.put("startOffset", 3);
+        body.put("endOffset", 12);
+        body.put("selectedText", "madeleine");
+        body.put("tagNames", IntStream.range(0, CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE)
+                .mapToObj(index -> "Tag " + index).toList());
+        body.put("newTagName", "Combray");
+
+        mockMvc.perform(post("/api/quotes").with(csrf()).session(session).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/quotes").session(session))
+                .andExpect(jsonPath("$.total").value(0));
+        mockMvc.perform(get("/api/tags").session(session))
+                .andExpect(jsonPath("$[0]").doesNotExist());
+    }
+
+    @Test
     void createQuoteWithMaximumNumberOfTagsSucceeds() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
         var tagNames = IntStream.rangeClosed(1, CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE)

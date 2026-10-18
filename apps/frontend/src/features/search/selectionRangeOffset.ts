@@ -81,3 +81,36 @@ export function getSelectionOffsets(container: HTMLElement, range: Range): { sta
 
   return { start, end: start + range.toString().length }
 }
+
+/** Rebuilds a native selection range from character offsets in the rendered paragraph. */
+export function createRangeForOffsets(container: HTMLElement, start: number, end: number): Range | null {
+  if (start < 0 || start >= end || end > (container.textContent?.length ?? 0)) return null
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
+  let total = 0
+  let startNode: Text | null = null
+  let startOffset = 0
+  let endNode: Text | null = null
+  let endOffset = 0
+  let current = walker.nextNode() as Text | null
+
+  while (current) {
+    const length = current.textContent?.length ?? 0
+    if (startNode === null && start <= total + length) {
+      startNode = current
+      startOffset = start - total
+    }
+    if (end <= total + length) {
+      endNode = current
+      endOffset = end - total
+      break
+    }
+    total += length
+    current = walker.nextNode() as Text | null
+  }
+
+  if (!startNode || !endNode) return null
+  const range = document.createRange()
+  range.setStart(startNode, startOffset)
+  range.setEnd(endNode, endOffset)
+  return range
+}

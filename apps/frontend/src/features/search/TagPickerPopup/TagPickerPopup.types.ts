@@ -1,8 +1,10 @@
 export interface TagPickerPopupProps {
   /** "Enregistrer" clicked — save the quote with these tag names (possibly none). */
-  onSave: (tagNames: string[]) => void
+  onSave: (tagNames: string[], newTagName?: string) => void
   /** Closed via the ×, a click outside, or Escape — cancel entirely, nothing is saved. */
   onCancel: () => void
   /** The save request triggered by a previous "Enregistrer" click is still in flight. */
   isSaving: boolean
+  initialNewListName?: string
+  errorMessage?: string | null
 }

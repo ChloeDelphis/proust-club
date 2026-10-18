@@ -21,6 +21,7 @@ import EmptyState from '../../components/EmptyState/EmptyState'
 import styles from './SearchPage.module.css'
 import { useCorpusSearchQuery } from './useCorpusSearchQuery'
 import { useSavedQuotesQuery } from './useSavedQuotesQuery'
+import { useGuestQuoteSave } from './useGuestQuoteSave'
 
 // The text filter takes priority over "no tag selected" in the message: a query present means the
 // empty result is about the search, not about the (lack of a) tag filter.
@@ -35,13 +36,14 @@ function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
 // defaulting to corpus search. Not route-split: this is one page, matching the reference mockup.
 export default function SearchPage() {
   const { t } = useTranslation()
+  const { draft } = useGuestQuoteSave()
   const { data: currentUser } = useCurrentUser()
   const isConnected = currentUser !== null && currentUser !== undefined
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(() => draft?.query ?? '')
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
   const [tagId, setTagId] = useState<string | null>(null)
-  const [page, setPage] = useState(0)
-  const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
+  const [page, setPage] = useState(() => draft?.page ?? 0)
+  const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(() => draft?.volumeId ?? null)
   // The selected quote is a snapshot owned by the modal, not a pointer into a filtered query.
   // It must remain available if removing a tag makes the quote disappear from the frieze/list, or
   // if the frieze request fails after a quote was opened from the saved-citations list.
@@ -128,7 +130,14 @@ export default function SearchPage() {
         <ResultList
           results={corpusQuery.data.results}
           getKey={hit => hit.paragraphId}
-          renderItem={hit => <ParagraphCard hit={hit} onOpenDetail={setDetailHit} />}
+          renderItem={hit => (
+            <ParagraphCard
+              hit={hit}
+              onOpenDetail={setDetailHit}
+              resumeDraft={draft?.paragraphId === hit.paragraphId ? draft : null}
+              searchContext={{ query, page, volumeId: selectedVolumeId }}
+            />
+          )}
           total={corpusQuery.data.total}
           page={corpusQuery.data.page}
           size={corpusQuery.data.size}
@@ -176,7 +185,7 @@ export default function SearchPage() {
           </aside>
         )}
         <div>
-          <SearchForm onSubmit={handleSearch} />
+          <SearchForm key={query} initialValue={query} onSubmit={handleSearch} />
           {isConnected && (
             <TagFilterBar
               scope={scope}
