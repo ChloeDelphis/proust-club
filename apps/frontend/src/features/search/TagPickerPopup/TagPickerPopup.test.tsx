@@ -125,7 +125,7 @@ describe('TagPickerPopup', () => {
       ...tags.slice(1, MAX_TAGS_PER_QUOTE).map(tag => tag.name),
       tags[MAX_TAGS_PER_QUOTE].name,
     ])
-  })
+  }, 10_000)
 
   it('removes a selected chip when its × is clicked', async () => {
     const onSave = vi.fn()

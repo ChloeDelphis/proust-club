@@ -16,6 +16,8 @@ Two controls exist, answering two different questions. Neither replaces the othe
 - No CI wiring for the check itself — CI trusts the already-committed, already-reviewed lockfile (see [ADR-008](ADR-008-supply-chain-security.md)).
 - No finding ≠ safe — only "not flagged as malicious in OSV as of this check."
 
+Dependency overrides for vulnerable transitive packages live in `apps/frontend/pnpm-workspace.yaml`, never in `package.json`. Current security overrides include `zod@4.6.7`, which patches the High-severity advisory reported through the frontend lint tooling.
+
 ## 2. Known vulnerabilities — `pnpm audit`
 
 **Question:** does a publicly known vulnerability (CVE/GHSA) apply to the dependency tree that's already installed?
@@ -43,6 +45,12 @@ The threshold lives **only** in the `audit:security` script in `apps/frontend/pa
 **Weekly run output:** each run writes a one-line pass/fail summary to the workflow's GitHub Actions summary page (no need to open the logs to see the result), and uploads the full `pnpm audit` output — both the blocking High/Critical result and a second, always-informational full-severity run (Low/Moderate included, never blocking) — as a downloadable `pnpm-audit-report` artifact.
 
 **Registry/network failure:** `pnpm audit` fails (non-zero exit) by default if the registry can't be reached — `--ignore-registry-errors` is deliberately never used in this project, so a failed check is never mistaken for "nothing found." A vulnerability finding and an audit failure both produce a non-zero exit; the command's output text is what distinguishes them (visible in CI logs).
+
+## 3. Newly published versions — pnpm `minimumReleaseAge`
+
+`apps/frontend/pnpm-workspace.yaml` sets `minimumReleaseAge: 1440` (24 hours) with `minimumReleaseAgeStrict: true`. For an urgent fix that is itself newer than 24 hours, use a narrowly scoped `minimumReleaseAgeExclude` entry for the exact package/version and remove it once the regular window has elapsed; do not disable the age check globally.
+
+`pnpm-workspace.yaml` can exclude specific GitHub Security Advisories from `pnpm audit` with the `audit.ignore` setting. Record the reason beside each excluded GHSA in that file.
 
 ## Complementary, not redundant
 
