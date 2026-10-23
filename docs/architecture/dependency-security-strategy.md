@@ -50,9 +50,7 @@ The threshold lives **only** in the `audit:security` script in `apps/frontend/pa
 
 `apps/frontend/pnpm-workspace.yaml` sets `minimumReleaseAge: 1440` (24 hours) with `minimumReleaseAgeStrict: true`. For an urgent fix that is itself newer than 24 hours, use a narrowly scoped `minimumReleaseAgeExclude` entry for the exact package/version and remove it once the regular window has elapsed; do not disable the age check globally.
 
-### Audited exceptions
-
-`pnpm-workspace.yaml` excludes [GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8) and [GHSA-xp26-3454-mjgp](https://github.com/advisories/GHSA-xp26-3454-mjgp), both reported through `@vitest/mocker@4.1.11`. Their attack paths require `mockerPlugin()` or `interceptorPlugin()` to register unauthenticated mock WebSocket handlers. The repository's `vite.config.ts` enables only the React plugin, and the Vitest suite uses `jsdom`; these vulnerable handlers are not registered by the current configuration. Reassess and remove these exclusions if either plugin is introduced.
+`pnpm-workspace.yaml` can exclude specific GitHub Security Advisories from `pnpm audit` with the `audit.ignore` setting. Record the reason beside each excluded GHSA in that file.
 
 ## Complementary, not redundant
 
