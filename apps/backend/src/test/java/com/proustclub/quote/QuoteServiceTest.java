@@ -2,6 +2,8 @@ package com.proustclub.quote;
 
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import com.proustclub.quote.dto.TagResponse;
+import com.proustclub.volume.VolumeService;
+import com.proustclub.volume.dto.VolumeResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,6 +34,9 @@ class QuoteServiceTest {
 
     @Mock
     QuoteTimelineRepository timelineRepository;
+
+    @Mock
+    VolumeService volumeService;
 
     @Mock
     QuoteTagRepository quoteTagRepository;
@@ -149,11 +154,11 @@ class QuoteServiceTest {
                 new TimelineEntry(quoteId2, 20, 150, 2, "Un", null, Instant.now())
         );
         var volumes = List.of(
-                new VolumeRange(1, "Du Côté de Chez Swann", 1, 1, 103),
-                new VolumeRange(2, "À l'Ombre des Jeunes Filles en Fleurs", 2, 104, 183)
+                new VolumeResponse(1, "Du Côté de Chez Swann", 1, 1, 103),
+                new VolumeResponse(2, "À l'Ombre des Jeunes Filles en Fleurs", 2, 104, 183)
         );
         when(timelineRepository.findByUserId(userId, null, null)).thenReturn(entries);
-        when(timelineRepository.findVolumesWithPageRange()).thenReturn(volumes);
+        when(volumeService.list()).thenReturn(volumes);
         when(quoteTagRepository.findByQuoteIds(List.of(quoteId1, quoteId2))).thenReturn(Map.of(quoteId1, List.of()));
 
         var response = service.getTimeline(userId, null, null);

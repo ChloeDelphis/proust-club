@@ -1,10 +1,12 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TimelineVolume } from '../../../api/quote'
+import type { VolumeResponse } from '../../../api/volume'
+import type { TimelineQuote } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
 import ErrorMessage from '../../../components/ErrorMessage/ErrorMessage'
 import QuoteHoverPreview from '../QuoteHoverPreview/QuoteHoverPreview'
 import { useTimeline } from '../useTimeline'
+import { useVolumes } from '../useVolumes'
 import { pageToPercent, positionTimelineQuotes } from './positionTimelineQuotes'
 import type { PageRange, TimelineGroup } from './positionTimelineQuotes'
 import type { TimelineBarProps } from './TimelineBar.types'
@@ -21,6 +23,8 @@ const BOOKMARK_HEIGHT_EXTENDED = 70
 const BOOKMARK_WIDTH = 8
 const PREVIEW_WIDTH = 220
 const PREVIEW_HEIGHT = 90
+const EMPTY_VOLUMES: VolumeResponse[] = []
+const EMPTY_QUOTES: TimelineQuote[] = []
 
 function percentToX(percent: number): number {
   return percent * (VIEWBOX_WIDTH / 100)
@@ -48,7 +52,7 @@ function VolumeZones({
   onSelect,
   t,
 }: {
-  volumes: TimelineVolume[]
+  volumes: VolumeResponse[]
   range: PageRange
   selectedVolumeId: number | null
   onSelect: (id: number) => void
@@ -99,7 +103,7 @@ function VolumeZones({
   )
 }
 
-function VolumeDelimiters({ volumes, range, isHidden }: { volumes: TimelineVolume[]; range: PageRange; isHidden: boolean }) {
+function VolumeDelimiters({ volumes, range, isHidden }: { volumes: VolumeResponse[]; range: PageRange; isHidden: boolean }) {
   const className = isHidden ? `${styles.delimiter} ${styles.isHidden}` : styles.delimiter
 
   return (
@@ -166,36 +170,39 @@ function Bookmarks({
   )
 }
 
-export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVolume, onOpenQuote }: TimelineBarProps) {
+export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId, onSelectVolume, onOpenQuote }: TimelineBarProps) {
   const { t } = useTranslation()
   const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
 
-  const { data, isPending, isError } = useTimeline(activeTagId)
+  const volumesQuery = useVolumes()
+  const timelineQuery = useTimeline(activeTagId, isConnected)
+  const volumes = volumesQuery.data ?? EMPTY_VOLUMES
+  const quotes = isConnected ? timelineQuery.data?.quotes ?? EMPTY_QUOTES : EMPTY_QUOTES
+  const isPending = volumesQuery.isPending || (isConnected && timelineQuery.isPending)
+  const isError = volumesQuery.isError || (isConnected && timelineQuery.isError)
 
-  // Hooks below must run unconditionally (before the isPending/isError/empty early returns),
-  // so each guards against a still-undefined `data` internally rather than skipping the hook.
+  // Hooks below must run unconditionally (before the isPending/isError/empty early returns).
   const volumesById = useMemo(
-    () => new Map<number, TimelineVolume>((data?.volumes ?? []).map(v => [v.id, v])),
-    [data?.volumes],
+    () => new Map<number, VolumeResponse>(volumes.map(v => [v.id, v])),
+    [volumes],
   )
   const selectedVolume = selectedVolumeId !== null ? volumesById.get(selectedVolumeId) : undefined
 
   const range = useMemo(() => {
-    if (!data || data.volumes.length === 0) return { minPage: 0, maxPage: 0 }
+    if (volumes.length === 0) return { minPage: 0, maxPage: 0 }
     return selectedVolume
       ? { minPage: selectedVolume.minPage, maxPage: selectedVolume.maxPage }
-      : { minPage: data.volumes[0].minPage, maxPage: data.volumes[data.volumes.length - 1].maxPage }
-  }, [data, selectedVolume])
+      : { minPage: volumes[0].minPage, maxPage: volumes[volumes.length - 1].maxPage }
+  }, [volumes, selectedVolume])
 
   const groups = useMemo(() => {
-    if (!data) return []
-    const visibleQuotes = selectedVolume ? data.quotes.filter(q => q.volumeId === selectedVolume.id) : data.quotes
+    const visibleQuotes = selectedVolume ? quotes.filter(q => q.volumeId === selectedVolume.id) : quotes
     return positionTimelineQuotes(visibleQuotes, range)
-  }, [data, selectedVolume, range])
+  }, [quotes, selectedVolume, range])
 
   if (isPending) return <Spinner />
   if (isError) return <ErrorMessage message={t('timelineBar.loadError')} />
-  if (data.volumes.length === 0) return null
+  if (volumes.length === 0) return null
 
   const hoveredGroup = groups.find(g => g.quotes[0].id === hoveredQuoteId)
 
@@ -206,11 +213,11 @@ export default function TimelineBar({ activeTagId, selectedVolumeId, onSelectVol
         viewBox={`0 0 ${VIEWBOX_WIDTH} 200`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={t('timelineBar.trackAriaLabel')}
+        aria-label={t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
       >
-        <VolumeZones volumes={data.volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} />
-        <VolumeDelimiters volumes={data.volumes} range={range} isHidden={selectedVolume !== undefined} />
-        <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} />
+        <VolumeZones volumes={volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} />
+        <VolumeDelimiters volumes={volumes} range={range} isHidden={selectedVolume !== undefined} />
+        {isConnected && <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} />}
 
         {hoveredGroup && (
           <foreignObject

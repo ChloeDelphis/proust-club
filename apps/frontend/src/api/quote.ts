@@ -3,6 +3,7 @@ import { assertVolumeIdInRange } from './volume'
 import { validationConstraints } from './generated/validationConstraints.generated'
 import type { operations } from './schema.generated'
 import type { TagResponse } from './tag'
+import type { VolumeResponse } from './volume'
 
 export type CreateQuoteParams = operations['create_1']['requestBody']['content']['application/json']
 export const MAX_TAGS_PER_QUOTE = validationConstraints.CreateQuoteSelectionRequest.tagNames.maxItems
@@ -79,14 +80,6 @@ export function deleteQuote(id: string, signal?: AbortSignal): Promise<void> {
 export type TimelineParams = NonNullable<operations['timeline']['parameters']['query']>
 
 // Same reasoning as QuoteSelectionResponse above: fields written by hand as non-optional.
-export type TimelineVolume = {
-  id: number
-  title: string
-  position: number
-  minPage: number
-  maxPage: number
-}
-
 export type TimelineQuote = {
   id: string
   paragraphId: number
@@ -99,7 +92,7 @@ export type TimelineQuote = {
 }
 
 export type TimelineResponse = {
-  volumes: TimelineVolume[]
+  volumes: VolumeResponse[]
   quotes: TimelineQuote[]
 }
 

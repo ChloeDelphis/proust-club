@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.proustclub.jooq.Tables.PARAGRAPHS;
-import static com.proustclub.jooq.Tables.VOLUMES;
 import static com.proustclub.jooq.Tables.QUOTE_SELECTIONS;
 
 @Repository
@@ -35,16 +34,6 @@ class QuoteTimelineRepository {
                         r.get(quoteSelections.ID), r.get(quoteSelections.PARAGRAPH_ID), r.get(paragraphs.PAGE_NUMBER),
                         r.get(paragraphs.VOLUME_ID), r.get(quoteSelections.SELECTED_TEXT),
                         r.get(quoteSelections.COMMENT), r.get(quoteSelections.CREATED_AT).toInstant()
-                ));
-    }
-
-    List<VolumeRange> findVolumesWithPageRange() {
-        return dsl.select(VOLUMES.ID, VOLUMES.TITLE, VOLUMES.POSITION, VOLUMES.MIN_PAGE, VOLUMES.MAX_PAGE)
-                .from(VOLUMES)
-                .orderBy(VOLUMES.POSITION)
-                .fetch(r -> new VolumeRange(
-                        r.get(VOLUMES.ID), r.get(VOLUMES.TITLE), r.get(VOLUMES.POSITION),
-                        r.get(VOLUMES.MIN_PAGE), r.get(VOLUMES.MAX_PAGE)
                 ));
     }
 }

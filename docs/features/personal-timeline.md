@@ -7,14 +7,19 @@ A graphical bar, shown to connected users on the unified search/citations page (
 ## Data flow
 
 ```
-GET /api/quotes/timeline?tagId=   (unpaginated — needs every quote at once to place every bookmark)
+GET /api/quotes/timeline?tagId=   (authenticated, unpaginated — needs every quote at once to place every bookmark)
   → QuoteController.timeline()
   → QuoteService.getTimeline(userId, tagId)
     → QuoteTimelineRepository.findByUserId  (quote_selections ⋈ paragraphs, ordered by paragraphs.position)
-    → QuoteTimelineRepository.findVolumesWithPageRange  (volumes.min_page/max_page — see below)
     → QuoteTagRepository.findByQuoteIds  (same batch pattern as list())
-  → TimelineResponse { volumes: TimelineVolume[7], quotes: TimelineQuote[] }
+  → TimelineResponse { volumes: VolumeResponse[7], quotes: TimelineQuote[] }
+
+GET /api/volumes (public structural metadata)
+  → VolumeController → VolumeService → VolumeRepository
+  → VolumeResponse[7] (no quote, bookmark, or tag data)
 ```
+
+The public volume endpoint supplies only the fixed structure needed to navigate and filter the corpus. The personal timeline endpoint remains authenticated and is fetched only when a session is present. Anonymous visitors therefore get the same frieze geometry and volume filters without loading personal data. The boundary is recorded in [ADR-017](../architecture/ADR-017-public-corpus-structure.md).
 
 `GET /api/quotes` (paginated, `size` ≤ 20) could never have served this: the timeline needs every saved quote in one response to place every bookmark, not one page of results.
 
@@ -28,7 +33,7 @@ FROM (SELECT volume_id, MIN(page_number), MAX(page_number) FROM paragraphs GROUP
 WHERE volumes.id = ranges.volume_id
 ```
 
-`findVolumesWithPageRange()` is then a plain `SELECT` of 7 already-computed rows — no aggregation at request time, at any scale. Page numbers are continuous across the whole corpus (e.g. tome 1 = pages 1–103, tome 7 = 434–486), never resetting per volume.
+`VolumeRepository` reads the 7 already-computed rows for the public endpoint — no aggregation at request time, at any scale. The personal timeline reuses those structural DTOs through `VolumeService` instead of querying volume metadata through its quote repository. Page numbers are continuous across the whole corpus (e.g. tome 1 = pages 1–103, tome 7 = 434–486), never resetting per volume.
 
 ## Response shape
 
@@ -48,7 +53,7 @@ WHERE volumes.id = ranges.volume_id
 
 ## Frontend
 
-**Layout** — `SearchPage` renders the frieze (`TimelineBar`) full-width above a two-column grid (`aside` 12rem / content `1fr`), with the volume list (`VolumeList`, `src/features/quotes/VolumeList/`) in the `aside`. All three (frieze, sidebar, `TagFilterBar`) are gated on `isConnected` — an anonymous visitor sees plain corpus search, nothing from this feature. `selectedVolumeId` is owned by `SearchPage` (not `TimelineBar` itself) and passed as a controlled prop to both `TimelineBar` and `VolumeList`, so a click in either one stays in sync with the other. Both components read the same timeline data independently via a shared hook, `useTimeline(activeTagId)` (`src/features/quotes/useTimeline.ts`) — same `queryKey`, deduplicated by TanStack Query into a single request, not prop-drilled.
+**Layout** — `SearchPage` renders the frieze (`TimelineBar`) full-width above a two-column grid (`aside` 12rem / content `1fr`), with the volume list (`VolumeList`, `src/features/quotes/VolumeList/`) in the `aside`. Frieze and volume list are public; tag and saved-citation controls remain gated on `isConnected`. `selectedVolumeId` is owned by `SearchPage` and passed as a controlled prop to both public controls. Both components use `useVolumes()` for structural metadata; `TimelineBar` also uses `useTimeline(activeTagId, isConnected)` so its personal-data query is disabled without a session. The anonymous frieze displays the tome structure only and filters corpus results. A future feature may let a visitor open a random page from a clicked point; that behavior is out of scope here.
 
 **Rendered as one SVG**, not absolutely-positioned HTML elements. This project's CSP forbids inline `style={{ ... }}` — bookmark position is a continuous value per quote (0–100% along the page range), which can't be expressed as a finite set of CSS classes. SVG geometry attributes (`x`, `width`, `y1`/`y2`, ...) aren't CSS and aren't covered by that restriction, and are the idiomatic tool for "plot points on an axis" regardless. `preserveAspectRatio="none"` on a `0 0 1000 200` viewBox stretches the same layout math to any real container width — no `getBoundingClientRect`/`ResizeObserver` needed anywhere.
 
@@ -66,6 +71,7 @@ WHERE volumes.id = ranges.volume_id
 
 ## Manual verification
 
+- **Anonymous structure and privacy:** without a session, confirm the frieze and tome list show all seven tomes with no bookmarks; `GET /api/volumes` returns only structure, `/api/quotes/timeline` returns `401`, and the browser makes no personal quote/tag requests.
 - **Select from sidebar:** choose a tome and confirm the frieze zooms to its page range and the active result list is filtered to the same tome.
 - **Select from frieze:** click another tome zone and confirm sidebar selection, frieze zoom, and result filter stay synchronized.
 - **Clear selection:** click the selected tome again in either control and confirm all bookmarks and results return.

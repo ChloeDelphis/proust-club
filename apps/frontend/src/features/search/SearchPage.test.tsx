@@ -9,6 +9,7 @@ import * as authApi from '../../api/auth'
 import * as quoteApi from '../../api/quote'
 import * as tagApi from '../../api/tag'
 import * as paragraphApi from '../../api/paragraph'
+import * as volumeApi from '../../api/volume'
 import { ApiError } from '../../api/client'
 import ToastProvider from '../../components/Toast/ToastProvider'
 import { quoteId } from '../quotes/TimelineBar/timelineTestFixtures'
@@ -21,6 +22,7 @@ vi.mock('../../api/auth')
 vi.mock('../../api/quote')
 vi.mock('../../api/tag')
 vi.mock('../../api/paragraph')
+vi.mock('../../api/volume')
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({
@@ -54,9 +56,15 @@ const mockResponse: searchApi.SearchResponse = {
   size: 10,
 }
 
+const mockVolumes: volumeApi.VolumeResponse[] = [
+  { id: 1, title: 'Du côté de chez Swann', position: 1, minPage: 1, maxPage: 103 },
+  { id: 2, title: 'À l’ombre des jeunes filles en fleurs', position: 2, minPage: 104, maxPage: 183 },
+]
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
+  vi.mocked(volumeApi.getVolumes).mockResolvedValue(mockVolumes)
   vi.mocked(paragraphApi.getParagraphContext).mockResolvedValue({
     paragraphId: mockHit.paragraphId,
     before: [],
@@ -89,7 +97,7 @@ describe('SearchPage', () => {
     render(<SearchPage />, { wrapper: resumeWrapper })
 
     expect(screen.getByRole('searchbox')).toHaveValue('Longtemps')
-    await screen.findByText(/Du côté de chez Swann/)
+    await screen.findByRole('article')
     expect(searchApi.searchParagraphs).toHaveBeenCalledWith(
       { q: 'Longtemps', volumeId: 1, page: 2, size: 10 },
       expect.any(AbortSignal),
@@ -104,7 +112,7 @@ describe('SearchPage', () => {
     await userEvent.type(screen.getByRole('searchbox'), 'Longtemps')
     await userEvent.click(screen.getByRole('button', { name: 'Chercher' }))
 
-    expect(await screen.findByText(/Du côté de chez Swann/)).toBeInTheDocument()
+    expect(await screen.findByRole('article')).toBeInTheDocument()
     expect(screen.getByText(/Longtemps/)).toBeInTheDocument()
     const resultLocation = /Du côté de chez Swann · Combray · p\. 1/
     expect(screen.getByText(resultLocation)).toBeInTheDocument()
@@ -121,7 +129,7 @@ describe('SearchPage', () => {
     await userEvent.type(screen.getByRole('searchbox'), 'petite madeleine')
     await userEvent.click(screen.getByRole('button', { name: 'Chercher' }))
 
-    await screen.findByText(/Du côté de chez Swann/)
+    await screen.findByRole('article')
 
     expect(searchApi.searchParagraphs).toHaveBeenCalledWith(
       { q: 'petite madeleine', page: 0, size: 10 },
@@ -158,13 +166,13 @@ describe('SearchPage', () => {
     render(<SearchPage />, { wrapper })
     await user.type(screen.getByRole('searchbox'), 'Longtemps')
     await user.click(screen.getByRole('button', { name: 'Chercher' }))
-    await screen.findByText(/Du côté de chez Swann/)
+    await screen.findByRole('article')
 
     await user.click(screen.getByRole('button', { name: 'Suivant →' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Mise à jour des résultats…')
     expect(screen.getByText('Longtemps').closest('section')).toHaveAttribute('aria-busy', 'true')
-    expect(screen.getByText(/Du côté de chez Swann/)).toBeInTheDocument()
+    expect(screen.getByRole('article')).toBeInTheDocument()
 
     expect(settleNextPage).toBeDefined()
     settleNextPage?.({
@@ -223,7 +231,7 @@ describe('SearchPage', () => {
     render(<SearchPage />, { wrapper })
     await user.type(screen.getByRole('searchbox'), 'Longtemps')
     await user.click(screen.getByRole('button', { name: 'Chercher' }))
-    await screen.findByText(/Du côté de chez Swann/)
+    await screen.findByRole('article')
 
     await user.click(screen.getByRole('button', { name: 'Effacer la recherche' }))
 
@@ -238,7 +246,7 @@ describe('SearchPage', () => {
     render(<SearchPage />, { wrapper })
     await userEvent.type(screen.getByRole('searchbox'), 'Longtemps')
     await userEvent.click(screen.getByRole('button', { name: 'Chercher' }))
-    await screen.findByText(/Du côté de chez Swann/)
+    await screen.findByRole('article')
 
     await user.click(screen.getByRole('button', { name: 'Voir le détail' }))
 
@@ -246,12 +254,32 @@ describe('SearchPage', () => {
     expect(screen.queryByRole('textbox', { name: 'Chercher un tag' })).not.toBeInTheDocument()
   })
 
-  it('invite à taper une recherche tant que le champ est vide, sans frise ni filtre par tag', async () => {
+  it('montre la frise et les tomes aux visiteurs sans charger leurs données personnelles', async () => {
     render(<SearchPage />, { wrapper })
 
     expect(await screen.findByText("Tapez une recherche pour explorer l'œuvre.")).toBeInTheDocument()
-    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Du côté de chez Swann' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Filtrer par tag' })).not.toBeInTheDocument()
+    expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
+    expect(quoteApi.listQuotes).not.toHaveBeenCalled()
+    expect(tagApi.listTags).not.toHaveBeenCalled()
+  })
+
+  it('applique le tome sélectionné dans la frise à la recherche anonyme', async () => {
+    vi.mocked(searchApi.searchParagraphs).mockResolvedValue(mockResponse)
+    const user = userEvent.setup()
+
+    render(<SearchPage />, { wrapper })
+    await user.click(await screen.findByRole('button', { name: /Filtrer les résultats sur Du côté de chez Swann/ }))
+    await user.type(screen.getByRole('searchbox'), 'Longtemps')
+    await user.click(screen.getByRole('button', { name: 'Chercher' }))
+
+    expect(await screen.findByRole('article')).toBeInTheDocument()
+    expect(searchApi.searchParagraphs).toHaveBeenCalledWith(
+      { q: 'Longtemps', volumeId: 1, page: 0, size: 10 },
+      expect.any(AbortSignal),
+    )
   })
 })
 

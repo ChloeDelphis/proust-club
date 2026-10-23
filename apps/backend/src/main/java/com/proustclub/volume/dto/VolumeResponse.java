@@ -1,9 +1,9 @@
-package com.proustclub.quote.dto;
+package com.proustclub.volume.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(description = "A volume of the work, with the page range it spans (used to draw delimiters and position bookmarks)")
-public record TimelineVolume(
+@Schema(description = "Public structural information for one volume of the corpus")
+public record VolumeResponse(
         @Schema(description = "Volume identifier", example = "2")
         int id,
 
