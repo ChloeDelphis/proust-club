@@ -46,6 +46,10 @@ The threshold lives **only** in the `audit:security` script in `apps/frontend/pa
 
 **Registry/network failure:** `pnpm audit` fails (non-zero exit) by default if the registry can't be reached — `--ignore-registry-errors` is deliberately never used in this project, so a failed check is never mistaken for "nothing found." A vulnerability finding and an audit failure both produce a non-zero exit; the command's output text is what distinguishes them (visible in CI logs).
 
+## 3. Newly published versions — pnpm `minimumReleaseAge`
+
+`apps/frontend/pnpm-workspace.yaml` sets `minimumReleaseAge: 1440` (24 hours) with `minimumReleaseAgeStrict: true`. For an urgent fix that is itself newer than 24 hours, use a narrowly scoped `minimumReleaseAgeExclude` entry for the exact package/version and remove it once the regular window has elapsed; do not disable the age check globally.
+
 ## Complementary, not redundant
 
 | | `OSV MAL-*` | `pnpm audit` |

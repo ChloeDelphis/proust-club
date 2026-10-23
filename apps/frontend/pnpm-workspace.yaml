@@ -2,7 +2,7 @@ allowBuilds:
   esbuild: true
 onlyBuiltDependencies:
   - esbuild
-minimumReleaseAge: 4320
+minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
 # Default ("install") silently runs a real `pnpm install` before any `pnpm run <script>`/test/
 # build/dev when node_modules looks out of sync with the lockfile — that install doesn't carry

@@ -8,7 +8,7 @@ The frontend depends on npm packages that can introduce known vulnerabilities or
 
 ## Decision
 
-- Pin direct frontend dependencies to exact versions, keep the lockfile committed, delay newly released versions by 72 hours, and allow install scripts only for explicitly approved packages.
+- Pin direct frontend dependencies to exact versions, keep the lockfile committed, delay newly released versions by 24 hours, and allow install scripts only for explicitly approved packages.
 - Require dependency changes to use the `pnpm safe:*` commands. They check proposed versions against OSV's malicious-package data before installation; a pnpm hook blocks accidental use of raw mutation commands. This guard is not intended to resist deliberate bypasses.
 - Run `pnpm audit` for known vulnerabilities. High/Critical findings are reported on PRs and checked weekly, but the PR audit is not a required merge check: an existing advisory can be unrelated to a PR. A blocking release check is intended but no release workflow exists yet.
 - Use pnpm workspace overrides to patch vulnerable transitive frontend dependencies when an upstream update is not yet available.
@@ -16,7 +16,7 @@ The frontend depends on npm packages that can introduce known vulnerabilities or
 
 ## Rationale and trade-offs
 
-The 72-hour delay reduces exposure to newly published malicious versions, at the cost of delaying emergency fixes. Exact pins make updates reviewable but require deliberate maintenance. The OSV malicious-package check complements `pnpm audit`, which checks published vulnerability advisories. Keeping the PR audit informational avoids blocking unrelated work; weekly monitoring detects new advisories even when the lockfile has not changed. A release gate is still needed before automated releases.
+The 24-hour delay reduces exposure to newly published malicious versions, at the cost of delaying emergency fixes. pnpm 11 uses a 24-hour delay by default; a previous 72-hour project override blocked a Vite security update because an unrelated transitive package was still inside the longer window. Exact pins make updates reviewable but require deliberate maintenance. The OSV malicious-package check complements `pnpm audit`, which checks published vulnerability advisories. Keeping the PR audit informational avoids blocking unrelated work; weekly monitoring detects new advisories even when the lockfile has not changed. A release gate is still needed before automated releases.
 
 The pnpm hook was chosen over a `preinstall` script, which runs too late to prevent package materialization, and a shell wrapper, which is unreliable across the project's Windows and Linux environments. Its purpose is to prevent accidental unsafe installs, not to stop a determined user from bypassing the check.
 
@@ -28,6 +28,7 @@ The pnpm hook was chosen over a `preinstall` script, which runs too late to prev
 - **2026-09-02:** Enforced the OSV check with a pnpm resolution hook and the `pnpm safe:*` commands.
 - **2026-10-08:** Made PR audits non-blocking after an unrelated PR was blocked by existing advisories; corrected the weekly workflow's false-green exit status. A release-time blocking check remains outstanding.
 - **2026-10-23:** Added the patched Zod version as a workspace override for the High-severity advisory reported in the frontend lint dependency tree.
+- **2026-10-23:** Reduced `minimumReleaseAge` from 72 to 24 hours after the longer delay blocked a Vite security update over an unrelated fresh transitive release. Kept strict enforcement.
 
 ## Current implementation
 
