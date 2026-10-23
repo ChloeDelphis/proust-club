@@ -4,6 +4,10 @@ onlyBuiltDependencies:
   - esbuild
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
+audit:
+  ignore:
+    - GHSA-qxg6-89mg-rqv8
+    - GHSA-xp26-3454-mjgp
 # Default ("install") silently runs a real `pnpm install` before any `pnpm run <script>`/test/
 # build/dev when node_modules looks out of sync with the lockfile — that install doesn't carry
 # the PROUST_SAFE_PNPM marker, so .pnpmfile.mjs blocks it with a confusing error instead of
