@@ -170,20 +170,17 @@ export default function SearchPage() {
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('searchPage.title')}</h1>
-      {isConnected && (
-        <TimelineBar
-          activeTagId={tagId}
-          selectedVolumeId={selectedVolumeId}
-          onSelectVolume={handleSelectVolume}
-          onOpenQuote={handleOpenQuote}
-        />
-      )}
-      <div className={isConnected ? styles.layout : undefined}>
-        {isConnected && (
-          <aside>
-            <VolumeList activeTagId={tagId} selectedVolumeId={selectedVolumeId} onSelectVolume={handleSelectVolume} />
-          </aside>
-        )}
+      <TimelineBar
+        isConnected={isConnected}
+        activeTagId={tagId}
+        selectedVolumeId={selectedVolumeId}
+        onSelectVolume={handleSelectVolume}
+        onOpenQuote={handleOpenQuote}
+      />
+      <div className={styles.layout}>
+        <aside>
+          <VolumeList selectedVolumeId={selectedVolumeId} onSelectVolume={handleSelectVolume} />
+        </aside>
         <div>
           <SearchForm key={query} initialValue={query} onSubmit={handleSearch} />
           {isConnected && (

@@ -33,9 +33,9 @@ Types are derived from `schema.generated.ts`, generated from the backend OpenAPI
 
 `SearchPage` owns `scope: 'corpus' | 'saved'`, toggled by `TagFilterBar` (its "Mes citations enregistrées" entry, or any real tag — selecting either switches to `'saved'`; clicking the active one again returns to `'corpus'`). The same `query` state feeds both: switching scope does **not** clear the search box, mirroring the corpus text filtering straight into the saved-citations text filter (`listQuotes`'s `q` param, a case-insensitive substring match against the quote's own saved text — see `docs/features/quote-save-tags.md`). Only one of the two `useQuery` calls is `enabled` at a time, based on the active scope.
 
-Anonymous visitors never see the scope toggle (`TagFilterBar`/`VolumeList`/`TimelineBar` are all gated on `isConnected`) — the page behaves exactly like corpus-only search always did.
+Anonymous visitors see the corpus frieze and volume list as navigation filters, but never see the saved-citations scope or tag controls. The frieze shows the fixed structure of the seven volumes without personal bookmarks. `SearchPage` only enables the personal timeline request while connected; anonymous browsing fetches public volume metadata from `GET /api/volumes` and corpus results from `GET /api/search`. It does not request `/api/quotes`, `/api/quotes/timeline`, or `/api/tags`.
 
-Selecting a tome from the sidebar or its zone in the frieze applies the same `selectedVolumeId` filter to the active results scope. `GET /api/search` and `GET /api/quotes` apply `volumeId` in the backend before pagination and counting, so `total` and every page describe only that tome. The filter combines with the existing phrase and tag filters. Selecting the active tome again clears it. Both changes reset `page` to `0`; the frieze still fetches its complete timeline and zooms its visible bookmarks locally.
+Selecting a tome from the sidebar or its zone in the frieze applies the same `selectedVolumeId` filter to the active results scope. `GET /api/search` and `GET /api/quotes` apply `volumeId` in the backend before pagination and counting, so `total` and every page describe only that tome. The filter combines with the existing phrase and tag filters. Selecting the active tome again clears it. Both changes reset `page` to `0`; connected users' frieze still fetches its complete personal timeline and zooms its visible bookmarks locally. For visitors, the frieze represents only the tome structure and acts as a corpus filter; opening a random page from the frieze is a later feature.
 
 ---
 
@@ -90,8 +90,10 @@ Backend-driven: `page`, `size`, and optional `volumeId` are query parameters; `t
 
 ## Manual verification
 
+- **Happy path — anonymous structure:** without a session, load `/`, confirm the frieze and tome list show all seven volumes without bookmarks, and confirm the UI requests `GET /api/volumes` but makes no requests to `/api/quotes`, `/api/quotes/timeline`, or `/api/tags`.
 - **Happy path — corpus:** submit a phrase present in more than one tome, select a tome from the sidebar, and confirm every result belongs to that tome and pagination reflects only its matches. Repeat by selecting the tome zone in the frieze.
 - **Happy path — saved citations:** switch to saved citations, select a tome, and confirm the list contains only that tome's quotes; combine the tome with a tag and a text query.
 - **Toggle and pagination:** move to page 2, select a tome in either control, and confirm the first filtered page appears. Select the same tome again and confirm all-tome results return on page 1.
 - **Empty result:** select a valid tome with no match for the submitted phrase (or no saved citations) and confirm the empty state and `total: 0`.
+- **Public volume metadata:** call `GET /api/volumes` without a session; expect `200`, seven ordered volume records with `id`, `title`, `position`, `minPage`, and `maxPage`, and no personal quote/tag data.
 - **Validation:** `GET /api/search` and authenticated `GET /api/quotes` with `volumeId=0` or `volumeId=8` return `400`; omitted `volumeId` retains all-tome behavior.

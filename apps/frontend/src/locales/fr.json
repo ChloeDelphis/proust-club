@@ -190,9 +190,10 @@
   },
   "timelineBar": {
     "loadError": "La frise n'a pas pu être chargée.",
-    "ariaLabel": "Frise de mes citations",
+    "ariaLabel": "Frise des tomes",
     "volumeFilterAriaLabel": "Filtrer par tome",
-    "trackAriaLabel": "Positions des citations sauvegardées dans l'œuvre",
+    "trackAriaLabel": "Structure des tomes et positions de mes citations",
+    "corpusTrackAriaLabel": "Structure des tomes de l’œuvre",
     "zoomOnVolume": "Filtrer les résultats sur {{title}} et zoomer sur ce tome",
     "zoomOutOfVolume": "Afficher les résultats de tous les tomes",
     "bookmarkAriaLabel": "Citation page {{page}}",

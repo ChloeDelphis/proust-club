@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import TimelineBar from './TimelineBar'
 import * as quoteApi from '../../../api/quote'
 import type { TimelineResponse } from '../../../api/quote'
+import * as volumeApi from '../../../api/volume'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
 import { quoteId } from './timelineTestFixtures'
@@ -15,10 +16,11 @@ import { quoteId } from './timelineTestFixtures'
 // directly in the bar, same pattern as any other controlled-component test in this codebase.
 function ControlledTimelineBar({ activeTagId }: { activeTagId: string | null }) {
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
-  return <TimelineBar activeTagId={activeTagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} onOpenQuote={vi.fn()} />
+  return <TimelineBar isConnected={true} activeTagId={activeTagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} onOpenQuote={vi.fn()} />
 }
 
 vi.mock('../../../api/quote')
+vi.mock('../../../api/volume')
 vi.mock('../../../api/tag')
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -41,13 +43,23 @@ function makeQuote(n: number, pageNumber: number, volumeId: number, selectedText
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(volumeApi.getVolumes).mockResolvedValue(volumes)
   vi.mocked(tagApi.listTags).mockResolvedValue([])
+})
+
+it('shows the corpus structure without requesting personal bookmarks for a guest', async () => {
+  render(<TimelineBar isConnected={false} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+
+  expect(await screen.findByRole('img', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /^Citation page/ })).not.toBeInTheDocument()
+  expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
+  expect(volumeApi.getVolumes).toHaveBeenCalledOnce()
 })
 
 it('shows a spinner while loading', () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockReturnValue(new Promise(() => {}))
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(screen.getByRole('status')).toBeInTheDocument()
 })
@@ -55,7 +67,7 @@ it('shows a spinner while loading', () => {
 it('shows an error message when the request fails', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockRejectedValue(new Error('HTTP 500'))
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('alert')).toBeInTheDocument()
 })
@@ -66,7 +78,7 @@ it('renders one bookmark per saved quote', async () => {
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
@@ -80,7 +92,7 @@ it('keeps multiple bookmarks on the same page independently clickable and identi
   const onOpenQuote = vi.fn()
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
 
   const firstBookmark = await screen.findByRole('button', { name: 'Citation page 9, 1 sur 2' })
   const secondBookmark = screen.getByRole('button', { name: 'Citation page 9, 2 sur 2' })
@@ -141,11 +153,11 @@ it('returns to the full view when selectedVolumeId goes back to null', async () 
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
 
-  const { rerender } = render(<TimelineBar activeTagId={null} selectedVolumeId={1} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  const { rerender } = render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={1} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
   await screen.findByRole('button', { name: 'Citation page 9' })
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
 
-  rerender(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />)
+  rerender(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />)
 
   expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
@@ -159,7 +171,7 @@ it('clicking a bookmark reports which quote to the parent, which owns the detail
   const onOpenQuote = vi.fn()
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
   await user.click(await screen.findByRole('button', { name: 'Citation page 9' }))
 
   expect(onOpenQuote).toHaveBeenCalledWith(quoteId(1))
@@ -172,7 +184,7 @@ it('hovering a bookmark shows a preview, leaving hides it', async () => {
   })
   const user = userEvent.setup()
 
-  render(<TimelineBar activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
   const bookmark = await screen.findByRole('button', { name: 'Citation page 9' })
 
   await user.hover(bookmark)
@@ -186,7 +198,7 @@ it('refetches with the active tag filter', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
   const tagId = '00000000-0000-4000-8000-000000000101'
 
-  render(<TimelineBar activeTagId={tagId} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={tagId} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   await waitFor(() => {
     expect(quoteApi.getQuoteTimeline).toHaveBeenCalledWith({ tagId }, expect.anything())

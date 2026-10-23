@@ -7,7 +7,7 @@ import com.proustclub.quote.dto.QuoteSelectionResponse;
 import com.proustclub.quote.dto.TagResponse;
 import com.proustclub.quote.dto.TimelineQuote;
 import com.proustclub.quote.dto.TimelineResponse;
-import com.proustclub.quote.dto.TimelineVolume;
+import com.proustclub.volume.VolumeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,17 +23,20 @@ class QuoteService {
 
     private final QuoteRepository quoteRepository;
     private final QuoteTimelineRepository timelineRepository;
+    private final VolumeService volumeService;
     private final QuoteTagRepository quoteTagRepository;
     private final TagRepository tagRepository;
 
     QuoteService(
             QuoteRepository quoteRepository,
             QuoteTimelineRepository timelineRepository,
+            VolumeService volumeService,
             QuoteTagRepository quoteTagRepository,
             TagRepository tagRepository
     ) {
         this.quoteRepository = quoteRepository;
         this.timelineRepository = timelineRepository;
+        this.volumeService = volumeService;
         this.quoteTagRepository = quoteTagRepository;
         this.tagRepository = tagRepository;
     }
@@ -97,8 +100,6 @@ class QuoteService {
     @Transactional(readOnly = true)
     TimelineResponse getTimeline(UUID userId, UUID tagId, String q) {
         var entries = timelineRepository.findByUserId(userId, tagId, blankToNull(q));
-        var volumes = timelineRepository.findVolumesWithPageRange();
-
         var quoteIds = entries.stream().map(TimelineEntry::id).toList();
         var tagsByQuoteId = quoteTagRepository.findByQuoteIds(quoteIds);
 
@@ -110,11 +111,7 @@ class QuoteService {
                 ))
                 .toList();
 
-        var volumeResponses = volumes.stream()
-                .map(v -> new TimelineVolume(v.id(), v.title(), v.position(), v.minPage(), v.maxPage()))
-                .toList();
-
-        return new TimelineResponse(volumeResponses, quotes);
+        return new TimelineResponse(volumeService.list(), quotes);
     }
 
     @Transactional

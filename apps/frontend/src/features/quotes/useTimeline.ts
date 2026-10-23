@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { getQuoteTimeline } from '../../api/quote'
 
-// Shared by TimelineBar and VolumeList — same queryKey/queryFn, so TanStack Query dedupes the two
-// calls into a single request rather than fetching the timeline twice. Extracted here rather than
-// left duplicated in both components, so the query shape only has to change in one place.
+// Personal bookmark data for the connected user's timeline. Structural volume metadata is loaded
+// separately through useVolumes, so anonymous browsing never requests this personal endpoint.
 export function useTimeline(activeTagId: string | null, enabled = true) {
   return useQuery({
     queryKey: ['quotes', 'timeline', activeTagId],

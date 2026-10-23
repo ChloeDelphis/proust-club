@@ -4,17 +4,16 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import VolumeList from './VolumeList'
-import * as quoteApi from '../../../api/quote'
-import type { TimelineResponse } from '../../../api/quote'
+import * as volumeApi from '../../../api/volume'
 
-vi.mock('../../../api/quote')
+vi.mock('../../../api/volume')
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }
 
-const volumes: TimelineResponse['volumes'] = [
+const volumes: volumeApi.VolumeResponse[] = [
   { id: 1, title: 'Du Côté de Chez Swann', position: 1, minPage: 1, maxPage: 103 },
   { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183 },
 ]
@@ -23,7 +22,7 @@ const volumes: TimelineResponse['volumes'] = [
 // clicking an entry can be observed (the active item highlighted, the callback having fired).
 function ControlledVolumeList() {
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
-  return <VolumeList activeTagId={null} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
+  return <VolumeList selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} />
 }
 
 beforeEach(() => {
@@ -31,36 +30,36 @@ beforeEach(() => {
 })
 
 it('renders nothing once loaded if there are no volumes', async () => {
-  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes: [], quotes: [] })
+  vi.mocked(volumeApi.getVolumes).mockResolvedValue([])
 
-  const { container } = render(<VolumeList activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  const { container } = render(<VolumeList selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
 
-  await waitFor(() => expect(quoteApi.getQuoteTimeline).toHaveBeenCalled())
+  await waitFor(() => expect(volumeApi.getVolumes).toHaveBeenCalled())
   expect(container).toBeEmptyDOMElement()
 })
 
 it('shows a button for every volume', async () => {
-  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
+  vi.mocked(volumeApi.getVolumes).mockResolvedValue(volumes)
 
-  render(<VolumeList activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
+  render(<VolumeList selectedVolumeId={null} onSelectVolume={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('button', { name: 'Du Côté de Chez Swann' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: "À l'Ombre des Jeunes Filles en Fleurs" })).toBeInTheDocument()
 })
 
 it('calls onSelectVolume with the volume id when an entry is clicked', async () => {
-  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
+  vi.mocked(volumeApi.getVolumes).mockResolvedValue(volumes)
   const onSelectVolume = vi.fn()
   const user = userEvent.setup()
 
-  render(<VolumeList activeTagId={null} selectedVolumeId={null} onSelectVolume={onSelectVolume} />, { wrapper })
+  render(<VolumeList selectedVolumeId={null} onSelectVolume={onSelectVolume} />, { wrapper })
   await user.click(await screen.findByRole('button', { name: 'Du Côté de Chez Swann' }))
 
   expect(onSelectVolume).toHaveBeenCalledWith(1)
 })
 
 it('reflects the selected volume as the active entry', async () => {
-  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
+  vi.mocked(volumeApi.getVolumes).mockResolvedValue(volumes)
   const user = userEvent.setup()
 
   render(<ControlledVolumeList />, { wrapper })

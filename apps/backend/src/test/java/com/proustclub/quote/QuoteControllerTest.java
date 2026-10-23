@@ -445,6 +445,19 @@ class QuoteControllerTest {
     // --- GET /api/quotes/timeline ---
 
     @Test
+    void corpusVolumesArePublicAndContainOnlyStructuralMetadata() throws Exception {
+        mockMvc.perform(get("/api/volumes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(7))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].position").value(1))
+                .andExpect(jsonPath("$[0].minPage").value(1))
+                .andExpect(jsonPath("$[0].maxPage").value(999))
+                .andExpect(jsonPath("$[0].quotes").doesNotExist())
+                .andExpect(jsonPath("$[0].tags").doesNotExist());
+    }
+
+    @Test
     void timelineAlwaysReturnsAllSevenVolumesEvenWithNoQuotes() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
 
