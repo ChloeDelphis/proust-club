@@ -1,6 +1,6 @@
 # ADR-008: Dependency and supply-chain security
 
-**Status:** Accepted · **Created:** 2026-08-05 · **Updated:** 2026-10-15
+**Status:** Accepted · **Created:** 2026-08-05 · **Updated:** 2026-10-23
 
 ## Context
 
@@ -27,6 +27,7 @@ The pnpm hook was chosen over a `preinstall` script, which runs too late to prev
 - **2026-09-01:** Enabled GitHub-native dependency monitoring and selected automatic dependency submission for Gradle; actual Gradle graph coverage was not yet verified.
 - **2026-09-02:** Enforced the OSV check with a pnpm resolution hook and the `pnpm safe:*` commands.
 - **2026-10-08:** Made PR audits non-blocking after an unrelated PR was blocked by existing advisories; corrected the weekly workflow's false-green exit status. A release-time blocking check remains outstanding.
+- **2026-10-23:** Added the patched Zod version as a workspace override for the High-severity advisory reported in the frontend lint dependency tree.
 
 ## Current implementation
 

@@ -16,6 +16,8 @@ Two controls exist, answering two different questions. Neither replaces the othe
 - No CI wiring for the check itself — CI trusts the already-committed, already-reviewed lockfile (see [ADR-008](ADR-008-supply-chain-security.md)).
 - No finding ≠ safe — only "not flagged as malicious in OSV as of this check."
 
+Dependency overrides for vulnerable transitive packages live in `apps/frontend/pnpm-workspace.yaml`, never in `package.json`. Current security overrides include `zod@4.6.7`, which patches the High-severity advisory reported through the frontend lint tooling.
+
 ## 2. Known vulnerabilities — `pnpm audit`
 
 **Question:** does a publicly known vulnerability (CVE/GHSA) apply to the dependency tree that's already installed?
