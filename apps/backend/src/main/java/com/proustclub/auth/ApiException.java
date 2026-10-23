@@ -61,6 +61,6 @@ class ApiException extends ErrorResponseException {
     // without confusing it with unrelated request-validation errors. The identifier policy uses a
     // stable ProblemDetail code because it shares the 400 status with those other failures.
     static ApiException passwordCompromised() {
-        return new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Password found in a known data breach.");
+        return new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "Password found in a known data breach.");
     }
 }
