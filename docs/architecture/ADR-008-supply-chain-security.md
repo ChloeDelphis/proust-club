@@ -9,10 +9,10 @@ Frontend dependencies can introduce known vulnerabilities or malicious install-t
 ## Decision
 
 - Pin direct frontend dependencies to exact versions, wait 24 hours before installing new releases, and allow install scripts only for approved packages.
-- Require `pnpm safe:*` for frontend dependency changes; it checks new resolutions against OSV's malicious-package data before installation.
-- Use `pnpm audit` and Dependabot alerts for published vulnerabilities; enable security update PRs. PR audit results are informational; normal required CI checks remain the merge gates. The weekly audit fails on High/Critical findings and reports all severities.
+- Require `pnpm safe:*` for frontend dependency changes; `safe:add`, `safe:update`, and `safe:install` check the lockfile against OSV's malicious-package data before installing packages.
+- Use `pnpm audit` for published advisories. Its PR job is non-required; the weekly job fails on High/Critical findings or audit failure and reports all severities.
 - Patch vulnerable transitive dependencies with pnpm workspace overrides when their parent packages have not yet resolved a fixed version.
-- Use GitHub dependency alerts, security update PRs, and dependency submission for repository-wide monitoring, including resolved Gradle dependencies.
+- Use Dependabot alerts and security update PRs, plus GitHub dependency submission for repository-wide monitoring. Confirm that the dependency graph includes resolved Gradle packages.
 
 ## Rationale
 

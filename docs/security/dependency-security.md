@@ -10,11 +10,11 @@ For a vulnerable transitive dependency, use an override in `apps/frontend/pnpm-w
 
 | Control | Purpose |
 | --- | --- |
-| `pnpm check:supply-chain` | Checks new frontend installs for packages reported as malicious by OSV. See the [technical design](../features/supply-chain-check.md). |
-| `pnpm audit` | Checks the frontend dependency tree for published advisories. PR results are informational; the weekly audit reports High/Critical findings. |
+| `pnpm safe:add`, `safe:update`, `safe:install` | Check the frontend lockfile against OSV's malicious-package data before packages are installed. Not a CI check; see the [technical design](../features/supply-chain-check.md). |
+| `pnpm audit` | Checks the frontend dependency tree for published advisories. The PR job is non-required; the weekly job fails on High/Critical findings or audit failure and reports all severities. |
 | GitHub Dependabot | Reports vulnerable or malicious dependencies and can open security update PRs. An alert without a PR still needs triage and, when applicable, a normal fix PR. |
 
-GitHub dependency submission is enabled for Gradle; confirm that the repository's dependency graph includes resolved backend packages.
+Gradle dependency-graph coverage is unverified; confirm that resolved backend packages appear in GitHub's dependency graph.
 
 ## Documentation
 
