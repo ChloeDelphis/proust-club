@@ -25,11 +25,11 @@ jobs:
       - name: Run pnpm audit (blocking, High/Critical)
         id: audit
         continue-on-error: true
-        # A plain redirection, not `| tee` — see ADR-008's 2026-10-08 addendum for why.
+        # Keep the audit exit code; print its report in the next step.
         run: pnpm audit --audit-level high > audit-report.txt
 
       # Kept separate from the step above so printing the report can never influence its exit
-      # code — see ADR-008's 2026-10-08 addendum. Tolerant of a missing file: if checkout or
+      # code. Tolerant of a missing file: if checkout or
       # pnpm/setup failed before the audit step ever ran, there's nothing to print and this
       # shouldn't add a second, misleading failure on top of that unrelated one.
       - name: Print the report to the log
@@ -37,7 +37,7 @@ jobs:
         run: cat audit-report.txt || echo "(no report — an earlier step likely failed first)"
 
       # Informational only — never fails the job. Low/Moderate advisories don't
-      # block anything (see docs/architecture/dependency-security-strategy.md),
+      # block anything (see docs/security/dependency-security.md),
       # but shouldn't be entirely invisible from a run that already queried the
       # registry anyway.
       - name: Run pnpm audit (informational, all severities)

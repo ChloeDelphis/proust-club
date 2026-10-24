@@ -31,7 +31,7 @@ pnpm safe:install            # plain install (e.g. after a fresh clone or pullin
 pnpm safe:remove <package>   # remove a dependency
 ```
 
-See `docs/features/supply-chain-check.md` for why.
+See [the dependency security guide](../../docs/security/dependency-security.md) for the policy and [the checker design](../../docs/features/supply-chain-check.md) for implementation details.
 
 ## Tests
 
