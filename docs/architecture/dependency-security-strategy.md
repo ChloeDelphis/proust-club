@@ -16,7 +16,7 @@ Two controls exist, answering two different questions. Neither replaces the othe
 - No CI wiring for the check itself — CI trusts the already-committed, already-reviewed lockfile (see [ADR-008](ADR-008-supply-chain-security.md)).
 - No finding ≠ safe — only "not flagged as malicious in OSV as of this check."
 
-Dependency overrides for vulnerable transitive packages live in `apps/frontend/pnpm-workspace.yaml`, never in `package.json`. Current security overrides include `zod@4.6.7`, which patches the High-severity advisory reported through the frontend lint tooling.
+Dependency overrides for vulnerable transitive packages live in `apps/frontend/pnpm-workspace.yaml`, never in `package.json`. Current security overrides include `zod@4.6.7`, which patches the High-severity advisory reported through the frontend lint tooling, and `@vitest/mocker@4.1.12`, which patches the two Moderate advisories GHSA-qxg6-89mg-rqv8 and GHSA-xp26-3454-mjgp. These Vitest advisories were previously excluded from `pnpm audit` because the project does not register the affected mock WebSocket handlers; the patched transitive version now removes the need for those exclusions.
 
 ## 2. Known vulnerabilities — `pnpm audit`
 
