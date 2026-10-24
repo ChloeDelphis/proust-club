@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { VolumeResponse } from '../../../api/volume'
 import type { TimelineQuote } from '../../../api/quote'
@@ -12,22 +12,22 @@ import type { PageRange, TimelineGroup } from './positionTimelineQuotes'
 import type { TimelineBarProps } from './TimelineBar.types'
 import styles from './TimelineBar.module.css'
 
-// SVG viewBox units, not pixels — preserveAspectRatio="none" stretches this to the container's
-// real size, so the same layout math works at any width without touching the DOM (no
-// getBoundingClientRect/ResizeObserver, see positionTimelineQuotes.ts).
+// SVG viewBox units. The horizontal range follows the rendered aspect ratio so preserveAspectRatio
+// can stretch the SVG uniformly: the track fills its container without distorting text or marks.
 const VIEWBOX_WIDTH = 1000
-const TRACK_TOP = 100
-const TRACK_BOTTOM = 190
-const BOOKMARK_HEIGHT_NORMAL = 40
-const BOOKMARK_HEIGHT_EXTENDED = 70
-const BOOKMARK_WIDTH = 8
-const PREVIEW_WIDTH = 220
-const PREVIEW_HEIGHT = 90
+const VIEWBOX_HEIGHT = 100
+const TRACK_TOP = 50
+const TRACK_BOTTOM = 95
+const BOOKMARK_HEIGHT_NORMAL = 20
+const BOOKMARK_HEIGHT_EXTENDED = 35
+const BOOKMARK_WIDTH = 4
+const PREVIEW_WIDTH = 110
+const PREVIEW_HEIGHT = 45
 const EMPTY_VOLUMES: VolumeResponse[] = []
 const EMPTY_QUOTES: TimelineQuote[] = []
 
-function percentToX(percent: number): number {
-  return percent * (VIEWBOX_WIDTH / 100)
+function percentToX(percent: number, viewBoxWidth: number): number {
+  return percent * (viewBoxWidth / 100)
 }
 
 function activateOnEnterOrSpace(onActivate: () => void) {
@@ -51,18 +51,20 @@ function VolumeZones({
   selectedVolumeId,
   onSelect,
   t,
+  viewBoxWidth,
 }: {
   volumes: VolumeResponse[]
   range: PageRange
   selectedVolumeId: number | null
   onSelect: (id: number) => void
   t: TranslateFn
+  viewBoxWidth: number
 }) {
   return (
     <>
       {volumes.map(volume => {
-        const x1 = percentToX(pageToPercent(volume.minPage, range))
-        const x2 = percentToX(pageToPercent(volume.maxPage, range))
+        const x1 = percentToX(pageToPercent(volume.minPage, range), viewBoxWidth)
+        const x2 = percentToX(pageToPercent(volume.maxPage, range), viewBoxWidth)
         const width = Math.max(0, x2 - x1)
         // Only the *other* volumes hide when one is selected — the selected one's own zone stays
         // visible and interactive (now spanning the full track, since `range` narrows to its own
@@ -93,7 +95,7 @@ function VolumeZones({
               onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
             />
             {/* Purely decorative — the rect above already carries the full accessible name. */}
-            <foreignObject x={x1} y={TRACK_TOP} width={width} height={TRACK_BOTTOM - TRACK_TOP} className={labelClassName} aria-hidden="true">
+            <foreignObject x={x1} y={0} width={width} height={VIEWBOX_HEIGHT} className={labelClassName} aria-hidden="true">
               <div className={styles.volumeLabelText}>{volume.title}</div>
             </foreignObject>
           </g>
@@ -103,14 +105,14 @@ function VolumeZones({
   )
 }
 
-function VolumeDelimiters({ volumes, range, isHidden }: { volumes: VolumeResponse[]; range: PageRange; isHidden: boolean }) {
+function VolumeDelimiters({ volumes, range, isHidden, viewBoxWidth }: { volumes: VolumeResponse[]; range: PageRange; isHidden: boolean; viewBoxWidth: number }) {
   const className = isHidden ? `${styles.delimiter} ${styles.isHidden}` : styles.delimiter
 
   return (
     <>
       {volumes.slice(1).map(volume => {
-        const x = percentToX(pageToPercent(volume.minPage, range))
-        return <line key={volume.id} x1={x} x2={x} y1={TRACK_TOP} y2={TRACK_BOTTOM} className={className} />
+        const x = percentToX(pageToPercent(volume.minPage, range), viewBoxWidth)
+        return <line key={volume.id} x1={x} x2={x} y1={0} y2={VIEWBOX_HEIGHT} className={className} />
       })}
     </>
   )
@@ -121,11 +123,13 @@ function Bookmarks({
   onOpen,
   onHoverChange,
   t,
+  viewBoxWidth,
 }: {
   groups: TimelineGroup[]
   onOpen: (id: string) => void
   onHoverChange: (id: string | null) => void
   t: TranslateFn
+  viewBoxWidth: number
 }) {
   const pageCounts = new Map<number, number>()
   for (const group of groups) {
@@ -142,7 +146,7 @@ function Bookmarks({
         const pageIndex = (pageIndexes.get(page) ?? 0) + 1
         pageIndexes.set(page, pageIndex)
         const pageCount = pageCounts.get(page) ?? 1
-        const x = percentToX(group.offsetPercent)
+        const x = percentToX(group.offsetPercent, viewBoxWidth)
         const height = group.isExtended ? BOOKMARK_HEIGHT_EXTENDED : BOOKMARK_HEIGHT_NORMAL
         return (
           <rect
@@ -173,6 +177,8 @@ function Bookmarks({
 export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId, onSelectVolume, onOpenQuote }: TimelineBarProps) {
   const { t } = useTranslation()
   const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
+  const trackRef = useRef<SVGSVGElement>(null)
+  const [viewBoxWidth, setViewBoxWidth] = useState(VIEWBOX_WIDTH)
 
   const volumesQuery = useVolumes()
   const timelineQuery = useTimeline(activeTagId, isConnected)
@@ -200,6 +206,23 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     return positionTimelineQuotes(visibleQuotes, range)
   }, [quotes, selectedVolume, range])
 
+  useLayoutEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+
+    const updateViewBoxWidth = () => {
+      const { width, height } = track.getBoundingClientRect()
+      if (width > 0 && height > 0) setViewBoxWidth(width * (VIEWBOX_HEIGHT / height))
+    }
+
+    updateViewBoxWidth()
+    if (typeof ResizeObserver === 'undefined') return
+
+    const observer = new ResizeObserver(updateViewBoxWidth)
+    observer.observe(track)
+    return () => observer.disconnect()
+  }, [isPending, isError, volumes.length])
+
   if (isPending) return <Spinner />
   if (isError) return <ErrorMessage message={t('timelineBar.loadError')} />
   if (volumes.length === 0) return null
@@ -209,19 +232,20 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   return (
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
       <svg
+        ref={trackRef}
         className={styles.track}
-        viewBox={`0 0 ${VIEWBOX_WIDTH} 200`}
+        viewBox={`0 0 ${viewBoxWidth} ${VIEWBOX_HEIGHT}`}
         preserveAspectRatio="none"
         role="img"
         aria-label={t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
       >
-        <VolumeZones volumes={volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} />
-        <VolumeDelimiters volumes={volumes} range={range} isHidden={selectedVolume !== undefined} />
-        {isConnected && <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} />}
+        <VolumeZones volumes={volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} viewBoxWidth={viewBoxWidth} />
+        <VolumeDelimiters volumes={volumes} range={range} isHidden={selectedVolume !== undefined} viewBoxWidth={viewBoxWidth} />
+        {isConnected && <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} viewBoxWidth={viewBoxWidth} />}
 
         {hoveredGroup && (
           <foreignObject
-            x={Math.min(Math.max(0, percentToX(hoveredGroup.offsetPercent) - PREVIEW_WIDTH / 2), VIEWBOX_WIDTH - PREVIEW_WIDTH)}
+            x={Math.min(Math.max(0, percentToX(hoveredGroup.offsetPercent, viewBoxWidth) - PREVIEW_WIDTH / 2), viewBoxWidth - PREVIEW_WIDTH)}
             y={0}
             width={PREVIEW_WIDTH}
             height={PREVIEW_HEIGHT}
