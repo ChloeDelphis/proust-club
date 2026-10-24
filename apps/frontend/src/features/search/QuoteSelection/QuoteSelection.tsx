@@ -15,7 +15,17 @@ import { useGuestQuoteSave } from '../useGuestQuoteSave'
 import type { QuoteSelectionProps, Phase } from './QuoteSelection.types'
 import styles from './QuoteSelection.module.css'
 
-export default function QuoteSelection({ paragraphId, text, highlightRange, sourceOffset = 0, hasLeadingEllipsis = false, hasTrailingEllipsis = false, onOpenDetail, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null } }: QuoteSelectionProps) {
+export default function QuoteSelection({
+  paragraphId,
+  text,
+  highlightRange,
+  sourceOffset = 0,
+  hasLeadingEllipsis = false,
+  hasTrailingEllipsis = false,
+  onOpenDetail,
+  resumeDraft = null,
+  searchContext = { query: '', page: 0, volumeId: null },
+}: QuoteSelectionProps) {
   const { t } = useTranslation()
   const { data: currentUser, isPending: isUserPending } = useCurrentUser()
   const navigate = useNavigate()
@@ -93,7 +103,8 @@ export default function QuoteSelection({ paragraphId, text, highlightRange, sour
   function handleTextClick() {
     if (!onOpenDetail) return
     const selection = window.getSelection()
-    if (selection && !selection.isCollapsed) return
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null
+    if (!selection?.isCollapsed && range && containerRef.current && range.intersectsNode(containerRef.current)) return
     onOpenDetail()
   }
 
@@ -187,7 +198,6 @@ export default function QuoteSelection({ paragraphId, text, highlightRange, sour
         className={styles.text}
         role={onOpenDetail ? 'button' : undefined}
         tabIndex={onOpenDetail ? 0 : undefined}
-        aria-label={onOpenDetail ? t('paragraphCard.openDetailButton') : undefined}
         onClick={onOpenDetail ? handleTextClick : undefined}
         onKeyDown={onOpenDetail ? handleTextKeyDown : undefined}
       >

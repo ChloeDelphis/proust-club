@@ -24,8 +24,8 @@ function nextSentenceEnd(text: string, index: number): number | null {
 
 function moveToWordStart(text: string, index: number): number {
   let boundary = index
-  while (boundary > 0 && !/\s/.test(text[boundary - 1])) boundary -= 1
   while (boundary < text.length && /\s/.test(text[boundary])) boundary += 1
+  while (boundary > 0 && !/\s/.test(text[boundary - 1])) boundary -= 1
   return boundary
 }
 
