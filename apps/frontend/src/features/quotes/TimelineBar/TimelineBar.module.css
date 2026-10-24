@@ -4,7 +4,6 @@
   top: 0;
   z-index: 10;
   background: var(--color-surface);
-  padding-top: var(--space-2);
   container-type: inline-size;
 }
 
@@ -20,8 +19,10 @@
   transition:
     fill var(--motion-duration-fast) var(--motion-ease-standard),
     opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    y var(--motion-duration-fast) var(--motion-ease-standard),
     x var(--motion-duration-fast) var(--motion-ease-standard),
-    width var(--motion-duration-fast) var(--motion-ease-standard);
+    width var(--motion-duration-fast) var(--motion-ease-standard),
+    height var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .volumeZone:hover,
@@ -29,13 +30,22 @@
   fill: var(--color-surface-subtle);
 }
 
+.volumeZone:focus {
+  outline: none;
+}
+
+.volumeZone:focus-visible {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
 .volumeZone.isActiveZone {
-  fill: var(--color-accent);
+  fill: var(--color-surface-subtle);
 }
 
 .volumeZone.isActiveZone:hover,
 .volumeZone.isActiveZone:focus-visible {
-  fill: var(--color-accent-hover);
+  fill: var(--color-surface-subtle);
 }
 
 .volumeZone.isHidden,
@@ -56,6 +66,11 @@
   opacity: 0;
 }
 
+.volumeZone:not(.isActiveZone):hover + .volumeLabel .volumeLabelText,
+.volumeZone:not(.isActiveZone):focus-visible + .volumeLabel .volumeLabelText {
+  color: var(--color-text-muted);
+}
+
 .volumeLabelText {
   display: flex;
   align-items: center;
@@ -67,15 +82,15 @@
   font-family: var(--font-ui);
   font-size: clamp(var(--text-2xs), 1cqw, var(--text-md));
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--font-tracking-expanded);
   text-transform: uppercase;
   text-align: center;
   line-height: 1.15;
-  color: var(--color-text-muted);
+  color: var(--color-text-quiet);
 }
 
 .volumeLabel.isActiveLabel .volumeLabelText {
-  color: var(--color-text-on-accent);
+  color: var(--color-text-quiet);
 }
 
 .delimiter {

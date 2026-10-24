@@ -32,6 +32,7 @@
   /* Semantic tokens */
   --color-text: var(--palette-ink);
   --color-text-muted: var(--palette-ink-soft);
+  --color-text-quiet: color-mix(in srgb, var(--color-text-muted) 55%, var(--color-surface));
   /* No second ink tone in the direction B palette — blended from the two
      that exist rather than inventing an unsourced third hex. */
   --color-text-subtle: color-mix(in srgb, var(--palette-ink) 70%, var(--palette-ink-soft) 30%);
@@ -92,6 +93,7 @@
 
   /* Typography — letter spacing */
   --font-tracking-wide: 0.02em;
+  --font-tracking-expanded: 0.24em;
 
   /* Spacing scale — numbered in quarter-rem units (space-1 = 0.25rem) so a
      future in-between step never forces a naming collision the way t-shirt

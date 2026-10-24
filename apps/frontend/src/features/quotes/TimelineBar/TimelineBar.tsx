@@ -62,9 +62,12 @@ function VolumeZones({
 }) {
   return (
     <>
-      {volumes.map(volume => {
+      {volumes.map((volume, index) => {
         const x1 = percentToX(pageToPercent(volume.minPage, range), viewBoxWidth)
-        const x2 = percentToX(pageToPercent(volume.maxPage, range), viewBoxWidth)
+        // The delimiter is placed at the next volume's first page. Extend this zone to that
+        // same boundary so an inclusive maxPage doesn't leave a sliver of unfilled space.
+        const rightBoundaryPage = volumes[index + 1]?.minPage ?? volume.maxPage
+        const x2 = percentToX(pageToPercent(rightBoundaryPage, range), viewBoxWidth)
         const width = Math.max(0, x2 - x1)
         // Only the *other* volumes hide when one is selected — the selected one's own zone stays
         // visible and interactive (now spanning the full track, since `range` narrows to its own
@@ -81,9 +84,9 @@ function VolumeZones({
           <g key={volume.id}>
             <rect
               x={x1}
-              y={TRACK_TOP}
+              y={0}
               width={width}
-              height={TRACK_BOTTOM - TRACK_TOP}
+              height={VIEWBOX_HEIGHT}
               className={zoneClassName}
               role="button"
               // Hidden zones stay mounted (for a smooth opacity transition) but drop out of the tab
