@@ -262,7 +262,7 @@
   outline: none;
 }
 
-@media (max-width: 48rem) {
+@media (width < 48rem) {
   .tomeMenuTrigger {
     grid-column: 1;
     justify-self: start;

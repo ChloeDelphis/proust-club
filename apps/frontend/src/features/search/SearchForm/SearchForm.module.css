@@ -87,7 +87,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (width < 48rem) {
   .button {
     display: none;
   }

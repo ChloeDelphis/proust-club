@@ -9,6 +9,10 @@
   gap: var(--space-8);
 }
 
+.layout > aside {
+  padding-top: var(--space-2);
+}
+
 .searchContent {
   position: relative;
   left: calc((12rem + var(--space-8)) / -2);
@@ -25,7 +29,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (width < 48rem) {
   .root {
     padding: var(--space-2) var(--space-4) var(--space-8);
   }

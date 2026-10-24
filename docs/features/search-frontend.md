@@ -10,7 +10,9 @@ The user enters a phrase, submits the form, and sees a paginated list of matchin
 
 For a connected user, the same search box also filters their own saved citations instead, when the "saved citations" scope is active in `TagFilterBar` — see "Corpus vs. saved-citations scope" below.
 
-**Layout** — on wide screens, the tome list sits beside centered search and results; tablets keep the two columns. On phones, the list moves into a left-side drawer and the frieze is hidden. The drawer leaves part of the page visible and closes on outside click, Escape, tome selection, its close control, or a left swipe. Tome names wrap inside it.
+**Layout** — above 1024px, the tome list sits beside centered search and results. From 768px through 1024px, the search fills the available content column while the tome list and frieze remain visible. Below 768px, the list moves into a left-side drawer and the frieze is hidden. At exactly 768px the tablet layout is retained. The drawer leaves part of the page visible and closes on outside click, Escape, tome selection, its close control, or a left swipe. Tome names wrap inside it.
+
+**Responsive thresholds** — `64rem` (1024px) stops offsetting and constraining search content because the sidebar leaves less room on medium screens; the tome filter text stays at the same compact 14px size on both sides of this threshold. `48rem` (768px) switches between the two-column layout and the mobile drawer; the query is strict (`width < 48rem`) so the 768px tablet reference keeps the two-column layout. `30rem` (480px) tightens header spacing and branding on the narrowest phones. Check the supplied reference widths at 320, 375, 425, 768, 1024, and 1440px, plus 1040px to confirm the tome labels no longer jump in size just above the 1024px threshold.
 
 ---
 
@@ -94,7 +96,7 @@ Backend-driven: `page`, `size`, and optional `volumeId` are query parameters; `t
 
 ## Manual verification
 
-- **Responsive layout:** check that desktop keeps the tome list beside search, tablets keep the frieze and provide the tome drawer, and phones hide the frieze and place search under the header. Check keyboard submission, clear control, and account links in the drawer.
+- **Responsive layout:** at 1440px, check centered search beside the tome list; at 1024px and 768px, check the full content column, visible frieze, and two-column layout; at 425px, 375px, and 320px, check the drawer, hidden frieze, and mobile search controls. Also check at 1040px that tome labels remain compact. Check keyboard submission, clear control, and account links in the drawer.
 - **Drawer:** verify outside click, Escape, tome selection, close control, and left swipe dismiss it; vertical scrolling and wrapped tome names remain usable.
 - **Happy path — anonymous structure:** without a session, load `/`, confirm the frieze and tome list show all seven volumes without bookmarks, and confirm the UI requests `GET /api/volumes` but makes no requests to `/api/quotes`, `/api/quotes/timeline`, or `/api/tags`.
 - **Happy path — corpus:** submit a phrase present in more than one tome, select a tome from the list, drawer, or frieze, and confirm results and pagination match that tome. Selecting a tome in the drawer closes it.
