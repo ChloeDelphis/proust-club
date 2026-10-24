@@ -106,14 +106,13 @@ LoginForm / RegisterForm (fields + client-side validation)
   → POST /api/auth/login | /api/auth/register
 ```
 
-`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to show either the account avatar/menu or signed-out account actions, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). On wide screens, signed-out users open the account icon menu for login and registration. At `48rem` (768 CSS px) and below, those actions move to the bottom of the tome drawer; the header keeps its centered brand and shows the drawer trigger. On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
+`useCurrentUser()` supplies session state to `Header` and `EmailVerificationBanner`. Signed-out users find login and registration in the account menu on desktop and at the bottom of the tome drawer on narrow screens. The brand remains centered. Auth mutations update the current-user cache; logout and email confirmation refresh it.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
 
 ## Manual verification
 
-- While logged out on desktop, open the account icon menu and verify it exposes working login and registration links; at 768 px and below, verify those links are at the bottom of the tome drawer and absent from the header. While logged in, verify the avatar still opens the account/logout menu.
-- At desktop and narrow widths, verify the brand stays centered in the header without colliding with its controls.
+- Check that signed-out users can reach login and registration from the desktop account menu and narrow-screen drawer. While signed in, verify the avatar menu offers account and logout actions, and the brand remains centered.
 
 ### Happy path
 

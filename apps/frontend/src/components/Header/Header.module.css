@@ -73,9 +73,10 @@
   inset-inline-start: 0;
   display: flex;
   flex-direction: column;
-  width: min(24rem, 100vw);
+  width: min(24rem, 85vw);
   padding: var(--space-5) var(--space-4) var(--space-4);
   overflow: hidden;
+  touch-action: pan-y;
   background: var(--color-surface);
   box-shadow: var(--shadow-lg);
 }
@@ -119,6 +120,7 @@
   min-height: 0;
   margin-block: var(--space-4);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .drawerVolumes > nav > ul {
@@ -127,7 +129,7 @@
 
 .drawerVolumes button {
   font-size: var(--text-sm);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .drawerActions {

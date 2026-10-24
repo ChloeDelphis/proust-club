@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
@@ -17,7 +17,24 @@ export default function Header() {
   const location = useLocation()
   const { selectedVolumeId, selectVolume } = useVolumeSelection()
   const [isNavigationOpen, setIsNavigationOpen] = useState(false)
+  const touchOrigin = useRef<{ x: number; y: number } | null>(null)
   const isSearchPage = location.pathname === '/'
+
+  function handleDrawerTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0]
+    touchOrigin.current = touch ? { x: touch.clientX, y: touch.clientY } : null
+  }
+
+  function handleDrawerTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    const origin = touchOrigin.current
+    const touch = event.changedTouches[0]
+    touchOrigin.current = null
+    if (!origin || !touch) return
+
+    const deltaX = touch.clientX - origin.x
+    const deltaY = touch.clientY - origin.y
+    if (deltaX < -48 && Math.abs(deltaX) > Math.abs(deltaY)) setIsNavigationOpen(false)
+  }
 
   const logoutMutation = useMutation({
     mutationFn: () => logout(),
@@ -37,7 +54,13 @@ export default function Header() {
           </Dialog.Trigger>
           <Dialog.Portal>
             <Dialog.Backdrop className={styles.drawerBackdrop} />
-            <Dialog.Popup className={styles.navigationDrawer} aria-label={t('header.navigationLabel')}>
+            <Dialog.Popup
+              className={styles.navigationDrawer}
+              aria-label={t('header.navigationLabel')}
+              onTouchStart={handleDrawerTouchStart}
+              onTouchEnd={handleDrawerTouchEnd}
+              onTouchCancel={() => { touchOrigin.current = null }}
+            >
               <div className={styles.drawerHeading}>
                 <Dialog.Title className={styles.drawerTitle}>{t('header.navigationTitle')}</Dialog.Title>
                 <Dialog.Close className={styles.drawerClose} aria-label={t('tagPicker.close')}>×</Dialog.Close>
