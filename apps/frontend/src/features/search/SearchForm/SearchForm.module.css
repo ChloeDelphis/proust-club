@@ -77,6 +77,16 @@
   color: var(--color-accent-hover);
 }
 
+@media (max-width: 64rem) {
+  .button {
+    font-size: clamp(var(--text-xs), 1.4vw, var(--text-sm));
+  }
+
+  .input::placeholder {
+    font-size: clamp(var(--text-xs), 1.4vw, var(--text-sm));
+  }
+}
+
 @media (max-width: 48rem) {
   .button {
     display: none;
