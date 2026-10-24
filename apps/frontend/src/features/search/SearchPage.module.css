@@ -21,6 +21,10 @@
   margin-inline: auto;
 }
 
+.resultsAnchor {
+  scroll-margin-top: calc(6.25rem + var(--space-6));
+}
+
 @media (max-width: 64rem) {
   .searchContent {
     left: auto;
@@ -45,5 +49,9 @@
 
   .searchContent {
     max-width: none;
+  }
+
+  .resultsAnchor {
+    scroll-margin-top: var(--space-4);
   }
 }
