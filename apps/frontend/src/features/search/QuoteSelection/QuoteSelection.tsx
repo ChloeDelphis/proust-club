@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../auth/useCurrentUser'
@@ -14,7 +15,7 @@ import { useGuestQuoteSave } from '../useGuestQuoteSave'
 import type { QuoteSelectionProps, Phase } from './QuoteSelection.types'
 import styles from './QuoteSelection.module.css'
 
-export default function QuoteSelection({ paragraphId, text, highlightRange, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null } }: QuoteSelectionProps) {
+export default function QuoteSelection({ paragraphId, text, highlightRange, sourceOffset = 0, hasLeadingEllipsis = false, hasTrailingEllipsis = false, onOpenDetail, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null } }: QuoteSelectionProps) {
   const { t } = useTranslation()
   const { data: currentUser, isPending: isUserPending } = useCurrentUser()
   const navigate = useNavigate()
@@ -22,7 +23,7 @@ export default function QuoteSelection({ paragraphId, text, highlightRange, resu
   const isConnected = currentUser !== null && currentUser !== undefined
   const isAuthResolved = !isUserPending
   const showToast = useToast()
-  const containerRef = useRef<HTMLParagraphElement>(null)
+  const containerRef = useRef<HTMLSpanElement>(null)
   const saveInFlightRef = useRef(false)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
   const phaseRef = useRef(phase)
@@ -67,23 +68,40 @@ export default function QuoteSelection({ paragraphId, text, highlightRange, resu
       const nextPhase = computeSelectionPhase(phaseRef.current, container, selection, text)
       updatePhase(nextPhase)
       if (resumeDraft && nextPhase.kind === 'selected'
-        && (nextPhase.start !== resumeDraft.start || nextPhase.end !== resumeDraft.end)) clearDraft()
+        && (nextPhase.start + sourceOffset !== resumeDraft.start || nextPhase.end + sourceOffset !== resumeDraft.end)) clearDraft()
     }
 
     document.addEventListener('selectionchange', handleSelectionChange)
     return () => document.removeEventListener('selectionchange', handleSelectionChange)
-  }, [text, resumeDraft, clearDraft])
+  }, [text, sourceOffset, resumeDraft, clearDraft])
 
   useEffect(() => {
     if (!resumeDraft || resumeDraft.paragraphId !== paragraphId || !containerRef.current) return
-    const range = createRangeForOffsets(containerRef.current, resumeDraft.start, resumeDraft.end)
+    const range = createRangeForOffsets(
+      containerRef.current,
+      resumeDraft.start - sourceOffset,
+      resumeDraft.end - sourceOffset,
+    )
     if (!range || range.toString() !== resumeDraft.selectedText) return
     const selection = window.getSelection()
     selection?.removeAllRanges()
     selection?.addRange(range)
     document.dispatchEvent(new Event('selectionchange'))
     if (resumeDraft.scrollY > 0) window.scrollTo({ top: resumeDraft.scrollY })
-  }, [paragraphId, resumeDraft, text])
+  }, [paragraphId, resumeDraft, sourceOffset, text])
+
+  function handleTextClick() {
+    if (!onOpenDetail) return
+    const selection = window.getSelection()
+    if (selection && !selection.isCollapsed) return
+    onOpenDetail()
+  }
+
+  function handleTextKeyDown(event: KeyboardEvent<HTMLParagraphElement>) {
+    if (!onOpenDetail || (event.key !== 'Enter' && event.key !== ' ')) return
+    event.preventDefault()
+    onOpenDetail()
+  }
 
   function handleSaveClick() {
     if (phase.kind !== 'selected') return
@@ -105,7 +123,11 @@ export default function QuoteSelection({ paragraphId, text, highlightRange, resu
     if (!isConnected) {
       if (newTagName === undefined || !newTagName.trim()) return
       setDraft({
-        paragraphId, start, end, selectedText: text.slice(start, end), listName: newTagName.trim(),
+        paragraphId,
+        start: start + sourceOffset,
+        end: end + sourceOffset,
+        selectedText: text.slice(start, end),
+        listName: newTagName.trim(),
         query: searchContext.query, page: searchContext.page, volumeId: searchContext.volumeId, scrollY: window.scrollY,
       })
       updatePhase({ kind: 'authPrompt', start, end })
@@ -116,7 +138,11 @@ export default function QuoteSelection({ paragraphId, text, highlightRange, resu
     saveInFlightRef.current = true
     createQuoteMutation.mutate(
       {
-        paragraphId, startOffset: start, endOffset: end, selectedText: text.slice(start, end), tagNames,
+        paragraphId,
+        startOffset: start + sourceOffset,
+        endOffset: end + sourceOffset,
+        selectedText: text.slice(start, end),
+        tagNames,
         ...(newTagName === undefined ? {} : { newTagName: newTagName.trim() }),
       },
       {
@@ -157,14 +183,25 @@ export default function QuoteSelection({ paragraphId, text, highlightRange, resu
 
   return (
     <div className={styles.root}>
-      <p ref={containerRef} className={styles.text}>
-        {segments.map((segment, index) =>
-          segment.highlighted ? (
-            <mark key={index} className={styles.mark}>{segment.text}</mark>
-          ) : (
-            <span key={index}>{segment.text}</span>
-          ),
-        )}
+      <p
+        className={styles.text}
+        role={onOpenDetail ? 'button' : undefined}
+        tabIndex={onOpenDetail ? 0 : undefined}
+        aria-label={onOpenDetail ? t('paragraphCard.openDetailButton') : undefined}
+        onClick={onOpenDetail ? handleTextClick : undefined}
+        onKeyDown={onOpenDetail ? handleTextKeyDown : undefined}
+      >
+        {hasLeadingEllipsis && <span className={styles.ellipsis} aria-hidden="true">… </span>}
+        <span ref={containerRef}>
+          {segments.map((segment, index) =>
+            segment.highlighted ? (
+              <mark key={index} className={styles.mark}>{segment.text}</mark>
+            ) : (
+              <span key={index}>{segment.text}</span>
+            ),
+          )}
+        </span>
+        {hasTrailingEllipsis && <span className={styles.ellipsis} aria-hidden="true"> …</span>}
       </p>
 
       {isAuthResolved && phase.kind === 'selected' && (

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { SearchHit } from '../../../api/search'
 import QuoteSelection from '../QuoteSelection/QuoteSelection'
+import { createSearchExcerpt } from '../createSearchExcerpt'
 import styles from './ParagraphCard.module.css'
 import type { GuestQuoteSaveDraft } from '../guestQuoteSaveContext'
 
@@ -11,12 +12,13 @@ interface ParagraphCardProps {
   searchContext?: Pick<GuestQuoteSaveDraft, 'query' | 'page' | 'volumeId'>
 }
 
-// A separate header button, not a click on the paragraph text itself — the text is already a
-// gesture target for native selection (QuoteSelection's "Sauvegarder" flow); overloading it with
-// "open detail" too would conflict with that.
+// The excerpt opens details on click, while an active native selection remains reserved for
+// QuoteSelection's "Sauvegarder" flow.
 export default function ParagraphCard({ hit, onOpenDetail, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null } }: ParagraphCardProps) {
   const { t } = useTranslation()
   const { paragraphId, text, startOffset, endOffset, volume, part, pageNumber } = hit
+  const excerpt = createSearchExcerpt(text, { start: startOffset, end: endOffset })
+  const excerptText = text.slice(excerpt.start, excerpt.end)
 
   return (
     <article className={styles.root}>
@@ -24,14 +26,15 @@ export default function ParagraphCard({ hit, onOpenDetail, resumeDraft = null, s
         <span className={styles.location}>
           {t('searchPage.resultLocation', { volume, part, page: pageNumber })}
         </span>
-        <button type="button" className={styles.detailButton} onClick={() => onOpenDetail(hit)}>
-          {t('paragraphCard.openDetailButton')}
-        </button>
       </header>
       <QuoteSelection
         paragraphId={paragraphId}
-        text={text}
-        highlightRange={{ start: startOffset, end: endOffset }}
+        text={excerptText}
+        highlightRange={{ start: startOffset - excerpt.start, end: endOffset - excerpt.start }}
+        sourceOffset={excerpt.start}
+        hasLeadingEllipsis={excerpt.hasLeadingEllipsis}
+        hasTrailingEllipsis={excerpt.hasTrailingEllipsis}
+        onOpenDetail={() => onOpenDetail(hit)}
         resumeDraft={resumeDraft}
         searchContext={searchContext}
       />

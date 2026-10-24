@@ -4,6 +4,10 @@ export interface QuoteSelectionProps {
   paragraphId: number
   text: string
   highlightRange: { start: number; end: number }
+  sourceOffset?: number
+  hasLeadingEllipsis?: boolean
+  hasTrailingEllipsis?: boolean
+  onOpenDetail?: () => void
   resumeDraft?: GuestQuoteSaveDraft | null
   searchContext?: Pick<GuestQuoteSaveDraft, 'query' | 'page' | 'volumeId'>
 }
