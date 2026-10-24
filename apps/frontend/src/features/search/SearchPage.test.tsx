@@ -122,7 +122,7 @@ describe('SearchPage', () => {
     const resultLocation = /Du côté de chez Swann · Combray · p\. 1/
     expect(screen.getByText(resultLocation)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Voir le détail' }))
+    await userEvent.click(screen.getByRole('button', { name: /Longtemps/ }))
     expect(await screen.findAllByText(resultLocation)).toHaveLength(2)
   })
 
@@ -253,7 +253,7 @@ describe('SearchPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Chercher' }))
     await screen.findByRole('article')
 
-    await user.click(screen.getByRole('button', { name: 'Voir le détail' }))
+    await user.click(screen.getByRole('button', { name: /Longtemps/ }))
 
     expect(await screen.findByRole('dialog', { name: 'Résultat de recherche' })).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Chercher un tag' })).not.toBeInTheDocument()
@@ -477,7 +477,7 @@ describe('connected', () => {
     render(<SearchPage />, { wrapper })
     await user.type(screen.getByRole('searchbox'), 'Longtemps')
     await user.click(screen.getByRole('button', { name: 'Chercher' }))
-    await user.click(await screen.findByRole('button', { name: 'Voir le détail' }))
+    await user.click(await screen.findByRole('button', { name: /Longtemps/ }))
 
     await user.click(await screen.findByRole('checkbox', { name: 'Combray' }))
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }))

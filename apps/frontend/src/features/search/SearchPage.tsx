@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SearchHit } from '../../api/search'
@@ -46,6 +46,8 @@ export default function SearchPage() {
   const [tagId, setTagId] = useState<string | null>(null)
   const [pagination, setPagination] = useState(() => ({ volumeId: selectedVolumeId, page: draft?.page ?? 0 }))
   const page = pagination.volumeId === selectedVolumeId ? pagination.page : 0
+  const resultsAnchorRef = useRef<HTMLDivElement>(null)
+  const shouldScrollToResultsRef = useRef(false)
   // The selected quote is a snapshot owned by the modal, not a pointer into a filtered query.
   // It must remain available if removing a tag makes the quote disappear from the frieze/list, or
   // if the frieze request fails after a quote was opened from the saved-citations list.
@@ -56,6 +58,17 @@ export default function SearchPage() {
   function setPage(nextPage: number) {
     setPagination({ volumeId: selectedVolumeId, page: nextPage })
   }
+
+  function handlePageChange(nextPage: number) {
+    shouldScrollToResultsRef.current = true
+    setPage(nextPage)
+  }
+
+  useEffect(() => {
+    if (!shouldScrollToResultsRef.current) return
+    shouldScrollToResultsRef.current = false
+    resultsAnchorRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' })
+  }, [page])
 
   function handleSearch(q: string) {
     setQuery(q)
@@ -148,7 +161,7 @@ export default function SearchPage() {
           page={corpusQuery.data.page}
           size={corpusQuery.data.size}
           isFetching={corpusQuery.isFetching}
-          onPageChange={setPage}
+          onPageChange={handlePageChange}
         />
       )
     }
@@ -168,7 +181,7 @@ export default function SearchPage() {
         page={savedQuery.data.page}
         size={savedQuery.data.size}
         isFetching={savedQuery.isFetching}
-        onPageChange={setPage}
+        onPageChange={handlePageChange}
       />
     )
   }
@@ -197,7 +210,9 @@ export default function SearchPage() {
               onSelectCorpusScope={() => selectScope('corpus')}
             />
           )}
-          {content}
+          <div ref={resultsAnchorRef} className={styles.resultsAnchor}>
+            {content}
+          </div>
         </div>
       </div>
       {isConnected && (

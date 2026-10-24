@@ -122,14 +122,9 @@
   }
 }
 
-@media (max-width: 48rem) {
-  .root {
-    margin-bottom: var(--space-4);
-  }
-}
-
 @media (width < 48rem) {
   .root {
+    margin-bottom: var(--space-4);
     display: none;
   }
 }

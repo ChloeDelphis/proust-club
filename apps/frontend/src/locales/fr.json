@@ -33,7 +33,7 @@
     "resendButton": "Renvoyer l'email de confirmation"
   },
   "searchForm": {
-    "placeholder": "Rechercher dans Proust…",
+    "placeholder": "Un mot ou une phrase…",
     "ariaLabel": "Rechercher un passage",
     "clearButton": "Effacer la recherche",
     "submitButton": "Chercher"
@@ -55,9 +55,6 @@
   },
   "searchResultDetailModal": {
     "ariaLabel": "Résultat de recherche"
-  },
-  "paragraphCard": {
-    "openDetailButton": "Voir le détail"
   },
   "resultList": {
     "resultCount_one": "{{count}} résultat",

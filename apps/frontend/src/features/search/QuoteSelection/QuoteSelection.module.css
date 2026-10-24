@@ -8,6 +8,17 @@
   font-size: var(--text-md);
   line-height: var(--line-height-loose);
   color: var(--color-text);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+
+.text:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
+}
+
+.ellipsis {
+  user-select: none;
 }
 
 .mark {

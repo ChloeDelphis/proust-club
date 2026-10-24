@@ -9,12 +9,20 @@
   gap: var(--space-8);
 }
 
+.layout > aside {
+  padding-top: var(--space-2);
+}
+
 .searchContent {
   position: relative;
   left: calc((12rem + var(--space-8)) / -2);
   width: 100%;
   max-width: 48rem;
   margin-inline: auto;
+}
+
+.resultsAnchor {
+  scroll-margin-top: calc(6.25rem + var(--space-6));
 }
 
 @media (max-width: 64rem) {
@@ -25,7 +33,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (width < 48rem) {
   .root {
     padding: var(--space-2) var(--space-4) var(--space-8);
   }
@@ -41,5 +49,9 @@
 
   .searchContent {
     max-width: none;
+  }
+
+  .resultsAnchor {
+    scroll-margin-top: var(--space-4);
   }
 }

@@ -1,16 +1,20 @@
 # Search — Frontend
 
-How the search UI works: from user input to highlighted paragraph displayed on screen. `SearchPage` is a **unified** page — it also hosts the connected user's saved citations (frieze, volume sidebar, tag/scope filter); see `docs/features/personal-timeline.md` for that half. This doc covers the search mechanics (corpus and saved-citations text search both reuse the same `SearchForm`).
+How the search UI works: from user input to highlighted excerpt displayed on screen. `SearchPage` is a **unified** page — it also hosts the connected user's saved citations (frieze, volume sidebar, tag/scope filter); see `docs/features/personal-timeline.md` for that half. This doc covers the search mechanics (corpus and saved-citations text search both reuse the same `SearchForm`).
 
 ---
 
 ## What it does
 
-The user enters a phrase, submits the form, and sees a paginated list of matching paragraphs from *À la recherche du temps perdu*. Each result shows the paragraph with the matched phrase highlighted, and its position in the work (volume, part, approximate page). A "Voir le détail" button on each result opens it in a two-column modal with progressive before/after reading context (and, when connected, a save-with-tags flow) — `SearchResultDetailModal`, documented in `docs/features/quote-save-tags.md` alongside the shared `DetailModal` layout it builds on, not duplicated here.
+The user enters a phrase, submits the form, and sees a paginated list of matching paragraphs from *À la recherche du temps perdu*. Each result shows an excerpt centered on the matched phrase (target length about 200 characters), with the match highlighted and its position in the work (volume, part, approximate page). The excerpt is cut at word boundaries, preferring nearby sentence punctuation, and uses an ellipsis where text was omitted. Clicking or keyboard-activating the excerpt opens the full paragraph in a two-column modal with progressive before/after reading context (and, when connected, a save-with-tags flow) — `SearchResultDetailModal`, documented in `docs/features/quote-save-tags.md` alongside the shared `DetailModal` layout it builds on, not duplicated here. Text selection in the excerpt remains available for saving a citation.
+
+The backend continues to return the complete paragraph and match offsets. The frontend derives the excerpt from those offsets; `QuoteSelection` adds the excerpt's source offset back to local selection positions before saving, so saved citation offsets still refer to the original paragraph.
 
 For a connected user, the same search box also filters their own saved citations instead, when the "saved citations" scope is active in `TagFilterBar` — see "Corpus vs. saved-citations scope" below.
 
-**Layout** — on wide screens, the tome list sits beside centered search and results; tablets keep the two columns. On phones, the list moves into a left-side drawer and the frieze is hidden. The drawer leaves part of the page visible and closes on outside click, Escape, tome selection, its close control, or a left swipe. Tome names wrap inside it.
+**Layout** — above 1024px, the tome list sits beside centered search and results. From 768px through 1024px, the search fills the available content column while the tome list and frieze remain visible. Below 768px, the list moves into a left-side drawer and the frieze is hidden. At exactly 768px the tablet layout is retained. The drawer leaves part of the page visible and closes on outside click, Escape, tome selection, its close control, or a left swipe. Tome names wrap inside it.
+
+**Responsive thresholds** — `64rem` (1024px) stops offsetting and constraining search content because the sidebar leaves less room on medium screens; the tome filter text stays at the same compact 14px size on both sides of this threshold. `48rem` (768px) switches between the two-column layout and the mobile drawer; the query is strict (`width < 48rem`) so the 768px tablet reference keeps the two-column layout. `30rem` (480px) tightens header spacing and branding on the narrowest phones. Check the supplied reference widths at 320, 375, 425, 768, 1024, and 1440px, plus 1040px to confirm the tome labels no longer jump in size just above the 1024px threshold.
 
 ---
 
@@ -75,16 +79,19 @@ TanStack Query derives loading state, data, errors, and caching — `['search', 
 
 ## Highlighting
 
-The backend returns `startOffset` (inclusive, 0-based) and `endOffset` (exclusive, 0-based), matching JavaScript's `String.substring()` exactly.
+The backend returns `startOffset` (inclusive, 0-based) and `endOffset` (exclusive, 0-based) within the full paragraph, matching JavaScript's `String.substring()` exactly. `createSearchExcerpt` selects a bounded window around that match; `ParagraphCard` subtracts the excerpt start from the highlight range, while `QuoteSelection` adds the excerpt start back to user selections before saving.
 
 ```tsx
-const before = text.substring(0, startOffset)
-const match  = text.substring(startOffset, endOffset)
-const after  = text.substring(endOffset)
+const excerpt = text.substring(excerptStart, excerptEnd)
+const matchStart = startOffset - excerptStart
+const matchEnd = endOffset - excerptStart
+const before = excerpt.substring(0, matchStart)
+const match  = excerpt.substring(matchStart, matchEnd)
+const after  = excerpt.substring(matchEnd)
 // renders: {before}<mark>{match}</mark>{after}
 ```
 
-No `dangerouslySetInnerHTML`. No string manipulation beyond `substring`.
+No `dangerouslySetInnerHTML`. Excerpt selection uses offsets and boundary scans; React renders every text segment and highlight.
 
 ---
 
@@ -94,12 +101,13 @@ Backend-driven: `page`, `size`, and optional `volumeId` are query parameters; `t
 
 ## Manual verification
 
-- **Responsive layout:** check that desktop keeps the tome list beside search, tablets keep the frieze and provide the tome drawer, and phones hide the frieze and place search under the header. Check keyboard submission, clear control, and account links in the drawer.
+- **Responsive layout:** at 1440px, check centered search beside the tome list; at 1024px and 768px, check the full content column, visible frieze, and two-column layout; at 425px, 375px, and 320px, check the drawer, hidden frieze, and mobile search controls. Also check at 1040px that tome labels remain compact. Check keyboard submission, clear control, and account links in the drawer.
 - **Drawer:** verify outside click, Escape, tome selection, close control, and left swipe dismiss it; vertical scrolling and wrapped tome names remain usable.
 - **Happy path — anonymous structure:** without a session, load `/`, confirm the frieze and tome list show all seven volumes without bookmarks, and confirm the UI requests `GET /api/volumes` but makes no requests to `/api/quotes`, `/api/quotes/timeline`, or `/api/tags`.
 - **Happy path — corpus:** submit a phrase present in more than one tome, select a tome from the list, drawer, or frieze, and confirm results and pagination match that tome. Selecting a tome in the drawer closes it.
+- **Search excerpts:** confirm the full match remains visible, text is cut on word boundaries with ellipses only when needed, and nearby punctuation is preferred. Check matches near the start and end of a paragraph and a match longer than the 200-character target. Click an excerpt to open its full paragraph; drag-select text and confirm it still opens the save flow without opening the detail modal, and that saved selection offsets point to the correct text in the original paragraph.
 - **Happy path — saved citations:** switch to saved citations, select a tome, and confirm the list contains only that tome's quotes; combine the tome with a tag and a text query.
-- **Toggle and pagination:** move to page 2, select a tome in either control, and confirm the first filtered page appears. Select the same tome again and confirm all-tome results return on page 1.
+- **Toggle and pagination:** move to page 2, select a tome in either control, and confirm the first filtered page appears. Select the same tome again and confirm all-tome results return on page 1. When using Prev / Next, confirm the viewport returns to the start of the updated result list.
 - **Empty result:** select a valid tome with no match for the submitted phrase (or no saved citations) and confirm the empty state and `total: 0`.
 - **Public volume metadata:** call `GET /api/volumes` without a session; expect `200`, seven ordered volume records with `id`, `title`, `position`, `minPage`, and `maxPage`, and no personal quote/tag data.
 - **Validation:** `GET /api/search` and authenticated `GET /api/quotes` with `volumeId=0` or `volumeId=8` return `400`; omitted `volumeId` retains all-tome behavior.
