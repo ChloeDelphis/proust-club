@@ -69,6 +69,7 @@ describe('Header', () => {
     expect(await screen.findByRole('menuitem', { name: 'Mon compte' })).toBeInTheDocument()
     await user.click(screen.getByRole('menuitem', { name: 'Se déconnecter' }))
 
-    expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Ouvrir le menu du compte' }))
+    expect(await screen.findByRole('menuitem', { name: 'Se connecter' })).toBeInTheDocument()
   })
 })
