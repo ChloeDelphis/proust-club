@@ -1,25 +1,170 @@
 .root {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  max-width: 56rem;
+  width: 100%;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-6) 0;
+  padding: var(--space-4) var(--space-6) var(--space-6);
   font-family: var(--font-ui);
 }
 
 .brand {
+  grid-column: 2;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: var(--text-xl);
+  font-size: var(--text-3xl);
   color: var(--color-text);
   text-decoration: none;
 }
 
-.nav {
+.actions,
+.session {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.tomeMenuTrigger {
+  display: none;
+}
+
+.menuIcon,
+.menuIcon::before,
+.menuIcon::after {
+  display: block;
+  width: 1.35rem;
+  height: 0.1rem;
+  background: currentColor;
+  border-radius: var(--radius-full);
+}
+
+.menuIcon {
+  position: relative;
+}
+
+.menuIcon::before,
+.menuIcon::after {
+  position: absolute;
+  left: 0;
+  content: '';
+}
+
+.menuIcon::before {
+  top: -0.4rem;
+}
+
+.menuIcon::after {
+  top: 0.4rem;
+}
+
+.drawerBackdrop,
+.navigationDrawer {
+  position: fixed;
+  z-index: var(--z-index-modal);
+}
+
+.drawerBackdrop {
+  inset: 0;
+  background: color-mix(in srgb, var(--color-text) 38%, transparent);
+}
+
+.navigationDrawer {
+  inset-block: 0;
+  inset-inline-start: 0;
   display: flex;
-  gap: var(--space-4);
+  flex-direction: column;
+  width: min(24rem, 85vw);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  overflow: hidden;
+  touch-action: pan-y;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.drawerHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.drawerTitle {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.drawerClose {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  flex: 0 0 auto;
+  aspect-ratio: 1;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-full);
+  font-size: var(--text-2xl);
+  cursor: pointer;
+}
+
+.drawerClose:hover {
+  background: var(--color-surface-subtle);
+}
+
+.drawerVolumes {
+  flex: 1;
+  min-height: 0;
+  margin-block: var(--space-4);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.drawerVolumes > nav > ul {
+  gap: var(--space-2);
+}
+
+.drawerVolumes button {
+  font-size: var(--text-sm);
+  white-space: normal;
+}
+
+.drawerActions {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.drawerActionPrimary,
+.drawerActionSecondary {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  text-align: center;
+  text-decoration: none;
+}
+
+.drawerActionPrimary {
+  color: var(--color-text-on-accent);
+  background: var(--color-accent);
+}
+
+.drawerActionPrimary:hover {
+  background: var(--color-accent-hover);
+}
+
+.drawerActionSecondary {
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.drawerActionSecondary:hover {
+  background: var(--color-surface-subtle);
 }
 
 .session {
@@ -28,6 +173,41 @@
   gap: var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-text);
+}
+
+.accountTrigger {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.accountIcon {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  background-color: currentColor;
+  mask: url('../../assets/icons/icone-madeleine.svg') center / contain no-repeat;
+}
+
+.accountTrigger:hover,
+.accountTrigger[data-popup-open] {
+  color: var(--color-accent);
+  background: var(--color-surface-subtle);
+}
+
+.accountTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .avatar {
@@ -53,6 +233,11 @@
   background: var(--color-accent-hover);
 }
 
+.accountMenuPositioner,
+.accountMenu {
+  z-index: var(--z-index-popover);
+}
+
 .accountMenu {
   min-width: 10rem;
   padding: var(--space-1-5);
@@ -75,4 +260,64 @@
 .menuItem[data-highlighted] {
   background: var(--color-surface-subtle);
   outline: none;
+}
+
+@media (max-width: 48rem) {
+  .tomeMenuTrigger {
+    grid-column: 1;
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    aspect-ratio: 1;
+    padding: 0;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+  }
+
+  .tomeMenuTrigger:hover,
+  .tomeMenuTrigger:focus-visible {
+    color: var(--color-accent);
+    background: var(--color-surface-subtle);
+  }
+
+  .tomeMenuTrigger:focus-visible,
+  .drawerClose:focus-visible,
+  .drawerActionPrimary:focus-visible,
+  .drawerActionSecondary:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus-ring);
+  }
+
+  .actions {
+    display: none;
+  }
+
+  .root {
+    padding-bottom: var(--space-4);
+  }
+}
+
+@media (max-width: 30rem) {
+  .root {
+    padding: var(--space-3) var(--space-3) var(--space-2);
+  }
+
+  .brand {
+    font-size: var(--text-2xl);
+  }
+
+  .accountTrigger {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .accountIcon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
 }

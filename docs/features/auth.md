@@ -106,11 +106,13 @@ LoginForm / RegisterForm (fields + client-side validation)
   → POST /api/auth/login | /api/auth/register
 ```
 
-`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
+`useCurrentUser()` supplies session state to `Header` and `EmailVerificationBanner`. Signed-out users find login and registration in the account menu on desktop and at the bottom of the tome drawer on narrow screens. The brand remains centered. Auth mutations update the current-user cache; logout and email confirmation refresh it.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
 
 ## Manual verification
+
+- Check that signed-out users can reach login and registration from the desktop account menu and narrow-screen drawer. While signed in, verify the avatar menu offers account and logout actions, and the brand remains centered.
 
 ### Happy path
 

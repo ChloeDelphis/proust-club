@@ -18,6 +18,10 @@
     "accountLink": "Mon compte",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
+    "accountMenuLabel": "Ouvrir le menu du compte",
+    "openNavigation": "Ouvrir le menu des tomes",
+    "navigationLabel": "Navigation des tomes et du compte",
+    "navigationTitle": "Explorer les tomes",
     "login": "Se connecter",
     "register": "Créer un compte"
   },

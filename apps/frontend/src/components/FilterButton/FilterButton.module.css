@@ -22,7 +22,7 @@
   width: 100%;
   text-align: left;
   font-family: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
   color: var(--color-text-muted);
   background: none;
   border: none;
@@ -47,4 +47,12 @@
 
 .isActive:hover {
   color: var(--color-text-on-accent);
+}
+
+@media (max-width: 64rem) {
+  .list {
+    padding-block: var(--space-1);
+    font-size: clamp(var(--text-xs), 1.5vw, var(--text-sm));
+    line-height: var(--line-height-normal);
+  }
 }

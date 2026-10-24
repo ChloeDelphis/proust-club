@@ -1,4 +1,5 @@
 .root {
+  margin-top: var(--space-4);
   transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 

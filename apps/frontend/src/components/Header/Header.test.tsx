@@ -6,6 +6,8 @@ import type { ReactNode } from 'react'
 import Header from './Header'
 import * as authApi from '../../api/auth'
 import { ApiError } from '../../api/client'
+import GuestQuoteSaveProvider from '../../features/search/GuestQuoteSaveProvider'
+import VolumeSelectionProvider from '../../features/search/VolumeSelectionProvider'
 
 vi.mock('../../api/auth')
 
@@ -15,7 +17,11 @@ function wrapper({ children }: { children: ReactNode }) {
   })
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>{children}</MemoryRouter>
+      <MemoryRouter>
+        <GuestQuoteSaveProvider>
+          <VolumeSelectionProvider>{children}</VolumeSelectionProvider>
+        </GuestQuoteSaveProvider>
+      </MemoryRouter>
     </QueryClientProvider>
   )
 }
@@ -33,13 +39,15 @@ beforeEach(() => {
 })
 
 describe('Header', () => {
-  it('affiche les liens connexion/inscription si personne n’est connecté', async () => {
+  it('affiche les liens connexion/inscription dans le menu si personne n’est connecté', async () => {
     vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
+    const user = userEvent.setup()
 
     render(<Header />, { wrapper })
 
-    expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Créer un compte' })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Ouvrir le menu du compte' }))
+    expect(await screen.findByRole('menuitem', { name: 'Se connecter' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Créer un compte' })).toBeInTheDocument()
   })
 
   it('affiche un avatar portant le nom d’utilisateur connecté, dont le menu permet de se déconnecter', async () => {
@@ -61,6 +69,7 @@ describe('Header', () => {
     expect(await screen.findByRole('menuitem', { name: 'Mon compte' })).toBeInTheDocument()
     await user.click(screen.getByRole('menuitem', { name: 'Se déconnecter' }))
 
-    expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Ouvrir le menu du compte' }))
+    expect(await screen.findByRole('menuitem', { name: 'Se connecter' })).toBeInTheDocument()
   })
 })

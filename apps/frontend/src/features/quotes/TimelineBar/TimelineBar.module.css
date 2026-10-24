@@ -4,7 +4,7 @@
   top: 0;
   z-index: 10;
   background: var(--color-surface);
-  padding-top: var(--space-2);
+  container-type: inline-size;
 }
 
 .track {
@@ -19,8 +19,10 @@
   transition:
     fill var(--motion-duration-fast) var(--motion-ease-standard),
     opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    y var(--motion-duration-fast) var(--motion-ease-standard),
     x var(--motion-duration-fast) var(--motion-ease-standard),
-    width var(--motion-duration-fast) var(--motion-ease-standard);
+    width var(--motion-duration-fast) var(--motion-ease-standard),
+    height var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .volumeZone:hover,
@@ -28,13 +30,22 @@
   fill: var(--color-surface-subtle);
 }
 
+.volumeZone:focus {
+  outline: none;
+}
+
+.volumeZone:focus-visible {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
 .volumeZone.isActiveZone {
-  fill: var(--color-accent);
+  fill: var(--color-surface-subtle);
 }
 
 .volumeZone.isActiveZone:hover,
 .volumeZone.isActiveZone:focus-visible {
-  fill: var(--color-accent-hover);
+  fill: var(--color-surface-subtle);
 }
 
 .volumeZone.isHidden,
@@ -55,6 +66,11 @@
   opacity: 0;
 }
 
+.volumeZone:not(.isActiveZone):hover + .volumeLabel .volumeLabelText,
+.volumeZone:not(.isActiveZone):focus-visible + .volumeLabel .volumeLabelText {
+  color: var(--color-text-muted);
+}
+
 .volumeLabelText {
   display: flex;
   align-items: center;
@@ -63,18 +79,17 @@
   height: 100%;
   padding: 0 var(--space-1);
   overflow: hidden;
-  font-family: var(--font-ui);
-  font-size: var(--text-3xs);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-family: var(--font-reading);
+  font-size: clamp(var(--text-sm), 1.05cqw, var(--text-lg));
+  font-weight: 400;
+  letter-spacing: normal;
   text-align: center;
-  line-height: 1.15;
-  color: var(--color-text-muted);
+  line-height: var(--line-height-snug);
+  color: var(--color-text-quiet);
 }
 
 .volumeLabel.isActiveLabel .volumeLabelText {
-  color: var(--color-text-on-accent);
+  color: var(--color-text-quiet);
 }
 
 .delimiter {
@@ -97,4 +112,24 @@
 .bookmark:hover,
 .bookmark:focus-visible {
   fill: var(--color-accent-hover);
+}
+
+@media (max-width: 64rem) {
+  .volumeLabelText {
+    padding-inline: var(--space-0-5);
+    font-size: clamp(var(--text-xs), 1.25cqw, var(--text-sm));
+    line-height: var(--line-height-tight);
+  }
+}
+
+@media (max-width: 48rem) {
+  .root {
+    margin-bottom: var(--space-4);
+  }
+}
+
+@media (width < 48rem) {
+  .root {
+    display: none;
+  }
 }

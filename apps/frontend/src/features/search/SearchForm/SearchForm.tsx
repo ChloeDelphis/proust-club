@@ -30,20 +30,27 @@ export default function SearchForm({ initialValue = '', onSubmit }: SearchFormPr
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
       <div className={styles.inputRow}>
-        <input
-          className={styles.input}
-          type="search"
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          placeholder={t('searchForm.placeholder')}
-          aria-label={t('searchForm.ariaLabel')}
-          maxLength={queryConstraints.maxLength}
-        />
-        {value && (
-          <button type="button" className={styles.clearButton} onClick={handleClear} aria-label={t('searchForm.clearButton')}>
-            ×
-          </button>
-        )}
+        <div className={styles.inputWrapper}>
+          <input
+            className={styles.input}
+            type="search"
+            enterKeyHint="search"
+            value={value}
+            onChange={e => setValue(e.target.value)}
+            placeholder={t('searchForm.placeholder')}
+            aria-label={t('searchForm.ariaLabel')}
+            maxLength={queryConstraints.maxLength}
+          />
+          <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="10.8" cy="10.8" r="6.8" />
+            <path d="m16 16 4.2 4.2" />
+          </svg>
+          {value && (
+            <button type="button" className={styles.clearButton} onClick={handleClear} aria-label={t('searchForm.clearButton')}>
+              ×
+            </button>
+          )}
+        </div>
         <button className={styles.button} type="submit">
           {t('searchForm.submitButton')}
         </button>
