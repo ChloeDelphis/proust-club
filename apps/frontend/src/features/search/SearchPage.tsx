@@ -169,7 +169,6 @@ export default function SearchPage() {
 
   return (
     <main className={styles.root}>
-      <h1 className={styles.title}>{t('searchPage.title')}</h1>
       <TimelineBar
         isConnected={isConnected}
         activeTagId={tagId}

@@ -4,16 +4,6 @@
   padding: var(--space-8) var(--space-6);
 }
 
-.title {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 500;
-  font-size: var(--text-3xl);
-  color: var(--color-text);
-  margin: 0 0 var(--space-6);
-  letter-spacing: var(--font-tracking-wide);
-}
-
 .layout {
   display: grid;
   grid-template-columns: 12rem 1fr;
