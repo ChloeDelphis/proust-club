@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SearchHit } from '../../api/search'
@@ -44,8 +44,8 @@ export default function SearchPage() {
   const [query, setQuery] = useState(() => draft?.query ?? '')
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
   const [tagId, setTagId] = useState<string | null>(null)
-  const [page, setPage] = useState(() => draft?.page ?? 0)
-  const previousVolumeId = useRef(selectedVolumeId)
+  const [pagination, setPagination] = useState(() => ({ volumeId: selectedVolumeId, page: draft?.page ?? 0 }))
+  const page = pagination.volumeId === selectedVolumeId ? pagination.page : 0
   // The selected quote is a snapshot owned by the modal, not a pointer into a filtered query.
   // It must remain available if removing a tag makes the quote disappear from the frieze/list, or
   // if the frieze request fails after a quote was opened from the saved-citations list.
@@ -53,12 +53,9 @@ export default function SearchPage() {
   const timelineQuery = useTimeline(tagId, isConnected)
   const [detailHit, setDetailHit] = useState<SearchHit | null>(null)
 
-  useEffect(() => {
-    if (previousVolumeId.current !== selectedVolumeId) {
-      previousVolumeId.current = selectedVolumeId
-      setPage(0)
-    }
-  }, [selectedVolumeId])
+  function setPage(nextPage: number) {
+    setPagination({ volumeId: selectedVolumeId, page: nextPage })
+  }
 
   function handleSearch(q: string) {
     setQuery(q)

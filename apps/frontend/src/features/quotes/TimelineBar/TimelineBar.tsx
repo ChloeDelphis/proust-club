@@ -16,8 +16,6 @@ import styles from './TimelineBar.module.css'
 // can stretch the SVG uniformly: the track fills its container without distorting text or marks.
 const VIEWBOX_WIDTH = 1000
 const VIEWBOX_HEIGHT = 100
-const TRACK_TOP = 50
-const TRACK_BOTTOM = 95
 const BOOKMARK_HEIGHT_NORMAL = 20
 const BOOKMARK_HEIGHT_EXTENDED = 35
 const BOOKMARK_WIDTH = 4
@@ -155,7 +153,7 @@ function Bookmarks({
           <rect
             key={quote.id}
             x={x - BOOKMARK_WIDTH / 2}
-            y={TRACK_BOTTOM - height}
+            y={VIEWBOX_HEIGHT - height}
             width={BOOKMARK_WIDTH}
             height={height}
             className={styles.bookmark}
