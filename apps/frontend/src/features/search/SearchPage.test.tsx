@@ -16,6 +16,7 @@ import { quoteId } from '../quotes/TimelineBar/timelineTestFixtures'
 import GuestQuoteSaveProvider from './GuestQuoteSaveProvider'
 import { GuestQuoteSaveContext } from './guestQuoteSaveContext'
 import type { GuestQuoteSaveDraft } from './guestQuoteSaveContext'
+import VolumeSelectionProvider from './VolumeSelectionProvider'
 
 vi.mock('../../api/search')
 vi.mock('../../api/auth')
@@ -32,7 +33,9 @@ function wrapper({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
         <GuestQuoteSaveProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <VolumeSelectionProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </VolumeSelectionProvider>
         </GuestQuoteSaveProvider>
       </MemoryRouter>
     </QueryClientProvider>
@@ -87,7 +90,9 @@ describe('SearchPage', () => {
         <QueryClientProvider client={queryClient}>
           <MemoryRouter>
             <GuestQuoteSaveContext.Provider value={{ draft, setDraft: vi.fn(), clearDraft: vi.fn() }}>
-              <ToastProvider>{children}</ToastProvider>
+              <VolumeSelectionProvider>
+                <ToastProvider>{children}</ToastProvider>
+              </VolumeSelectionProvider>
             </GuestQuoteSaveContext.Provider>
           </MemoryRouter>
         </QueryClientProvider>

@@ -6,6 +6,8 @@ import type { ReactNode } from 'react'
 import Header from './Header'
 import * as authApi from '../../api/auth'
 import { ApiError } from '../../api/client'
+import GuestQuoteSaveProvider from '../../features/search/GuestQuoteSaveProvider'
+import VolumeSelectionProvider from '../../features/search/VolumeSelectionProvider'
 
 vi.mock('../../api/auth')
 
@@ -15,7 +17,11 @@ function wrapper({ children }: { children: ReactNode }) {
   })
   return (
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>{children}</MemoryRouter>
+      <MemoryRouter>
+        <GuestQuoteSaveProvider>
+          <VolumeSelectionProvider>{children}</VolumeSelectionProvider>
+        </GuestQuoteSaveProvider>
+      </MemoryRouter>
     </QueryClientProvider>
   )
 }

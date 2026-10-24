@@ -1,15 +1,23 @@
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { Menu } from '@base-ui/react/menu'
+import { Dialog } from '@base-ui/react/dialog'
 import { logout } from '../../api/auth'
 import { useCurrentUser } from '../../features/auth/useCurrentUser'
+import VolumeList from '../../features/quotes/VolumeList/VolumeList'
+import { useVolumeSelection } from '../../features/search/useVolumeSelection'
 import styles from './Header.module.css'
 
 export default function Header() {
   const { t } = useTranslation()
   const { data: user, isSuccess } = useCurrentUser()
   const queryClient = useQueryClient()
+  const location = useLocation()
+  const { selectedVolumeId, selectVolume } = useVolumeSelection()
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false)
+  const isSearchPage = location.pathname === '/'
 
   const logoutMutation = useMutation({
     mutationFn: () => logout(),
@@ -22,6 +30,41 @@ export default function Header() {
 
   return (
     <header className={styles.root}>
+      {isSearchPage && (
+        <Dialog.Root open={isNavigationOpen} onOpenChange={setIsNavigationOpen}>
+          <Dialog.Trigger className={styles.tomeMenuTrigger} aria-label={t('header.openNavigation')}>
+            <span className={styles.menuIcon} aria-hidden="true" />
+          </Dialog.Trigger>
+          <Dialog.Portal>
+            <Dialog.Backdrop className={styles.drawerBackdrop} />
+            <Dialog.Popup className={styles.navigationDrawer} aria-label={t('header.navigationLabel')}>
+              <div className={styles.drawerHeading}>
+                <Dialog.Title className={styles.drawerTitle}>{t('header.navigationTitle')}</Dialog.Title>
+                <Dialog.Close className={styles.drawerClose} aria-label={t('tagPicker.close')}>×</Dialog.Close>
+              </div>
+              <div className={styles.drawerVolumes}>
+                <VolumeList
+                  selectedVolumeId={selectedVolumeId}
+                  onSelectVolume={id => {
+                    selectVolume(id)
+                    setIsNavigationOpen(false)
+                  }}
+                />
+              </div>
+              {isSuccess && user === null && (
+                <nav className={styles.drawerActions} aria-label={t('header.accountMenuLabel')}>
+                  <Link className={styles.drawerActionPrimary} to="/login" onClick={() => setIsNavigationOpen(false)}>
+                    {t('header.login')}
+                  </Link>
+                  <Link className={styles.drawerActionSecondary} to="/register" onClick={() => setIsNavigationOpen(false)}>
+                    {t('header.register')}
+                  </Link>
+                </nav>
+              )}
+            </Dialog.Popup>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
       <Link className={styles.brand} to="/">{t('header.brand')}</Link>
       {isSuccess && user && (
         <div className={styles.session}>

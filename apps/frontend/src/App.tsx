@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { useCurrentUser } from './features/auth/useCurrentUser'
 import ErrorMessage from './components/ErrorMessage/ErrorMessage'
 import GuestQuoteSaveProvider from './features/search/GuestQuoteSaveProvider'
+import VolumeSelectionProvider from './features/search/VolumeSelectionProvider'
 
 const queryClient = new QueryClient()
 
@@ -30,21 +31,23 @@ export default function App() {
       <ToastProvider>
         <BrowserRouter>
           <GuestQuoteSaveProvider>
-            <Header />
-            <CurrentUserErrorNotice />
-            <EmailVerificationBanner />
-            <Routes>
-              <Route path="/" element={<SearchPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/confirm-email" element={<ConfirmEmailPage />} />
-              <Route path="/account" element={<AccountPage />} />
-              {/* /mes-citations is now part of the unified search page (select the "saved citations"
+            <VolumeSelectionProvider>
+              <Header />
+              <CurrentUserErrorNotice />
+              <EmailVerificationBanner />
+              <Routes>
+                <Route path="/" element={<SearchPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+                <Route path="/account" element={<AccountPage />} />
+                {/* /mes-citations is now part of the unified search page (select the "saved citations"
                   scope there) — this redirect keeps the old URL from 404ing. */}
-              <Route path="/mes-citations" element={<Navigate to="/" replace />} />
-            </Routes>
+                <Route path="/mes-citations" element={<Navigate to="/" replace />} />
+              </Routes>
+            </VolumeSelectionProvider>
           </GuestQuoteSaveProvider>
         </BrowserRouter>
       </ToastProvider>

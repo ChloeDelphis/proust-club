@@ -27,3 +27,21 @@
     left: auto;
   }
 }
+
+@media (max-width: 48rem) {
+  .root {
+    padding: var(--space-2) var(--space-4) var(--space-8);
+  }
+
+  .layout > aside {
+    display: none;
+  }
+
+  .layout {
+    gap: 0;
+  }
+
+  .searchContent {
+    max-width: none;
+  }
+}

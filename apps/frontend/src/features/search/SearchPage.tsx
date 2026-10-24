@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SearchHit } from '../../api/search'
@@ -22,6 +22,7 @@ import styles from './SearchPage.module.css'
 import { useCorpusSearchQuery } from './useCorpusSearchQuery'
 import { useSavedQuotesQuery } from './useSavedQuotesQuery'
 import { useGuestQuoteSave } from './useGuestQuoteSave'
+import { useVolumeSelection } from './useVolumeSelection'
 
 // The text filter takes priority over "no tag selected" in the message: a query present means the
 // empty result is about the search, not about the (lack of a) tag filter.
@@ -37,19 +38,27 @@ function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
 export default function SearchPage() {
   const { t } = useTranslation()
   const { draft } = useGuestQuoteSave()
+  const { selectedVolumeId, selectVolume } = useVolumeSelection()
   const { data: currentUser } = useCurrentUser()
   const isConnected = currentUser !== null && currentUser !== undefined
   const [query, setQuery] = useState(() => draft?.query ?? '')
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
   const [tagId, setTagId] = useState<string | null>(null)
   const [page, setPage] = useState(() => draft?.page ?? 0)
-  const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(() => draft?.volumeId ?? null)
+  const previousVolumeId = useRef(selectedVolumeId)
   // The selected quote is a snapshot owned by the modal, not a pointer into a filtered query.
   // It must remain available if removing a tag makes the quote disappear from the frieze/list, or
   // if the frieze request fails after a quote was opened from the saved-citations list.
   const [selectedDetailQuote, setSelectedDetailQuote] = useState<{ userId: string; quote: QuoteDetailModalQuote } | null>(null)
   const timelineQuery = useTimeline(tagId, isConnected)
   const [detailHit, setDetailHit] = useState<SearchHit | null>(null)
+
+  useEffect(() => {
+    if (previousVolumeId.current !== selectedVolumeId) {
+      previousVolumeId.current = selectedVolumeId
+      setPage(0)
+    }
+  }, [selectedVolumeId])
 
   function handleSearch(q: string) {
     setQuery(q)
@@ -65,7 +74,7 @@ export default function SearchPage() {
   // Selecting the already-selected volume again zooms back out — the frieze zone and the sidebar
   // entry both call this, there's no separate "Tous les tomes" control.
   function handleSelectVolume(id: number) {
-    setSelectedVolumeId(current => (current === id ? null : id))
+    selectVolume(id)
     setPage(0)
   }
 

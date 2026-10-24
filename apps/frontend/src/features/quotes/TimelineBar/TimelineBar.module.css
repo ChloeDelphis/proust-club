@@ -113,3 +113,23 @@
 .bookmark:focus-visible {
   fill: var(--color-accent-hover);
 }
+
+@media (max-width: 64rem) {
+  .volumeLabelText {
+    padding-inline: var(--space-0-5);
+    font-size: clamp(var(--text-xs), 1.25cqw, var(--text-sm));
+    line-height: var(--line-height-tight);
+  }
+}
+
+@media (max-width: 48rem) {
+  .root {
+    margin-bottom: var(--space-4);
+  }
+}
+
+@media (width < 48rem) {
+  .root {
+    display: none;
+  }
+}
