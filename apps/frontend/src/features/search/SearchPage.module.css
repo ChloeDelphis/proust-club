@@ -8,3 +8,22 @@
   grid-template-columns: 12rem 1fr;
   gap: var(--space-8);
 }
+
+.searchContent {
+  position: relative;
+  left: calc((12rem + var(--space-8)) / -2);
+  width: 100%;
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+@media (max-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .searchContent {
+    left: auto;
+  }
+}

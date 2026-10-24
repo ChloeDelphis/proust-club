@@ -71,18 +71,17 @@
   --font-reading: 'Source Serif 4', Georgia, serif;
   --font-ui: 'DM Sans', system-ui, sans-serif;
 
-  /* Typography — type scale. Steps below ~2% apart (e.g. 0.8/0.8125/0.85rem,
-     or 1.0625/1.1/1.125rem) were merged into a single step: the difference
-     isn't perceptible, so keeping them distinct was drift, not intent. */
-  --text-3xs: 0.5625rem;
+  /* Typography — type scale. Each step has a visible role-sized jump, from
+     compact metadata and controls to reading text and prominent titles. */
+  --text-3xs: 0.625rem;
   --text-2xs: 0.75rem;
-  --text-xs: 0.8125rem;
-  --text-sm: 0.875rem;
-  --text-md: 0.9375rem;
-  --text-lg: 1rem;
-  --text-xl: 1.125rem;
-  --text-2xl: 1.25rem;
-  --text-3xl: 1.75rem;
+  --text-xs: 0.875rem;
+  --text-sm: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.25rem;
 
   /* Typography — line heights */
   --line-height-tight: 1;
@@ -93,7 +92,6 @@
 
   /* Typography — letter spacing */
   --font-tracking-wide: 0.02em;
-  --font-tracking-expanded: 0.24em;
 
   /* Spacing scale — numbered in quarter-rem units (space-1 = 0.25rem) so a
      future in-between step never forces a naming collision the way t-shirt
@@ -133,8 +131,9 @@
   /* Mirrors --color-accent at ~15% opacity. */
   --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--palette-signature) 15%, transparent);
 
-  /* A full-screen modal/dialog (backdrop + popup) must outrank any sticky element on the page
-     (e.g. TimelineBar's sticky frieze, z-index 10) — used by DetailModal and TagPickerPopup. */
+  /* Popovers must sit above sticky page chrome (e.g. TimelineBar's frieze, z-index 10),
+     while modal layers remain above both. */
+  --z-index-popover: 20;
   --z-index-modal: 1000;
 
   /* Motion. "fast" covers hover/focus feedback and all current appearance

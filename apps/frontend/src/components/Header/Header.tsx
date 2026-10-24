@@ -30,7 +30,7 @@ export default function Header() {
               {user.username.charAt(0).toUpperCase()}
             </Menu.Trigger>
             <Menu.Portal>
-              <Menu.Positioner align="end" sideOffset={8}>
+              <Menu.Positioner className={styles.accountMenuPositioner} align="end" sideOffset={8}>
                 <Menu.Popup className={styles.accountMenu}>
                   <Menu.Item className={styles.menuItem} render={<Link to="/account" />}>
                     {t('header.accountLink')}
@@ -45,10 +45,25 @@ export default function Header() {
         </div>
       )}
       {isSuccess && user === null && (
-        <nav className={styles.nav}>
-          <Link to="/login">{t('header.login')}</Link>
-          <Link to="/register">{t('header.register')}</Link>
-        </nav>
+        <div className={styles.actions}>
+          <Menu.Root>
+            <Menu.Trigger className={styles.accountTrigger} aria-label={t('header.accountMenuLabel')}>
+              <span className={styles.accountIcon} aria-hidden="true" />
+            </Menu.Trigger>
+            <Menu.Portal>
+              <Menu.Positioner className={styles.accountMenuPositioner} align="end" sideOffset={8}>
+                <Menu.Popup className={styles.accountMenu}>
+                  <Menu.Item className={styles.menuItem} render={<Link to="/login" />}>
+                    {t('header.login')}
+                  </Menu.Item>
+                  <Menu.Item className={styles.menuItem} render={<Link to="/register" />}>
+                    {t('header.register')}
+                  </Menu.Item>
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
+        </div>
       )}
     </header>
   )

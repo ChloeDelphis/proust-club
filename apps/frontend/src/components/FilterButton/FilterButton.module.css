@@ -22,7 +22,7 @@
   width: 100%;
   text-align: left;
   font-family: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
   color: var(--color-text-muted);
   background: none;
   border: none;

@@ -5,7 +5,7 @@
 .text {
   margin: 0;
   font-family: var(--font-reading);
-  font-size: var(--text-lg);
+  font-size: var(--text-md);
   line-height: var(--line-height-loose);
   color: var(--color-text);
 }

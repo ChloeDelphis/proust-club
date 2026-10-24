@@ -79,13 +79,12 @@
   height: 100%;
   padding: 0 var(--space-1);
   overflow: hidden;
-  font-family: var(--font-ui);
-  font-size: clamp(var(--text-2xs), 1cqw, var(--text-md));
-  font-weight: 600;
-  letter-spacing: var(--font-tracking-expanded);
-  text-transform: uppercase;
+  font-family: var(--font-reading);
+  font-size: clamp(var(--text-sm), 1.05cqw, var(--text-lg));
+  font-weight: 400;
+  letter-spacing: normal;
   text-align: center;
-  line-height: 1.15;
+  line-height: var(--line-height-snug);
   color: var(--color-text-quiet);
 }
 

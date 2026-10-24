@@ -33,13 +33,15 @@ beforeEach(() => {
 })
 
 describe('Header', () => {
-  it('affiche les liens connexion/inscription si personne n’est connecté', async () => {
+  it('affiche les liens connexion/inscription dans le menu si personne n’est connecté', async () => {
     vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError(401))
+    const user = userEvent.setup()
 
     render(<Header />, { wrapper })
 
-    expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Créer un compte' })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Ouvrir le menu du compte' }))
+    expect(await screen.findByRole('menuitem', { name: 'Se connecter' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Créer un compte' })).toBeInTheDocument()
   })
 
   it('affiche un avatar portant le nom d’utilisateur connecté, dont le menu permet de se déconnecter', async () => {

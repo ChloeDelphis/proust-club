@@ -106,11 +106,14 @@ LoginForm / RegisterForm (fields + client-side validation)
   → POST /api/auth/login | /api/auth/register
 ```
 
-`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to switch between the logged-in/logged-out nav, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
+`useCurrentUser()` (`src/features/auth/useCurrentUser.ts`) wraps `GET /api/auth/me` in a `useQuery` — the single source of truth for "who is logged in," read by `Header` to show either the account avatar/menu or the anonymous account menu with login and registration links, and by `EmailVerificationBanner` to decide whether to show the confirmation reminder (and, inside it, the resend button). The brand stays centered independently of the right-side account control. On success, the login/register mutations write directly into the `['auth', 'me']` query cache (`queryClient.setQueryData`) instead of waiting for a refetch. Logout invalidates the same key; so does a successful email confirmation (`ConfirmEmailPage`), so the banner disappears without a reload if the confirming browser happens to be logged in as that account.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
 
 ## Manual verification
+
+- While logged out, open the account icon menu and verify it exposes working login and registration links above the sticky frieze; while logged in, verify the avatar still opens the account/logout menu.
+- At desktop and narrow mobile widths, verify the brand stays centered in the header without colliding with the account control.
 
 ### Happy path
 

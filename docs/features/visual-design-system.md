@@ -13,7 +13,7 @@ The design system is the single source of truth for Proust Club's visual languag
 ## Token categories
 
 - **Color** — two tiers. `--palette-*` holds the raw hex values; `--color-*` (the only tier components should ever consume) names them by role: `--color-accent`, `--color-text-muted`, `--color-danger-bg`, etc.
-- **Typography** — three font-family tokens (`--font-display`/`--font-reading`/`--font-ui`, see below), an 8-step type scale (`--text-2xs` through `--text-3xl`), line-height and letter-spacing tokens.
+- **Typography** — three font-family tokens (`--font-display`/`--font-reading`/`--font-ui`, see below), a 9-step type scale (`--text-3xs` through `--text-3xl`) with clearer jumps between interface text, reading text, and titles, line-height and letter-spacing tokens.
 - **Spacing** — `--space-0-5` through `--space-12`, numbered in quarter-rem units rather than t-shirt sizes (`xs`/`sm`/`md`...). See ADR-016 for the scale's design.
 - **Radius** — `--radius-sm` through `--radius-full` (pill shape). A literal `border-radius: 50%` (a true circle, `Spinner`) is left as a literal — it isn't a point on a radius scale.
 - **Elevation** — `--shadow-sm` and `--shadow-lg`, plus a standalone `--shadow-focus-ring` for input focus rings. Pure black at low opacity regardless of the active color palette — an overlay shadow is a lighting effect, not a themed color, so it isn't re-derived when the palette changes.

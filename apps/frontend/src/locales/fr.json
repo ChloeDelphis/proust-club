@@ -18,6 +18,7 @@
     "accountLink": "Mon compte",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
+    "accountMenuLabel": "Ouvrir le menu du compte",
     "login": "Se connecter",
     "register": "Créer un compte"
   },

@@ -180,7 +180,7 @@ export default function SearchPage() {
         <aside>
           <VolumeList selectedVolumeId={selectedVolumeId} onSelectVolume={handleSelectVolume} />
         </aside>
-        <div>
+        <div className={styles.searchContent}>
           <SearchForm key={query} initialValue={query} onSubmit={handleSearch} />
           {isConnected && (
             <TagFilterBar

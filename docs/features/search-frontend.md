@@ -10,6 +10,8 @@ The user enters a phrase, submits the form, and sees a paginated list of matchin
 
 For a connected user, the same search box also filters their own saved citations instead, when the "saved citations" scope is active in `TagFilterBar` — see "Corpus vs. saved-citations scope" below.
 
+**Layout** — the search form, scope filters, result count, and result cards share one content column capped at `48rem`. On wide viewports this column is centered against the full page, while the tome list stays at the left; the column fills the available space when narrower. Below `64rem`, the tome list moves above the content so the two do not overlap.
+
 ---
 
 ## Data flow
@@ -90,6 +92,7 @@ Backend-driven: `page`, `size`, and optional `volumeId` are query parameters; `t
 
 ## Manual verification
 
+- **Responsive content width:** at a wide viewport, confirm the search form and result cards share a centered width of about `48rem` relative to the full page, while the tome list stays at the left; below `64rem`, confirm the tome list moves above the content and both expand together to the available width.
 - **Happy path — anonymous structure:** without a session, load `/`, confirm the frieze and tome list show all seven volumes without bookmarks, and confirm the UI requests `GET /api/volumes` but makes no requests to `/api/quotes`, `/api/quotes/timeline`, or `/api/tags`.
 - **Happy path — corpus:** submit a phrase present in more than one tome, select a tome from the sidebar, and confirm every result belongs to that tome and pagination reflects only its matches. Repeat by selecting the tome zone in the frieze.
 - **Happy path — saved citations:** switch to saved citations, select a tome, and confirm the list contains only that tome's quotes; combine the tome with a tag and a text query.

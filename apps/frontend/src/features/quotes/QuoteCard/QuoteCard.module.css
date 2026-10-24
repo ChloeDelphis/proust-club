@@ -14,7 +14,7 @@
   text-align: left;
   color: inherit;
   font-family: var(--font-reading);
-  font-size: var(--text-md);
+  font-size: var(--text-xl);
   font-style: italic;
   cursor: pointer;
 }

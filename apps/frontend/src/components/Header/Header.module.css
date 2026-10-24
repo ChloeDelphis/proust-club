@@ -1,25 +1,27 @@
 .root {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  max-width: 56rem;
+  width: 100%;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-6) 0;
+  padding: var(--space-4) var(--space-6) var(--space-6);
   font-family: var(--font-ui);
 }
 
 .brand {
+  grid-column: 2;
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: var(--text-xl);
+  font-size: var(--text-3xl);
   color: var(--color-text);
   text-decoration: none;
 }
 
-.nav {
-  display: flex;
-  gap: var(--space-4);
+.actions,
+.session {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .session {
@@ -28,6 +30,41 @@
   gap: var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-text);
+}
+
+.accountTrigger {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.accountIcon {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  background-color: currentColor;
+  mask: url('../../assets/icons/icone-madeleine.svg') center / contain no-repeat;
+}
+
+.accountTrigger:hover,
+.accountTrigger[data-popup-open] {
+  color: var(--color-accent);
+  background: var(--color-surface-subtle);
+}
+
+.accountTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
 }
 
 .avatar {
@@ -53,6 +90,11 @@
   background: var(--color-accent-hover);
 }
 
+.accountMenuPositioner,
+.accountMenu {
+  z-index: var(--z-index-popover);
+}
+
 .accountMenu {
   min-width: 10rem;
   padding: var(--space-1-5);
@@ -75,4 +117,24 @@
 .menuItem[data-highlighted] {
   background: var(--color-surface-subtle);
   outline: none;
+}
+
+@media (max-width: 30rem) {
+  .root {
+    padding: var(--space-3) var(--space-3) var(--space-5);
+  }
+
+  .brand {
+    font-size: var(--text-2xl);
+  }
+
+  .accountTrigger {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .accountIcon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
 }
