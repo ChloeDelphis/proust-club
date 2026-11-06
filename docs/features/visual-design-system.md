@@ -41,7 +41,7 @@ The timeline frieze uses the same pale mauve for labels and borders to match its
 **Typography** — four roles, self-hosted (no external font URLs, per the project's CSP):
 
 - `--font-display` (Fraunces, italic, weight 500 only) — page and section titles.
-- `--font-brand` (EB Garamond, regular 400 and italic 400) — the "Proust Club" logo and timeline frieze; frieze numerals are upright, volume titles italic.
+- `--font-brand` (EB Garamond, regular 400 and italic 400) — the "Proust Club" logo, tome navigation, and timeline frieze; frieze numerals are upright, volume titles italic.
 - `--font-reading` (Source Serif 4, regular + italic) — quote and paragraph text specifically (search results, saved quotes, the quote detail modal) — not page chrome.
 - `--font-ui` (DM Sans, weights 400–600 via one variable-font `@font-face` block) — everything else: body default, buttons, labels, menus.
 

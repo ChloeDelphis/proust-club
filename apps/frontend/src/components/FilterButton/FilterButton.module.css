@@ -21,9 +21,10 @@
   display: block;
   width: 100%;
   text-align: left;
-  font-family: inherit;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
+  font-family: var(--font-brand);
+  font-size: clamp(var(--text-sm), 1.25vw, var(--text-md));
+  line-height: var(--line-height-snug);
+  color: var(--color-text);
   background: none;
   border: none;
   border-radius: var(--radius-md);
