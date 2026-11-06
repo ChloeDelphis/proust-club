@@ -28,6 +28,30 @@
   scroll-margin-top: calc(7.5rem + var(--space-6));
 }
 
+.searchPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  padding-block: clamp(var(--space-12), 5vw, var(--space-16));
+}
+
+.searchPromptRule {
+  width: 6rem;
+  height: var(--border-width);
+  background: var(--color-frieze);
+}
+
+.searchPromptMessage {
+  margin: 0;
+  color: var(--color-accent);
+  font-family: var(--font-reading);
+  font-size: clamp(var(--text-md), 1.4vw, var(--text-xl));
+  font-style: italic;
+  line-height: var(--line-height-snug);
+  text-align: center;
+}
+
 @media (max-width: 64rem) {
   .layout {
     gap: var(--space-8);
@@ -55,6 +79,15 @@
 
   .searchContent {
     max-width: none;
+  }
+
+  .searchPrompt {
+    gap: var(--space-6);
+    padding-block: var(--space-8);
+  }
+
+  .searchPromptMessage {
+    font-size: var(--text-md);
   }
 
   .resultsAnchor {

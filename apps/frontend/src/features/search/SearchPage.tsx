@@ -137,7 +137,12 @@ export default function SearchPage() {
 
   if (scope === 'corpus') {
     if (!isQueryValid) {
-      content = <EmptyState message={t('searchPage.typeToSearch')} />
+      content = (
+        <div className={styles.searchPrompt}>
+          <span className={styles.searchPromptRule} aria-hidden="true" />
+          <p className={styles.searchPromptMessage}>{t('searchPage.typeToSearch')}</p>
+        </div>
+      )
     } else if (corpusQuery.isPending) {
       content = <Spinner />
     } else if (corpusQuery.isError) {
