@@ -65,9 +65,10 @@
   --color-danger-border: var(--palette-danger-border);
   --color-danger-accent: var(--palette-danger-accent);
 
-  /* Typography — font families. Three roles, not two: display (titles),
-     reading (quotes/paragraphs), ui (interface chrome). */
+  /* Typography — font families for display titles, the brand, reading text,
+     and interface chrome. */
   --font-display: 'Fraunces', Georgia, serif;
+  --font-brand: 'EB Garamond', Georgia, serif;
   --font-reading: 'Source Serif 4', Georgia, serif;
   --font-ui: 'DM Sans', system-ui, sans-serif;
 
