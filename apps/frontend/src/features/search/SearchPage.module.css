@@ -18,6 +18,10 @@
   border-right: var(--border-width) solid var(--color-frieze);
 }
 
+.layout > aside {
+  padding-top: var(--space-2);
+}
+
 .searchContent {
   width: 100%;
   max-width: 72rem;
@@ -89,7 +93,6 @@
   .searchPromptMessage {
     font-size: var(--text-md);
   }
-
   .resultsAnchor {
     scroll-margin-top: var(--space-4);
   }

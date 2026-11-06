@@ -218,7 +218,6 @@
     font-size: clamp(0.5625rem, 0.85cqw, 0.625rem);
   }
 }
-
 @media (width < 48rem) {
   .root {
     margin-bottom: var(--space-4);
