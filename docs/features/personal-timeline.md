@@ -69,7 +69,7 @@ WHERE volumes.id = ranges.volume_id
 ## Manual verification
 
 - **Anonymous structure and privacy:** without a session, confirm the frieze and tome list show all seven tomes with no bookmarks; `GET /api/volumes` returns only structure, `/api/quotes/timeline` returns `401`, and the browser makes no personal quote/tag requests.
-- **Select a tome:** choose one from the desktop list, drawer, or frieze; confirm the active result list and frieze reflect the same selection.
+- **Select a tome:** choose one from the desktop list, drawer, or frieze; confirm the frieze expands to the selected tome as the other tomes fade away, and the active result list stays in sync.
 - **Select from frieze:** click another tome zone and confirm sidebar selection, frieze zoom, and result filter stay synchronized.
 - **Clear selection:** click the selected tome again in either control and confirm all bookmarks and results return.
 - **Saved-citations scope:** repeat while saved citations are active; confirm filtering combines with the selected tag and resets pagination.

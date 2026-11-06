@@ -17,7 +17,9 @@
 .volumeZone {
   fill: var(--color-page-bg);
   cursor: pointer;
-  transition: fill var(--motion-duration-hover) var(--motion-ease-standard);
+  transition:
+    fill var(--motion-duration-hover) var(--motion-ease-standard),
+    opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
 .volumeZone:hover,
@@ -51,7 +53,7 @@
 
 .volumeLabel {
   pointer-events: none;
-  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
 .volumeLabel.isHidden {
@@ -108,7 +110,7 @@
   stroke: var(--color-frieze);
   stroke-width: var(--border-width);
   vector-effect: non-scaling-stroke;
-  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
 .bookmark {

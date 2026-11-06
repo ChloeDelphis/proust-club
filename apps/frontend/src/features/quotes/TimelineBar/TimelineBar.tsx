@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { VolumeResponse } from '../../../api/volume'
 import type { TimelineQuote } from '../../../api/quote'
@@ -27,6 +27,13 @@ const EMPTY_QUOTES: TimelineQuote[] = []
 
 function percentToX(percent: number, viewBoxWidth: number): number {
   return percent * (viewBoxWidth / 100)
+}
+
+function getMotionDurationMs(element: Element, token: string): number {
+  const duration = getComputedStyle(element).getPropertyValue(token).trim()
+  const match = /^([\d.]+)(ms|s)$/.exec(duration)
+  if (!match) return 0
+  return Number(match[1]) * (match[2] === 's' ? 1000 : 1)
 }
 
 function snapSvgXToDevicePixelCenter(x: number, scale: number, trackLeft: number): number {
@@ -212,6 +219,8 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   const [viewBoxWidth, setViewBoxWidth] = useState(VIEWBOX_WIDTH)
   const [viewBoxScale, setViewBoxScale] = useState(1)
   const [trackLeft, setTrackLeft] = useState(0)
+  const [animatedRange, setAnimatedRange] = useState<PageRange | null>(null)
+  const animatedRangeRef = useRef<PageRange | null>(null)
 
   const volumesQuery = useVolumes()
   const timelineQuery = useTimeline(activeTagId, isConnected)
@@ -234,10 +243,56 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
       : { minPage: volumes[0].minPage, maxPage: volumes[volumes.length - 1].maxPage }
   }, [volumes, selectedVolume])
 
+  useEffect(() => {
+    if (volumes.length === 0) return
+
+    const startRange = animatedRangeRef.current
+    if (!startRange) {
+      animatedRangeRef.current = range
+      setAnimatedRange(range)
+      return
+    }
+    if (startRange.minPage === range.minPage && startRange.maxPage === range.maxPage) return
+
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    const track = trackRef.current
+    const durationMs = track ? getMotionDurationMs(track, '--motion-duration-zoom') : 0
+    if (prefersReducedMotion || durationMs <= 0) {
+      animatedRangeRef.current = range
+      setAnimatedRange(range)
+      return
+    }
+
+    const startTime = performance.now()
+    let frameId = 0
+
+    const animateRange = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / durationMs)
+      const easedProgress = 1 - Math.pow(1 - progress, 3)
+      const nextRange = {
+        minPage: startRange.minPage + (range.minPage - startRange.minPage) * easedProgress,
+        maxPage: startRange.maxPage + (range.maxPage - startRange.maxPage) * easedProgress,
+      }
+
+      animatedRangeRef.current = nextRange
+      setAnimatedRange(nextRange)
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animateRange)
+      } else {
+        animatedRangeRef.current = range
+        setAnimatedRange(range)
+      }
+    }
+
+    frameId = requestAnimationFrame(animateRange)
+    return () => cancelAnimationFrame(frameId)
+  }, [range, volumes.length])
+
   const groups = useMemo(() => {
     const visibleQuotes = selectedVolume ? quotes.filter(q => q.volumeId === selectedVolume.id) : quotes
-    return positionTimelineQuotes(visibleQuotes, range)
-  }, [quotes, selectedVolume, range])
+    return positionTimelineQuotes(visibleQuotes, animatedRange ?? range)
+  }, [quotes, selectedVolume, range, animatedRange])
 
   useLayoutEffect(() => {
     const track = trackRef.current
@@ -276,10 +331,10 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
         role="img"
         aria-label={t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
       >
-        <VolumeZones volumes={volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} viewBoxWidth={viewBoxWidth} />
+        <VolumeZones volumes={volumes} range={animatedRange ?? range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} viewBoxWidth={viewBoxWidth} />
         <VolumeDelimiters
           volumes={volumes}
-          range={range}
+          range={animatedRange ?? range}
           isHidden={selectedVolume !== undefined}
           viewBoxWidth={viewBoxWidth}
           viewBoxScale={viewBoxScale}
