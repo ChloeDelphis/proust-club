@@ -3,7 +3,8 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--color-surface);
+  background: var(--color-page-bg);
+  border: 1px solid var(--color-frieze);
   container-type: inline-size;
 }
 
@@ -14,7 +15,7 @@
 }
 
 .volumeZone {
-  fill: var(--color-surface);
+  fill: var(--color-page-bg);
   cursor: pointer;
   transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
@@ -64,28 +65,46 @@
 
 .volumeLabelText {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--space-1-5);
   width: 100%;
   height: 100%;
   padding: 0 var(--space-1);
   overflow: hidden;
-  font-family: var(--font-reading);
-  font-size: clamp(var(--text-sm), 1.05cqw, var(--text-lg));
-  font-weight: 400;
-  letter-spacing: normal;
+  font-family: var(--font-brand);
   text-align: center;
+  color: var(--color-frieze);
+}
+
+.volumeNumeral {
+  flex: 0 0 auto;
+  font-size: var(--text-md);
+  font-style: normal;
+  font-weight: 400;
+  line-height: var(--line-height-tight);
+}
+
+.volumeTitle {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: clamp(var(--text-xs), 1cqw, var(--text-md));
+  font-style: italic;
+  font-weight: 400;
   line-height: var(--line-height-snug);
-  color: var(--color-text-quiet);
 }
 
 .volumeLabel.isActiveLabel .volumeLabelText {
-  color: var(--color-text-quiet);
+  color: var(--color-frieze);
 }
 
 .delimiter {
-  stroke: var(--color-border-strong);
-  stroke-width: 1.5;
+  stroke: var(--color-frieze);
+  stroke-width: 1;
   transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
@@ -103,8 +122,10 @@
 @media (max-width: 64rem) {
   .volumeLabelText {
     padding-inline: var(--space-0-5);
-    font-size: clamp(var(--text-xs), 1.25cqw, var(--text-sm));
-    line-height: var(--line-height-tight);
+  }
+
+  .volumeTitle {
+    font-size: clamp(var(--text-2xs), 1.25cqw, var(--text-xs));
   }
 }
 

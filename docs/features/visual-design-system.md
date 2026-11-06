@@ -25,19 +25,23 @@ The design system is the single source of truth for Proust Club's visual languag
 
 | Raw token | Hex | Role |
 |---|---|---|
-| `--palette-bg` | `#FFF1DF` | Page background (`body`, via `--color-page-bg`) |
+| `--palette-bg` | `#FFFCF8` | Page background (`body`, via `--color-page-bg`) |
 | `--palette-surface` | `#FFFAF2` | Cards, popups, inputs (`--color-surface`) |
 | `--palette-ink` | `#3A2430` | Primary text (`--color-text`) |
-| `--palette-ink-soft` | `#7E656D` | Muted text, strong borders — measures 4.76:1/5.09:1 against the page/surface backgrounds, above the 4.5:1 WCAG AA threshold for normal-size text |
+| `--palette-ink-soft` | `#7E656D` | Muted text, strong borders — measures 5.17:1/5.09:1 against the page/surface backgrounds, above the 4.5:1 WCAG AA threshold for normal-size text |
 | `--palette-signature` / `-hover` | `#884D69` / `#6E3C54` | `--color-accent` / `--color-accent-hover` |
 | `--palette-rule` | `#F3DEC4` | Borders, subtle surfaces (`--color-border`, `--color-surface-subtle`) |
+| `--palette-frieze` | `#E4D6D8` | Timeline frieze text, segment dividers, and outer frame |
 | `--palette-accent-coral`/`-lavender`/`-mint` | `#E78C6B`/`#D5D0EF`/`#BFDCCE` | Not yet consumed by a semantic token — reserved for features not yet built (e.g. a future personal-list color coding) |
 
 `--color-highlight-bg` (search-match highlighting) is mint at 45% opacity over transparent, not a solid fill.
 
-**Typography** — three roles, self-hosted (no external font URLs, per the project's CSP):
+The timeline frieze uses the same pale mauve for labels and borders to match its visual reference. Its text contrast against the page background is 1.38:1, below WCAG AA.
 
-- `--font-display` (Fraunces, italic, weight 500 only) — page/section titles, the "Proust Club" logo.
+**Typography** — four roles, self-hosted (no external font URLs, per the project's CSP):
+
+- `--font-display` (Fraunces, italic, weight 500 only) — page and section titles.
+- `--font-brand` (EB Garamond, regular 400 and italic 400) — the "Proust Club" logo and timeline frieze; frieze numerals are upright, volume titles italic.
 - `--font-reading` (Source Serif 4, regular + italic) — quote and paragraph text specifically (search results, saved quotes, the quote detail modal) — not page chrome.
 - `--font-ui` (DM Sans, weights 400–600 via one variable-font `@font-face` block) — everything else: body default, buttons, labels, menus.
 

@@ -55,7 +55,7 @@ WHERE volumes.id = ranges.volume_id
 
 **Layout** — the frieze spans the page above the tome list and search results. On narrow screens, the list moves into the header drawer and the frieze is hidden on phones. These navigation controls are public; personal bookmarks and saved-citation controls require a session.
 
-**Frieze rendering** — SVG positions bookmarks along the page range without inline styles. `ResizeObserver` keeps its aspect ratio responsive; HTML labels wrap and center in each volume zone.
+**Frieze rendering** — SVG positions bookmarks along the page range without inline styles. `ResizeObserver` keeps its aspect ratio responsive; HTML labels wrap and center in each volume zone. Each zone pairs the volume position as a Roman numeral with its title, styled in EB Garamond (upright numerals, italic title). The track uses the page background with mauve text and fine mauve dividers, with a closed outer frame and separators between volumes.
 
 - **Positioning** — bookmark positions follow each quote's page within its tome. Overlapping bookmarks alternate between two heights.
 - **Tome selection** — the frieze and desktop list or drawer share one selection. It zooms the frieze, filters bookmarks and results, and resets pagination. Selecting the active tome again clears the filter. The unpaginated timeline response supplies all bookmarks.
@@ -72,6 +72,7 @@ WHERE volumes.id = ranges.volume_id
 
 - **Anonymous structure and privacy:** without a session, confirm the frieze and tome list show all seven tomes with no bookmarks; `GET /api/volumes` returns only structure, `/api/quotes/timeline` returns `401`, and the browser makes no personal quote/tag requests.
 - **Select a tome:** choose one from the desktop list, drawer, or frieze; confirm the active result list and frieze reflect the same selection.
+- **Frieze presentation:** confirm the seven zones are labeled I–VII, volume titles remain centered and readable, and the track has a closed outer frame, internal separators, and the expected page-background and mauve tokens.
 - **Select from frieze:** click another tome zone and confirm sidebar selection, frieze zoom, and result filter stay synchronized.
 - **Clear selection:** click the selected tome again in either control and confirm all bookmarks and results return.
 - **Saved-citations scope:** repeat while saved citations are active; confirm filtering combines with the selected tag and resets pagination.

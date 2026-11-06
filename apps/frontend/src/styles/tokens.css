@@ -15,7 +15,7 @@
   /* Darkened ~15% from the source artifact's #8A7078 — the original value measured
      4.05:1/4.33:1 against the page/surface backgrounds (real WCAG relative-luminance
      calculation), below the 4.5:1 AA threshold for normal-size text. This value
-     clears it (4.76:1/5.09:1) while staying close to the original hue/tone. */
+     clears it (5.17:1/5.09:1) while staying close to the original hue/tone. */
   --palette-ink-soft: #7e656d;
   --palette-signature: #884d69;
   --palette-signature-hover: #6e3c54;
@@ -23,6 +23,7 @@
   --palette-accent-lavender: #d5d0ef;
   --palette-accent-mint: #bfdcce;
   --palette-rule: #f3dec4;
+  --palette-frieze: #E4D6D8;
   --palette-on-signature: #fff;
   --palette-danger: #b91c1c;
   --palette-danger-bg: #fef2f2;
@@ -52,6 +53,7 @@
 
   --color-border: var(--palette-rule);
   --color-border-strong: var(--palette-ink-soft);
+  --color-frieze: var(--palette-frieze);
 
   --color-accent: var(--palette-signature);
   --color-accent-hover: var(--palette-signature-hover);

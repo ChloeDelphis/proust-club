@@ -21,6 +21,7 @@ const BOOKMARK_HEIGHT_EXTENDED = 35
 const BOOKMARK_WIDTH = 4
 const PREVIEW_WIDTH = 110
 const PREVIEW_HEIGHT = 45
+const VOLUME_ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'] as const
 const EMPTY_VOLUMES: VolumeResponse[] = []
 const EMPTY_QUOTES: TimelineQuote[] = []
 
@@ -97,7 +98,10 @@ function VolumeZones({
             />
             {/* Purely decorative — the rect above already carries the full accessible name. */}
             <foreignObject x={x1} y={0} width={width} height={VIEWBOX_HEIGHT} className={labelClassName} aria-hidden="true">
-              <div className={styles.volumeLabelText}>{volume.title}</div>
+              <div className={styles.volumeLabelText}>
+                <span className={styles.volumeNumeral}>{VOLUME_ROMAN_NUMERALS[volume.position - 1] ?? volume.position}</span>
+                <span className={styles.volumeTitle}>{volume.title}</span>
+              </div>
             </foreignObject>
           </g>
         )
