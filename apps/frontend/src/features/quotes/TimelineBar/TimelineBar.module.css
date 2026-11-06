@@ -19,11 +19,11 @@
   height: var(--space-12);
   padding: var(--space-2) var(--space-3) var(--space-1);
   margin-bottom: var(--space-2);
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-family: var(--font-frieze);
   font-size: 1rem;
   font-style: italic;
-  font-weight: 200;
+  font-weight: 400;
   line-height: var(--line-height-snug);
   overflow: hidden;
 }
@@ -120,7 +120,7 @@
 
 .volumeZone:not(.isActiveZone):hover + .volumeLabel .volumeLabelText,
 .volumeZone:not(.isActiveZone):focus-visible + .volumeLabel .volumeLabelText {
-  color: var(--color-frieze-hover-text);
+  color: var(--color-text);
 }
 
 .volumeLabelText {
@@ -132,7 +132,7 @@
   overflow: hidden;
   font-family: var(--font-frieze);
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   transition: color var(--motion-duration-hover) var(--motion-ease-standard);
 }
 
@@ -142,7 +142,7 @@
   justify-self: center;
   font-size: clamp(1.4rem, 2cqw, 1.8rem);
   font-style: normal;
-  font-weight: 100;
+  font-weight: 300;
   line-height: var(--line-height-tight);
 }
 
@@ -156,7 +156,7 @@
   -webkit-line-clamp: 2;
   font-size: clamp(0.5625rem, 0.7cqw, 0.625rem);
   font-style: italic;
-  font-weight: 200;
+  font-weight: 400;
   line-height: var(--line-height-snug);
 }
 
@@ -172,11 +172,11 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-family: var(--font-frieze);
   font-size: clamp(0.5625rem, 0.7cqw, 0.625rem);
   font-style: italic;
-  font-weight: 200;
+  font-weight: 400;
   line-height: var(--line-height-snug);
   text-align: center;
 }
@@ -222,7 +222,7 @@
 
 .delimiter {
   stroke: var(--color-frieze);
-  stroke-width: var(--border-width);
+  stroke-width: 0.5px;
   vector-effect: non-scaling-stroke;
   transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }

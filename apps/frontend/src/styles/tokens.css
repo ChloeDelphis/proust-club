@@ -9,7 +9,7 @@
      tokens below. Keeps renaming/retheming (e.g. a future dark mode) from
      requiring a search-and-replace across every component. Values are the
      "Club joyeux" (direction B) palette. */
-  --palette-bg: #FFFCF8;
+  --palette-bg: #ffffff;
   --palette-surface: #fffaf2;
   --palette-result-card: #fff;
   --palette-selection-bg: #F2E6EA;
