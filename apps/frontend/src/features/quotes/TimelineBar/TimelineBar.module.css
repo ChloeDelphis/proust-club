@@ -35,12 +35,12 @@
 }
 
 .volumeZone.isActiveZone {
-  fill: var(--color-surface-subtle);
+  fill: var(--color-page-bg);
 }
 
 .volumeZone.isActiveZone:hover,
 .volumeZone.isActiveZone:focus-visible {
-  fill: var(--color-frieze-hover-bg);
+  fill: var(--color-page-bg);
 }
 
 .volumeZone.isHidden,
@@ -58,8 +58,8 @@
   opacity: 0;
 }
 
-.volumeZone:hover + .volumeLabel .volumeLabelText,
-.volumeZone:focus-visible + .volumeLabel .volumeLabelText {
+.volumeZone:not(.isActiveZone):hover + .volumeLabel .volumeLabelText,
+.volumeZone:not(.isActiveZone):focus-visible + .volumeLabel .volumeLabelText {
   color: var(--color-frieze-hover-text);
 }
 
