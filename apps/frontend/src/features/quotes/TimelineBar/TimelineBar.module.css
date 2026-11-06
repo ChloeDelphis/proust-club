@@ -16,13 +16,7 @@
 .volumeZone {
   fill: var(--color-surface);
   cursor: pointer;
-  transition:
-    fill var(--motion-duration-fast) var(--motion-ease-standard),
-    opacity var(--motion-duration-fast) var(--motion-ease-standard),
-    y var(--motion-duration-fast) var(--motion-ease-standard),
-    x var(--motion-duration-fast) var(--motion-ease-standard),
-    width var(--motion-duration-fast) var(--motion-ease-standard),
-    height var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .volumeZone:hover,
@@ -56,10 +50,7 @@
 
 .volumeLabel {
   pointer-events: none;
-  transition:
-    opacity var(--motion-duration-fast) var(--motion-ease-standard),
-    x var(--motion-duration-fast) var(--motion-ease-standard),
-    width var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .volumeLabel.isHidden {
@@ -95,18 +86,13 @@
 .delimiter {
   stroke: var(--color-border-strong);
   stroke-width: 1.5;
-  transition:
-    opacity var(--motion-duration-fast) var(--motion-ease-standard),
-    x1 var(--motion-duration-fast) var(--motion-ease-standard),
-    x2 var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .bookmark {
   fill: var(--color-accent);
   cursor: pointer;
-  transition:
-    fill var(--motion-duration-fast) var(--motion-ease-standard),
-    x var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .bookmark:hover,
