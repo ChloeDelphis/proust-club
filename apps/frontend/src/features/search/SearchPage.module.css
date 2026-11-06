@@ -56,6 +56,16 @@
   text-align: center;
 }
 
+@media (min-width: 426px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layout > aside {
+    display: none;
+  }
+}
+
 @media (max-width: 64rem) {
   .layout {
     gap: var(--space-8);

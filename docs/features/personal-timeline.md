@@ -60,7 +60,7 @@ WHERE volumes.id = ranges.volume_id
 
 ## Frontend
 
-**Layout** — the frieze spans the page above the tome list and search results. On narrow screens, the list moves into the header drawer and the frieze is hidden on phones. These navigation controls are public; personal bookmarks and saved-citation controls require a session.
+**Layout** — the frieze spans the search content on desktop, where it replaces the left tome list. The left column is hidden from 426px upward. Below 48rem, the frieze is hidden and the tome list remains available in the header drawer. These navigation controls are public; personal bookmarks and saved-citation controls require a session.
 
 - **Positioning** — bookmark positions follow each quote's page within its tome. Overlapping bookmarks alternate between two heights.
 - **Tome selection** — the frieze and desktop list or drawer share one selection. It zooms the frieze, filters bookmarks and results, and resets pagination. Selecting the active tome again clears the filter. The unpaginated timeline response supplies all bookmarks.
@@ -77,6 +77,7 @@ WHERE volumes.id = ranges.volume_id
 
 ## Manual verification
 
+- **Responsive tome navigation:** at 425px and below, confirm the tome list remains in the header drawer; between 426px and 48rem, confirm the drawer remains available; from 48rem upward, confirm the left column is gone and the frieze spans the search content.
 - **Anonymous structure and privacy:** without a session, confirm the frieze and tome list show all seven tomes with no bookmarks; `GET /api/volumes` returns only structure, `/api/quotes/timeline` returns `401`, and the browser makes no personal quote/tag requests.
 - **Select a tome:** choose one from the desktop list, drawer, or frieze; confirm the frieze expands to the selected tome as the other tomes fade away, and the active result list stays in sync.
 - **Select from frieze:** click or keyboard-focus another tome zone and activate it with Enter or Space; confirm sidebar selection, frieze zoom, and result filter stay synchronized.
