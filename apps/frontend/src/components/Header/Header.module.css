@@ -8,14 +8,38 @@
   font-family: var(--font-ui);
 }
 
-.brand {
+.brandBlock {
   grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.brand {
   font-family: var(--font-brand);
   font-style: normal;
   font-weight: 400;
-  font-size: clamp(var(--text-3xl), 4vw, 3rem);
+  font-size: clamp(var(--text-3xl), 3.6vw, 3.25rem);
+  line-height: var(--line-height-tight);
   color: var(--color-text);
   text-decoration: none;
+}
+
+.brandRule {
+  width: 6rem;
+  height: var(--border-width);
+  margin-block: var(--space-3);
+  background: var(--color-frieze);
+}
+
+.brandTagline {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: clamp(var(--text-3xs), 0.75vw, var(--text-2xs));
+  letter-spacing: var(--font-tracking-caps);
+  line-height: var(--line-height-snug);
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .actions,
@@ -309,6 +333,10 @@
 
   .brand {
     font-size: 2rem;
+  }
+
+  .brandTagline {
+    letter-spacing: var(--font-tracking-caps-compact);
   }
 
   .accountTrigger {

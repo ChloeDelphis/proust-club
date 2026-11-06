@@ -104,6 +104,8 @@
 
   /* Typography — letter spacing */
   --font-tracking-wide: 0.02em;
+  --font-tracking-caps: 0.4em;
+  --font-tracking-caps-compact: 0.26em;
 
   /* Spacing scale — numbered in quarter-rem units (space-1 = 0.25rem) so a
      future in-between step never forces a naming collision the way t-shirt

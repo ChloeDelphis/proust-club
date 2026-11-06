@@ -88,7 +88,11 @@ export default function Header() {
           </Dialog.Portal>
         </Dialog.Root>
       )}
-      <Link className={styles.brand} to="/">{t('header.brand')}</Link>
+      <div className={styles.brandBlock}>
+        <Link className={styles.brand} to="/">{t('header.brand')}</Link>
+        <span className={styles.brandRule} aria-hidden="true" />
+        <p className={styles.brandTagline}>{t('header.tagline')}</p>
+      </div>
       {isSuccess && user && (
         <div className={styles.session}>
           <Menu.Root>

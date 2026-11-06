@@ -15,6 +15,7 @@
   },
   "header": {
     "brand": "Proust Club",
+    "tagline": "À la recherche du temps perdu",
     "accountLink": "Mon compte",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
