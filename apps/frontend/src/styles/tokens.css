@@ -11,6 +11,7 @@
      "Club joyeux" (direction B) palette. */
   --palette-bg: #FFFCF8;
   --palette-surface: #fffaf2;
+  --palette-result-card: #fff;
   --palette-ink: #3a2430;
   /* Darkened ~15% from the source artifact's #8A7078 — the original value measured
      4.05:1/4.33:1 against the page/surface backgrounds (real WCAG relative-luminance
@@ -46,6 +47,7 @@
   --color-page-bg: var(--palette-bg);
 
   --color-surface: var(--palette-surface);
+  --color-result-card: var(--palette-result-card);
   /* No distinct "subtle surface" tone in direction B either — reuses the
      rule color, which already plays a similar "lightly demarcated" role. */
   --color-surface-subtle: var(--palette-rule);
