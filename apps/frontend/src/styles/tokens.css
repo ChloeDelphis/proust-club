@@ -8,7 +8,7 @@
   /* Raw palette — not consumed directly by components, only by the semantic
      tokens below. Keeps renaming/retheming (e.g. a future dark mode) from
      requiring a search-and-replace across every component. Values are the
-     "Club joyeux" (direction B) palette — see docs/features/visual-design-system.md. */
+     "Club joyeux" (direction B) palette. */
   --palette-bg: #FFFCF8;
   --palette-surface: #fffaf2;
   --palette-ink: #3a2430;
@@ -71,6 +71,7 @@
      and interface chrome. */
   --font-display: 'Fraunces', Georgia, serif;
   --font-brand: 'EB Garamond', Georgia, serif;
+  --font-frieze: 'Noto Serif Display', Georgia, serif;
   --font-reading: 'Source Serif 4', Georgia, serif;
   --font-ui: 'DM Sans', system-ui, sans-serif;
 

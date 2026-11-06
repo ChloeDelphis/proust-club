@@ -27,7 +27,7 @@
 }
 
 .resultsAnchor {
-  scroll-margin-top: calc(6.25rem + var(--space-6));
+  scroll-margin-top: calc(7.5rem + var(--space-6));
 }
 
 @media (max-width: 64rem) {

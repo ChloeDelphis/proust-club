@@ -13,7 +13,7 @@
   font-family: var(--font-brand);
   font-style: normal;
   font-weight: 400;
-  font-size: var(--text-3xl);
+  font-size: clamp(var(--text-3xl), 4vw, 3rem);
   color: var(--color-text);
   text-decoration: none;
 }
@@ -308,7 +308,7 @@
   }
 
   .brand {
-    font-size: var(--text-2xl);
+    font-size: 2rem;
   }
 
   .accountTrigger {

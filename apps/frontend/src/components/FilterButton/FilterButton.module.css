@@ -23,6 +23,7 @@
   text-align: left;
   font-family: var(--font-brand);
   font-size: clamp(var(--text-sm), 1.25vw, var(--text-md));
+  font-weight: 400;
   line-height: var(--line-height-snug);
   color: var(--color-text);
   background: none;
