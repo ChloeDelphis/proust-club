@@ -1,6 +1,7 @@
 .root {
+  cursor: pointer;
   padding: var(--space-5) clamp(var(--space-4), 2vw, var(--space-8));
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid color-mix(in srgb, var(--color-border) 55%, transparent);
   border-radius: var(--radius-lg);
   background: var(--color-result-card);
 }

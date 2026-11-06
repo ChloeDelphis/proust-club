@@ -20,8 +20,15 @@ export default function ParagraphCard({ hit, onOpenDetail, resumeDraft = null, s
   const excerpt = createSearchExcerpt(text, { start: startOffset, end: endOffset })
   const excerptText = text.slice(excerpt.start, excerpt.end)
 
+  function handleCardClick(event: React.MouseEvent<HTMLElement>) {
+    if (!(event.target instanceof Element)) return
+    if (event.target.closest('button, a, input, select, textarea, [role="button"]')) return
+    if (window.getSelection()?.toString()) return
+    onOpenDetail(hit)
+  }
+
   return (
-    <article className={styles.root}>
+    <article className={styles.root} onClick={handleCardClick}>
       <header className={styles.header}>
         <span className={styles.location}>
           {t('searchPage.resultLocation', { volume, part, page: pageNumber })}
