@@ -61,14 +61,18 @@
 }
 
 .button {
-  padding: var(--space-2-5) var(--space-5);
-  font-size: var(--text-lg);
-  font-family: inherit;
+  padding: var(--space-4) var(--space-16);
+  font-family: var(--font-ui);
+  font-size: clamp(var(--text-3xs), 0.75vw, var(--text-2xs));
+  font-weight: 400;
+  letter-spacing: var(--font-tracking-caps-compact);
+  line-height: var(--line-height-snug);
   background: var(--color-accent);
   color: var(--color-text-on-accent);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
+  text-transform: uppercase;
   transition: background var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
@@ -96,10 +100,6 @@
 }
 
 @media (max-width: 64rem) {
-  .button {
-    font-size: clamp(var(--text-xs), 1.4vw, var(--text-sm));
-  }
-
   .input::placeholder {
     font-size: clamp(var(--text-xs), 1.4vw, var(--text-sm));
   }
