@@ -7,7 +7,13 @@ export default function VolumeSelectionProvider({ children }: { children: ReactN
   const { draft } = useGuestQuoteSave()
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(() => draft?.volumeId ?? null)
   const [selectedPartId, setSelectedPartId] = useState<number | null>(() => draft?.partId ?? null)
-  const selectVolume = useCallback((id: number) => {
+  const selectVolume = useCallback((id: number | null) => {
+    if (id === null) {
+      setSelectedVolumeId(null)
+      setSelectedPartId(null)
+      return
+    }
+
     if (selectedVolumeId === id && selectedPartId !== null) {
       setSelectedPartId(null)
       return

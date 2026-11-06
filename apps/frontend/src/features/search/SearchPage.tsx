@@ -81,9 +81,7 @@ export default function SearchPage() {
     setPage(0)
   }
 
-  // Selecting the already-selected volume again zooms back out — the frieze zone and the sidebar
-  // entry both call this, there's no separate "Tous les tomes" control.
-  function handleSelectVolume(id: number) {
+  function handleSelectVolume(id: number | null) {
     selectVolume(id)
     setPage(0)
   }

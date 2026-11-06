@@ -190,6 +190,9 @@
     "renameTag": "Renommer {{name}}",
     "deleteTag": "Supprimer {{name}}"
   },
+  "volumeList": {
+    "allWork": "Toute l’œuvre"
+  },
   "timelineBar": {
     "loadError": "La frise n'a pas pu être chargée.",
     "ariaLabel": "Frise des tomes",
