@@ -38,6 +38,8 @@
   font-size: var(--text-sm);
   font-style: italic;
   font-weight: 300;
+  color: var(--color-text-muted);
+  opacity: 1;
 }
 
 .searchIcon {
@@ -112,7 +114,5 @@
 
   .input::placeholder {
     font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    opacity: 1;
   }
 }

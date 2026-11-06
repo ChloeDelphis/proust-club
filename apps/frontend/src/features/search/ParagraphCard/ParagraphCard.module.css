@@ -1,5 +1,5 @@
 .root {
-  padding: var(--space-5);
+  padding: var(--space-5) clamp(var(--space-4), 2vw, var(--space-8));
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-result-card);

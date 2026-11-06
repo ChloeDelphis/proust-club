@@ -3,6 +3,7 @@
 }
 
 .text {
+  max-width: 110ch;
   margin: 0;
   font-family: var(--font-reading);
   font-size: var(--text-md);

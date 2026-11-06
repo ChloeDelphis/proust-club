@@ -74,7 +74,7 @@
   overflow: hidden;
   font-family: var(--font-frieze);
   text-align: center;
-  color: var(--color-frieze);
+  color: var(--color-text-muted);
   transition: color var(--motion-duration-hover) var(--motion-ease-standard);
 }
 
@@ -103,7 +103,7 @@
 }
 
 .volumeLabel.isActiveLabel .volumeLabelText {
-  color: var(--color-frieze);
+  color: var(--color-text-muted);
 }
 
 .delimiter {
