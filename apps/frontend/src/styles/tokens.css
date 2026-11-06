@@ -9,7 +9,7 @@
      tokens below. Keeps renaming/retheming (e.g. a future dark mode) from
      requiring a search-and-replace across every component. Values are the
      "Club joyeux" (direction B) palette — see docs/features/visual-design-system.md. */
-  --palette-bg: #fff1df;
+  --palette-bg: #FFFCF8;
   --palette-surface: #fffaf2;
   --palette-ink: #3a2430;
   /* Darkened ~15% from the source artifact's #8A7078 — the original value measured
