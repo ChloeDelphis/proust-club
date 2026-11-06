@@ -29,6 +29,14 @@ function percentToX(percent: number, viewBoxWidth: number): number {
   return percent * (viewBoxWidth / 100)
 }
 
+function snapSvgXToDevicePixelCenter(x: number, scale: number, trackLeft: number): number {
+  // Responsive viewBox coordinates can land between device pixels and rasterize with uneven weight.
+  const devicePixelRatio = window.devicePixelRatio || 1
+  const deviceX = (trackLeft + x * scale) * devicePixelRatio
+  const snappedDeviceX = Math.round(deviceX - 0.5) + 0.5
+  return (snappedDeviceX / devicePixelRatio - trackLeft) / scale
+}
+
 function activateOnEnterOrSpace(onActivate: () => void) {
   return (event: KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -110,13 +118,31 @@ function VolumeZones({
   )
 }
 
-function VolumeDelimiters({ volumes, range, isHidden, viewBoxWidth }: { volumes: VolumeResponse[]; range: PageRange; isHidden: boolean; viewBoxWidth: number }) {
+function VolumeDelimiters({
+  volumes,
+  range,
+  isHidden,
+  viewBoxWidth,
+  viewBoxScale,
+  trackLeft,
+}: {
+  volumes: VolumeResponse[]
+  range: PageRange
+  isHidden: boolean
+  viewBoxWidth: number
+  viewBoxScale: number
+  trackLeft: number
+}) {
   const className = isHidden ? `${styles.delimiter} ${styles.isHidden}` : styles.delimiter
 
   return (
     <>
       {volumes.slice(1).map(volume => {
-        const x = percentToX(pageToPercent(volume.minPage, range), viewBoxWidth)
+        const x = snapSvgXToDevicePixelCenter(
+          percentToX(pageToPercent(volume.minPage, range), viewBoxWidth),
+          viewBoxScale,
+          trackLeft,
+        )
         return <line key={volume.id} x1={x} x2={x} y1={0} y2={VIEWBOX_HEIGHT} className={className} />
       })}
     </>
@@ -184,6 +210,8 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
   const trackRef = useRef<SVGSVGElement>(null)
   const [viewBoxWidth, setViewBoxWidth] = useState(VIEWBOX_WIDTH)
+  const [viewBoxScale, setViewBoxScale] = useState(1)
+  const [trackLeft, setTrackLeft] = useState(0)
 
   const volumesQuery = useVolumes()
   const timelineQuery = useTimeline(activeTagId, isConnected)
@@ -216,8 +244,12 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     if (!track) return
 
     const updateViewBoxWidth = () => {
-      const { width, height } = track.getBoundingClientRect()
-      if (width > 0 && height > 0) setViewBoxWidth(width * (VIEWBOX_HEIGHT / height))
+      const { width, height, left } = track.getBoundingClientRect()
+      if (width > 0 && height > 0) {
+        setViewBoxWidth(width * (VIEWBOX_HEIGHT / height))
+        setViewBoxScale(height / VIEWBOX_HEIGHT)
+        setTrackLeft(left)
+      }
     }
 
     updateViewBoxWidth()
@@ -245,7 +277,14 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
         aria-label={t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
       >
         <VolumeZones volumes={volumes} range={range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} viewBoxWidth={viewBoxWidth} />
-        <VolumeDelimiters volumes={volumes} range={range} isHidden={selectedVolume !== undefined} viewBoxWidth={viewBoxWidth} />
+        <VolumeDelimiters
+          volumes={volumes}
+          range={range}
+          isHidden={selectedVolume !== undefined}
+          viewBoxWidth={viewBoxWidth}
+          viewBoxScale={viewBoxScale}
+          trackLeft={trackLeft}
+        />
         {isConnected && <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} viewBoxWidth={viewBoxWidth} />}
 
         {hoveredGroup && (
