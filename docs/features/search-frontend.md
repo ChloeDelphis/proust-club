@@ -26,8 +26,8 @@ SearchForm (user input, no validation of its own)
   → searchParagraphs()  src/api/search.ts         (corpus scope)
   → listQuotes()        src/api/quote.ts          (saved-citations scope)
   → apiFetch<...>()
-  → GET /api/search?q=...&volumeId=...&page=...&size=...       (corpus scope)
-  → GET /api/quotes?q=...&tagId=...&volumeId=...&page=... (saved-citations scope)
+  → GET /api/search?q=...&volumeId=...&partId=...&page=...&size=...       (corpus scope)
+  → GET /api/quotes?q=...&tagId=...&volumeId=...&partId=...&page=... (saved-citations scope)
   → Spring Boot → PostgreSQL
 ```
 
@@ -41,7 +41,7 @@ Types are derived from `schema.generated.ts`, generated from the backend OpenAPI
 
 Anonymous visitors see the corpus frieze and volume list as navigation filters, but never see the saved-citations scope or tag controls. The frieze shows the fixed structure of the seven volumes without personal bookmarks. `SearchPage` only enables the personal timeline request while connected; anonymous browsing fetches public volume metadata from `GET /api/volumes` and corpus results from `GET /api/search`. It does not request `/api/quotes`, `/api/quotes/timeline`, or `/api/tags`.
 
-Selecting a tome from the desktop list, the narrow-screen drawer, or its zone in the frieze applies the same `selectedVolumeId` filter to the active results scope. `GET /api/search` and `GET /api/quotes` apply `volumeId` in the backend before pagination and counting, so `total` and every page describe only that tome. The filter combines with the existing phrase and tag filters. Selecting the active tome again clears it. Both changes reset `page` to `0`; connected users' frieze still fetches its complete personal timeline and zooms its visible bookmarks locally. For visitors, the frieze represents only the tome structure and acts as a corpus filter; opening a random page from the frieze is a later feature.
+Selecting a tome from the desktop list, the narrow-screen drawer, or its zone in the frieze applies the same `selectedVolumeId` filter to the active results scope. When a tome is selected, its named parts become selectable zones in the frieze. Selecting a part adds `partId` alongside `volumeId`; `GET /api/search` and `GET /api/quotes` apply both filters before pagination and counting, so totals and pages describe only that part. The filter combines with the existing phrase and tag filters. Selecting the active part again returns to the tome; selecting the tome title clears the part filter, and selecting the tome again returns to all tomes. Each scope change resets `page` to `0`. Connected users' frieze still fetches the complete personal timeline, then limits visible bookmarks to the selected tome or part locally. Anonymous visitors get the same corpus filters without personal data. Opening a random page from the frieze is a later feature.
 
 ---
 
@@ -53,13 +53,14 @@ Search and pagination state lives in `SearchPage`; the selected tome is shared w
 - `scope` — `'corpus' | 'saved'`
 - `tagId` — which real tag is active, meaningful only in `'saved'` scope
 - `selectedVolumeId` — optional tome filter shared by the desktop list, drawer, and frieze
+- `selectedPartId` — optional part filter available after selecting a tome in the frieze
 - `page` — current page index (0-based; reset to 0 on each new search or scope/tag/volume change)
 
 `SearchForm` manages its own input value locally and has no minimum-length validation of its own — submitting (or clicking its clear button) always calls `onSubmit(q)` as-is, including an empty string. The 2-character floor only applies to corpus search, enforced by `SearchPage` itself (`isQueryValid`), since an empty or 1-character query is meaningful in the saved-citations scope (it means "no text filter").
 
 At narrow widths, Enter submits the search and the submit button is hidden. A magnifier appears inside the input and a clear control appears when it contains text. The placeholder is smaller than tome names in the drawer.
 
-TanStack Query derives loading state, data, errors, and caching — `['search', query, selectedVolumeId, page]` for corpus, `['quotes', tagId, query, selectedVolumeId, page]` for saved.
+TanStack Query derives loading state, data, errors, and caching — `['search', query, selectedVolumeId, selectedPartId, page]` for corpus, `['quotes', tagId, query, selectedVolumeId, selectedPartId, page]` for saved.
 
 ---
 
@@ -97,7 +98,7 @@ No `dangerouslySetInnerHTML`. Excerpt selection uses offsets and boundary scans;
 
 ## Pagination
 
-Backend-driven: `page`, `size`, and optional `volumeId` are query parameters; `total` is counted after all active filters. The frontend computes `totalPages = Math.ceil(total / size)` and renders Prev / Next controls. Page size is fixed at 10. Applying or clearing a tome filter resets pagination before issuing the new request.
+Backend-driven: `page`, `size`, and optional `volumeId` and `partId` are query parameters; `total` is counted after all active filters. The frontend computes `totalPages = Math.ceil(total / size)` and renders Prev / Next controls. Page size is fixed at 10. Applying or clearing a tome or part filter resets pagination before issuing the new request.
 
 ## Manual verification
 
@@ -105,9 +106,10 @@ Backend-driven: `page`, `size`, and optional `volumeId` are query parameters; `t
 - **Drawer:** verify outside click, Escape, tome selection, close control, and left swipe dismiss it; vertical scrolling and wrapped tome names remain usable.
 - **Happy path — anonymous structure:** without a session, load `/`, confirm the frieze and tome list show all seven volumes without bookmarks, and confirm the UI requests `GET /api/volumes` but makes no requests to `/api/quotes`, `/api/quotes/timeline`, or `/api/tags`.
 - **Happy path — corpus:** submit a phrase present in more than one tome, select a tome from the list, drawer, or frieze, and confirm results and pagination match that tome. Selecting a tome in the drawer closes it.
+- **Part filter:** zoom into a tome, select one of its part titles, and confirm corpus results and saved citations are restricted to that part. Select the active part again to return to the tome; activate the tome title to clear the part filter, then activate the tome again to show all tomes. Confirm each change resets pagination.
 - **Search excerpts:** confirm the full match remains visible, text is cut on word boundaries with ellipses only when needed, and nearby punctuation is preferred. Check matches near the start and end of a paragraph and a match longer than the 200-character target. Click an excerpt to open its full paragraph; drag-select text and confirm it still opens the save flow without opening the detail modal, and that saved selection offsets point to the correct text in the original paragraph.
 - **Happy path — saved citations:** switch to saved citations, select a tome, and confirm the list contains only that tome's quotes; combine the tome with a tag and a text query.
 - **Toggle and pagination:** move to page 2, select a tome in either control, and confirm the first filtered page appears. Select the same tome again and confirm all-tome results return on page 1. When using Prev / Next, confirm the viewport returns to the start of the updated result list.
 - **Empty result:** select a valid tome with no match for the submitted phrase (or no saved citations) and confirm the empty state and `total: 0`.
 - **Public volume metadata:** call `GET /api/volumes` without a session; expect `200`, seven ordered volume records with `id`, `title`, `position`, `minPage`, and `maxPage`, and no personal quote/tag data.
-- **Validation:** `GET /api/search` and authenticated `GET /api/quotes` with `volumeId=0` or `volumeId=8` return `400`; omitted `volumeId` retains all-tome behavior.
+- **Validation:** `GET /api/search` and authenticated `GET /api/quotes` with `volumeId=0`, `volumeId=8`, or `partId=0` return `400`; omitted filters retain the wider scope.

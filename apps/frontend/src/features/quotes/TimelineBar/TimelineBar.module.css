@@ -4,7 +4,6 @@
   top: 0;
   z-index: 10;
   background: var(--color-page-bg);
-  border: var(--border-width) solid var(--color-frieze);
   container-type: inline-size;
 }
 
@@ -12,6 +11,36 @@
   width: 100%;
   height: 7.5rem;
   display: block;
+  border: var(--border-width) solid var(--color-frieze);
+}
+
+.zoomTitle {
+  min-height: var(--space-12);
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  font-family: var(--font-frieze);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 200;
+  line-height: var(--line-height-snug);
+  text-align: right;
+}
+
+.zoomTitleVolume {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-style: inherit;
+}
+
+.zoomTitleVolume:hover,
+.zoomTitleVolume:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
 }
 
 .volumeZone {
@@ -103,7 +132,63 @@
 }
 
 .volumeLabel.isActiveLabel .volumeLabelText {
+  opacity: 0;
+}
+
+.partTitle {
+  display: -webkit-box;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2) var(--space-1) var(--space-8);
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
   color: var(--color-text-muted);
+  font-family: var(--font-frieze);
+  font-size: clamp(0.5625rem, 0.7cqw, 0.625rem);
+  font-style: italic;
+  font-weight: 200;
+  line-height: var(--line-height-snug);
+  text-align: center;
+}
+
+.partLabel {
+  pointer-events: none;
+}
+
+.partZone {
+  fill: transparent;
+  cursor: pointer;
+  transition: fill var(--motion-duration-hover) var(--motion-ease-standard), opacity var(--motion-duration-zoom) var(--motion-ease-out);
+}
+
+.partZone:hover,
+.partZone:focus-visible {
+  fill: var(--color-frieze-hover-bg);
+}
+
+.partZone:focus {
+  outline: none;
+}
+
+.partZone:focus-visible {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
+.partZone.isActivePart {
+  fill: transparent;
+}
+
+.partZone.isHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.partDelimiter {
+  stroke: var(--color-frieze);
+  stroke-width: var(--border-width);
+  vector-effect: non-scaling-stroke;
 }
 
 .delimiter {

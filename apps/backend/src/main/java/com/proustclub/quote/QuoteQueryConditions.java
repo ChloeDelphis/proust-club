@@ -15,7 +15,7 @@ final class QuoteQueryConditions {
     private QuoteQueryConditions() {}
 
     // Shared by paginated quote queries and the unpaginated timeline query.
-    static Condition forUser(QuoteSelections quoteSelections, UUID userId, UUID tagId, String q, Integer volumeId) {
+    static Condition forUser(QuoteSelections quoteSelections, UUID userId, UUID tagId, String q, Integer volumeId, Integer partId) {
         Condition condition = quoteSelections.USER_ID.eq(userId);
 
         if (tagId != null) {
@@ -36,6 +36,14 @@ final class QuoteQueryConditions {
                     DSL.select(PARAGRAPHS.ID)
                             .from(PARAGRAPHS)
                             .where(PARAGRAPHS.VOLUME_ID.eq(volumeId))
+            ));
+        }
+
+        if (partId != null) {
+            condition = condition.and(quoteSelections.PARAGRAPH_ID.in(
+                    DSL.select(PARAGRAPHS.ID)
+                            .from(PARAGRAPHS)
+                            .where(PARAGRAPHS.PART_ID.eq(partId))
             ));
         }
 

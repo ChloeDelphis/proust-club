@@ -196,8 +196,14 @@
     "volumeFilterAriaLabel": "Filtrer par tome",
     "trackAriaLabel": "Structure des tomes et positions de mes citations",
     "corpusTrackAriaLabel": "Structure des tomes de l’œuvre",
+    "zoomedTrackAriaLabel": "Tome {{title}}, parties : {{parts}}, et positions de mes citations",
+    "zoomedCorpusTrackAriaLabel": "Tome {{title}}, parties : {{parts}}",
     "zoomOnVolume": "Filtrer les résultats sur {{title}} et zoomer sur ce tome",
     "zoomOutOfVolume": "Afficher les résultats de tous les tomes",
+    "zoomOnPart": "Filtrer les résultats sur {{title}} et zoomer sur cette partie",
+    "returnToVolume": "Revenir au tome {{title}}",
+    "partTrackAriaLabel": "Partie {{title}} du tome {{volume}} et positions de mes citations",
+    "corpusPartTrackAriaLabel": "Partie {{title}} du tome {{volume}}",
     "bookmarkAriaLabel": "Citation page {{page}}",
     "bookmarkDuplicatePageAriaLabel": "Citation page {{page}}, {{index}} sur {{total}}"
   }

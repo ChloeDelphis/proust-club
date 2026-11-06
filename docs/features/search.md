@@ -2,6 +2,8 @@
 
 How phrase search works in Proust Club: from user input to highlighted paragraph.
 
+The public search accepts optional `volumeId` and `partId` filters. Both are applied before pagination and counting, so `total` describes the filtered result set. `partId` must be a positive identifier; when combined with `volumeId`, both filters apply.
+
 ---
 
 ## The search unit: one paragraph, one row
@@ -86,3 +88,8 @@ Note: `paragraphs` holds both `part_id` and `volume_id` directly (denormalized).
 ## Rate limiting
 
 `GET /api/search` is rate-limited per client IP (60 requests/minute by default) — see [Rate limiting](rate-limiting.md).
+
+## Manual verification
+
+- Search a known phrase with no location filter, then with `volumeId` and `partId`; confirm each result belongs to the selected scope and `total` reflects the filtered count before pagination.
+- Confirm `partId=0` returns `400`, while omitting `partId` preserves the existing search behavior.

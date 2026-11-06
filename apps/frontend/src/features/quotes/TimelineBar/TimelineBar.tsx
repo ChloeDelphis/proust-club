@@ -63,6 +63,7 @@ function VolumeZones({
   volumes,
   range,
   selectedVolumeId,
+  selectedPartId,
   onSelect,
   t,
   viewBoxWidth,
@@ -70,6 +71,7 @@ function VolumeZones({
   volumes: VolumeResponse[]
   range: PageRange
   selectedVolumeId: number | null
+  selectedPartId: number | null
   onSelect: (id: number) => void
   t: TranslateFn
   viewBoxWidth: number
@@ -107,7 +109,11 @@ function VolumeZones({
               // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
               tabIndex={isHidden ? -1 : 0}
               aria-hidden={isHidden}
-              aria-label={isActive ? t('timelineBar.zoomOutOfVolume') : t('timelineBar.zoomOnVolume', { title: volume.title })}
+              aria-label={isActive
+                ? selectedPartId !== null
+                  ? t('timelineBar.returnToVolume', { title: volume.title })
+                  : t('timelineBar.zoomOutOfVolume')
+                : t('timelineBar.zoomOnVolume', { title: volume.title })}
               onClick={() => onSelect(volume.id)}
               onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
             />
@@ -151,6 +157,84 @@ function VolumeDelimiters({
           trackLeft,
         )
         return <line key={volume.id} x1={x} x2={x} y1={0} y2={VIEWBOX_HEIGHT} className={className} />
+      })}
+    </>
+  )
+}
+
+function PartStructure({
+  volume,
+  range,
+  selectedPartId,
+  onSelectPart,
+  t,
+  viewBoxWidth,
+  viewBoxScale,
+  trackLeft,
+}: {
+  volume: VolumeResponse
+  range: PageRange
+  selectedPartId: number | null
+  onSelectPart: (partId: number, volumeId: number) => void
+  t: TranslateFn
+  viewBoxWidth: number
+  viewBoxScale: number
+  trackLeft: number
+}) {
+  return (
+    <>
+      {volume.parts.map((part, index) => {
+        const nextPart = volume.parts[index + 1]
+        const isSelected = selectedPartId === part.id
+        const isHidden = selectedPartId !== null && !isSelected
+        const startX = selectedPartId === null ? percentToX(pageToPercent(part.startPage, range), viewBoxWidth) : 0
+        const endX = selectedPartId === null
+          ? percentToX(pageToPercent(nextPart?.startPage ?? volume.maxPage, range), viewBoxWidth)
+          : viewBoxWidth
+        const zoneClassName = [styles.partZone, isSelected && styles.isActivePart, isHidden && styles.isHidden]
+          .filter(Boolean)
+          .join(' ')
+        return (
+          <g key={part.id}>
+            <rect
+              x={startX}
+              y={0}
+              width={Math.max(0, endX - startX)}
+              height={VIEWBOX_HEIGHT}
+              className={zoneClassName}
+              role="button"
+              tabIndex={isHidden ? -1 : 0}
+              aria-hidden={isHidden}
+              aria-label={isSelected
+                ? t('timelineBar.returnToVolume', { title: volume.title })
+                : t('timelineBar.zoomOnPart', { title: part.title })}
+              aria-pressed={isSelected}
+              onClick={() => onSelectPart(part.id, volume.id)}
+              onKeyDown={activateOnEnterOrSpace(() => onSelectPart(part.id, volume.id))}
+            />
+            {!isHidden && (
+              <foreignObject
+                x={startX}
+                y={0}
+                width={Math.max(0, endX - startX)}
+                height={VIEWBOX_HEIGHT}
+                className={styles.partLabel}
+                aria-hidden="true"
+              >
+                <div className={styles.partTitle}>{part.title}</div>
+              </foreignObject>
+            )}
+            {selectedPartId === null && index > 0 && (
+              <line
+                x1={snapSvgXToDevicePixelCenter(startX, viewBoxScale, trackLeft)}
+                x2={snapSvgXToDevicePixelCenter(startX, viewBoxScale, trackLeft)}
+                y1={0}
+                y2={VIEWBOX_HEIGHT}
+                className={styles.partDelimiter}
+              />
+            )}
+          </g>
+        )
       })}
     </>
   )
@@ -212,7 +296,7 @@ function Bookmarks({
   )
 }
 
-export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId, onSelectVolume, onOpenQuote }: TimelineBarProps) {
+export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId, selectedPartId, onSelectVolume, onSelectPart, onOpenQuote }: TimelineBarProps) {
   const { t } = useTranslation()
   const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
   const trackRef = useRef<SVGSVGElement>(null)
@@ -235,13 +319,26 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     [volumes],
   )
   const selectedVolume = selectedVolumeId !== null ? volumesById.get(selectedVolumeId) : undefined
+  const selectedPart = selectedVolume?.parts.find(part => part.id === selectedPartId)
+  const selectedPartIndex = selectedPart
+    ? selectedVolume?.parts.findIndex(part => part.id === selectedPart.id) ?? -1
+    : -1
+  const selectedPartEndPage = selectedPart && selectedVolume
+    ? selectedVolume.parts[selectedPartIndex + 1]?.startPage ?? selectedVolume.maxPage
+    : undefined
+  const selectedPartEndExclusive = selectedPart && selectedVolume && selectedPartIndex === selectedVolume.parts.length - 1
+    ? selectedVolume.maxPage + 1
+    : selectedPartEndPage
 
   const range = useMemo(() => {
     if (volumes.length === 0) return { minPage: 0, maxPage: 0 }
+    if (selectedPart && selectedPartEndPage !== undefined) {
+      return { minPage: selectedPart.startPage, maxPage: selectedPartEndPage }
+    }
     return selectedVolume
       ? { minPage: selectedVolume.minPage, maxPage: selectedVolume.maxPage }
       : { minPage: volumes[0].minPage, maxPage: volumes[volumes.length - 1].maxPage }
-  }, [volumes, selectedVolume])
+  }, [volumes, selectedVolume, selectedPart, selectedPartEndPage])
 
   useEffect(() => {
     if (volumes.length === 0) return
@@ -249,7 +346,6 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     const startRange = animatedRangeRef.current
     if (!startRange) {
       animatedRangeRef.current = range
-      setAnimatedRange(range)
       return
     }
     if (startRange.minPage === range.minPage && startRange.maxPage === range.maxPage) return
@@ -259,8 +355,8 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     const durationMs = track ? getMotionDurationMs(track, '--motion-duration-zoom') : 0
     if (prefersReducedMotion || durationMs <= 0) {
       animatedRangeRef.current = range
-      setAnimatedRange(range)
-      return
+      const frameId = requestAnimationFrame(() => setAnimatedRange(range))
+      return () => cancelAnimationFrame(frameId)
     }
 
     const startTime = performance.now()
@@ -290,9 +386,13 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   }, [range, volumes.length])
 
   const groups = useMemo(() => {
-    const visibleQuotes = selectedVolume ? quotes.filter(q => q.volumeId === selectedVolume.id) : quotes
+    const visibleQuotes = quotes.filter(quote => {
+      if (selectedVolume && quote.volumeId !== selectedVolume.id) return false
+      if (selectedPart && (quote.pageNumber < selectedPart.startPage || quote.pageNumber >= (selectedPartEndExclusive ?? Number.POSITIVE_INFINITY))) return false
+      return true
+    })
     return positionTimelineQuotes(visibleQuotes, animatedRange ?? range)
-  }, [quotes, selectedVolume, range, animatedRange])
+  }, [quotes, selectedVolume, selectedPart, selectedPartEndExclusive, range, animatedRange])
 
   useLayoutEffect(() => {
     const track = trackRef.current
@@ -323,15 +423,63 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
 
   return (
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
+      <div className={styles.zoomTitle}>
+        {selectedVolume && (
+          <>
+            {selectedPart ? (
+              <button
+                type="button"
+                className={styles.zoomTitleVolume}
+                aria-label={t('timelineBar.returnToVolume', { title: selectedVolume.title })}
+                onClick={() => onSelectVolume(selectedVolume.id)}
+              >
+                <span>{VOLUME_ROMAN_NUMERALS[selectedVolume.position - 1] ?? selectedVolume.position}</span>
+                <span aria-hidden="true"> · </span>
+                <span>{selectedVolume.title}</span>
+              </button>
+            ) : (
+              <>
+                <span>{VOLUME_ROMAN_NUMERALS[selectedVolume.position - 1] ?? selectedVolume.position}</span>
+                <span aria-hidden="true"> · </span>
+                <span>{selectedVolume.title}</span>
+              </>
+            )}
+            {selectedPart && (
+              <>
+                <span aria-hidden="true"> › </span>
+                <span>{selectedPart.title}</span>
+              </>
+            )}
+          </>
+        )}
+      </div>
       <svg
         ref={trackRef}
         className={styles.track}
         viewBox={`0 0 ${viewBoxWidth} ${VIEWBOX_HEIGHT}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
+        aria-label={selectedPart
+          ? t(isConnected ? 'timelineBar.partTrackAriaLabel' : 'timelineBar.corpusPartTrackAriaLabel', {
+            title: selectedPart.title,
+            volume: selectedVolume?.title,
+          })
+          : selectedVolume
+            ? t(isConnected ? 'timelineBar.zoomedTrackAriaLabel' : 'timelineBar.zoomedCorpusTrackAriaLabel', {
+              title: selectedVolume.title,
+              parts: selectedVolume.parts.map(part => part.title).join(', '),
+            })
+          : t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
       >
-        <VolumeZones volumes={volumes} range={animatedRange ?? range} selectedVolumeId={selectedVolumeId} onSelect={onSelectVolume} t={t} viewBoxWidth={viewBoxWidth} />
+        <VolumeZones
+          volumes={volumes}
+          range={animatedRange ?? range}
+          selectedVolumeId={selectedVolumeId}
+          selectedPartId={selectedPart?.id ?? null}
+          onSelect={onSelectVolume}
+          t={t}
+          viewBoxWidth={viewBoxWidth}
+        />
         <VolumeDelimiters
           volumes={volumes}
           range={animatedRange ?? range}
@@ -340,6 +488,18 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
           viewBoxScale={viewBoxScale}
           trackLeft={trackLeft}
         />
+        {selectedVolume && (
+          <PartStructure
+            volume={selectedVolume}
+            range={animatedRange ?? range}
+            selectedPartId={selectedPart?.id ?? null}
+            onSelectPart={onSelectPart}
+            t={t}
+            viewBoxWidth={viewBoxWidth}
+            viewBoxScale={viewBoxScale}
+            trackLeft={trackLeft}
+          />
+        )}
         {isConnected && <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} viewBoxWidth={viewBoxWidth} />}
 
         {hoveredGroup && (

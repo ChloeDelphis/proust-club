@@ -9,12 +9,12 @@ interface ParagraphCardProps {
   hit: SearchHit
   onOpenDetail: (hit: SearchHit) => void
   resumeDraft?: GuestQuoteSaveDraft | null
-  searchContext?: Pick<GuestQuoteSaveDraft, 'query' | 'page' | 'volumeId'>
+  searchContext?: Pick<GuestQuoteSaveDraft, 'query' | 'page' | 'volumeId' | 'partId'>
 }
 
 // The excerpt opens details on click, while an active native selection remains reserved for
 // QuoteSelection's "Sauvegarder" flow.
-export default function ParagraphCard({ hit, onOpenDetail, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null } }: ParagraphCardProps) {
+export default function ParagraphCard({ hit, onOpenDetail, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null, partId: null } }: ParagraphCardProps) {
   const { t } = useTranslation()
   const { paragraphId, text, startOffset, endOffset, volume, part, pageNumber } = hit
   const excerpt = createSearchExcerpt(text, { start: startOffset, end: endOffset })

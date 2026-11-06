@@ -35,7 +35,7 @@ class SearchController {
     @Operation(
         summary = "Search the corpus",
         description = """
-            Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to one of the corpus volumes.
+            Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to a volume and one of its parts.
 
             Each result includes the `startOffset` (inclusive) and `endOffset` (exclusive)
             using 0-based indexes, ready to use with `String.substring()` in Java or JavaScript.
@@ -57,6 +57,9 @@ class SearchController {
         @Parameter(description = "Only search paragraphs in this volume (1–7)", example = "1")
         @RequestParam(required = false) @Min(value = 1, message = "volumeId must be >= {value}") @Max(value = ProustVolumes.COUNT, message = "volumeId must be <= {value}") Integer volumeId,
 
+        @Parameter(description = "Only search paragraphs in this part (positive identifier)", example = "4")
+        @RequestParam(required = false) @Min(value = 1, message = "partId must be >= {value}") Integer partId,
+
         @Parameter(description = "Zero-based page index (default: 0). This paginates the search results, not the book's page numbers.", example = "0")
         @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= {value}") int page,
 
@@ -66,6 +69,6 @@ class SearchController {
         HttpServletRequest httpRequest
     ) {
         rateLimiter.checkSearchByIp(httpRequest);
-        return service.search(q, volumeId, page, size);
+        return service.search(q, volumeId, partId, page, size);
     }
 }

@@ -20,7 +20,7 @@ class SearchRepository {
         this.dsl = dsl;
     }
 
-    List<SearchResult> search(String query, Integer volumeId, int page, int size) {
+    List<SearchResult> search(String query, Integer volumeId, Integer partId, int page, int size) {
         String pattern = "%" + LikePatterns.escape(query) + "%";
         var paragraph = PARAGRAPHS.as("p");
         var part = PARTS.as("pt");
@@ -47,6 +47,7 @@ class SearchRepository {
                         .on(paragraph.VOLUME_ID.eq(volume.ID))
                 .where(pText.likeIgnoreCase(pattern, '\\'))
                 .and(volumeId == null ? DSL.noCondition() : pVolumeId.eq(volumeId))
+                .and(partId == null ? DSL.noCondition() : part.ID.eq(partId))
                 .orderBy(paragraph.POSITION)
                 .limit(size)
                 .offset((long) page * size)
@@ -68,16 +69,18 @@ class SearchRepository {
                 });
     }
 
-    long count(String query, Integer volumeId) {
+    long count(String query, Integer volumeId, Integer partId) {
         String pattern = "%" + LikePatterns.escape(query) + "%";
         var volumeCondition = volumeId == null
                 ? DSL.noCondition()
                 : PARAGRAPHS.VOLUME_ID.eq(volumeId);
+        var partCondition = partId == null ? DSL.noCondition() : PARAGRAPHS.PART_ID.eq(partId);
         return dsl
                 .selectCount()
                 .from(PARAGRAPHS)
                 .where(PARAGRAPHS.TEXT.likeIgnoreCase(pattern, '\\'))
                 .and(volumeCondition)
+                .and(partCondition)
                 .fetchOne(0, Long.class);
     }
 }

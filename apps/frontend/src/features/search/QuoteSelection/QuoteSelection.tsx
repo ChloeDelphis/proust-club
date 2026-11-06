@@ -24,7 +24,7 @@ export default function QuoteSelection({
   hasTrailingEllipsis = false,
   onOpenDetail,
   resumeDraft = null,
-  searchContext = { query: '', page: 0, volumeId: null },
+  searchContext = { query: '', page: 0, volumeId: null, partId: null },
 }: QuoteSelectionProps) {
   const { t } = useTranslation()
   const { data: currentUser, isPending: isUserPending } = useCurrentUser()
@@ -139,7 +139,8 @@ export default function QuoteSelection({
         end: end + sourceOffset,
         selectedText: text.slice(start, end),
         listName: newTagName.trim(),
-        query: searchContext.query, page: searchContext.page, volumeId: searchContext.volumeId, scrollY: window.scrollY,
+        query: searchContext.query, page: searchContext.page, volumeId: searchContext.volumeId,
+        partId: searchContext.partId, scrollY: window.scrollY,
       })
       updatePhase({ kind: 'authPrompt', start, end })
       return

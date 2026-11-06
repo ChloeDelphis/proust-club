@@ -1,5 +1,5 @@
 import { apiFetch, buildQuery } from './client'
-import { assertVolumeIdInRange } from './volume'
+import { assertPartId, assertVolumeIdInRange } from './volume'
 import type { operations } from './schema.generated'
 
 export type SearchHit = {
@@ -23,6 +23,7 @@ export type SearchParams = operations['search']['parameters']['query']
 
 export function searchParagraphs(params: SearchParams, signal?: AbortSignal): Promise<SearchResponse> {
   assertVolumeIdInRange(params.volumeId)
-  const qs = buildQuery({ q: params.q, volumeId: params.volumeId, page: params.page, size: params.size })
+  assertPartId(params.partId)
+  const qs = buildQuery({ q: params.q, volumeId: params.volumeId, partId: params.partId, page: params.page, size: params.size })
   return apiFetch<SearchResponse>(`/api/search?${qs}`, { signal })
 }

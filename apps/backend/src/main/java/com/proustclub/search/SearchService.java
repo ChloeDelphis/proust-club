@@ -13,8 +13,8 @@ class SearchService {
         this.repository = repository;
     }
 
-    SearchResponse search(String query, Integer volumeId, int page, int size) {
-        var results = repository.search(query, volumeId, page, size).stream()
+    SearchResponse search(String query, Integer volumeId, Integer partId, int page, int size) {
+        var results = repository.search(query, volumeId, partId, page, size).stream()
                 .map(result -> new SearchHit(
                         result.paragraphId(),
                         result.text(),
@@ -25,7 +25,7 @@ class SearchService {
                         result.pageNumber()
                 ))
                 .toList();
-        long total = repository.count(query, volumeId);
+        long total = repository.count(query, volumeId, partId);
         return new SearchResponse(results, total, page, size);
     }
 }

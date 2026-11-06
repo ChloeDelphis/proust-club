@@ -9,7 +9,7 @@ export interface QuoteSelectionProps {
   hasTrailingEllipsis?: boolean
   onOpenDetail?: () => void
   resumeDraft?: GuestQuoteSaveDraft | null
-  searchContext?: Pick<GuestQuoteSaveDraft, 'query' | 'page' | 'volumeId'>
+  searchContext?: Pick<GuestQuoteSaveDraft, 'query' | 'page' | 'volumeId' | 'partId'>
 }
 
 export type Phase =

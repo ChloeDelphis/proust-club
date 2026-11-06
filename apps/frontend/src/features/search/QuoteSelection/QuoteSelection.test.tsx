@@ -139,7 +139,7 @@ describe('QuoteSelection — not connected', () => {
         paragraphId={PARAGRAPH_ID}
         text={TEXT}
         highlightRange={HIGHLIGHT}
-        searchContext={{ query: 'madeleine', page: 1, volumeId: 2 }}
+        searchContext={{ query: 'madeleine', page: 1, volumeId: 2, partId: null }}
       />,
       { wrapper: flowWrapper },
     )
@@ -167,7 +167,7 @@ describe('QuoteSelection — not connected', () => {
     } as unknown as Selection)
     const resumeDraft = {
       paragraphId: PARAGRAPH_ID, start: 6, end: 11, selectedText: 'world', listName: 'Combray',
-      query: 'madeleine', page: 2, volumeId: 1, scrollY: 300,
+      query: 'madeleine', page: 2, volumeId: 1, partId: null, scrollY: 300,
     }
     render(
       <QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} resumeDraft={resumeDraft} />,
@@ -198,7 +198,7 @@ describe('QuoteSelection — not connected', () => {
     } as unknown as Selection)
     const resumeDraft = {
       paragraphId: PARAGRAPH_ID, start: 6, end: 11, selectedText: 'world', listName: 'Combray',
-      query: 'madeleine', page: 0, volumeId: null, scrollY: 0,
+      query: 'madeleine', page: 0, volumeId: null, partId: null, scrollY: 0,
     }
     render(
       <QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} resumeDraft={resumeDraft} />,

@@ -14,8 +14,8 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const volumes: volumeApi.VolumeResponse[] = [
-  { id: 1, title: 'Du Côté de Chez Swann', position: 1, minPage: 1, maxPage: 103 },
-  { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183 },
+  { id: 1, title: 'Du Côté de Chez Swann', position: 1, minPage: 1, maxPage: 103, parts: [] },
+  { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183, parts: [] },
 ]
 
 // Controlled, same convention as TimelineBar's own test file — feeds selectedVolumeId back so

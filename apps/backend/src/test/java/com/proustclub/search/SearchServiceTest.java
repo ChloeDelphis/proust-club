@@ -25,10 +25,10 @@ class SearchServiceTest {
     void searchAssemblesResponse() {
         var result = new SearchResult(1, "La madeleine est un symbole.", 3, 12, "Du CÃ´tÃ© de Chez Swann", "Combray", 1);
         var expectedHit = new SearchHit(1, "La madeleine est un symbole.", 3, 12, "Du CÃ´tÃ© de Chez Swann", "Combray", 1);
-        when(repository.search("madeleine", null, 0, 10)).thenReturn(List.of(result));
-        when(repository.count("madeleine", null)).thenReturn(1L);
+        when(repository.search("madeleine", null, null, 0, 10)).thenReturn(List.of(result));
+        when(repository.count("madeleine", null, null)).thenReturn(1L);
 
-        var response = service.search("madeleine", null, 0, 10);
+        var response = service.search("madeleine", null, null, 0, 10);
 
         assertThat(response.results()).containsExactly(expectedHit);
         assertThat(response.total()).isEqualTo(1L);
@@ -38,10 +38,10 @@ class SearchServiceTest {
 
     @Test
     void searchReturnsEmptyResponseWhenNoResults() {
-        when(repository.search("DostoÃ¯evski", null, 0, 10)).thenReturn(List.of());
-        when(repository.count("DostoÃ¯evski", null)).thenReturn(0L);
+        when(repository.search("DostoÃ¯evski", null, null, 0, 10)).thenReturn(List.of());
+        when(repository.count("DostoÃ¯evski", null, null)).thenReturn(0L);
 
-        var response = service.search("DostoÃ¯evski", null, 0, 10);
+        var response = service.search("DostoÃ¯evski", null, null, 0, 10);
 
         assertThat(response.results()).isEmpty();
         assertThat(response.total()).isEqualTo(0L);

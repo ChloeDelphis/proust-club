@@ -38,14 +38,14 @@ function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
 export default function SearchPage() {
   const { t } = useTranslation()
   const { draft } = useGuestQuoteSave()
-  const { selectedVolumeId, selectVolume } = useVolumeSelection()
+  const { selectedVolumeId, selectedPartId, selectVolume, selectPart } = useVolumeSelection()
   const { data: currentUser } = useCurrentUser()
   const isConnected = currentUser !== null && currentUser !== undefined
   const [query, setQuery] = useState(() => draft?.query ?? '')
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
   const [tagId, setTagId] = useState<string | null>(null)
-  const [pagination, setPagination] = useState(() => ({ volumeId: selectedVolumeId, page: draft?.page ?? 0 }))
-  const page = pagination.volumeId === selectedVolumeId ? pagination.page : 0
+  const [pagination, setPagination] = useState(() => ({ volumeId: selectedVolumeId, partId: selectedPartId, page: draft?.page ?? 0 }))
+  const page = pagination.volumeId === selectedVolumeId && pagination.partId === selectedPartId ? pagination.page : 0
   const resultsAnchorRef = useRef<HTMLDivElement>(null)
   const shouldScrollToResultsRef = useRef(false)
   // The selected quote is a snapshot owned by the modal, not a pointer into a filtered query.
@@ -56,7 +56,7 @@ export default function SearchPage() {
   const [detailHit, setDetailHit] = useState<SearchHit | null>(null)
 
   function setPage(nextPage: number) {
-    setPagination({ volumeId: selectedVolumeId, page: nextPage })
+    setPagination({ volumeId: selectedVolumeId, partId: selectedPartId, page: nextPage })
   }
 
   function handlePageChange(nextPage: number) {
@@ -88,6 +88,11 @@ export default function SearchPage() {
     setPage(0)
   }
 
+  function handleSelectPart(partId: number, volumeId: number) {
+    selectPart(partId, volumeId)
+    setPage(0)
+  }
+
   function handleOpenQuote(quoteId: string) {
     const quote = timelineQuery.data?.quotes.find(item => item.id === quoteId)
     if (quote && currentUser) setSelectedDetailQuote({ userId: currentUser.uuid, quote })
@@ -113,6 +118,7 @@ export default function SearchPage() {
   const corpusQuery = useCorpusSearchQuery({
     query,
     volumeId: selectedVolumeId,
+    partId: selectedPartId,
     page,
     enabled: scope === 'corpus' && isQueryValid,
   })
@@ -121,6 +127,7 @@ export default function SearchPage() {
     tagId,
     query,
     volumeId: selectedVolumeId,
+    partId: selectedPartId,
     page,
     enabled: scope === 'saved' && isConnected,
   })
@@ -159,7 +166,7 @@ export default function SearchPage() {
               hit={hit}
               onOpenDetail={setDetailHit}
               resumeDraft={draft?.paragraphId === hit.paragraphId ? draft : null}
-              searchContext={{ query, page, volumeId: selectedVolumeId }}
+              searchContext={{ query, page, volumeId: selectedVolumeId, partId: selectedPartId }}
             />
           )}
           total={corpusQuery.data.total}
@@ -197,7 +204,9 @@ export default function SearchPage() {
         isConnected={isConnected}
         activeTagId={tagId}
         selectedVolumeId={selectedVolumeId}
+        selectedPartId={selectedPartId}
         onSelectVolume={handleSelectVolume}
+        onSelectPart={handleSelectPart}
         onOpenQuote={handleOpenQuote}
       />
       <div className={styles.layout}>

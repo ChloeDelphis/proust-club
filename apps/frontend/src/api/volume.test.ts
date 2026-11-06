@@ -2,7 +2,14 @@ import { assertVolumeIdInRange, getVolumes, VOLUME_COUNT } from './volume'
 
 describe('getVolumes', () => {
   it('loads public volume structure without user-specific parameters', async () => {
-    const volumes = [{ id: 1, title: 'Du côté de chez Swann', position: 1, minPage: 1, maxPage: 103 }]
+    const volumes = [{
+      id: 1,
+      title: 'Du côté de chez Swann',
+      position: 1,
+      minPage: 1,
+      maxPage: 103,
+      parts: [{ id: 1, title: 'Combray', position: 1, startPage: 1 }],
+    }]
     globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(volumes), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

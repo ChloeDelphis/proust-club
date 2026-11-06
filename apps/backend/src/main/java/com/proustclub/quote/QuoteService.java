@@ -81,10 +81,10 @@ class QuoteService {
     }
 
     @Transactional(readOnly = true)
-    QuoteSelectionListResponse list(UUID userId, UUID tagId, String q, Integer volumeId, int page, int size) {
+    QuoteSelectionListResponse list(UUID userId, UUID tagId, String q, Integer volumeId, Integer partId, int page, int size) {
         String normalizedQ = blankToNull(q);
-        var quotes = quoteRepository.findByUserId(userId, tagId, normalizedQ, volumeId, page, size);
-        long total = quoteRepository.countByUserId(userId, tagId, normalizedQ, volumeId);
+        var quotes = quoteRepository.findByUserId(userId, tagId, normalizedQ, volumeId, partId, page, size);
+        long total = quoteRepository.countByUserId(userId, tagId, normalizedQ, volumeId, partId);
 
         var quoteIds = quotes.stream().map(QuoteSelection::id).toList();
         var tagsByQuoteId = quoteTagRepository.findByQuoteIds(quoteIds);

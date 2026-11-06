@@ -40,9 +40,9 @@ class SearchControllerErrorTest {
 
     @Test
     void unexpectedRepositoryFailureReturns500WithoutLeakingInternalDetails() throws Exception {
-        when(searchRepository.search(anyString(), isNull(), anyInt(), anyInt()))
+        when(searchRepository.search(anyString(), isNull(), isNull(), anyInt(), anyInt()))
                 .thenThrow(new RuntimeException("SELECT * FROM paragraphs failed unexpectedly (simulated)"));
-        when(searchRepository.count(anyString(), isNull())).thenReturn(0L);
+        when(searchRepository.count(anyString(), isNull(), isNull())).thenReturn(0L);
 
         HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
         HttpRequest request = HttpRequest.newBuilder()
