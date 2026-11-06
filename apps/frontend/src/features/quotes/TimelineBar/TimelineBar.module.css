@@ -4,7 +4,7 @@
   top: 0;
   z-index: 10;
   background: var(--color-page-bg);
-  border: 1px solid var(--color-frieze);
+  border: var(--border-width) solid var(--color-frieze);
   container-type: inline-size;
 }
 
@@ -105,7 +105,7 @@
 
 .delimiter {
   stroke: var(--color-frieze);
-  stroke-width: 1;
+  stroke-width: var(--border-width);
   vector-effect: non-scaling-stroke;
   shape-rendering: crispEdges;
   transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);

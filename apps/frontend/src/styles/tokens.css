@@ -125,6 +125,9 @@
   --radius-xl: 8px;
   --radius-full: 999px;
 
+  /* Shared resting border and divider thickness */
+  --border-width: 1px;
+
   /* Elevation (box-shadow). The two near-identical "large overlay" shadows
      (8px/30px and 8px/24px, same offset, blur within 25% of each other, same
      alpha) were consolidated into one --shadow-lg — full-screen modal/popup

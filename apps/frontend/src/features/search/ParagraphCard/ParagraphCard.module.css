@@ -1,6 +1,6 @@
 .root {
   padding: var(--space-5);
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-result-card);
 }
