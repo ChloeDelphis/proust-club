@@ -425,11 +425,20 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
       <div className={styles.zoomTitle}>
         {selectedVolume && (
-          <>
+          <div className={styles.zoomTitleBreadcrumb}>
+            <button
+              type="button"
+              className={`${styles.zoomTitleLink} ${styles.zoomTitleRoot}`}
+              aria-label={t('timelineBar.returnToAllWork')}
+              onClick={() => onSelectVolume(null)}
+            >
+              {t('volumeList.allWork')}
+            </button>
+            <span className={styles.zoomTitleSeparator} aria-hidden="true">›</span>
             {selectedPart ? (
               <button
                 type="button"
-                className={styles.zoomTitleVolume}
+                className={`${styles.zoomTitleLink} ${styles.zoomTitleVolume}`}
                 aria-label={t('timelineBar.returnToVolume', { title: selectedVolume.title })}
                 onClick={() => onSelectVolume(selectedVolume.id)}
               >
@@ -438,19 +447,19 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
                 <span>{selectedVolume.title}</span>
               </button>
             ) : (
-              <>
+              <span className={styles.zoomTitleCurrent}>
                 <span>{VOLUME_ROMAN_NUMERALS[selectedVolume.position - 1] ?? selectedVolume.position}</span>
                 <span aria-hidden="true"> · </span>
                 <span>{selectedVolume.title}</span>
-              </>
+              </span>
             )}
             {selectedPart && (
               <>
-                <span aria-hidden="true"> › </span>
-                <span>{selectedPart.title}</span>
+                <span className={styles.zoomTitleSeparator} aria-hidden="true">›</span>
+                <span className={styles.zoomTitleCurrent}>{selectedPart.title}</span>
               </>
             )}
-          </>
+          </div>
         )}
       </div>
       <svg

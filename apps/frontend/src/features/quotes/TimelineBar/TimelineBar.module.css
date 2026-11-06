@@ -15,7 +15,8 @@
 }
 
 .zoomTitle {
-  min-height: var(--space-12);
+  box-sizing: border-box;
+  height: var(--space-12);
   padding: var(--space-2) var(--space-3) var(--space-1);
   margin-bottom: var(--space-2);
   color: var(--color-text-muted);
@@ -24,10 +25,20 @@
   font-style: italic;
   font-weight: 200;
   line-height: var(--line-height-snug);
-  text-align: right;
+  overflow: hidden;
 }
 
-.zoomTitleVolume {
+.zoomTitleBreadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  min-width: 0;
+  height: 100%;
+  white-space: nowrap;
+}
+
+.zoomTitleLink {
   padding: 0;
   border: 0;
   background: none;
@@ -35,10 +46,28 @@
   cursor: pointer;
   font: inherit;
   font-style: inherit;
+  text-align: right;
 }
 
-.zoomTitleVolume:hover,
-.zoomTitleVolume:focus-visible {
+.zoomTitleRoot {
+  flex: 0 0 auto;
+}
+
+.zoomTitleVolume,
+.zoomTitleCurrent {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zoomTitleSeparator {
+  flex: 0 0 auto;
+}
+
+.zoomTitleLink:hover,
+.zoomTitleLink:focus-visible {
   text-decoration: underline;
   text-underline-offset: var(--space-1);
 }

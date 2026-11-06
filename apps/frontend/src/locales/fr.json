@@ -204,6 +204,7 @@
     "zoomOnVolume": "Filtrer les résultats sur {{title}} et zoomer sur ce tome",
     "zoomOutOfVolume": "Afficher les résultats de tous les tomes",
     "zoomOnPart": "Filtrer les résultats sur {{title}} et zoomer sur cette partie",
+    "returnToAllWork": "Revenir à toute l’œuvre",
     "returnToVolume": "Revenir au tome {{title}}",
     "partTrackAriaLabel": "Partie {{title}} du tome {{volume}} et positions de mes citations",
     "corpusPartTrackAriaLabel": "Partie {{title}} du tome {{volume}}",

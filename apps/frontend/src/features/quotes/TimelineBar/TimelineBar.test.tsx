@@ -17,7 +17,13 @@ import { quoteId } from './timelineTestFixtures'
 function ControlledTimelineBar({ activeTagId }: { activeTagId: string | null }) {
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
   const [selectedPartId, setSelectedPartId] = useState<number | null>(null)
-  function selectVolume(id: number) {
+  function selectVolume(id: number | null) {
+    if (id === null) {
+      setSelectedVolumeId(null)
+      setSelectedPartId(null)
+      return
+    }
+
     if (selectedVolumeId === id && selectedPartId !== null) {
       setSelectedPartId(null)
       return
