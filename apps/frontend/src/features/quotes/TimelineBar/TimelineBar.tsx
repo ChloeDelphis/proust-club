@@ -467,7 +467,7 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
         className={styles.track}
         viewBox={`0 0 ${viewBoxWidth} ${VIEWBOX_HEIGHT}`}
         preserveAspectRatio="none"
-        role="img"
+        role="group"
         aria-label={selectedPart
           ? t(isConnected ? 'timelineBar.partTrackAriaLabel' : 'timelineBar.corpusPartTrackAriaLabel', {
             title: selectedPart.title,
