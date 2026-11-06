@@ -193,8 +193,8 @@
 
 .accountIcon {
   display: block;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   background-color: currentColor;
   mask: url('../../assets/icons/icone-madeleine.svg') center / contain no-repeat;
 }
@@ -317,7 +317,7 @@
   }
 
   .accountIcon {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2rem;
+    height: 2rem;
   }
 }

@@ -106,6 +106,8 @@
 .delimiter {
   stroke: var(--color-frieze);
   stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  shape-rendering: crispEdges;
   transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 

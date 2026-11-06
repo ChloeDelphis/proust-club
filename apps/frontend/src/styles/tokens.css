@@ -11,7 +11,7 @@
      "Club joyeux" (direction B) palette. */
   --palette-bg: #FFFCF8;
   --palette-surface: #fffaf2;
-  --palette-result-card: #fff;
+  --palette-result-card: #FFFAF5;
   --palette-ink: #3a2430;
   /* Darkened ~15% from the source artifact's #8A7078 — the original value measured
      4.05:1/4.33:1 against the page/surface backgrounds (real WCAG relative-luminance
