@@ -19,8 +19,8 @@
      calculation), below the 4.5:1 AA threshold for normal-size text. This value
      clears it (5.17:1/5.09:1) while staying close to the original hue/tone. */
   --palette-ink-soft: #7e656d;
-  --palette-signature: #884d69;
-  --palette-signature-hover: #6e3c54;
+  --palette-signature: #6e3c54;
+  --palette-signature-hover: #542b41;
   --palette-accent-coral: #e78c6b;
   --palette-accent-lavender: #d5d0ef;
   --palette-accent-mint: #bfdcce;
