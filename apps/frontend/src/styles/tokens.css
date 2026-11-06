@@ -25,6 +25,8 @@
   --palette-accent-mint: #bfdcce;
   --palette-rule: #f3dec4;
   --palette-frieze: #E4D6D8;
+  --palette-frieze-hover-bg: #F8EFED;
+  --palette-frieze-hover-text: #947581;
   --palette-on-signature: #fff;
   --palette-danger: #b91c1c;
   --palette-danger-bg: #fef2f2;
@@ -56,6 +58,8 @@
   --color-border: var(--palette-rule);
   --color-border-strong: var(--palette-ink-soft);
   --color-frieze: var(--palette-frieze);
+  --color-frieze-hover-bg: var(--palette-frieze-hover-bg);
+  --color-frieze-hover-text: var(--palette-frieze-hover-text);
 
   --color-accent: var(--palette-signature);
   --color-accent-hover: var(--palette-signature-hover);
@@ -145,10 +149,9 @@
   --z-index-popover: 20;
   --z-index-modal: 1000;
 
-  /* Motion. "fast" covers hover/focus feedback and all current appearance
-     transitions, modals included — nothing in this diff needs a slower
-     tier, so one wasn't added speculatively. */
+  /* Motion. */
   --motion-duration-fast: 0.15s;
+  --motion-duration-hover: 0.25s;
   --motion-duration-spin: 0.7s;
   --motion-ease-standard: ease;
   --motion-ease-out: ease-out;

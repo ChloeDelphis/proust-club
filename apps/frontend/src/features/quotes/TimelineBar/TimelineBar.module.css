@@ -17,12 +17,12 @@
 .volumeZone {
   fill: var(--color-page-bg);
   cursor: pointer;
-  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: fill var(--motion-duration-hover) var(--motion-ease-standard);
 }
 
 .volumeZone:hover,
 .volumeZone:focus-visible {
-  fill: var(--color-surface-subtle);
+  fill: var(--color-frieze-hover-bg);
 }
 
 .volumeZone:focus {
@@ -40,7 +40,7 @@
 
 .volumeZone.isActiveZone:hover,
 .volumeZone.isActiveZone:focus-visible {
-  fill: var(--color-surface-subtle);
+  fill: var(--color-frieze-hover-bg);
 }
 
 .volumeZone.isHidden,
@@ -58,9 +58,9 @@
   opacity: 0;
 }
 
-.volumeZone:not(.isActiveZone):hover + .volumeLabel .volumeLabelText,
-.volumeZone:not(.isActiveZone):focus-visible + .volumeLabel .volumeLabelText {
-  color: var(--color-text-muted);
+.volumeZone:hover + .volumeLabel .volumeLabelText,
+.volumeZone:focus-visible + .volumeLabel .volumeLabelText {
+  color: var(--color-frieze-hover-text);
 }
 
 .volumeLabelText {
@@ -73,6 +73,7 @@
   font-family: var(--font-frieze);
   text-align: center;
   color: var(--color-frieze);
+  transition: color var(--motion-duration-hover) var(--motion-ease-standard);
 }
 
 .volumeNumeral {
