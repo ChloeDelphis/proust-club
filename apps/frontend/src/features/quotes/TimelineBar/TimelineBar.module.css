@@ -1,4 +1,6 @@
 .root {
+  --timeline-bg: #fbf5f8;
+  --timeline-bookmark-bg: #F4E9EF;
   margin-bottom: var(--space-6);
   position: sticky;
   top: 0;
@@ -14,15 +16,23 @@
   border: var(--border-width) solid var(--color-frieze);
 }
 
+.titleTrackBackground {
+  fill: var(--timeline-bg);
+}
+
+.bookmarkTrackBackground {
+  fill: var(--timeline-bookmark-bg);
+}
+
 .zoomTitle {
   box-sizing: border-box;
   height: var(--space-12);
   padding: var(--space-2) var(--space-3) var(--space-1);
   margin-bottom: var(--space-2);
   color: var(--color-text);
-  font-family: var(--font-frieze);
+  font-family: var(--font-reading);
   font-size: 1rem;
-  font-style: italic;
+  font-style: normal;
   font-weight: 400;
   line-height: var(--line-height-snug);
   overflow: hidden;
@@ -31,7 +41,7 @@
 .zoomTitleBreadcrumb {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--space-1);
   min-width: 0;
   height: 100%;
@@ -46,7 +56,7 @@
   cursor: pointer;
   font: inherit;
   font-style: inherit;
-  text-align: right;
+  text-align: left;
 }
 
 .zoomTitleRoot {
@@ -73,7 +83,7 @@
 }
 
 .volumeZone {
-  fill: var(--color-page-bg);
+  fill: transparent;
   cursor: pointer;
   transition:
     fill var(--motion-duration-hover) var(--motion-ease-standard),
@@ -95,12 +105,12 @@
 }
 
 .volumeZone.isActiveZone {
-  fill: var(--color-page-bg);
+  fill: transparent;
 }
 
 .volumeZone.isActiveZone:hover,
 .volumeZone.isActiveZone:focus-visible {
-  fill: var(--color-page-bg);
+  fill: transparent;
 }
 
 .volumeZone.isHidden,
@@ -130,8 +140,8 @@
   height: 100%;
   padding: 0 var(--space-1) var(--space-2);
   overflow: hidden;
-  font-family: var(--font-frieze);
-  text-align: center;
+  font-family: var(--font-reading);
+  text-align: left;
   color: var(--color-text);
   transition: color var(--motion-duration-hover) var(--motion-ease-standard);
 }
@@ -139,10 +149,11 @@
 .volumeNumeral {
   grid-row: 1;
   align-self: center;
-  justify-self: center;
+  justify-self: start;
+  font-family: var(--font-frieze);
   font-size: clamp(1.4rem, 2cqw, 1.8rem);
   font-style: normal;
-  font-weight: 300;
+  font-weight: 100;
   line-height: var(--line-height-tight);
 }
 
@@ -155,7 +166,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-size: clamp(0.5625rem, 0.7cqw, 0.625rem);
-  font-style: italic;
+  font-style: normal;
   font-weight: 400;
   line-height: var(--line-height-snug);
 }
@@ -173,12 +184,12 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
   color: var(--color-text);
-  font-family: var(--font-frieze);
+  font-family: var(--font-reading);
   font-size: clamp(0.5625rem, 0.7cqw, 0.625rem);
-  font-style: italic;
+  font-style: normal;
   font-weight: 400;
   line-height: var(--line-height-snug);
-  text-align: center;
+  text-align: left;
 }
 
 .partLabel {

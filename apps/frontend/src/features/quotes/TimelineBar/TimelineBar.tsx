@@ -16,6 +16,7 @@ import styles from './TimelineBar.module.css'
 // can stretch the SVG uniformly: the track fills its container without distorting text or marks.
 const VIEWBOX_WIDTH = 1000
 const VIEWBOX_HEIGHT = 100
+const TITLE_TRACK_HEIGHT = 65
 const BOOKMARK_HEIGHT_NORMAL = 20
 const BOOKMARK_HEIGHT_EXTENDED = 35
 const BOOKMARK_WIDTH = 4
@@ -118,7 +119,7 @@ function VolumeZones({
               onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
             />
             {/* Purely decorative — the rect above already carries the full accessible name. */}
-            <foreignObject x={x1} y={0} width={width} height={VIEWBOX_HEIGHT} className={labelClassName} aria-hidden="true">
+            <foreignObject x={x1} y={0} width={width} height={TITLE_TRACK_HEIGHT} className={labelClassName} aria-hidden="true">
               <div className={styles.volumeLabelText}>
                 <span className={styles.volumeNumeral}>{VOLUME_ROMAN_NUMERALS[volume.position - 1] ?? volume.position}</span>
                 <span className={styles.volumeTitle}>{volume.title}</span>
@@ -217,7 +218,7 @@ function PartStructure({
                 x={startX}
                 y={0}
                 width={Math.max(0, endX - startX)}
-                height={VIEWBOX_HEIGHT}
+                height={TITLE_TRACK_HEIGHT}
                 className={styles.partLabel}
                 aria-hidden="true"
               >
@@ -424,8 +425,8 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   return (
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
       <div className={styles.zoomTitle}>
-        {selectedVolume && (
-          <div className={styles.zoomTitleBreadcrumb}>
+        <div className={styles.zoomTitleBreadcrumb}>
+          {selectedVolume ? (
             <button
               type="button"
               className={`${styles.zoomTitleLink} ${styles.zoomTitleRoot}`}
@@ -434,33 +435,41 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
             >
               {t('volumeList.allWork')}
             </button>
-            <span className={styles.zoomTitleSeparator} aria-hidden="true">›</span>
-            {selectedPart ? (
-              <button
-                type="button"
-                className={`${styles.zoomTitleLink} ${styles.zoomTitleVolume}`}
-                aria-label={t('timelineBar.returnToVolume', { title: selectedVolume.title })}
-                onClick={() => onSelectVolume(selectedVolume.id)}
-              >
-                <span>{VOLUME_ROMAN_NUMERALS[selectedVolume.position - 1] ?? selectedVolume.position}</span>
-                <span aria-hidden="true"> · </span>
-                <span>{selectedVolume.title}</span>
-              </button>
-            ) : (
-              <span className={styles.zoomTitleCurrent}>
-                <span>{VOLUME_ROMAN_NUMERALS[selectedVolume.position - 1] ?? selectedVolume.position}</span>
-                <span aria-hidden="true"> · </span>
-                <span>{selectedVolume.title}</span>
-              </span>
-            )}
-            {selectedPart && (
-              <>
-                <span className={styles.zoomTitleSeparator} aria-hidden="true">›</span>
-                <span className={styles.zoomTitleCurrent}>{selectedPart.title}</span>
-              </>
-            )}
-          </div>
-        )}
+          ) : (
+            <span className={`${styles.zoomTitleCurrent} ${styles.zoomTitleRoot}`} aria-current="page">
+              {t('volumeList.allWork')}
+            </span>
+          )}
+          {selectedVolume && (
+            <>
+              <span className={styles.zoomTitleSeparator} aria-hidden="true">›</span>
+              {selectedPart ? (
+                <button
+                  type="button"
+                  className={`${styles.zoomTitleLink} ${styles.zoomTitleVolume}`}
+                  aria-label={t('timelineBar.returnToVolume', { title: selectedVolume.title })}
+                  onClick={() => onSelectVolume(selectedVolume.id)}
+                >
+                  <span>{VOLUME_ROMAN_NUMERALS[selectedVolume.position - 1] ?? selectedVolume.position}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span>{selectedVolume.title}</span>
+                </button>
+              ) : (
+                <span className={styles.zoomTitleCurrent}>
+                  <span>{VOLUME_ROMAN_NUMERALS[selectedVolume.position - 1] ?? selectedVolume.position}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span>{selectedVolume.title}</span>
+                </span>
+              )}
+              {selectedPart && (
+                <>
+                  <span className={styles.zoomTitleSeparator} aria-hidden="true">›</span>
+                  <span className={styles.zoomTitleCurrent}>{selectedPart.title}</span>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
       <svg
         ref={trackRef}
@@ -480,6 +489,14 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
             })
           : t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
       >
+        <rect x={0} y={0} width={viewBoxWidth} height={TITLE_TRACK_HEIGHT} className={styles.titleTrackBackground} />
+        <rect
+          x={0}
+          y={TITLE_TRACK_HEIGHT}
+          width={viewBoxWidth}
+          height={VIEWBOX_HEIGHT - TITLE_TRACK_HEIGHT}
+          className={styles.bookmarkTrackBackground}
+        />
         <VolumeZones
           volumes={volumes}
           range={animatedRange ?? range}
