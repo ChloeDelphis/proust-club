@@ -1,6 +1,8 @@
 .root {
   --timeline-bg: #fbf5f8;
   --timeline-bookmark-bg: #F4E9EF;
+  --timeline-title-hover-bg: color-mix(in srgb, var(--timeline-bg) 95%, var(--color-frieze-hover-text));
+  --timeline-bookmark-hover-bg: color-mix(in srgb, var(--timeline-bookmark-bg) 95%, var(--color-frieze-hover-text));
   margin-bottom: var(--space-6);
   position: sticky;
   top: 0;
@@ -42,7 +44,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--space-1);
+  gap: var(--space-5);
   min-width: 0;
   height: 100%;
   white-space: nowrap;
@@ -90,9 +92,34 @@
     opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
-.volumeZone:hover,
-.volumeZone:focus-visible {
-  fill: var(--color-frieze-hover-bg);
+.volumeZoneHoverTitle,
+.volumeZoneHoverBookmarks,
+.partZoneHoverTitle,
+.partZoneHoverBookmarks {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-hover) var(--motion-ease-standard);
+}
+
+.volumeZoneHoverTitle,
+.partZoneHoverTitle {
+  fill: var(--timeline-title-hover-bg);
+}
+
+.volumeZoneHoverBookmarks,
+.partZoneHoverBookmarks {
+  fill: var(--timeline-bookmark-hover-bg);
+}
+
+.volumeZone:hover ~ .volumeZoneHoverTitle,
+.volumeZone:focus-visible ~ .volumeZoneHoverTitle,
+.volumeZone:hover ~ .volumeZoneHoverBookmarks,
+.volumeZone:focus-visible ~ .volumeZoneHoverBookmarks,
+.partZone:hover ~ .partZoneHoverTitle,
+.partZone:focus-visible ~ .partZoneHoverTitle,
+.partZone:hover ~ .partZoneHoverBookmarks,
+.partZone:focus-visible ~ .partZoneHoverBookmarks {
+  opacity: 1;
 }
 
 .volumeZone:focus {
@@ -128,8 +155,8 @@
   opacity: 0;
 }
 
-.volumeZone:not(.isActiveZone):hover + .volumeLabel .volumeLabelText,
-.volumeZone:not(.isActiveZone):focus-visible + .volumeLabel .volumeLabelText {
+.volumeZone:not(.isActiveZone):hover ~ .volumeLabel .volumeLabelText,
+.volumeZone:not(.isActiveZone):focus-visible ~ .volumeLabel .volumeLabelText {
   color: var(--color-text);
 }
 
@@ -200,11 +227,6 @@
   fill: transparent;
   cursor: pointer;
   transition: fill var(--motion-duration-hover) var(--motion-ease-standard), opacity var(--motion-duration-zoom) var(--motion-ease-out);
-}
-
-.partZone:hover,
-.partZone:focus-visible {
-  fill: var(--color-frieze-hover-bg);
 }
 
 .partZone:focus {

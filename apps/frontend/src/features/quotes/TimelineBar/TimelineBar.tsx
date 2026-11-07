@@ -118,6 +118,22 @@ function VolumeZones({
               onClick={() => onSelect(volume.id)}
               onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
             />
+            <rect
+              x={x1}
+              y={0}
+              width={width}
+              height={TITLE_TRACK_HEIGHT}
+              className={styles.volumeZoneHoverTitle}
+              aria-hidden="true"
+            />
+            <rect
+              x={x1}
+              y={TITLE_TRACK_HEIGHT}
+              width={width}
+              height={VIEWBOX_HEIGHT - TITLE_TRACK_HEIGHT}
+              className={styles.volumeZoneHoverBookmarks}
+              aria-hidden="true"
+            />
             {/* Purely decorative — the rect above already carries the full accessible name. */}
             <foreignObject x={x1} y={0} width={width} height={TITLE_TRACK_HEIGHT} className={labelClassName} aria-hidden="true">
               <div className={styles.volumeLabelText}>
@@ -212,6 +228,22 @@ function PartStructure({
               aria-pressed={isSelected}
               onClick={() => onSelectPart(part.id, volume.id)}
               onKeyDown={activateOnEnterOrSpace(() => onSelectPart(part.id, volume.id))}
+            />
+            <rect
+              x={startX}
+              y={0}
+              width={Math.max(0, endX - startX)}
+              height={TITLE_TRACK_HEIGHT}
+              className={styles.partZoneHoverTitle}
+              aria-hidden="true"
+            />
+            <rect
+              x={startX}
+              y={TITLE_TRACK_HEIGHT}
+              width={Math.max(0, endX - startX)}
+              height={VIEWBOX_HEIGHT - TITLE_TRACK_HEIGHT}
+              className={styles.partZoneHoverBookmarks}
+              aria-hidden="true"
             />
             {!isHidden && (
               <foreignObject
