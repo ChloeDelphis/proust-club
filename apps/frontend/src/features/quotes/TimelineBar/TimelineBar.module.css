@@ -141,7 +141,8 @@
 }
 
 .volumeZone.isHidden,
-.delimiter.isHidden {
+.delimiter.isHidden,
+.partDelimiter.isHidden {
   opacity: 0;
   pointer-events: none;
 }
@@ -221,6 +222,11 @@
 
 .partLabel {
   pointer-events: none;
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
+}
+
+.partLabel.isHidden {
+  opacity: 0;
 }
 
 .partZone {
@@ -251,6 +257,7 @@
   stroke: var(--color-frieze);
   stroke-width: var(--border-width);
   vector-effect: non-scaling-stroke;
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
 .delimiter {

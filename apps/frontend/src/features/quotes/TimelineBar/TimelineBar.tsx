@@ -204,13 +204,12 @@ function PartStructure({
         const nextPart = volume.parts[index + 1]
         const isSelected = selectedPartId === part.id
         const isHidden = selectedPartId !== null && !isSelected
-        const startX = selectedPartId === null ? percentToX(pageToPercent(part.startPage, range), viewBoxWidth) : 0
-        const endX = selectedPartId === null
-          ? percentToX(pageToPercent(nextPart?.startPage ?? volume.maxPage, range), viewBoxWidth)
-          : viewBoxWidth
+        const startX = percentToX(pageToPercent(part.startPage, range), viewBoxWidth)
+        const endX = percentToX(pageToPercent(nextPart?.startPage ?? volume.maxPage, range), viewBoxWidth)
         const zoneClassName = [styles.partZone, isSelected && styles.isActivePart, isHidden && styles.isHidden]
           .filter(Boolean)
           .join(' ')
+        const labelClassName = [styles.partLabel, isHidden && styles.isHidden].filter(Boolean).join(' ')
         return (
           <g key={part.id}>
             <rect
@@ -245,25 +244,23 @@ function PartStructure({
               className={styles.partZoneHoverBookmarks}
               aria-hidden="true"
             />
-            {!isHidden && (
-              <foreignObject
-                x={startX}
-                y={0}
-                width={Math.max(0, endX - startX)}
-                height={TITLE_TRACK_HEIGHT}
-                className={styles.partLabel}
-                aria-hidden="true"
-              >
-                <div className={styles.partTitle}>{part.title}</div>
-              </foreignObject>
-            )}
-            {selectedPartId === null && index > 0 && (
+            <foreignObject
+              x={startX}
+              y={0}
+              width={Math.max(0, endX - startX)}
+              height={TITLE_TRACK_HEIGHT}
+              className={labelClassName}
+              aria-hidden="true"
+            >
+              <div className={styles.partTitle}>{part.title}</div>
+            </foreignObject>
+            {index > 0 && (
               <line
                 x1={snapSvgXToDevicePixelCenter(startX, viewBoxScale, trackLeft)}
                 x2={snapSvgXToDevicePixelCenter(startX, viewBoxScale, trackLeft)}
                 y1={0}
                 y2={VIEWBOX_HEIGHT}
-                className={styles.partDelimiter}
+                className={selectedPartId === null ? styles.partDelimiter : `${styles.partDelimiter} ${styles.isHidden}`}
               />
             )}
           </g>
