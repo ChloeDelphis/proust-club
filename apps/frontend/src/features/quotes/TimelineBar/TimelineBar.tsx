@@ -16,7 +16,7 @@ import styles from './TimelineBar.module.css'
 // can stretch the SVG uniformly: the track fills its container without distorting text or marks.
 const VIEWBOX_WIDTH = 1000
 const VIEWBOX_HEIGHT = 100
-const TITLE_TRACK_HEIGHT = 65
+const TITLE_TRACK_HEIGHT = 54
 const BOOKMARK_HEIGHT_NORMAL = 20
 const BOOKMARK_HEIGHT_EXTENDED = 35
 const BOOKMARK_WIDTH = 4
