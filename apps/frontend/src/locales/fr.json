@@ -41,7 +41,7 @@
   },
   "searchPage": {
     "title": "Proust Club",
-    "resultLocation": "{{volume}} · {{part}} · p. {{page}}",
+    "resultLocation": "{{volume}} · {{part}}",
     "emptyState": "Aucun résultat pour « {{query}} ».",
     "typeToSearch": "Tapez une recherche pour explorer l'œuvre.",
     "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
@@ -201,14 +201,22 @@
     "corpusTrackAriaLabel": "Structure des tomes de l’œuvre",
     "zoomedTrackAriaLabel": "Tome {{title}}, parties : {{parts}}, et positions de mes citations",
     "zoomedCorpusTrackAriaLabel": "Tome {{title}}, parties : {{parts}}",
+    "searchTrackAriaLabel": "Résultats de recherche dans les sept tomes",
+    "searchZoomedTrackAriaLabel": "{{count}} passages trouvés dans le tome {{title}} et ses parties : {{parts}}",
+    "searchPartTrackAriaLabel": "{{count}} passages trouvés dans la partie {{title}} du tome {{volume}}",
     "zoomOnVolume": "Filtrer les résultats sur {{title}} et zoomer sur ce tome",
+    "zoomOnVolumeWithCount": "Filtrer sur {{title}}, {{count}} passages trouvés, et zoomer sur ce tome",
     "zoomOutOfVolume": "Afficher les résultats de tous les tomes",
+    "zoomOutOfVolumeWithCount": "Afficher tous les résultats ; {{count}} passages trouvés dans ce tome",
     "zoomOnPart": "Filtrer les résultats sur {{title}} et zoomer sur cette partie",
+    "zoomOnPartWithCount": "Filtrer sur {{title}}, {{count}} passages trouvés, et zoomer sur cette partie",
     "returnToAllWork": "Revenir à toute l’œuvre",
     "returnToVolume": "Revenir au tome {{title}}",
+    "returnToVolumeWithCount": "Revenir au tome {{title}} ; {{count}} passages trouvés dans cette partie",
     "partTrackAriaLabel": "Partie {{title}} du tome {{volume}} et positions de mes citations",
     "corpusPartTrackAriaLabel": "Partie {{title}} du tome {{volume}}",
     "bookmarkAriaLabel": "Citation page {{page}}",
-    "bookmarkDuplicatePageAriaLabel": "Citation page {{page}}, {{index}} sur {{total}}"
+    "bookmarkDuplicatePageAriaLabel": "Citation page {{page}}, {{index}} sur {{total}}",
+    "searchMatchAriaLabel": "Passage trouvé page {{page}} : {{preview}}"
   }
 }

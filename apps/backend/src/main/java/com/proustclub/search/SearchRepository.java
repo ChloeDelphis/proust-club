@@ -14,6 +14,8 @@ import static com.proustclub.jooq.Tables.VOLUMES;
 @Repository
 class SearchRepository {
 
+    private static final int PREVIEW_CONTEXT_CODE_POINTS = 60;
+
     private final DSLContext dsl;
 
     SearchRepository(DSLContext dsl) {
@@ -67,6 +69,47 @@ class SearchRepository {
                             r.get("page_number", Integer.class)
                     );
                 });
+    }
+
+    List<SearchOverviewEntry> searchOverview(String query) {
+        String pattern = "%" + LikePatterns.escape(query) + "%";
+        var paragraph = PARAGRAPHS.as("p");
+        var pText = paragraph.TEXT;
+        var matchStart = DSL.function("strpos", Integer.class, DSL.lower(pText), DSL.lower(DSL.val(query)));
+        var windowStart = DSL.function(
+                "greatest",
+                Integer.class,
+                DSL.val(1),
+                matchStart.sub(PREVIEW_CONTEXT_CODE_POINTS)
+        );
+        int queryLengthCodePoints = query.codePointCount(0, query.length());
+        var previewWindow = DSL.function(
+                "substring",
+                String.class,
+                pText,
+                windowStart,
+                DSL.val(queryLengthCodePoints + 2 * PREVIEW_CONTEXT_CODE_POINTS)
+        );
+
+        return dsl.select(
+                        paragraph.ID,
+                        paragraph.VOLUME_ID,
+                        paragraph.PART_ID,
+                        paragraph.PAGE_NUMBER,
+                        previewWindow.as("preview_window"),
+                        matchStart.sub(windowStart).as("match_offset")
+                )
+                .from(paragraph)
+                .where(pText.likeIgnoreCase(pattern, '\\'))
+                .orderBy(paragraph.POSITION)
+                .fetch(r -> new SearchOverviewEntry(
+                        r.get(paragraph.ID),
+                        r.get(paragraph.VOLUME_ID),
+                        r.get(paragraph.PART_ID),
+                        r.get(paragraph.PAGE_NUMBER),
+                        r.get("preview_window", String.class),
+                        r.get("match_offset", Integer.class)
+                ));
     }
 
     long count(String query, Integer volumeId, Integer partId) {

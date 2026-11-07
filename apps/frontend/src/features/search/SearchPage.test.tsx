@@ -125,7 +125,7 @@ describe('SearchPage', () => {
 
     expect(await screen.findByRole('article')).toBeInTheDocument()
     expect(screen.getByText(/Longtemps/)).toBeInTheDocument()
-    const resultLocation = /Du côté de chez Swann · Combray · p\. 1/
+    const resultLocation = /Du côté de chez Swann · Combray/
     expect(screen.getByText(resultLocation)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /Longtemps/ }))

@@ -310,7 +310,7 @@ export interface paths {
         };
         /**
          * Search the corpus
-         * @description Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to one of the corpus volumes.
+         * @description Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to a volume and one of its parts.
          *
          *     Each result includes the `startOffset` (inclusive) and `endOffset` (exclusive)
          *     using 0-based indexes, ready to use with `String.substring()` in Java or JavaScript.
@@ -318,6 +318,26 @@ export interface paths {
          *     Results are paginated: `size` controls how many are returned at once, `page` selects which batch. Both parameters are optional and default to the first 10 results.
          */
         get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/search/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a lightweight corpus-wide search overview
+         * @description Returns the position, part/volume counts, and a five-word hover preview for every paragraph matching the query. Unlike /api/search, this response is not paginated and does not include full paragraph text.
+         */
+        get: operations["overview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -769,6 +789,47 @@ export interface components {
              * @example 10
              */
             size?: number;
+        };
+        /** @description A lightweight marker for one matching paragraph */
+        Marker: {
+            /** Format: int32 */
+            paragraphId?: number;
+            /** Format: int32 */
+            volumeId?: number;
+            /** Format: int32 */
+            partId?: number;
+            /** Format: int32 */
+            pageNumber?: number;
+            previewText?: string;
+        };
+        /** @description Search result count for one part */
+        PartCount: {
+            /** Format: int32 */
+            partId?: number;
+            /** Format: int64 */
+            count?: number;
+        };
+        /** @description Lightweight corpus-wide distribution for a search query */
+        SearchOverviewResponse: {
+            /**
+             * Format: int64
+             * @description Total number of matching paragraphs
+             * @example 622
+             */
+            total?: number;
+            /** @description Matching paragraph positions and short hover previews, in reading order */
+            markers?: components["schemas"]["Marker"][];
+            /** @description Number of matching paragraphs in each volume; volumes without matches are omitted */
+            volumeCounts?: components["schemas"]["VolumeCount"][];
+            /** @description Number of matching paragraphs in each part; parts without matches are omitted */
+            partCounts?: components["schemas"]["PartCount"][];
+        };
+        /** @description Search result count for one volume */
+        VolumeCount: {
+            /** Format: int32 */
+            volumeId?: number;
+            /** Format: int64 */
+            count?: number;
         };
         /** @description Paginated list of the current user's quote selections */
         QuoteSelectionListResponse: {
@@ -1623,6 +1684,41 @@ export interface operations {
                 };
             };
             /** @description Invalid request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    overview: {
+        parameters: {
+            query: {
+                /**
+                 * @description Phrase to search for (2–500 characters)
+                 * @example petite madeleine
+                 */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Corpus-wide match positions and distribution */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchOverviewResponse"];
+                };
+            };
+            /** @description Invalid search query */
             400: {
                 headers: {
                     [name: string]: unknown;

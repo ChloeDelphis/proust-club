@@ -16,14 +16,14 @@ interface ParagraphCardProps {
 // QuoteSelection's "Sauvegarder" flow.
 export default function ParagraphCard({ hit, onOpenDetail, resumeDraft = null, searchContext = { query: '', page: 0, volumeId: null, partId: null } }: ParagraphCardProps) {
   const { t } = useTranslation()
-  const { paragraphId, text, startOffset, endOffset, volume, part, pageNumber } = hit
+  const { paragraphId, text, startOffset, endOffset, volume, part } = hit
   const excerpt = createSearchExcerpt(text, { start: startOffset, end: endOffset })
   const excerptText = text.slice(excerpt.start, excerpt.end)
   return (
     <article className={styles.root}>
       <header className={styles.header}>
         <span className={styles.location}>
-          {t('searchPage.resultLocation', { volume, part, page: pageNumber })}
+          {t('searchPage.resultLocation', { volume, part })}
         </span>
       </header>
       <QuoteSelection

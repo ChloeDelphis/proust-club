@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { SearchOverviewMarker } from '../../../api/search'
 import type { VolumeResponse } from '../../../api/volume'
 import type { TimelineQuote } from '../../../api/quote'
 import Spinner from '../../../components/Spinner/Spinner'
@@ -19,12 +20,16 @@ const VIEWBOX_HEIGHT = 100
 const TITLE_TRACK_HEIGHT = 54
 const BOOKMARK_HEIGHT_NORMAL = 20
 const BOOKMARK_HEIGHT_EXTENDED = 35
-const BOOKMARK_WIDTH = 4
+const BOOKMARK_WIDTH = 0.75
 const PREVIEW_WIDTH = 110
 const PREVIEW_HEIGHT = 45
 const VOLUME_ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'] as const
 const EMPTY_VOLUMES: VolumeResponse[] = []
 const EMPTY_QUOTES: TimelineQuote[] = []
+const EMPTY_SEARCH_MARKERS: SearchOverviewMarker[] = []
+const EMPTY_COUNTS = new Map<number, number>()
+
+type TimelinePreview = { text: string; offsetPercent: number }
 
 function percentToX(percent: number, viewBoxWidth: number): number {
   return percent * (viewBoxWidth / 100)
@@ -60,6 +65,22 @@ function activateOnEnterOrSpace(onActivate: () => void) {
 
 type TranslateFn = ReturnType<typeof useTranslation>['t']
 
+function SearchCountBadge({ x, count, isHidden = false }: { x: number; count: number | undefined; isHidden?: boolean }) {
+  if (!count) return null
+  const width = Math.max(16, String(count).length * 6 + 8)
+  const height = 12
+  const xLeft = x - width - 4
+  const centerX = xLeft + width / 2
+  const centerY = 4 + height / 2
+
+  return (
+    <g className={[styles.searchCountBadge, isHidden && styles.isHidden].filter(Boolean).join(' ')} aria-hidden="true">
+      <rect x={xLeft} y={4} width={width} height={height} rx={height / 2} className={styles.searchCountBadgeBg} />
+      <text x={centerX} y={centerY} className={styles.searchCountBadgeText}>{count}</text>
+    </g>
+  )
+}
+
 function VolumeZones({
   volumes,
   range,
@@ -68,6 +89,7 @@ function VolumeZones({
   onSelect,
   t,
   viewBoxWidth,
+  volumeCounts,
 }: {
   volumes: VolumeResponse[]
   range: PageRange
@@ -76,6 +98,7 @@ function VolumeZones({
   onSelect: (id: number) => void
   t: TranslateFn
   viewBoxWidth: number
+  volumeCounts: ReadonlyMap<number, number>
 }) {
   return (
     <>
@@ -91,6 +114,7 @@ function VolumeZones({
         // page bounds), so clicking it again can toggle the zoom back off.
         const isActive = volume.id === selectedVolumeId
         const isHidden = selectedVolumeId !== null && !isActive
+        const resultCount = volumeCounts.get(volume.id)
         const zoneClassName = [styles.volumeZone, isActive && styles.isActiveZone, isHidden && styles.isHidden]
           .filter(Boolean)
           .join(' ')
@@ -110,11 +134,17 @@ function VolumeZones({
               // order — pointer-events: none in CSS only blocks the mouse, not keyboard activation.
               tabIndex={isHidden ? -1 : 0}
               aria-hidden={isHidden}
-              aria-label={isActive
-                ? selectedPartId !== null
-                  ? t('timelineBar.returnToVolume', { title: volume.title })
-                  : t('timelineBar.zoomOutOfVolume')
-                : t('timelineBar.zoomOnVolume', { title: volume.title })}
+              aria-label={resultCount !== undefined
+                ? isActive
+                  ? selectedPartId !== null
+                    ? t('timelineBar.returnToVolumeWithCount', { title: volume.title, count: resultCount })
+                    : t('timelineBar.zoomOutOfVolumeWithCount', { count: resultCount })
+                  : t('timelineBar.zoomOnVolumeWithCount', { title: volume.title, count: resultCount })
+                : isActive
+                  ? selectedPartId !== null
+                    ? t('timelineBar.returnToVolume', { title: volume.title })
+                    : t('timelineBar.zoomOutOfVolume')
+                  : t('timelineBar.zoomOnVolume', { title: volume.title })}
               onClick={() => onSelect(volume.id)}
               onKeyDown={activateOnEnterOrSpace(() => onSelect(volume.id))}
             />
@@ -141,6 +171,7 @@ function VolumeZones({
                 <span className={styles.volumeTitle}>{volume.title}</span>
               </div>
             </foreignObject>
+            <SearchCountBadge x={x2} count={resultCount} isHidden={isHidden} />
           </g>
         )
       })}
@@ -188,6 +219,7 @@ function PartStructure({
   viewBoxWidth,
   viewBoxScale,
   trackLeft,
+  partCounts,
 }: {
   volume: VolumeResponse
   range: PageRange
@@ -197,6 +229,7 @@ function PartStructure({
   viewBoxWidth: number
   viewBoxScale: number
   trackLeft: number
+  partCounts: ReadonlyMap<number, number>
 }) {
   return (
     <>
@@ -204,6 +237,7 @@ function PartStructure({
         const nextPart = volume.parts[index + 1]
         const isSelected = selectedPartId === part.id
         const isHidden = selectedPartId !== null && !isSelected
+        const resultCount = partCounts.get(part.id)
         const startX = percentToX(pageToPercent(part.startPage, range), viewBoxWidth)
         const endX = percentToX(pageToPercent(nextPart?.startPage ?? volume.maxPage, range), viewBoxWidth)
         const zoneClassName = [styles.partZone, isSelected && styles.isActivePart, isHidden && styles.isHidden]
@@ -221,9 +255,13 @@ function PartStructure({
               role="button"
               tabIndex={isHidden ? -1 : 0}
               aria-hidden={isHidden}
-              aria-label={isSelected
-                ? t('timelineBar.returnToVolume', { title: volume.title })
-                : t('timelineBar.zoomOnPart', { title: part.title })}
+              aria-label={resultCount !== undefined
+                ? isSelected
+                  ? t('timelineBar.returnToVolumeWithCount', { title: volume.title, count: resultCount })
+                  : t('timelineBar.zoomOnPartWithCount', { title: part.title, count: resultCount })
+                : isSelected
+                  ? t('timelineBar.returnToVolume', { title: volume.title })
+                  : t('timelineBar.zoomOnPart', { title: part.title })}
               aria-pressed={isSelected}
               onClick={() => onSelectPart(part.id, volume.id)}
               onKeyDown={activateOnEnterOrSpace(() => onSelectPart(part.id, volume.id))}
@@ -254,6 +292,7 @@ function PartStructure({
             >
               <div className={styles.partTitle}>{part.title}</div>
             </foreignObject>
+            <SearchCountBadge x={endX} count={resultCount} isHidden={isHidden} />
             {index > 0 && (
               <line
                 x1={snapSvgXToDevicePixelCenter(startX, viewBoxScale, trackLeft)}
@@ -277,9 +316,9 @@ function Bookmarks({
   t,
   viewBoxWidth,
 }: {
-  groups: TimelineGroup[]
+  groups: TimelineGroup<TimelineQuote>[]
   onOpen: (id: string) => void
-  onHoverChange: (id: string | null) => void
+  onHoverChange: (preview: TimelinePreview | null) => void
   t: TranslateFn
   viewBoxWidth: number
 }) {
@@ -315,9 +354,9 @@ function Bookmarks({
               : t('timelineBar.bookmarkAriaLabel', { page })}
             onClick={() => onOpen(quote.id)}
             onKeyDown={activateOnEnterOrSpace(() => onOpen(quote.id))}
-            onMouseEnter={() => onHoverChange(quote.id)}
+            onMouseEnter={() => onHoverChange({ text: quote.selectedText, offsetPercent: group.offsetPercent })}
             onMouseLeave={() => onHoverChange(null)}
-            onFocus={() => onHoverChange(quote.id)}
+            onFocus={() => onHoverChange({ text: quote.selectedText, offsetPercent: group.offsetPercent })}
             onBlur={() => onHoverChange(null)}
           />
         )
@@ -326,9 +365,59 @@ function Bookmarks({
   )
 }
 
-export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId, selectedPartId, onSelectVolume, onSelectPart, onOpenQuote }: TimelineBarProps) {
+function SearchMatches({
+  groups,
+  onHoverChange,
+  t,
+  viewBoxWidth,
+}: {
+  groups: TimelineGroup<SearchOverviewMarker>[]
+  onHoverChange: (preview: TimelinePreview | null) => void
+  t: TranslateFn
+  viewBoxWidth: number
+}) {
+  return (
+    <>
+      {groups.map(group => {
+        const marker = group.quotes[0]
+        const x = percentToX(group.offsetPercent, viewBoxWidth)
+        const height = group.isExtended ? BOOKMARK_HEIGHT_EXTENDED : BOOKMARK_HEIGHT_NORMAL
+        const preview = { text: marker.previewText, offsetPercent: group.offsetPercent }
+        return (
+          <rect
+            key={marker.paragraphId}
+            x={x - BOOKMARK_WIDTH / 2}
+            y={VIEWBOX_HEIGHT - height}
+            width={BOOKMARK_WIDTH}
+            height={height}
+            className={styles.searchMatch}
+            role="img"
+            tabIndex={0}
+            aria-label={t('timelineBar.searchMatchAriaLabel', { page: marker.pageNumber, preview: marker.previewText })}
+            onMouseEnter={() => onHoverChange(preview)}
+            onMouseLeave={() => onHoverChange(null)}
+            onFocus={() => onHoverChange(preview)}
+            onBlur={() => onHoverChange(null)}
+          />
+        )
+      })}
+    </>
+  )
+}
+
+export default function TimelineBar({
+  isConnected,
+  activeTagId,
+  selectedVolumeId,
+  selectedPartId,
+  corpusSearchActive = false,
+  corpusSearchOverview,
+  onSelectVolume,
+  onSelectPart,
+  onOpenQuote,
+}: TimelineBarProps) {
   const { t } = useTranslation()
-  const [hoveredQuoteId, setHoveredQuoteId] = useState<string | null>(null)
+  const [hoveredPreview, setHoveredPreview] = useState<TimelinePreview | null>(null)
   const trackRef = useRef<SVGSVGElement>(null)
   const [viewBoxWidth, setViewBoxWidth] = useState(VIEWBOX_WIDTH)
   const [viewBoxScale, setViewBoxScale] = useState(1)
@@ -337,11 +426,11 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   const animatedRangeRef = useRef<PageRange | null>(null)
 
   const volumesQuery = useVolumes()
-  const timelineQuery = useTimeline(activeTagId, isConnected)
+  const timelineQuery = useTimeline(activeTagId, isConnected && !corpusSearchActive)
   const volumes = volumesQuery.data ?? EMPTY_VOLUMES
-  const quotes = isConnected ? timelineQuery.data?.quotes ?? EMPTY_QUOTES : EMPTY_QUOTES
-  const isPending = volumesQuery.isPending || (isConnected && timelineQuery.isPending)
-  const isError = volumesQuery.isError || (isConnected && timelineQuery.isError)
+  const quotes = isConnected && !corpusSearchActive ? timelineQuery.data?.quotes ?? EMPTY_QUOTES : EMPTY_QUOTES
+  const isPending = volumesQuery.isPending || (isConnected && !corpusSearchActive && timelineQuery.isPending)
+  const isError = volumesQuery.isError || (isConnected && !corpusSearchActive && timelineQuery.isError)
 
   // Hooks below must run unconditionally (before the isPending/isError/empty early returns).
   const volumesById = useMemo(
@@ -359,6 +448,23 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   const selectedPartEndExclusive = selectedPart && selectedVolume && selectedPartIndex === selectedVolume.parts.length - 1
     ? selectedVolume.maxPage + 1
     : selectedPartEndPage
+
+  const volumeCounts = useMemo(
+    () => new Map(corpusSearchOverview?.volumeCounts.map(({ volumeId, count }) => [volumeId, count] as const) ?? []),
+    [corpusSearchOverview],
+  )
+  const partCounts = useMemo(
+    () => new Map(corpusSearchOverview?.partCounts.map(({ partId, count }) => [partId, count] as const) ?? []),
+    [corpusSearchOverview],
+  )
+  const visibleSearchMarkers = useMemo(() => {
+    if (!corpusSearchActive || !corpusSearchOverview) return EMPTY_SEARCH_MARKERS
+    return corpusSearchOverview.markers.filter(marker => {
+      if (selectedVolume && marker.volumeId !== selectedVolume.id) return false
+      if (selectedPart && (marker.pageNumber < selectedPart.startPage || marker.pageNumber >= (selectedPartEndExclusive ?? Number.POSITIVE_INFINITY))) return false
+      return true
+    })
+  }, [corpusSearchActive, corpusSearchOverview, selectedVolume, selectedPart, selectedPartEndExclusive])
 
   const range = useMemo(() => {
     if (volumes.length === 0) return { minPage: 0, maxPage: 0 }
@@ -415,7 +521,7 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     return () => cancelAnimationFrame(frameId)
   }, [range, volumes.length])
 
-  const groups = useMemo(() => {
+  const quoteGroups = useMemo(() => {
     const visibleQuotes = quotes.filter(quote => {
       if (selectedVolume && quote.volumeId !== selectedVolume.id) return false
       if (selectedPart && (quote.pageNumber < selectedPart.startPage || quote.pageNumber >= (selectedPartEndExclusive ?? Number.POSITIVE_INFINITY))) return false
@@ -423,6 +529,10 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
     })
     return positionTimelineQuotes(visibleQuotes, animatedRange ?? range)
   }, [quotes, selectedVolume, selectedPart, selectedPartEndExclusive, range, animatedRange])
+  const searchGroups = useMemo(
+    () => positionTimelineQuotes(visibleSearchMarkers, animatedRange ?? range),
+    [visibleSearchMarkers, animatedRange, range],
+  )
 
   useLayoutEffect(() => {
     const track = trackRef.current
@@ -448,8 +558,6 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
   if (isPending) return <Spinner />
   if (isError) return <ErrorMessage message={t('timelineBar.loadError')} />
   if (volumes.length === 0) return null
-
-  const hoveredGroup = groups.find(g => g.quotes[0].id === hoveredQuoteId)
 
   return (
     <section className={styles.root} aria-label={t('timelineBar.ariaLabel')}>
@@ -507,16 +615,24 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
         preserveAspectRatio="none"
         role="group"
         aria-label={selectedPart
-          ? t(isConnected ? 'timelineBar.partTrackAriaLabel' : 'timelineBar.corpusPartTrackAriaLabel', {
+          ? t(corpusSearchActive
+            ? 'timelineBar.searchPartTrackAriaLabel'
+            : isConnected ? 'timelineBar.partTrackAriaLabel' : 'timelineBar.corpusPartTrackAriaLabel', {
             title: selectedPart.title,
             volume: selectedVolume?.title,
+            count: partCounts.get(selectedPart.id) ?? 0,
           })
           : selectedVolume
-            ? t(isConnected ? 'timelineBar.zoomedTrackAriaLabel' : 'timelineBar.zoomedCorpusTrackAriaLabel', {
+            ? t(corpusSearchActive
+              ? 'timelineBar.searchZoomedTrackAriaLabel'
+              : isConnected ? 'timelineBar.zoomedTrackAriaLabel' : 'timelineBar.zoomedCorpusTrackAriaLabel', {
               title: selectedVolume.title,
               parts: selectedVolume.parts.map(part => part.title).join(', '),
+              count: volumeCounts.get(selectedVolume.id) ?? 0,
             })
-          : t(isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
+          : t(corpusSearchActive
+            ? 'timelineBar.searchTrackAriaLabel'
+            : isConnected ? 'timelineBar.trackAriaLabel' : 'timelineBar.corpusTrackAriaLabel')}
       >
         <rect x={0} y={0} width={viewBoxWidth} height={TITLE_TRACK_HEIGHT} className={styles.titleTrackBackground} />
         <rect
@@ -534,6 +650,7 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
           onSelect={onSelectVolume}
           t={t}
           viewBoxWidth={viewBoxWidth}
+          volumeCounts={corpusSearchActive && !selectedVolume ? volumeCounts : EMPTY_COUNTS}
         />
         <VolumeDelimiters
           volumes={volumes}
@@ -553,18 +670,23 @@ export default function TimelineBar({ isConnected, activeTagId, selectedVolumeId
             viewBoxWidth={viewBoxWidth}
             viewBoxScale={viewBoxScale}
             trackLeft={trackLeft}
+            partCounts={corpusSearchActive ? partCounts : EMPTY_COUNTS}
           />
         )}
-        {isConnected && <Bookmarks groups={groups} onOpen={onOpenQuote} onHoverChange={setHoveredQuoteId} t={t} viewBoxWidth={viewBoxWidth} />}
+        {corpusSearchActive ? (
+          <SearchMatches groups={searchGroups} onHoverChange={setHoveredPreview} t={t} viewBoxWidth={viewBoxWidth} />
+        ) : isConnected && (
+          <Bookmarks groups={quoteGroups} onOpen={onOpenQuote} onHoverChange={setHoveredPreview} t={t} viewBoxWidth={viewBoxWidth} />
+        )}
 
-        {hoveredGroup && (
+        {hoveredPreview && (
           <foreignObject
-            x={Math.min(Math.max(0, percentToX(hoveredGroup.offsetPercent, viewBoxWidth) - PREVIEW_WIDTH / 2), viewBoxWidth - PREVIEW_WIDTH)}
+            x={Math.min(Math.max(0, percentToX(hoveredPreview.offsetPercent, viewBoxWidth) - PREVIEW_WIDTH / 2), viewBoxWidth - PREVIEW_WIDTH)}
             y={0}
             width={PREVIEW_WIDTH}
             height={PREVIEW_HEIGHT}
           >
-            <QuoteHoverPreview text={hoveredGroup.quotes[0].selectedText} />
+            <QuoteHoverPreview text={hoveredPreview.text} />
           </foreignObject>
         )}
       </svg>

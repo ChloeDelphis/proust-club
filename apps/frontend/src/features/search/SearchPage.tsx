@@ -20,6 +20,7 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import styles from './SearchPage.module.css'
 import { useCorpusSearchQuery } from './useCorpusSearchQuery'
+import { useCorpusSearchOverviewQuery } from './useCorpusSearchOverviewQuery'
 import { useSavedQuotesQuery } from './useSavedQuotesQuery'
 import { useGuestQuoteSave } from './useGuestQuoteSave'
 import { useVolumeSelection } from './useVolumeSelection'
@@ -42,6 +43,7 @@ export default function SearchPage() {
   const { data: currentUser } = useCurrentUser()
   const isConnected = currentUser !== null && currentUser !== undefined
   const [query, setQuery] = useState(() => draft?.query ?? '')
+  const isQueryValid = query.trim().length >= 2
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
   const [tagId, setTagId] = useState<string | null>(null)
   const [pagination, setPagination] = useState(() => ({ volumeId: selectedVolumeId, partId: selectedPartId, page: draft?.page ?? 0 }))
@@ -52,7 +54,7 @@ export default function SearchPage() {
   // It must remain available if removing a tag makes the quote disappear from the frieze/list, or
   // if the frieze request fails after a quote was opened from the saved-citations list.
   const [selectedDetailQuote, setSelectedDetailQuote] = useState<{ userId: string; quote: QuoteDetailModalQuote } | null>(null)
-  const timelineQuery = useTimeline(tagId, isConnected)
+  const timelineQuery = useTimeline(tagId, isConnected && (scope === 'saved' || !isQueryValid))
   const [detailHit, setDetailHit] = useState<SearchHit | null>(null)
 
   function setPage(nextPage: number) {
@@ -111,8 +113,6 @@ export default function SearchPage() {
       : current)
   }
 
-  const isQueryValid = query.trim().length >= 2
-
   const corpusQuery = useCorpusSearchQuery({
     query,
     volumeId: selectedVolumeId,
@@ -120,6 +120,7 @@ export default function SearchPage() {
     page,
     enabled: scope === 'corpus' && isQueryValid,
   })
+  const corpusOverviewQuery = useCorpusSearchOverviewQuery(query, scope === 'corpus' && isQueryValid)
 
   const savedQuery = useSavedQuotesQuery({
     tagId,
@@ -203,6 +204,8 @@ export default function SearchPage() {
         activeTagId={tagId}
         selectedVolumeId={selectedVolumeId}
         selectedPartId={selectedPartId}
+        corpusSearchActive={scope === 'corpus' && isQueryValid}
+        corpusSearchOverview={corpusOverviewQuery.data}
         onSelectVolume={handleSelectVolume}
         onSelectPart={handleSelectPart}
         onOpenQuote={handleOpenQuote}

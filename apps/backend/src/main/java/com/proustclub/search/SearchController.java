@@ -2,6 +2,7 @@ package com.proustclub.search;
 
 import com.proustclub.common.ProustVolumes;
 import com.proustclub.ratelimit.RateLimiter;
+import com.proustclub.search.dto.SearchOverviewResponse;
 import com.proustclub.search.dto.SearchResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -70,5 +71,26 @@ class SearchController {
     ) {
         rateLimiter.checkSearchByIp(httpRequest);
         return service.search(q, volumeId, partId, page, size);
+    }
+
+    @Operation(
+        summary = "Get a lightweight corpus-wide search overview",
+        description = "Returns the position, part/volume counts, and a five-word hover preview for every paragraph matching the query. Unlike /api/search, this response is not paginated and does not include full paragraph text."
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Corpus-wide match positions and distribution",
+        content = @Content(schema = @Schema(implementation = SearchOverviewResponse.class))
+    )
+    @ApiResponse(responseCode = "400", description = "Invalid search query", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @GetMapping(value = "/api/search/overview", produces = MediaType.APPLICATION_JSON_VALUE)
+    SearchOverviewResponse overview(
+        @Parameter(description = "Phrase to search for (2–500 characters)", example = "petite madeleine")
+        @RequestParam @NotBlank(message = "q must not be blank") @Size(min = 2, max = 500, message = "q must be between {min} and {max} characters") String q,
+
+        HttpServletRequest httpRequest
+    ) {
+        rateLimiter.checkSearchByIp(httpRequest);
+        return service.overview(q);
     }
 }
