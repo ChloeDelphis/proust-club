@@ -54,7 +54,7 @@ describe('ResetPasswordPage', () => {
     render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
 
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'short')
-    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(screen.getByRole('alert')).toBeInTheDocument()
     expect(authApi.confirmPasswordReset).not.toHaveBeenCalled()
@@ -66,7 +66,7 @@ describe('ResetPasswordPage', () => {
     render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
 
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(authApi.confirmPasswordReset).toHaveBeenCalledWith({
       token: 'abc123',
@@ -81,7 +81,7 @@ describe('ResetPasswordPage', () => {
     render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
 
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Ce lien de réinitialisation est invalide ou a expiré.')).toBeInTheDocument()
   })
@@ -92,7 +92,7 @@ describe('ResetPasswordPage', () => {
     render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
 
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
   })
@@ -103,7 +103,7 @@ describe('ResetPasswordPage', () => {
     render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
 
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.')).toBeInTheDocument()
     expect(screen.queryByText('Ce lien de réinitialisation est invalide ou a expiré.')).not.toBeInTheDocument()
@@ -115,7 +115,7 @@ describe('ResetPasswordPage', () => {
     render(<ResetPasswordPage />, { wrapper: wrapperWithPath('/reset-password?token=abc123') })
 
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Réinitialiser le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Une erreur est survenue. Réessayez.')).toBeInTheDocument()
   })

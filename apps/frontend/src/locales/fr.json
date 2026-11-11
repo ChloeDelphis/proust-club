@@ -140,20 +140,28 @@
     "title": "Compte"
   },
   "forgotPasswordForm": {
-    "submitButton": "Envoyer le lien de réinitialisation"
+    "emailLabel": "Adresse e-mail",
+    "submitButton": "Envoyer le lien",
+    "submittingButton": "Envoi en cours…"
   },
   "forgotPasswordPage": {
     "genericError": "Une erreur est survenue. Réessayez.",
     "title": "Mot de passe oublié",
-    "successMessage": "Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé. Vérifiez votre boîte de réception.",
+    "description": "Indiquez votre adresse e-mail pour recevoir un lien permettant de réinitialiser votre mot de passe.",
+    "successMessage": "Si un compte est associé à cette adresse, vous recevrez un e-mail contenant les instructions de réinitialisation.",
+    "spamFolderHint": "Pensez aussi à vérifier votre dossier de courriers indésirables.",
+    "resendWait": "Si vous n’avez rien reçu, vous pourrez demander un nouveau lien après cinq minutes.",
+    "resendReady": "Si vous n’avez rien reçu, vous pouvez demander un nouveau lien.",
+    "resendButton": "Renvoyer le lien",
+    "resendingButton": "Envoi en cours…",
     "backToLoginLink": "Retour à la connexion"
   },
   "resetPasswordForm": {
-    "submitButton": "Réinitialiser le mot de passe"
+    "submitButton": "Enregistrer le nouveau mot de passe"
   },
   "resetPasswordPage": {
     "successToast": "Mot de passe réinitialisé.",
-    "title": "Réinitialiser le mot de passe",
+    "title": "Choisir un nouveau mot de passe",
     "invalidLinkError": "Ce lien de réinitialisation est invalide.",
     "requestNewLinkLink": "Demander un nouveau lien",
     "expiredLinkError": "Ce lien de réinitialisation est invalide ou a expiré.",

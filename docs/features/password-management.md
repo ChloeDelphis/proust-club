@@ -81,12 +81,13 @@ Same invariant as the rest of the API: CSRF stays active on both endpoints even 
 ## Frontend
 
 ```
-ForgotPasswordForm (email field)
+ForgotPasswordForm (email field, with an explanatory prompt)
   → ForgotPasswordPage (TanStack Query: useMutation)
   → requestPasswordReset()        src/api/auth.ts
   → POST /api/auth/password-reset/request
+  → generic anti-enumeration confirmation; resend is offered after a 5-minute UI cooldown
 
-ResetPasswordForm (new password field)
+ResetPasswordForm (new password field, visibility toggle, and length guidance)
   → ResetPasswordPage (reads ?token= via useSearchParams)
   → confirmPasswordReset()        src/api/auth.ts
   → POST /api/auth/password-reset/confirm
@@ -95,7 +96,7 @@ ResetPasswordForm (new password field)
     (same pattern as login/register), shows a toast, redirects to /
 ```
 
-Routes: `/forgot-password`, `/reset-password` (reads `token` from the query string). `LoginPage` links to `/forgot-password`. Both pages share `AuthPage.module.css` with `LoginPage`/`RegisterPage` (identical layout, same precedent as `AuthForm.module.css`).
+Routes: `/forgot-password`, `/reset-password` (reads `token` from the query string). `LoginPage` links to `/forgot-password`. Both pages share `AuthPage.module.css` with `LoginPage`/`RegisterPage` (identical layout, same precedent as `AuthForm.module.css`). The reset request keeps the same generic confirmation for registered and unregistered addresses; the UI cooldown matches the per-email allowance of three requests per fifteen minutes while backend rate limiting remains authoritative.
 
 ---
 
@@ -151,6 +152,8 @@ Route: `/account`. Connected users reach it from the account menu in `Header`; `
 
 - Change password with the correct current password and a new password distinct from both account identifiers: `POST /api/auth/password` returns `204`; the current session remains open and other sessions are invalidated.
 - Confirm a reset with a live token and a new password distinct from both identifiers: `POST /api/auth/password-reset/confirm` returns `200` and opens a session.
+- On `/forgot-password`, confirm the explanatory prompt, generic confirmation after submission, and resend button disabled for five minutes then enabled; the form is replaced by confirmation after a successful request.
+- On `/reset-password?token=...`, confirm the heading is “Choisir un nouveau mot de passe”, the visibility toggle and length guidance are present, and the submit action is “Enregistrer le nouveau mot de passe”.
 
 ### Edge cases
 

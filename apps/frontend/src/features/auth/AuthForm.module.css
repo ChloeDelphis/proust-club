@@ -38,6 +38,13 @@
   background: var(--color-accent-hover);
 }
 
+.button:disabled,
+.button:disabled:hover {
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
+  cursor: not-allowed;
+}
+
 .button:focus-visible {
   outline: var(--border-width) solid var(--color-accent);
   outline-offset: var(--space-1);
