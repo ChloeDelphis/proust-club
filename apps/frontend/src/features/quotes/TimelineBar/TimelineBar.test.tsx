@@ -75,7 +75,7 @@ beforeEach(() => {
 it('shows the corpus structure without requesting personal bookmarks for a guest', async () => {
   render(<TimelineBar isConnected={false} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
-  expect(await screen.findByRole('img', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
+  expect(await screen.findByRole('group', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /^Citation page/ })).not.toBeInTheDocument()
   expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
   expect(volumeApi.getVolumes).toHaveBeenCalledOnce()

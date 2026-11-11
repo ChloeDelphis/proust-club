@@ -286,7 +286,7 @@ describe('SearchPage', () => {
     render(<SearchPage />, { wrapper })
 
     expect(await screen.findByText("Tapez une recherche pour explorer l'œuvre.")).toBeInTheDocument()
-    expect(await screen.findByRole('img', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
+    expect(await screen.findByRole('group', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Du côté de chez Swann' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Filtrer par tag' })).not.toBeInTheDocument()
     expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
