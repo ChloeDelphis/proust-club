@@ -112,6 +112,8 @@ Authentication pages use the shared design tokens for typography, color, control
 
 Password fields share a visibility toggle in `FormField`. It switches the current input between masked and plain text without changing its value, and its button exposes a localized show/hide action label.
 
+On `/login`, the password-recovery link sits directly below the password field and aligns to its right edge, keeping it visually associated with the field rather than the submit action.
+
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
 
 ## Manual verification
@@ -119,6 +121,7 @@ Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/rese
 - Check that signed-out users can reach login and registration from the desktop account menu and narrow-screen drawer. While signed in, verify the avatar menu offers account and logout actions, and the brand remains centered.
 - Review `/login`, `/forgot-password`, `/reset-password`, `/register`, and `/account` at desktop and narrow widths. Confirm headings, fields, buttons, and links use the shared design tokens, and revisit the “Créer un compte” link to verify its color does not change after visiting. Open the account dropdown and check its colors, typography, hover state, and keyboard focus.
 - For every password field, enter a long passphrase, toggle visibility on and off, and confirm the value is preserved and the control remains keyboard-operable.
+- On `/login`, confirm “Mot de passe oublié ?” appears beneath the password field, aligned right, while the registration link remains below the form.
 
 ### Happy path
 

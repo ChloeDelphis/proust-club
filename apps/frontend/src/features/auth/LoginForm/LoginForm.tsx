@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router'
 import type { LoginFormProps } from './LoginForm.types'
 import FormField from '../FormField/FormField'
 import { emailFormatError } from '../emailValidation'
@@ -36,13 +37,18 @@ export default function LoginForm({ onSubmit }: LoginFormProps) {
         onChange={e => setEmail(e.target.value)}
         autoComplete="email"
       />
-      <FormField
-        label={t('loginForm.passwordLabel')}
-        type="password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        autoComplete="current-password"
-      />
+      <div className={styles.passwordFieldGroup}>
+        <FormField
+          label={t('loginForm.passwordLabel')}
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          autoComplete="current-password"
+        />
+        <Link className={styles.forgotPasswordLink} to="/forgot-password">
+          {t('loginPage.forgotPasswordLink')}
+        </Link>
+      </div>
       <button className={styles.button} type="submit">
         {t('loginForm.submitButton')}
       </button>
