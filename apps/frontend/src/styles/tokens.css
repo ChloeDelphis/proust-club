@@ -23,7 +23,7 @@
   --palette-signature-hover: #542b41;
   --palette-accent-coral: #e78c6b;
   --palette-accent-lavender: #d5d0ef;
-  --palette-accent-mint: #bfdcce;
+  --palette-accent-highlight: #F7E8D4;
   --palette-rule: #f3dec4;
   --palette-frieze: #C9AFB5;
   --palette-frieze-hover-bg: #F8EFED;
@@ -66,9 +66,8 @@
   --color-accent: var(--palette-signature);
   --color-accent-hover: var(--palette-signature-hover);
 
-  /* Mint at 45% over transparent, not a solid fill — direction B's own
-     answer for search-match highlighting (.paragraph-text mark). */
-  --color-highlight-bg: color-mix(in srgb, var(--palette-accent-mint) 45%, transparent);
+  /* Pale apricot highlight used for search matches and selected controls. */
+  --color-highlight-bg: var(--palette-accent-highlight);
 
   --color-danger-text: var(--palette-danger);
   --color-danger-bg: var(--palette-danger-bg);
