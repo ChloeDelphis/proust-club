@@ -28,6 +28,9 @@ const EMPTY_VOLUMES: VolumeResponse[] = []
 const EMPTY_QUOTES: TimelineQuote[] = []
 const EMPTY_SEARCH_MARKERS: SearchOverviewMarker[] = []
 const EMPTY_COUNTS = new Map<number, number>()
+const TITLE_FONT_SIZES_REM = [0.625, 0.5625, 0.5, 0.4375, 0.375] as const
+const TITLE_SIZE_CLASSES = ['', styles.compactTitle, styles.denseTitle, styles.tinyTitle, styles.microTitle] as const
+let titleMeasureContext: CanvasRenderingContext2D | null = null
 
 type TimelinePreview = { text: string; offsetPercent: number }
 
@@ -48,6 +51,71 @@ function snapSvgXToDevicePixelCenter(x: number, scale: number, trackLeft: number
   const deviceX = (trackLeft + x * scale) * devicePixelRatio
   const snappedDeviceX = Math.round(deviceX - 0.5) + 0.5
   return (snappedDeviceX / devicePixelRatio - trackLeft) / scale
+}
+
+function titleFontClass(
+  title: string,
+  width: number,
+  height: number,
+  scale: number,
+  horizontalPaddingRem: number,
+  verticalPaddingRem: number,
+): string {
+  if (typeof document === 'undefined') return ''
+
+  const rootStyle = getComputedStyle(document.documentElement)
+  const rootFontSize = Number.parseFloat(rootStyle.fontSize) || 16
+  const contentWidth = Math.max(1, (width - horizontalPaddingRem * rootFontSize) * scale)
+  const contentHeight = Math.max(1, (height - verticalPaddingRem * rootFontSize) * scale)
+  titleMeasureContext ??= document.createElement('canvas').getContext('2d')
+  const context = titleMeasureContext
+  if (!context) return ''
+
+  const fontFamily = rootStyle.getPropertyValue('--font-reading').trim() || 'Georgia, serif'
+  for (const [index, fontSizeRem] of TITLE_FONT_SIZES_REM.entries()) {
+    const fontSize = fontSizeRem * rootFontSize * scale
+    context.font = `400 ${fontSize}px ${fontFamily}`
+    const lineCount = getWrappedLineCount(title, contentWidth, context)
+    if (lineCount * fontSize * 1.4 <= contentHeight) return TITLE_SIZE_CLASSES[index] ?? ''
+  }
+
+  return TITLE_SIZE_CLASSES[TITLE_SIZE_CLASSES.length - 1] ?? ''
+}
+
+function getWrappedLineCount(text: string, maxWidth: number, context: CanvasRenderingContext2D): number {
+  const words = text.trim().split(/\s+/).filter(Boolean)
+  let lineCount = 1
+  let lineWidth = 0
+  const spaceWidth = context.measureText(' ').width
+
+  for (const word of words) {
+    const wordWidth = context.measureText(word).width
+    if (lineWidth > 0 && lineWidth + spaceWidth + wordWidth <= maxWidth) {
+      lineWidth += spaceWidth + wordWidth
+      continue
+    }
+    if (wordWidth <= maxWidth) {
+      if (lineWidth > 0) lineCount += 1
+      lineWidth = wordWidth
+      continue
+    }
+
+    if (lineWidth > 0) {
+      lineCount += 1
+      lineWidth = 0
+    }
+    for (const character of word) {
+      const characterWidth = context.measureText(character).width
+      if (lineWidth > 0 && lineWidth + characterWidth > maxWidth) {
+        lineCount += 1
+        lineWidth = characterWidth
+      } else {
+        lineWidth += characterWidth
+      }
+    }
+  }
+
+  return lineCount
 }
 
 function activateOnEnterOrSpace(onActivate: () => void) {
@@ -89,6 +157,7 @@ function VolumeZones({
   onSelect,
   t,
   viewBoxWidth,
+  viewBoxScale,
   volumeCounts,
 }: {
   volumes: VolumeResponse[]
@@ -98,6 +167,7 @@ function VolumeZones({
   onSelect: (id: number) => void
   t: TranslateFn
   viewBoxWidth: number
+  viewBoxScale: number
   volumeCounts: ReadonlyMap<number, number>
 }) {
   return (
@@ -115,6 +185,7 @@ function VolumeZones({
         const isActive = volume.id === selectedVolumeId
         const isHidden = selectedVolumeId !== null && !isActive
         const resultCount = volumeCounts.get(volume.id)
+        const titleSizeClass = titleFontClass(volume.title, width, TITLE_TRACK_HEIGHT / 2, viewBoxScale, 0.5, 0.25)
         const zoneClassName = [styles.volumeZone, isActive && styles.isActiveZone, isHidden && styles.isHidden]
           .filter(Boolean)
           .join(' ')
@@ -168,7 +239,7 @@ function VolumeZones({
             <foreignObject x={x1} y={0} width={width} height={TITLE_TRACK_HEIGHT} className={labelClassName} aria-hidden="true">
               <div className={styles.volumeLabelText}>
                 <span className={styles.volumeNumeral}>{VOLUME_ROMAN_NUMERALS[volume.position - 1] ?? volume.position}</span>
-                <span className={styles.volumeTitle}>{volume.title}</span>
+                <span className={`${styles.volumeTitle} ${titleSizeClass}`}>{volume.title}</span>
               </div>
             </foreignObject>
             <SearchCountBadge x={x2} count={resultCount} isHidden={isHidden} />
@@ -240,6 +311,8 @@ function PartStructure({
         const resultCount = partCounts.get(part.id)
         const startX = percentToX(pageToPercent(part.startPage, range), viewBoxWidth)
         const endX = percentToX(pageToPercent(nextPart?.startPage ?? volume.maxPage, range), viewBoxWidth)
+        const width = Math.max(0, endX - startX)
+        const titleSizeClass = titleFontClass(part.title, width, TITLE_TRACK_HEIGHT, viewBoxScale, 0.5, 1)
         const zoneClassName = [styles.partZone, isSelected && styles.isActivePart, isHidden && styles.isHidden]
           .filter(Boolean)
           .join(' ')
@@ -249,7 +322,7 @@ function PartStructure({
             <rect
               x={startX}
               y={0}
-              width={Math.max(0, endX - startX)}
+              width={width}
               height={VIEWBOX_HEIGHT}
               className={zoneClassName}
               role="button"
@@ -269,7 +342,7 @@ function PartStructure({
             <rect
               x={startX}
               y={0}
-              width={Math.max(0, endX - startX)}
+              width={width}
               height={TITLE_TRACK_HEIGHT}
               className={styles.partZoneHoverTitle}
               aria-hidden="true"
@@ -277,7 +350,7 @@ function PartStructure({
             <rect
               x={startX}
               y={TITLE_TRACK_HEIGHT}
-              width={Math.max(0, endX - startX)}
+              width={width}
               height={VIEWBOX_HEIGHT - TITLE_TRACK_HEIGHT}
               className={styles.partZoneHoverBookmarks}
               aria-hidden="true"
@@ -290,7 +363,7 @@ function PartStructure({
               className={labelClassName}
               aria-hidden="true"
             >
-              <div className={styles.partTitle}>{part.title}</div>
+              <div className={`${styles.partTitle} ${titleSizeClass}`}>{part.title}</div>
             </foreignObject>
             <SearchCountBadge x={endX} count={resultCount} isHidden={isHidden} />
             {index > 0 && (
@@ -418,12 +491,23 @@ export default function TimelineBar({
 }: TimelineBarProps) {
   const { t } = useTranslation()
   const [hoveredPreview, setHoveredPreview] = useState<TimelinePreview | null>(null)
+  const [, setFontMetricsReady] = useState(false)
   const trackRef = useRef<SVGSVGElement>(null)
   const [viewBoxWidth, setViewBoxWidth] = useState(VIEWBOX_WIDTH)
   const [viewBoxScale, setViewBoxScale] = useState(1)
   const [trackLeft, setTrackLeft] = useState(0)
   const [animatedRange, setAnimatedRange] = useState<PageRange | null>(null)
   const animatedRangeRef = useRef<PageRange | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    document.fonts?.ready.then(() => {
+      if (isMounted) setFontMetricsReady(true)
+    })
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const volumesQuery = useVolumes()
   const timelineQuery = useTimeline(activeTagId, isConnected && !corpusSearchActive)
@@ -650,6 +734,7 @@ export default function TimelineBar({
           onSelect={onSelectVolume}
           t={t}
           viewBoxWidth={viewBoxWidth}
+          viewBoxScale={viewBoxScale}
           volumeCounts={corpusSearchActive && !selectedVolume ? volumeCounts : EMPTY_COUNTS}
         />
         <VolumeDelimiters
