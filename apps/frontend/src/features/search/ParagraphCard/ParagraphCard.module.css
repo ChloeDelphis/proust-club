@@ -1,9 +1,14 @@
 .root {
   cursor: pointer;
   padding: var(--space-5) clamp(var(--space-4), 2vw, var(--space-8));
-  border: var(--border-width) solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  border: var(--border-width) solid var(--color-result-border);
   border-radius: var(--radius-lg);
   background: var(--color-result-card);
+  transition: border-color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.root:hover {
+  border-color: var(--color-accent);
 }
 
 .header {

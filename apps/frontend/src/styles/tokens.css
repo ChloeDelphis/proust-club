@@ -26,6 +26,7 @@
   --palette-accent-highlight: #F7E8D4;
   --palette-rule: #f3dec4;
   --palette-frieze: #C9AFB5;
+  --palette-result-border: #AA8193;
   --palette-frieze-hover-bg: #F8EFED;
   --palette-frieze-hover-text: #947581;
   --palette-on-signature: #fff;
@@ -60,6 +61,7 @@
   --color-border: var(--palette-rule);
   --color-border-strong: var(--palette-ink-soft);
   --color-frieze: var(--palette-frieze);
+  --color-result-border: var(--palette-result-border);
   --color-frieze-hover-bg: var(--palette-frieze-hover-bg);
   --color-frieze-hover-text: var(--palette-frieze-hover-text);
 
