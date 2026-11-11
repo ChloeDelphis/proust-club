@@ -110,12 +110,15 @@ LoginForm / RegisterForm (fields + client-side validation)
 
 Authentication pages use the shared design tokens for typography, color, controls, and spacing. Login, registration, password recovery/reset, and the account password form share a restrained, centered layout; links retain the same palette color after visiting, and form controls use the same plum accents and literary type pairing as the frieze/search experience. The account dropdown follows the same palette and reading typography, including a consistent color for visited links.
 
+Password fields share a visibility toggle in `FormField`. It switches the current input between masked and plain text without changing its value, and its button exposes a localized show/hide action label.
+
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
 
 ## Manual verification
 
 - Check that signed-out users can reach login and registration from the desktop account menu and narrow-screen drawer. While signed in, verify the avatar menu offers account and logout actions, and the brand remains centered.
 - Review `/login`, `/forgot-password`, `/reset-password`, `/register`, and `/account` at desktop and narrow widths. Confirm headings, fields, buttons, and links use the shared design tokens, and revisit the “Créer un compte” link to verify its color does not change after visiting. Open the account dropdown and check its colors, typography, hover state, and keyboard focus.
+- For every password field, enter a long passphrase, toggle visibility on and off, and confirm the value is preserved and the control remains keyboard-operable.
 
 ### Happy path
 

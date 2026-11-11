@@ -92,6 +92,10 @@
   "passwordIdentifierValidation": {
     "matchesIdentifierError": "Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email."
   },
+  "formField": {
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
+  },
   "passwordValidation": {
     "passphraseSuggestion": "une phrase fonctionne très bien.",
     "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — $t(passwordValidation.passphraseSuggestion)",
