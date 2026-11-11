@@ -27,7 +27,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 const mockUser: authApi.UserResponse = {
   uuid: '11111111-1111-1111-1111-111111111111',
-  username: 'marcel',
+  username: null,
   email: 'marcel@example.com',
   role: 'USER',
   emailVerified: true,
@@ -38,10 +38,11 @@ beforeEach(() => {
 })
 
 describe('RegisterPage', () => {
-  it('valide la saisie avant envoi et ne déclenche pas de requête', async () => {
+  it('valide le format de l’adresse e-mail avant envoi', async () => {
     render(<RegisterPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'ab')
+    await userEvent.type(screen.getByLabelText('Email'), 'pas-une-adresse')
+    await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
 
     expect(screen.getByRole('alert')).toBeInTheDocument()
@@ -53,31 +54,28 @@ describe('RegisterPage', () => {
 
     render(<RegisterPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
     await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
 
     expect(authApi.register).toHaveBeenCalledWith({
-      username: 'marcel',
       email: 'marcel@example.com',
       password: 'hunter2222password',
     })
     expect(await screen.findByText('Page de recherche')).toBeInTheDocument()
   })
 
-  it('affiche une erreur si le nom d’utilisateur ou l’email est déjà pris', async () => {
+  it('affiche une erreur si l’adresse e-mail est déjà prise', async () => {
     vi.mocked(authApi.register).mockRejectedValue(new ApiError(409))
 
     render(<RegisterPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
     await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
 
     expect(
-      await screen.findByText('Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).'),
+      await screen.findByText('Cette adresse e-mail est déjà utilisée.'),
     ).toBeInTheDocument()
   })
 
@@ -86,7 +84,6 @@ describe('RegisterPage', () => {
 
     render(<RegisterPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
     await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
@@ -94,16 +91,15 @@ describe('RegisterPage', () => {
     expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
   })
 
-  it('bloque la soumission si le mot de passe est identique au nom d’utilisateur, sans appeler l’API', async () => {
+  it('bloque la soumission si le mot de passe est identique à l’adresse e-mail', async () => {
     render(<RegisterPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcelproustcombray')
     await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
-    await userEvent.type(screen.getByLabelText('Mot de passe'), 'marcelproustcombray')
+    await userEvent.type(screen.getByLabelText('Mot de passe'), 'MARcel@example.com')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
 
     expect(
-      screen.getByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.'),
+      screen.getByText('Le mot de passe ne peut pas être identique à votre adresse e-mail.'),
     ).toBeInTheDocument()
     expect(authApi.register).not.toHaveBeenCalled()
   })
@@ -116,7 +112,6 @@ describe('RegisterPage', () => {
 
     render(<RegisterPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Nom d’utilisateur'), 'marcel')
     await userEvent.type(screen.getByLabelText('Email'), 'marcel@example.com')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))

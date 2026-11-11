@@ -96,8 +96,13 @@ export default function Header() {
       {isSuccess && user && (
         <div className={styles.session}>
           <Menu.Root>
-            <Menu.Trigger className={styles.avatar} aria-label={t('header.loggedInAs', { username: user.username })}>
-              {user.username.charAt(0).toUpperCase()}
+            <Menu.Trigger
+              className={user.username ? styles.avatar : styles.accountTrigger}
+              aria-label={user.username ? t('header.loggedInAs', { username: user.username }) : t('header.accountMenuLabel')}
+            >
+              {user.username
+                ? user.username.charAt(0).toUpperCase()
+                : <span className={styles.accountIcon} aria-hidden="true" />}
             </Menu.Trigger>
             <Menu.Portal>
               <Menu.Positioner className={styles.accountMenuPositioner} align="end" sideOffset={8}>

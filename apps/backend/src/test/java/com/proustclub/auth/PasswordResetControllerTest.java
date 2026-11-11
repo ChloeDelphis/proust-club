@@ -114,7 +114,7 @@ class PasswordResetControllerTest {
 
         mockMvc.perform(confirmReset(capturedToken("confirmreset@example.com"), "new-password-long-enough"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("confirmreset"));
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()));
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("confirmreset@example.com", "new-password-long-enough")))
@@ -268,11 +268,11 @@ class PasswordResetControllerTest {
 
         mockMvc.perform(get("/api/auth/me").session(sessionB))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("sweepsessions"));
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()));
     }
 
-    private MvcResult register(String username, String email, String password) throws Exception {
-        String body = objectMapper.writeValueAsString(new RegisterRequest(username, email, password));
+    private MvcResult register(String ignoredDisplayName, String email, String password) throws Exception {
+        String body = objectMapper.writeValueAsString(new RegisterRequest(email, password));
         return mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated())
                 .andReturn();

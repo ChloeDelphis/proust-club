@@ -90,7 +90,8 @@
     "formatError": "Adresse email invalide."
   },
   "passwordIdentifierValidation": {
-    "matchesIdentifierError": "Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email."
+    "matchesIdentifierError": "Le mot de passe doit être différent des identifiants du compte.",
+    "matchesEmailError": "Le mot de passe ne peut pas être identique à votre adresse e-mail."
   },
   "formField": {
     "showPassword": "Afficher le mot de passe",
@@ -115,14 +116,13 @@
     "registerLink": "Créer un compte"
   },
   "registerForm": {
-    "usernameLabel": "Nom d’utilisateur",
-    "usernameTooShortError": "Le nom d’utilisateur doit contenir au moins {{min}} caractères.",
     "emailLabel": "Email",
     "submitButton": "Créer un compte"
   },
   "registerPage": {
     "title": "Créer un compte",
-    "identifierTakenError": "Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).",
+    "description": "Conservez vos citations préférées, organisez‑les en listes et enrichissez‑les de vos annotations.",
+    "identifierTakenError": "Cette adresse e-mail est déjà utilisée.",
     "genericError": "Impossible de créer ce compte. Réessayez.",
     "alreadyAccountPrompt": "Déjà un compte ?",
     "loginLink": "Se connecter"

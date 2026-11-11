@@ -68,7 +68,7 @@ class PasswordChangeControllerTest {
 
         mockMvc.perform(get("/api/auth/me").session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("changepwd"));
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()));
 
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("changepwd@example.com", "new-password-long-enough")))
@@ -105,11 +105,11 @@ class PasswordChangeControllerTest {
     }
 
     @Test
-    void changePasswordMatchingUsernameIsRejectedBeforeBreachCheck() throws Exception {
+    void changePasswordMatchingEmailIsRejectedBeforeBreachCheck() throws Exception {
         MockHttpSession session = registerAndGetSession("averylongusername", "policy@example.com", "old-password-long-enough");
         clearInvocations(passwordBreachChecker);
 
-        mockMvc.perform(changePassword(session, "old-password-long-enough", "AVERYLONGUSERNAME"))
+        mockMvc.perform(changePassword(session, "old-password-long-enough", "POLICY@EXAMPLE.COM"))
                 // Spring MVC's native ErrorResponseException resolution returns a bare status
                 // under MockMvc; PasswordPolicyTest asserts the ProblemDetail code itself.
                 .andExpect(status().isBadRequest());
@@ -172,11 +172,11 @@ class PasswordChangeControllerTest {
 
         mockMvc.perform(get("/api/auth/me").session(sessionB))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("sweepsessions"));
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()));
     }
 
-    private MockHttpSession registerAndGetSession(String username, String email, String password) throws Exception {
-        String body = objectMapper.writeValueAsString(new RegisterRequest(username, email, password));
+    private MockHttpSession registerAndGetSession(String ignoredDisplayName, String email, String password) throws Exception {
+        String body = objectMapper.writeValueAsString(new RegisterRequest(email, password));
         MvcResult result = mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated())
                 .andReturn();
@@ -192,8 +192,8 @@ class PasswordChangeControllerTest {
         return "{\"currentPassword\":\"" + currentPassword + "\",\"newPassword\":\"" + newPassword + "\"}";
     }
 
-    private String registerJson(String username, String email, String password) throws Exception {
-        return objectMapper.writeValueAsString(new RegisterRequest(username, email, password));
+    private String registerJson(String ignoredDisplayName, String email, String password) throws Exception {
+        return objectMapper.writeValueAsString(new RegisterRequest(email, password));
     }
 
     private String loginJson(String email, String password) throws Exception {

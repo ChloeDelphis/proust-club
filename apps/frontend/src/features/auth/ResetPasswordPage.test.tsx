@@ -105,7 +105,7 @@ describe('ResetPasswordPage', () => {
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
-    expect(await screen.findByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.')).toBeInTheDocument()
+    expect(await screen.findByText('Le mot de passe doit être différent des identifiants du compte.')).toBeInTheDocument()
     expect(screen.queryByText('Ce lien de réinitialisation est invalide ou a expiré.')).not.toBeInTheDocument()
   })
 

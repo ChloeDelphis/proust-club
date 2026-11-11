@@ -143,10 +143,10 @@ class RateLimitControllerTest {
                 .andExpect(header().exists("Retry-After"));
     }
 
-    private MockHttpServletRequestBuilder registerFrom(String ip, String username, String email) throws Exception {
+    private MockHttpServletRequestBuilder registerFrom(String ip, String ignoredDisplayName, String email) throws Exception {
         return post("/api/auth/register").with(csrf()).with(remoteAddr(ip))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new RegisterRequest(username, email, "hunter2222password")));
+                .content(objectMapper.writeValueAsString(new RegisterRequest(email, "hunter2222password")));
     }
 
     private MockHttpServletRequestBuilder loginFrom(String ip, String email, String password) throws Exception {

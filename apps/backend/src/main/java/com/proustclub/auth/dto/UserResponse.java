@@ -9,7 +9,7 @@ public record UserResponse(
         @Schema(description = "User identifier")
         UUID uuid,
 
-        @Schema(description = "Username", example = "marcel")
+        @Schema(description = "Public display name, set when social features require one", nullable = true, example = "marcel")
         String username,
 
         @Schema(description = "Email address", example = "marcel@example.com")

@@ -2,7 +2,7 @@
 
 ## Decision
 
-Keep three concepts separate: `email` is the login credential, `username` is the public display identity, and `users.uuid` is the stable technical identity. Store a project-owned `ProustClubPrincipal` in the session; its equality and hash code use `userId` only.
+Keep three concepts separate: `email` is the login credential, `username` is an optional public display identity, and `users.uuid` is the stable technical identity. New accounts may omit `username` until a social feature requires one. Store a project-owned `ProustClubPrincipal` in the session; its equality and hash code use `userId` only.
 
 ## Context
 
@@ -16,8 +16,8 @@ Using the real principal for `SessionRegistry` lookups lets password-change and 
 
 ## Trade-off
 
-The distinction requires a custom principal and updates to authentication, session invalidation, and account-scoped rate limits. Authenticated account limits use `userId`; unauthenticated login and reset limits use the submitted normalized email because no user identity is resolved yet.
+The distinction requires a custom principal and updates to authentication, session invalidation, and account-scoped rate limits. Authenticated account limits use `userId`; unauthenticated login and reset limits use the submitted normalized email because no user identity is resolved yet. Social actions that expose a user will collect a unique `username` at the point of use.
 
 ## Date
 
-2026-08-27
+2026-11-11 (public usernames are optional until needed by social features)

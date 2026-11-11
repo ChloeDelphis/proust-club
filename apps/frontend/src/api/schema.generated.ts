@@ -556,11 +556,6 @@ export interface components {
         /** @description Account creation request */
         RegisterRequest: {
             /**
-             * @description Unique username (3-50 characters)
-             * @example marcel
-             */
-            username: string;
-            /**
              * Format: email
              * @description Unique email address
              * @example marcel@example.com
@@ -580,10 +575,10 @@ export interface components {
              */
             uuid?: string;
             /**
-             * @description Username
+             * @description Public display name, set when social features require one
              * @example marcel
              */
-            username?: string;
+            username?: string | null;
             /**
              * @description Email address
              * @example marcel@example.com
@@ -1193,7 +1188,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserResponse"];
                 };
             };
-            /** @description Invalid request body or password matches the username/email (code: password_matches_identifier) */
+            /** @description Invalid request body or password matches the email (code: password_matches_identifier) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1202,7 +1197,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetail"];
                 };
             };
-            /** @description Username or email already taken */
+            /** @description Email already taken */
             409: {
                 headers: {
                     [name: string]: unknown;

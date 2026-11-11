@@ -28,7 +28,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 const mockUser: authApi.UserResponse = {
   uuid: '11111111-1111-1111-1111-111111111111',
-  username: 'marcel',
+  username: null,
   email: 'marcel@example.com',
   role: 'USER',
   emailVerified: true,
@@ -50,7 +50,7 @@ describe('Header', () => {
     expect(screen.getByRole('menuitem', { name: 'Créer un compte' })).toBeInTheDocument()
   })
 
-  it('affiche un avatar portant le nom d’utilisateur connecté, dont le menu permet de se déconnecter', async () => {
+  it('affiche le menu de compte sans pseudonyme et permet de se déconnecter', async () => {
     let loggedIn = true
     vi.mocked(authApi.getCurrentUser).mockImplementation(() =>
       loggedIn ? Promise.resolve(mockUser) : Promise.reject(new ApiError(401)),
@@ -63,7 +63,7 @@ describe('Header', () => {
 
     render(<Header />, { wrapper })
 
-    const avatar = await screen.findByRole('button', { name: 'Connecté en tant que marcel' })
+    const avatar = await screen.findByRole('button', { name: 'Ouvrir le menu du compte' })
     await user.click(avatar)
 
     expect(await screen.findByRole('menuitem', { name: 'Mon compte' })).toBeInTheDocument()

@@ -126,6 +126,8 @@ erDiagram
     quote_selections }o--o{ tags               : tagged_with
 ```
 
+`users.username` is nullable and remains unique when set. Existing usernames are retained; the UUID remains the stable user identity.
+
 ### Key decisions
 
 **`users.uuid`** is a UUID (not a serial integer) — avoids enumerable user IDs in URLs and API responses. Generated in Postgres via `gen_random_uuid()` (built into Postgres 13+, no `pgcrypto` extension needed).

@@ -40,6 +40,17 @@
   color: var(--color-text-muted);
 }
 
+.registerDescription {
+  max-width: 32rem;
+  margin: calc(0px - var(--space-4)) auto var(--space-8);
+  color: var(--color-text-subtle);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-normal);
+  text-align: center;
+  text-wrap: balance;
+}
+
 .confirmation {
   display: flex;
   flex-direction: column;

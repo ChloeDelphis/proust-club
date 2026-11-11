@@ -77,11 +77,11 @@ class AuthService {
     // cheap, local criteria (in-memory comparison, indexed SELECTs) shouldn't pay for the HIBP
     // network round-trip first. register() re-runs the same checks inside its own transaction
     // regardless (see below) — that's not new work caused by this pre-check, it was already
-    // required to close the TOCTOU race on username/email uniqueness.
+    // required to close the TOCTOU race on email uniqueness.
     String checkNoCheapConflicts(RegisterRequest request) {
         var normalizedEmail = EmailNormalizer.normalize(request.email());
-        PasswordPolicy.requireDistinctFromIdentifiers(request.password(), request.username(), normalizedEmail);
-        requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
+        PasswordPolicy.requireDistinctFromIdentifiers(request.password(), null, normalizedEmail);
+        requireEmailAvailable(normalizedEmail);
         return normalizedEmail;
     }
 
@@ -90,23 +90,20 @@ class AuthService {
         var normalizedEmail = checkNoCheapConflicts(request);
 
         var passwordHash = passwordEncoder.encode(request.password());
-        var insertedUuid = repository.insertIfAbsent(request.username(), normalizedEmail, passwordHash);
+        var insertedUuid = repository.insertIfAbsent(normalizedEmail, passwordHash);
         if (insertedUuid.isEmpty()) {
-            requireUsernameAndEmailAvailable(request.username(), normalizedEmail);
-            throw new IllegalStateException("User insert conflicted without a matching username or email.");
+            requireEmailAvailable(normalizedEmail);
+            throw new IllegalStateException("User insert conflicted without a matching email.");
         }
         var uuid = insertedUuid.get();
-        log.info("User registered: {}", request.username());
+        log.info("User registered: {}", uuid);
 
         emailVerificationService.sendVerification(uuid, normalizedEmail);
 
-        return new UserResponse(uuid, request.username(), normalizedEmail, "USER", false);
+        return new UserResponse(uuid, null, normalizedEmail, "USER", false);
     }
 
-    private void requireUsernameAndEmailAvailable(String username, String normalizedEmail) {
-        if (repository.existsByUsername(username)) {
-            throw ApiException.usernameAlreadyExists();
-        }
+    private void requireEmailAvailable(String normalizedEmail) {
         if (repository.existsByEmail(normalizedEmail)) {
             throw ApiException.emailAlreadyExists();
         }

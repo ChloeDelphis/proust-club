@@ -323,9 +323,9 @@ class TagControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    private MockHttpSession registerAndLogin(String username, String email) throws Exception {
+    private MockHttpSession registerAndLogin(String ignoredDisplayName, String email) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RegisterRequest(username, email, "hunter2222password"))))
+                        .content(objectMapper.writeValueAsString(new RegisterRequest(email, "hunter2222password"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         return (MockHttpSession) result.getRequest().getSession(false);

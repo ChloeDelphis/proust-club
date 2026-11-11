@@ -50,49 +50,31 @@ class AuthServiceTest {
 
     @Test
     void registerHashesPasswordBeforeInsertion() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
+        var request = new RegisterRequest("marcel@example.com", "hunter2222");
         var uuid = UUID.randomUUID();
 
-        when(repository.existsByUsername("marcel")).thenReturn(false);
         when(repository.existsByEmail("marcel@example.com")).thenReturn(false);
         when(passwordEncoder.encode("hunter2222")).thenReturn("hashed-value");
-        when(repository.insertIfAbsent("marcel", "marcel@example.com", "hashed-value")).thenReturn(Optional.of(uuid));
+        when(repository.insertIfAbsent("marcel@example.com", "hashed-value")).thenReturn(Optional.of(uuid));
 
         var response = service.register(request);
 
         assertThat(response.uuid()).isEqualTo(uuid);
-        assertThat(response.username()).isEqualTo("marcel");
+        assertThat(response.username()).isNull();
         assertThat(response.email()).isEqualTo("marcel@example.com");
         assertThat(response.role()).isEqualTo("USER");
         assertThat(response.emailVerified()).isFalse();
-        verify(repository).insertIfAbsent(eq("marcel"), eq("marcel@example.com"), eq("hashed-value"));
-        verify(repository, never()).insertIfAbsent(any(), any(), eq("hunter2222"));
+        verify(repository).insertIfAbsent(eq("marcel@example.com"), eq("hashed-value"));
+        verify(repository, never()).insertIfAbsent(any(), eq("hunter2222"));
         verify(emailVerificationService).sendVerification(uuid, "marcel@example.com");
     }
 
     @Test
-    void registerMapsConcurrentUsernameConflictToUsernameAlreadyExists() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
-        when(repository.existsByUsername("marcel")).thenReturn(false, true);
-        when(repository.existsByEmail("marcel@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("hunter2222")).thenReturn("hashed-value");
-        when(repository.insertIfAbsent("marcel", "marcel@example.com", "hashed-value")).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.register(request))
-                .isInstanceOf(ApiException.class)
-                .extracting(exception -> ((ErrorResponseException) exception).getStatusCode())
-                .isEqualTo(HttpStatus.CONFLICT);
-
-        verify(emailVerificationService, never()).sendVerification(any(), any());
-    }
-
-    @Test
     void registerMapsConcurrentEmailConflictToEmailAlreadyExists() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
-        when(repository.existsByUsername("marcel")).thenReturn(false);
+        var request = new RegisterRequest("marcel@example.com", "hunter2222");
         when(repository.existsByEmail("marcel@example.com")).thenReturn(false, true);
         when(passwordEncoder.encode("hunter2222")).thenReturn("hashed-value");
-        when(repository.insertIfAbsent("marcel", "marcel@example.com", "hashed-value")).thenReturn(Optional.empty());
+        when(repository.insertIfAbsent("marcel@example.com", "hashed-value")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.register(request))
                 .isInstanceOf(ApiException.class)
@@ -100,54 +82,22 @@ class AuthServiceTest {
                 .isEqualTo(HttpStatus.CONFLICT);
 
         verify(emailVerificationService, never()).sendVerification(any(), any());
-    }
-
-    @Test
-    void registerRejectsDuplicateUsername() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
-        when(repository.existsByUsername("marcel")).thenReturn(true);
-
-        assertThatThrownBy(() -> service.register(request))
-                .isInstanceOf(ErrorResponseException.class)
-                .isInstanceOf(ApiException.class);
-
-        verify(repository, never()).insertIfAbsent(any(), any(), any());
     }
 
     @Test
     void registerRejectsDuplicateEmail() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
-        when(repository.existsByUsername("marcel")).thenReturn(false);
+        var request = new RegisterRequest("marcel@example.com", "hunter2222");
         when(repository.existsByEmail("marcel@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> service.register(request))
                 .isInstanceOf(ApiException.class);
 
-        verify(repository, never()).insertIfAbsent(any(), any(), any());
-    }
-
-    @Test
-    void checkNoCheapConflictsRejectsPasswordMatchingUsername() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "marcel");
-
-        assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
-                .isInstanceOf(ApiException.class);
-
-        verify(repository, never()).existsByUsername(any());
+        verify(repository, never()).insertIfAbsent(any(), any());
     }
 
     @Test
     void checkNoCheapConflictsRejectsPasswordMatchingEmail() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "marcel@example.com");
-
-        assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
-                .isInstanceOf(ApiException.class);
-    }
-
-    @Test
-    void checkNoCheapConflictsRejectsDuplicateUsername() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
-        when(repository.existsByUsername("marcel")).thenReturn(true);
+        var request = new RegisterRequest("marcel@example.com", "marcel@example.com");
 
         assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
                 .isInstanceOf(ApiException.class);
@@ -155,8 +105,7 @@ class AuthServiceTest {
 
     @Test
     void checkNoCheapConflictsRejectsDuplicateEmail() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
-        when(repository.existsByUsername("marcel")).thenReturn(false);
+        var request = new RegisterRequest("marcel@example.com", "hunter2222");
         when(repository.existsByEmail("marcel@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> service.checkNoCheapConflicts(request))
@@ -165,8 +114,7 @@ class AuthServiceTest {
 
     @Test
     void checkNoCheapConflictsAllowsValidRequest() {
-        var request = new RegisterRequest("marcel", "marcel@example.com", "hunter2222");
-        when(repository.existsByUsername("marcel")).thenReturn(false);
+        var request = new RegisterRequest("marcel@example.com", "hunter2222");
         when(repository.existsByEmail("marcel@example.com")).thenReturn(false);
 
         service.checkNoCheapConflicts(request);

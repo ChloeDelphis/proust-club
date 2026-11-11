@@ -6,7 +6,7 @@ import type { operations } from './schema.generated'
 // type is `foo?: string`. Same reasoning already applied to SearchHit/SearchResponse in search.ts.
 export type UserResponse = {
   uuid: string
-  username: string
+  username: string | null
   email: string
   role: string
   emailVerified: boolean
