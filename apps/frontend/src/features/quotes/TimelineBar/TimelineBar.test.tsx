@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import TimelineBar from './TimelineBar'
 import * as quoteApi from '../../../api/quote'
 import type { TimelineResponse } from '../../../api/quote'
+import type { SearchOverviewResponse } from '../../../api/search'
 import * as volumeApi from '../../../api/volume'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
@@ -254,4 +255,76 @@ it('refetches with the active tag filter', async () => {
   await waitFor(() => {
     expect(quoteApi.getQuoteTimeline).toHaveBeenCalledWith({ tagId }, expect.anything())
   })
+})
+
+it('shows corpus search markers, volume counts, and a preview without requesting personal quotes', async () => {
+  const overview: SearchOverviewResponse = {
+    total: 3,
+    markers: [
+      { paragraphId: 101, volumeId: 1, partId: 11, pageNumber: 9, previewText: 'un premier passage' },
+      { paragraphId: 102, volumeId: 1, partId: 12, pageNumber: 50, previewText: 'un passage au milieu' },
+      { paragraphId: 201, volumeId: 2, partId: 21, pageNumber: 150, previewText: 'un dernier passage' },
+    ],
+    volumeCounts: [{ volumeId: 1, count: 2 }, { volumeId: 2, count: 1 }],
+    partCounts: [{ partId: 11, count: 1 }, { partId: 12, count: 1 }, { partId: 21, count: 1 }],
+  }
+
+  render(
+    <TimelineBar
+      isConnected={false}
+      activeTagId={null}
+      selectedVolumeId={null}
+      selectedPartId={null}
+      corpusSearchActive
+      corpusSearchOverview={overview}
+      onSelectPart={vi.fn()}
+      onSelectVolume={vi.fn()}
+      onOpenQuote={vi.fn()}
+    />,
+    { wrapper },
+  )
+
+  expect(await screen.findByRole('group', { name: 'Résultats de recherche dans les sept tomes' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Filtrer sur Du Côté de Chez Swann, 2 passages trouvés, et zoomer sur ce tome' })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Passage trouvé page 50 : un passage au milieu' })).toBeInTheDocument()
+  expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
+
+  const marker = screen.getByRole('img', { name: 'Passage trouvé page 50 : un passage au milieu' })
+  fireEvent.focus(marker)
+  expect(screen.getByRole('tooltip')).toHaveTextContent('un passage au milieu')
+  fireEvent.blur(marker)
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+})
+
+it('filters corpus search markers to the selected part and announces its match count', async () => {
+  const overview: SearchOverviewResponse = {
+    total: 3,
+    markers: [
+      { paragraphId: 101, volumeId: 1, partId: 11, pageNumber: 9, previewText: 'Combray' },
+      { paragraphId: 102, volumeId: 1, partId: 12, pageNumber: 50, previewText: 'Un amour de Swann' },
+      { paragraphId: 103, volumeId: 1, partId: 13, pageNumber: 96, previewText: 'Noms de pays' },
+    ],
+    volumeCounts: [{ volumeId: 1, count: 3 }],
+    partCounts: [{ partId: 11, count: 1 }, { partId: 12, count: 1 }, { partId: 13, count: 1 }],
+  }
+
+  render(
+    <TimelineBar
+      isConnected={false}
+      activeTagId={null}
+      selectedVolumeId={1}
+      selectedPartId={12}
+      corpusSearchActive
+      corpusSearchOverview={overview}
+      onSelectPart={vi.fn()}
+      onSelectVolume={vi.fn()}
+      onOpenQuote={vi.fn()}
+    />,
+    { wrapper },
+  )
+
+  expect(await screen.findByRole('group', { name: '1 passages trouvés dans la partie Un amour de Swann du tome Du Côté de Chez Swann' })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Passage trouvé page 50 : Un amour de Swann' })).toBeInTheDocument()
+  expect(screen.queryByRole('img', { name: 'Passage trouvé page 9 : Combray' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('img', { name: 'Passage trouvé page 96 : Noms de pays' })).not.toBeInTheDocument()
 })
