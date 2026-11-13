@@ -13,3 +13,5 @@ export interface TimelineBarProps {
   // bookmark click just reports which quote, rather than TimelineBar keeping its own instance.
   onOpenQuote: (id: string) => void
 }
+
+export type TimelinePreview = { text: string; offsetPercent: number }
