@@ -84,7 +84,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value("marcel"))
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.email").value("marcel@example.com"))
                 .andExpect(jsonPath("$.role").value("USER"))
                 .andExpect(jsonPath("$.uuid").exists())
@@ -100,20 +100,6 @@ class AuthControllerTest {
                 .andExpect(status().isCreated());
 
         verify(mailService).sendEmailConfirmation(eq("emailconfirm@example.com"), anyString());
-    }
-
-    // Only the status is asserted, not the ProblemDetail body — see the comment on
-    // ErrorHandlingIntegrationTest.malformedJsonReturnsBadRequest for why (MockMvc limitation for
-    // this resolution path, manually verified correct against the real server).
-    @Test
-    void registerDuplicateUsernameReturnsConflict() throws Exception {
-        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("marcel", "other@example.com", "hunter2222password")))
-                .andExpect(status().isConflict());
     }
 
     @Test
@@ -139,7 +125,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void concurrentRegistrationsWithTheSameUsernameReturnOneCreatedAndOneConflict() throws Exception {
+    void concurrentRegistrationsWithTheSameEmailReturnOneCreatedAndOneConflict() throws Exception {
         var bothAtInsert = new CountDownLatch(2);
         var continueInsert = new CountDownLatch(1);
         doAnswer(invocation -> {
@@ -151,17 +137,17 @@ class AuthControllerTest {
                 throw new AssertionError("Timed out waiting to release concurrent registration inserts.");
             }
             return invocation.callRealMethod();
-        }).when(userRepository).insertIfAbsent(anyString(), anyString(), anyString());
+        }).when(userRepository).insertIfAbsent(anyString(), anyString());
 
         var executor = Executors.newFixedThreadPool(2);
         try {
             var first = executor.submit(() -> mockMvc.perform(post("/api/auth/register").with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(registerJson("raceuser", "race-one@example.com", "hunter2222password")))
+                            .content(registerJson("raceuser", "race@example.com", "hunter2222password")))
                     .andReturn());
             var second = executor.submit(() -> mockMvc.perform(post("/api/auth/register").with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(registerJson("raceuser", "race-two@example.com", "hunter2222password")))
+                            .content(registerJson("raceuser", "race@example.com", "hunter2222password")))
                     .andReturn());
 
             assertThat(bothAtInsert.await(10, TimeUnit.SECONDS)).isTrue();
@@ -191,9 +177,9 @@ class AuthControllerTest {
     }
 
     @Test
-    void registerBlankUsernameReturnsBadRequest() throws Exception {
+    void registerBlankEmailReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("", "marcel@example.com", "hunter2222password")))
+                        .content(registerJson("ignored", "", "hunter2222password")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -212,13 +198,6 @@ class AuthControllerTest {
     }
 
     @Test
-    void registerPasswordMatchingUsernameReturnsBadRequest() throws Exception {
-        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("marcelproustcombray", "marcel@example.com", "marcelproustcombray")))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void registerPasswordMatchingEmailReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcelproust@example.com", "marcelproust@example.com")))
@@ -226,51 +205,40 @@ class AuthControllerTest {
     }
 
     @Test
-    void registerPasswordMatchingUsernameCaseInsensitiveReturnsBadRequest() throws Exception {
+    void registerPasswordMatchingEmailCaseInsensitiveReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("MarcelProustCombray", "marcel@example.com", "marcelproustcombray")))
+                        .content(registerJson("ignored", "Marcel@Example.com", "marcel@example.com")))
                 .andExpect(status().isBadRequest());
     }
 
-    // Direct API callers (Swagger, scripts) skip RegisterForm's client-side trim — the backend
-    // check itself must not be bypassable by padding the username with insignificant whitespace.
+    // Non-regression for the "strict equality, not substring" decision: a passphrase containing
+    // the email remains acceptable.
     @Test
-    void registerPasswordMatchingWhitespacePaddedUsernameReturnsBadRequest() throws Exception {
+    void registerPasswordContainingEmailIsAccepted() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("  marcelproustcombray  ", "marcel@example.com", "marcelproustcombray")))
-                .andExpect(status().isBadRequest());
-    }
-
-    // Non-regression for the "strict equality, not substring" decision:
-    // a passphrase that merely contains the username must stay accepted — the project actively
-    // encourages long passphrases over composed passwords (RegisterRequest.password), and a
-    // "contains" check would reject legitimate ones whenever the username is a common word.
-    @Test
-    void registerPasswordContainingUsernameIsAccepted() throws Exception {
-        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("marcel", "marcel@example.com", "Marcel se souvient de Combray")))
+                        .content(registerJson("ignored", "marcel@example.com", "Marcel@example.com se souvient de Combray")))
                 .andExpect(status().isCreated());
     }
 
     // Proves the reordering from breach-check-avant-verifications-bon-marche: a request invalid on
     // a cheap, local criterion must never reach the external HIBP call.
     @Test
-    void registerPasswordMatchingUsernameDoesNotCallBreachChecker() throws Exception {
+    void registerPasswordMatchingEmailDoesNotCallBreachChecker() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("marcelproustcombray", "marcel@example.com", "marcelproustcombray")))
+                        .content(registerJson("ignored", "marcel@example.com", "MARCEL@example.com")))
                 .andExpect(status().isBadRequest());
 
         verify(passwordBreachChecker, never()).isCompromised(anyString());
     }
 
     @Test
-    void registerDuplicateUsernameDoesNotCallBreachCheckerForSecondRequest() throws Exception {
+    void registerDuplicateEmailDoesNotCallBreachCheckerForSecondRequest() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("marcel", "other@example.com", "differentpassword")))
+                        .content(registerJson("marcel", "marcel@example.com", "differentpassword")))
                 .andExpect(status().isConflict());
 
         verify(passwordBreachChecker, never()).isCompromised("differentpassword");
@@ -310,7 +278,7 @@ class AuthControllerTest {
     @Test
     void registerIgnoresClientSuppliedRole() throws Exception {
         String bodyWithRole = """
-                {"username":"roleinject","email":"roleinject@example.com","password":"hunter2222password","role":"ADMIN"}""";
+                {"email":"roleinject@example.com","password":"hunter2222password","role":"ADMIN"}""";
 
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(bodyWithRole))
@@ -327,7 +295,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("marcel@example.com", "hunter2222password")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("marcel"));
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()));
     }
 
     @Test
@@ -339,10 +307,10 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("Marcel@Example.com", "hunter2222password")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("marcel"));
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()));
     }
 
-    // Status only, not the ProblemDetail body — see registerDuplicateUsernameReturnsConflict above.
+    // Status only, not the ProblemDetail body — see the error-handling integration test.
     @Test
     void loginWithWrongPasswordReturnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
@@ -506,7 +474,7 @@ class AuthControllerTest {
 
         mockMvc.perform(get("/api/auth/me").session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("marcel"))
+                .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.emailVerified").value(false));
     }
 
@@ -526,8 +494,8 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    private String registerJson(String username, String email, String password) throws Exception {
-        return objectMapper.writeValueAsString(new RegisterRequest(username, email, password));
+    private String registerJson(String ignoredDisplayName, String email, String password) throws Exception {
+        return objectMapper.writeValueAsString(new RegisterRequest(email, password));
     }
 
     private String loginJson(String email, String password) throws Exception {

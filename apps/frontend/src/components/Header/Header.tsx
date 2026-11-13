@@ -88,12 +88,21 @@ export default function Header() {
           </Dialog.Portal>
         </Dialog.Root>
       )}
-      <Link className={styles.brand} to="/">{t('header.brand')}</Link>
+      <div className={styles.brandBlock}>
+        <Link className={styles.brand} to="/">{t('header.brand')}</Link>
+        <span className={styles.brandRule} aria-hidden="true" />
+        <p className={styles.brandTagline}>{t('header.tagline')}</p>
+      </div>
       {isSuccess && user && (
         <div className={styles.session}>
           <Menu.Root>
-            <Menu.Trigger className={styles.avatar} aria-label={t('header.loggedInAs', { username: user.username })}>
-              {user.username.charAt(0).toUpperCase()}
+            <Menu.Trigger
+              className={user.username ? styles.avatar : styles.accountTrigger}
+              aria-label={user.username ? t('header.loggedInAs', { username: user.username }) : t('header.accountMenuLabel')}
+            >
+              {user.username
+                ? user.username.charAt(0).toUpperCase()
+                : <span className={styles.accountIcon} aria-hidden="true" />}
             </Menu.Trigger>
             <Menu.Portal>
               <Menu.Positioner className={styles.accountMenuPositioner} align="end" sideOffset={8}>

@@ -35,7 +35,7 @@ Changing a password for an already-logged-in user (with the current password, no
 ```json
 { "token": "lCXCmUgFVwG7foD6O0jgNq1jQOt86aoF8CI9Nipo8f8", "newPassword": "Le cote de chez Swann" }
 ```
-- `newPassword`: same constraints as registration (15–128 characters, see [Auth](auth.md)); it must also differ from the account username and normalized email, otherwise the API returns `400` with code `password_matches_identifier`. If it appears in a known data breach, the API returns `422` (see [ADR-011](../architecture/ADR-011-compromised-password-check.md)). Both checks run *before* the token is consumed: a rejected password never burns the reset link, see "Token lifecycle" below.
+- `newPassword`: same constraints as registration (15–128 characters, see [Auth](auth.md)); it must also differ from the account username, if set, and normalized email, otherwise the API returns `400` with code `password_matches_identifier`. If it appears in a known data breach, the API returns `422` (see [ADR-011](../architecture/ADR-011-compromised-password-check.md)). Both checks run *before* the token is consumed: a rejected password never burns the reset link, see "Token lifecycle" below.
 
 **Response** — `UserResponse`, same shape as register/login/me (see [Auth](auth.md)). Confirming a reset opens a session, same as auto-login after registration.
 
@@ -81,12 +81,13 @@ Same invariant as the rest of the API: CSRF stays active on both endpoints even 
 ## Frontend
 
 ```
-ForgotPasswordForm (email field)
+ForgotPasswordForm (email field, with an explanatory prompt)
   → ForgotPasswordPage (TanStack Query: useMutation)
   → requestPasswordReset()        src/api/auth.ts
   → POST /api/auth/password-reset/request
+  → generic anti-enumeration confirmation; resend is offered after a 5-minute UI cooldown
 
-ResetPasswordForm (new password field)
+ResetPasswordForm (new password field, visibility toggle, and length guidance)
   → ResetPasswordPage (reads ?token= via useSearchParams)
   → confirmPasswordReset()        src/api/auth.ts
   → POST /api/auth/password-reset/confirm
@@ -95,7 +96,7 @@ ResetPasswordForm (new password field)
     (same pattern as login/register), shows a toast, redirects to /
 ```
 
-Routes: `/forgot-password`, `/reset-password` (reads `token` from the query string). `LoginPage` links to `/forgot-password`. Both pages share `AuthPage.module.css` with `LoginPage`/`RegisterPage` (identical layout, same precedent as `AuthForm.module.css`).
+Routes: `/forgot-password`, `/reset-password` (reads `token` from the query string). `LoginPage` links to `/forgot-password`. Both pages share `AuthPage.module.css` with `LoginPage`/`RegisterPage` (identical layout, same precedent as `AuthForm.module.css`). The reset request keeps the same generic confirmation for registered and unregistered addresses; the UI cooldown matches the per-email allowance of three requests per fifteen minutes while backend rate limiting remains authoritative.
 
 ---
 
@@ -115,13 +116,13 @@ No new Flyway migration — `users.password_hash` already exists (V4).
 ```json
 { "currentPassword": "Les madeleines de Combray", "newPassword": "Le cote de chez Swann" }
 ```
-- `newPassword`: same constraints as registration/reset (15–128 characters, see [Auth](auth.md)); must differ from the current account's username and normalized email (`400`, code `password_matches_identifier`) and must not appear in a known data breach (`422`).
+- `newPassword`: same constraints as registration/reset (15–128 characters, see [Auth](auth.md)); must differ from the current account's username, if set, and normalized email (`400`, code `password_matches_identifier`) and must not appear in a known data breach (`422`).
 
 **Response** — `204 No Content`, no body. Unlike register/confirm-reset, this endpoint never opens a new session (one is already open) and nothing about the caller's identity changes — there's nothing to return.
 
 ### Current password re-verification
 
-Goes through the same `AuthenticationManager` round-trip as login (`AuthService.reauthenticate`, extracted from `AuthService.authenticate` so the "User logged in" log line — accurate for an actual login — isn't emitted for what is really a re-verification on an already-open session). A wrong current password returns the exact same generic `401 Invalid email or password.` as a failed login — no distinct error code or message that would tell a caller *why* it failed beyond "the endpoint requires proof of the current password." The current session's own principal carries both the display username and normalized email; the password policy checks those server-resolved values after re-authentication and before HIBP.
+Goes through the same `AuthenticationManager` round-trip as login (`AuthService.reauthenticate`, extracted from `AuthService.authenticate` so the "User logged in" log line — accurate for an actual login — isn't emitted for what is really a re-verification on an already-open session). A wrong current password returns the exact same generic `401 Invalid email or password.` as a failed login — no distinct error code or message that would tell a caller *why* it failed beyond "the endpoint requires proof of the current password." The current session's own principal carries any existing display username and normalized email; the password policy checks those server-resolved values after re-authentication and before HIBP.
 
 ### Session handling
 
@@ -151,6 +152,8 @@ Route: `/account`. Connected users reach it from the account menu in `Header`; `
 
 - Change password with the correct current password and a new password distinct from both account identifiers: `POST /api/auth/password` returns `204`; the current session remains open and other sessions are invalidated.
 - Confirm a reset with a live token and a new password distinct from both identifiers: `POST /api/auth/password-reset/confirm` returns `200` and opens a session.
+- On `/forgot-password`, confirm the explanatory prompt, generic confirmation after submission, and resend button disabled for five minutes then enabled; the form is replaced by confirmation after a successful request.
+- On `/reset-password?token=...`, confirm the heading is “Choisir un nouveau mot de passe”, the visibility toggle and length guidance are present, and the submit action is “Enregistrer le nouveau mot de passe”.
 
 ### Edge cases
 
@@ -163,5 +166,5 @@ Route: `/account`. Connected users reach it from the account menu in `Header`; `
 - Change password while unauthenticated: `401`.
 - Change password with an incorrect current password: `401`; the password is unchanged.
 - Confirm reset with an unknown, expired, or used token: generic `400` (`Invalid or expired reset token.`).
-- Submit a new password equal to the username or normalized email (case-insensitive): `400` with `code: password_matches_identifier`; the UI shows the localized policy message rather than reporting an invalid/expired link.
+- Submit a new password equal to an existing username or normalized email (case-insensitive): `400` with `code: password_matches_identifier`; the UI shows the localized policy message rather than reporting an invalid/expired link.
 - Submit a new password outside 15–128 characters: `400`; a malformed request is rejected before token consumption.

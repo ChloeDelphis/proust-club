@@ -66,7 +66,7 @@ export default function SearchResultDetailModal({ hit, onClose }: SearchResultDe
       sideContent={hit && (
         <>
           <p className={styles.meta}>
-            {t('searchPage.resultLocation', { volume: hit.volume, part: hit.part, page: hit.pageNumber })}
+            {t('searchPage.resultLocation', { volume: hit.volume, part: hit.part })}
           </p>
           {isConnected && <TagPickerContent onSave={handleSave} isSaving={createQuoteMutation.isPending} />}
         </>

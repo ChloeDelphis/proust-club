@@ -15,6 +15,7 @@
   },
   "header": {
     "brand": "Proust Club",
+    "tagline": "À la recherche du temps perdu",
     "accountLink": "Mon compte",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
@@ -40,7 +41,7 @@
   },
   "searchPage": {
     "title": "Proust Club",
-    "resultLocation": "{{volume}} · {{part}} · p. {{page}}",
+    "resultLocation": "{{volume}} · {{part}}",
     "emptyState": "Aucun résultat pour « {{query}} ».",
     "typeToSearch": "Tapez une recherche pour explorer l'œuvre.",
     "emptyStateNoQuotes": "Aucune citation sauvegardée pour le moment.",
@@ -89,10 +90,15 @@
     "formatError": "Adresse email invalide."
   },
   "passwordIdentifierValidation": {
-    "matchesIdentifierError": "Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email."
+    "matchesIdentifierError": "Le mot de passe doit être différent des identifiants du compte.",
+    "matchesEmailError": "Le mot de passe ne peut pas être identique à votre adresse e-mail."
+  },
+  "formField": {
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "passwordValidation": {
-    "passphraseSuggestion": "une phrase de passe fonctionne très bien.",
+    "passphraseSuggestion": "une phrase fonctionne très bien.",
     "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — $t(passwordValidation.passphraseSuggestion)",
     "defaultLabel": "Le mot de passe",
     "minLengthHint": "{{min}} caractères minimum — $t(passwordValidation.passphraseSuggestion)"
@@ -110,14 +116,13 @@
     "registerLink": "Créer un compte"
   },
   "registerForm": {
-    "usernameLabel": "Nom d’utilisateur",
-    "usernameTooShortError": "Le nom d’utilisateur doit contenir au moins {{min}} caractères.",
     "emailLabel": "Email",
     "submitButton": "Créer un compte"
   },
   "registerPage": {
     "title": "Créer un compte",
-    "identifierTakenError": "Impossible de créer ce compte (nom d’utilisateur ou email déjà utilisé).",
+    "description": "Conservez vos citations préférées, organisez‑les en listes et enrichissez‑les de vos annotations.",
+    "identifierTakenError": "Cette adresse e-mail est déjà utilisée.",
     "genericError": "Impossible de créer ce compte. Réessayez.",
     "alreadyAccountPrompt": "Déjà un compte ?",
     "loginLink": "Se connecter"
@@ -135,20 +140,28 @@
     "title": "Compte"
   },
   "forgotPasswordForm": {
-    "submitButton": "Envoyer le lien de réinitialisation"
+    "emailLabel": "Adresse e-mail",
+    "submitButton": "Envoyer le lien",
+    "submittingButton": "Envoi en cours…"
   },
   "forgotPasswordPage": {
     "genericError": "Une erreur est survenue. Réessayez.",
     "title": "Mot de passe oublié",
-    "successMessage": "Si un compte existe pour cet email, un lien de réinitialisation vient d’être envoyé. Vérifiez votre boîte de réception.",
+    "description": "Indiquez votre adresse e-mail pour recevoir un lien permettant de réinitialiser votre mot de passe.",
+    "successMessage": "Si un compte est associé à cette adresse, vous recevrez un e-mail contenant les instructions de réinitialisation.",
+    "spamFolderHint": "Pensez aussi à vérifier votre dossier de courriers indésirables.",
+    "resendWait": "Si vous n’avez rien reçu, vous pourrez demander un nouveau lien après cinq minutes.",
+    "resendReady": "Si vous n’avez rien reçu, vous pouvez demander un nouveau lien.",
+    "resendButton": "Renvoyer le lien",
+    "resendingButton": "Envoi en cours…",
     "backToLoginLink": "Retour à la connexion"
   },
   "resetPasswordForm": {
-    "submitButton": "Réinitialiser le mot de passe"
+    "submitButton": "Enregistrer le nouveau mot de passe"
   },
   "resetPasswordPage": {
     "successToast": "Mot de passe réinitialisé.",
-    "title": "Réinitialiser le mot de passe",
+    "title": "Choisir un nouveau mot de passe",
     "invalidLinkError": "Ce lien de réinitialisation est invalide.",
     "requestNewLinkLink": "Demander un nouveau lien",
     "expiredLinkError": "Ce lien de réinitialisation est invalide ou a expiré.",
@@ -189,15 +202,33 @@
     "renameTag": "Renommer {{name}}",
     "deleteTag": "Supprimer {{name}}"
   },
+  "volumeList": {
+    "allWork": "Toute l’œuvre"
+  },
   "timelineBar": {
     "loadError": "La frise n'a pas pu être chargée.",
     "ariaLabel": "Frise des tomes",
     "volumeFilterAriaLabel": "Filtrer par tome",
     "trackAriaLabel": "Structure des tomes et positions de mes citations",
     "corpusTrackAriaLabel": "Structure des tomes de l’œuvre",
+    "zoomedTrackAriaLabel": "Tome {{title}}, parties : {{parts}}, et positions de mes citations",
+    "zoomedCorpusTrackAriaLabel": "Tome {{title}}, parties : {{parts}}",
+    "searchTrackAriaLabel": "Résultats de recherche dans les sept tomes",
+    "searchZoomedTrackAriaLabel": "{{count}} passages trouvés dans le tome {{title}} et ses parties : {{parts}}",
+    "searchPartTrackAriaLabel": "{{count}} passages trouvés dans la partie {{title}} du tome {{volume}}",
     "zoomOnVolume": "Filtrer les résultats sur {{title}} et zoomer sur ce tome",
+    "zoomOnVolumeWithCount": "Filtrer sur {{title}}, {{count}} passages trouvés, et zoomer sur ce tome",
     "zoomOutOfVolume": "Afficher les résultats de tous les tomes",
+    "zoomOutOfVolumeWithCount": "Afficher tous les résultats ; {{count}} passages trouvés dans ce tome",
+    "zoomOnPart": "Filtrer les résultats sur {{title}} et zoomer sur cette partie",
+    "zoomOnPartWithCount": "Filtrer sur {{title}}, {{count}} passages trouvés, et zoomer sur cette partie",
+    "returnToAllWork": "Revenir à toute l’œuvre",
+    "returnToVolume": "Revenir au tome {{title}}",
+    "returnToVolumeWithCount": "Revenir au tome {{title}} ; {{count}} passages trouvés dans cette partie",
+    "partTrackAriaLabel": "Partie {{title}} du tome {{volume}} et positions de mes citations",
+    "corpusPartTrackAriaLabel": "Partie {{title}} du tome {{volume}}",
     "bookmarkAriaLabel": "Citation page {{page}}",
-    "bookmarkDuplicatePageAriaLabel": "Citation page {{page}}, {{index}} sur {{total}}"
+    "bookmarkDuplicatePageAriaLabel": "Citation page {{page}}, {{index}} sur {{total}}",
+    "searchMatchAriaLabel": "Passage trouvé page {{page}} : {{preview}}"
   }
 }

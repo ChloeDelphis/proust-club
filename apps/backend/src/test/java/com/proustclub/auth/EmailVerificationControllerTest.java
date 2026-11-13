@@ -62,7 +62,7 @@ class EmailVerificationControllerTest {
 
         var verified = dsl.select(DSL.field("email_verified", Boolean.class))
                 .from(DSL.table("users"))
-                .where(DSL.field("username", String.class).eq("confirmvalid"))
+                .where(DSL.field("email", String.class).eq("confirmvalid@example.com"))
                 .fetchOne(r -> r.get("email_verified", Boolean.class));
         assertThat(verified).isTrue();
     }
@@ -152,12 +152,12 @@ class EmailVerificationControllerTest {
         return post("/api/auth/email/confirm/resend").with(csrf()).session(session);
     }
 
-    private MockHttpSession registerAndGetSession(String username, String email, String password) throws Exception {
-        return (MockHttpSession) register(username, email, password).getRequest().getSession(false);
+    private MockHttpSession registerAndGetSession(String ignoredDisplayName, String email, String password) throws Exception {
+        return (MockHttpSession) register(ignoredDisplayName, email, password).getRequest().getSession(false);
     }
 
-    private MvcResult register(String username, String email, String password) throws Exception {
-        String body = objectMapper.writeValueAsString(new RegisterRequest(username, email, password));
+    private MvcResult register(String ignoredDisplayName, String email, String password) throws Exception {
+        String body = objectMapper.writeValueAsString(new RegisterRequest(email, password));
         return mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated())
                 .andReturn();

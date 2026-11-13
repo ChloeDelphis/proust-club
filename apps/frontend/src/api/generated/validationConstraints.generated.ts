@@ -26,10 +26,6 @@ export const validationConstraints = {
     }
   },
   "RegisterRequest": {
-    "username": {
-      "minLength": 3,
-      "maxLength": 50
-    },
     "email": {
       "maxLength": 255
     },
@@ -90,6 +86,12 @@ export const validationConstraints = {
     }
   },
   "search": {
+    "q": {
+      "minLength": 2,
+      "maxLength": 500
+    }
+  },
+  "overview": {
     "q": {
       "minLength": 2,
       "maxLength": 500

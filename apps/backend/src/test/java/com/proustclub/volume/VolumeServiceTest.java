@@ -24,8 +24,8 @@ class VolumeServiceTest {
     @Test
     void listMapsOnlyTheOrderedPublicVolumeStructure() {
         when(repository.findAll()).thenReturn(List.of(
-                new VolumeData(1, "Du côté de chez Swann", 1, 1, 103),
-                new VolumeData(2, "À l'ombre des jeunes filles en fleurs", 2, 104, 183)
+                new VolumeData(1, "Du côté de chez Swann", 1, 1, 103, List.of()),
+                new VolumeData(2, "À l'ombre des jeunes filles en fleurs", 2, 104, 183, List.of())
         ));
 
         var volumes = service.list();

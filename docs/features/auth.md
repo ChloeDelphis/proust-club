@@ -14,12 +14,11 @@ Register, login, logout, `me`, and the two email-confirmation endpoints. See Swa
 
 **RegisterRequest**
 ```json
-{ "username": "marcel", "email": "marcel@example.com", "password": "hunter2222" }
+{ "email": "marcel@example.com", "password": "hunter2222" }
 ```
-- `username`: 3–50 characters
 - `email`: valid email format, max 255 characters
 - `password`: 15–128 characters. Length over composition rules — no uppercase/digit/symbol requirement, passphrases and spaces are welcome (current NIST guidance: 15+ characters for a password used as the sole factor, since there's no MFA here). The upper bound is a sanity limit on hashing cost, not an algorithm quirk — Argon2id's cost scales with input size, so an unbounded password is a cheap way to make the server do expensive work
-- `password` must not be identical (case-insensitive) to `username` or to the normalized `email` — `400` with code `password_matches_identifier` if it is. Strict equality only, not a substring check: a passphrase that merely contains the username (e.g. `"Marcel se souvient de Combray"` for user `marcel`) stays accepted, since a "contains" rule would fight the passphrase-friendly design above. Enforced by the backend for registration, password change, and reset; the registration and signed-in change forms also mirror it client-side for immediate feedback. The backend is always authoritative. See [Password management](password-management.md) for the other flows.
+- `password` must not be identical (case-insensitive) to the normalized `email` — `400` with code `password_matches_identifier` if it is. Enforced by the backend for registration, password change, and reset; the forms mirror the relevant checks client-side. The backend is always authoritative. See [Password management](password-management.md) for the other flows.
 - `password` must not appear in a known data breach — `422` if it does, checked against the [Have I Been Pwned](https://haveibeenpwned.com/) "Pwned Passwords" API (k-anonymity: only the first 5 characters of the SHA-1 hash ever leave the server) via Spring Security's `HaveIBeenPwnedRestApiPasswordChecker`, wrapped in `PasswordBreachChecker` (`auth/PasswordBreachChecker.java`). That wrapper deliberately does **not** implement Spring Security's `CompromisedPasswordChecker` interface and is not exposed as a bean of that type — doing so would make Spring Security auto-wire the check into every authentication (`login()` included) via `InitializeUserDetailsBeanManagerConfigurer`, silently expanding scope and bypassing the fail-open behavior below. **Fails open**: if the HIBP API errors or times out (2s connect + 2s read), the check is skipped and the password update proceeds — this is a defense-in-depth check, not a hard dependency. Applied to registration, password change, and reset.
 
 **LoginRequest**
@@ -30,7 +29,7 @@ Register, login, logout, `me`, and the two email-confirmation endpoints. See Swa
 
 **UserResponse** (the only response shape returned by register/login/me)
 ```json
-{ "uuid": "...", "username": "marcel", "email": "marcel@example.com", "role": "USER", "emailVerified": false }
+{ "uuid": "...", "username": null, "email": "marcel@example.com", "role": "USER", "emailVerified": false }
 ```
 `password`/`password_hash` never appear in any response, at any endpoint. The mapping from the internal `AuthUser` record (which does carry the hash) to `UserResponse` happens explicitly in `AuthService` — the controller never serializes an internal object directly.
 
@@ -38,12 +37,12 @@ Register, login, logout, `me`, and the two email-confirmation endpoints. See Swa
 
 ## Why login uses email, and how the session identity model works
 
-`email` is the login credential — a better UX bet than `username` for a mainstream product, since a user is far more likely to remember the address they registered with than an app-specific handle. `username` stays exactly as before: required, unique, the public display identity (`Header`'s "Connecté en tant que ⟨username⟩", etc.) — nothing about it changed, only what you type to log in.
+`email` is the login credential. `username` is an optional public identity: existing accounts keep their value, while new accounts leave it unset until a social feature needs a display name. The UUID remains the stable technical identity.
 
 Three distinct concepts, each with its own accessor — see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md) for the full comparison of options and why:
 
 - **`email`** — the login credential (what authenticates you)
-- **`username`** — the public identity (what other people/the UI see)
+- **`username`** — the optional public identity, collected when a social feature needs it
 - **`users.uuid`** — the stable technical identity (what the system uses internally: session equality, rate-limit bucket keys, `user_id` foreign keys)
 
 The session principal is a dedicated class, `ProustClubPrincipal` (`auth/ProustClubPrincipal.java`), replacing Spring Security's own `User`. Its `getUsername()` — Spring's vocabulary for "the string used to authenticate," not necessarily the app's `username` field — returns the normalized email, since that's the actual credential; `getUserId()` and `getDisplayUsername()` are separate, explicit accessors for the other two concepts. `equals()`/`hashCode()` are based on `userId` alone, deliberately — neither `username` nor `email` is trusted as the system's notion of identity, only the immutable database key is. `CurrentUser` (`auth/CurrentUser.java`) is the single place every controller in this package resolves the current principal from `Authentication`, rather than each one casting independently.
@@ -106,26 +105,37 @@ LoginForm / RegisterForm (fields + client-side validation)
   → POST /api/auth/login | /api/auth/register
 ```
 
-`useCurrentUser()` supplies session state to `Header` and `EmailVerificationBanner`. Signed-out users find login and registration in the account menu on desktop and at the bottom of the tome drawer on narrow screens. The brand remains centered. Auth mutations update the current-user cache; logout and email confirmation refresh it.
+`useCurrentUser()` supplies session state to `Header` and `EmailVerificationBanner`. Signed-out users find login and registration in the account menu on desktop and at the bottom of the tome drawer on narrow screens. Accounts without a public identity use the generic account icon. Auth mutations update the current-user cache; logout and email confirmation refresh it.
+
+Authentication pages use the shared design tokens for typography, color, controls, and spacing. Login, registration, password recovery/reset, and the account password form share a restrained, centered layout; links retain the same palette color after visiting, and form controls use the same plum accents and literary type pairing as the frieze/search experience. The account dropdown follows the same palette and reading typography, including a consistent color for visited links.
+
+Registration places a short, centered description of saved quotes, lists, and annotations beneath its title, before the fields.
+
+Password fields share a visibility toggle in `FormField`. It switches the current input between masked and plain text without changing its value, and its button exposes a localized show/hide action label.
+
+On `/login`, the password-recovery link sits directly below the password field and aligns to its right edge, keeping it visually associated with the field rather than the submit action.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
 
 ## Manual verification
 
 - Check that signed-out users can reach login and registration from the desktop account menu and narrow-screen drawer. While signed in, verify the avatar menu offers account and logout actions, and the brand remains centered.
+- Review `/login`, `/forgot-password`, `/reset-password`, `/register`, and `/account` at desktop and narrow widths. Confirm headings, fields, buttons, and links use the shared design tokens, and revisit the “Créer un compte” link to verify its color does not change after visiting. Open the account dropdown and check its colors, typography, hover state, and keyboard focus.
+- On `/register`, confirm the description sits below the decorative rule, stays visually secondary to the heading, and wraps to no more than two lines at common viewport widths.
+- For every password field, enter a long passphrase, toggle visibility on and off, and confirm the value is preserved and the control remains keyboard-operable.
+- On `/login`, confirm “Mot de passe oublié ?” appears beneath the password field, aligned right, while the registration link remains below the form.
 
 ### Happy path
 
-- Register with a password that differs from the username and email: `POST /api/auth/register` returns `201` and opens a session.
-- Register with a passphrase that contains (but is not equal to) the username: the password policy accepts it, subject to the normal breach check.
+- Register using only email and password: `POST /api/auth/register` returns `201`, opens a session, and returns `username: null`.
 
 ### Edge cases
 
-- Compare an identifier with different letter casing: exact case-insensitive equality is rejected for both username and normalized email.
+- Compare the password with the email using different letter casing: exact case-insensitive equality is rejected.
 - Compare against an email with different letter casing: account email normalization is applied before the comparison.
 
 ### Validation errors
 
-- Submit a password equal to the username or email (case-insensitive): `400`, ProblemDetail `code` is `password_matches_identifier`; the localized policy message is shown.
+- Submit a password equal to the email (case-insensitive): `400`, ProblemDetail `code` is `password_matches_identifier`; the localized policy message is shown.
 - Submit malformed fields or a password outside 15–128 characters: `400`; the frontend shows the appropriate local validation when possible, otherwise its generic server error.
 - Submit a known-compromised password: `422` and the localized breach-check message.

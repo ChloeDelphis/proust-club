@@ -6,18 +6,20 @@ type SavedQuotesQueryParams = {
   tagId: string | null
   query: string
   volumeId: number | null
+  partId: number | null
   page: number
   enabled: boolean
 }
 
-export function useSavedQuotesQuery({ tagId, query, volumeId, page, enabled }: SavedQuotesQueryParams) {
+export function useSavedQuotesQuery({ tagId, query, volumeId, partId, page, enabled }: SavedQuotesQueryParams) {
   return useQuery({
-    queryKey: ['quotes', tagId, query, volumeId, page],
+    queryKey: ['quotes', tagId, query, volumeId, partId, page],
     queryFn: async ({ signal }) => {
       const params = {
         tagId: tagId ?? undefined,
         q: query || undefined,
         volumeId: volumeId ?? undefined,
+        partId: partId ?? undefined,
         page,
         size: SEARCH_PAGE_SIZE,
       }

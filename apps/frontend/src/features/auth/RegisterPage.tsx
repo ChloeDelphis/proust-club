@@ -38,12 +38,13 @@ export default function RegisterPage() {
           422: t('auth.passwordCompromisedError'),
         },
         t('registerPage.genericError'),
-        { password_matches_identifier: t('passwordIdentifierValidation.matchesIdentifierError') },
+        { password_matches_identifier: t('passwordIdentifierValidation.matchesEmailError') },
       )
 
   return (
     <main className={styles.root}>
       <h1 className={styles.title}>{t('registerPage.title')}</h1>
+      <p className={styles.registerDescription}>{t('registerPage.description')}</p>
       <RegisterForm onSubmit={params => mutation.mutate(params)} />
       {errorMessage && <ErrorMessage message={errorMessage} />}
       <p className={styles.switch}>

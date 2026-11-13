@@ -8,21 +8,28 @@
   /* Raw palette — not consumed directly by components, only by the semantic
      tokens below. Keeps renaming/retheming (e.g. a future dark mode) from
      requiring a search-and-replace across every component. Values are the
-     "Club joyeux" (direction B) palette — see docs/features/visual-design-system.md. */
-  --palette-bg: #fff1df;
+     "Club joyeux" (direction B) palette. */
+  --palette-bg: #ffffff;
   --palette-surface: #fffaf2;
+  --palette-result-card: #fff;
+  --palette-selection-bg: #F2E6EA;
+  --palette-text-selection: #D8B6C6;
   --palette-ink: #3a2430;
   /* Darkened ~15% from the source artifact's #8A7078 — the original value measured
      4.05:1/4.33:1 against the page/surface backgrounds (real WCAG relative-luminance
      calculation), below the 4.5:1 AA threshold for normal-size text. This value
-     clears it (4.76:1/5.09:1) while staying close to the original hue/tone. */
+     clears it (5.17:1/5.09:1) while staying close to the original hue/tone. */
   --palette-ink-soft: #7e656d;
-  --palette-signature: #884d69;
-  --palette-signature-hover: #6e3c54;
+  --palette-signature: #6e3c54;
+  --palette-signature-hover: #542b41;
   --palette-accent-coral: #e78c6b;
   --palette-accent-lavender: #d5d0ef;
-  --palette-accent-mint: #bfdcce;
+  --palette-accent-highlight: #F7E8D4;
   --palette-rule: #f3dec4;
+  --palette-frieze: #C9AFB5;
+  --palette-result-border: #AA8193;
+  --palette-frieze-hover-bg: #F8EFED;
+  --palette-frieze-hover-text: #947581;
   --palette-on-signature: #fff;
   --palette-danger: #b91c1c;
   --palette-danger-bg: #fef2f2;
@@ -45,6 +52,9 @@
   --color-page-bg: var(--palette-bg);
 
   --color-surface: var(--palette-surface);
+  --color-result-card: var(--palette-result-card);
+  --color-selection-bg: var(--palette-selection-bg);
+  --color-text-selection-bg: var(--palette-text-selection);
   /* No distinct "subtle surface" tone in direction B either — reuses the
      rule color, which already plays a similar "lightly demarcated" role. */
   --color-surface-subtle: var(--palette-rule);
@@ -52,22 +62,27 @@
 
   --color-border: var(--palette-rule);
   --color-border-strong: var(--palette-ink-soft);
+  --color-frieze: var(--palette-frieze);
+  --color-result-border: var(--palette-result-border);
+  --color-frieze-hover-bg: var(--palette-frieze-hover-bg);
+  --color-frieze-hover-text: var(--palette-frieze-hover-text);
 
   --color-accent: var(--palette-signature);
   --color-accent-hover: var(--palette-signature-hover);
 
-  /* Mint at 45% over transparent, not a solid fill — direction B's own
-     answer for search-match highlighting (.paragraph-text mark). */
-  --color-highlight-bg: color-mix(in srgb, var(--palette-accent-mint) 45%, transparent);
+  /* Pale apricot highlight used for search matches and selected controls. */
+  --color-highlight-bg: var(--palette-accent-highlight);
 
   --color-danger-text: var(--palette-danger);
   --color-danger-bg: var(--palette-danger-bg);
   --color-danger-border: var(--palette-danger-border);
   --color-danger-accent: var(--palette-danger-accent);
 
-  /* Typography — font families. Three roles, not two: display (titles),
-     reading (quotes/paragraphs), ui (interface chrome). */
+  /* Typography — font families for display titles, the brand, reading text,
+     and interface chrome. */
   --font-display: 'Fraunces', Georgia, serif;
+  --font-brand: 'EB Garamond', Georgia, serif;
+  --font-frieze: 'Noto Serif Display', Georgia, serif;
   --font-reading: 'Source Serif 4', Georgia, serif;
   --font-ui: 'DM Sans', system-ui, sans-serif;
 
@@ -92,6 +107,8 @@
 
   /* Typography — letter spacing */
   --font-tracking-wide: 0.02em;
+  --font-tracking-caps: 0.4em;
+  --font-tracking-caps-compact: 0.26em;
 
   /* Spacing scale — numbered in quarter-rem units (space-1 = 0.25rem) so a
      future in-between step never forces a naming collision the way t-shirt
@@ -111,6 +128,7 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-12: 3rem;
+  --space-16: 4rem;
 
   /* Border radius */
   --radius-sm: 2px;
@@ -118,6 +136,9 @@
   --radius-lg: 6px;
   --radius-xl: 8px;
   --radius-full: 999px;
+
+  /* Shared resting border and divider thickness */
+  --border-width: 1px;
 
   /* Elevation (box-shadow). The two near-identical "large overlay" shadows
      (8px/30px and 8px/24px, same offset, blur within 25% of each other, same
@@ -136,10 +157,10 @@
   --z-index-popover: 20;
   --z-index-modal: 1000;
 
-  /* Motion. "fast" covers hover/focus feedback and all current appearance
-     transitions, modals included — nothing in this diff needs a slower
-     tier, so one wasn't added speculatively. */
+  /* Motion. */
   --motion-duration-fast: 0.15s;
+  --motion-duration-hover: 0.25s;
+  --motion-duration-zoom: 0.45s;
   --motion-duration-spin: 0.7s;
   --motion-ease-standard: ease;
   --motion-ease-out: ease-out;

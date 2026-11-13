@@ -93,6 +93,14 @@ val migrateSchemaForCodegen by tasks.registering(JavaExec::class) {
 	mainClass.set("com.proustclub.codegen.MigrateSchemaForCodegen")
 }
 
+val repairLocalSchemaHistory by tasks.registering(JavaExec::class) {
+	group = "flyway"
+	description = "Repairs Flyway metadata for the local code-generation database"
+	dependsOn(tasks.named(schemaMigrator.classesTaskName))
+	classpath = schemaMigrator.runtimeClasspath
+	mainClass.set("com.proustclub.codegen.RepairLocalSchemaHistory")
+}
+
 tasks.named("jooqCodegen") {
 	dependsOn(migrateSchemaForCodegen)
 }

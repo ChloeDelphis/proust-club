@@ -33,7 +33,7 @@ class ApiException extends ErrorResponseException {
     static ApiException passwordMatchesIdentifier() {
         return new ApiException(
                 HttpStatus.BAD_REQUEST,
-                "Password must not match the username or email.",
+                "Password must not match an account identifier.",
                 "password_matches_identifier"
         );
     }

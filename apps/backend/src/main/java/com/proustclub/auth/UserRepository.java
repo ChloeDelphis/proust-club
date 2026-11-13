@@ -35,9 +35,9 @@ class UserRepository {
         );
     }
 
-    Optional<UUID> insertIfAbsent(String username, String email, String passwordHash) {
-        return dsl.insertInto(USERS, USERS.USERNAME, USERS.EMAIL, USERS.PASSWORD_HASH)
-                .values(username, email, passwordHash)
+    Optional<UUID> insertIfAbsent(String email, String passwordHash) {
+        return dsl.insertInto(USERS, USERS.EMAIL, USERS.PASSWORD_HASH)
+                .values(email, passwordHash)
                 .onConflictDoNothing()
                 .returning(USERS.UUID)
                 .fetchOptional(USERS.UUID);

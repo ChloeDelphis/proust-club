@@ -19,7 +19,11 @@ public class VolumeService {
     public List<VolumeResponse> list() {
         return repository.findAll().stream()
                 .map(volume -> new VolumeResponse(
-                        volume.id(), volume.title(), volume.position(), volume.minPage(), volume.maxPage()))
+                        volume.id(), volume.title(), volume.position(), volume.minPage(), volume.maxPage(),
+                        volume.parts().stream()
+                                .map(part -> new VolumeResponse.PartResponse(
+                                        part.id(), part.title(), part.position(), part.startPage()))
+                                .toList()))
                 .toList();
     }
 }

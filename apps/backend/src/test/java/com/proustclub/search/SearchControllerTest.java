@@ -135,6 +135,22 @@ class SearchControllerTest {
     }
 
     @Test
+    void searchFiltersByPartBeforePaginationAndCounting() throws Exception {
+        insertParagraphInPart(1, 2, 4, 2, "Une madeleine dans Un amour de Swann.");
+
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("partId", "2").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.results.length()").value(1))
+                .andExpect(jsonPath("$.results[0].text").value("Une madeleine dans Un amour de Swann."));
+
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("partId", "1").param("page", "1").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.results.length()").value(1));
+    }
+
+    @Test
     void searchRejectsVolumeIdsOutsideCorpusRange() throws Exception {
         mockMvc.perform(get("/api/search").param("q", "madeleine").param("volumeId", "0"))
                 .andExpect(status().isBadRequest());
@@ -145,6 +161,12 @@ class SearchControllerTest {
         mockMvc.perform(get("/api/search").param("q", "madeleine").param("volumeId", "7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void searchRejectsNonPositivePartId() throws Exception {
+        mockMvc.perform(get("/api/search").param("q", "madeleine").param("partId", "0"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -202,10 +224,14 @@ class SearchControllerTest {
     }
 
     private int insertParagraphInVolume(int volumeId, int position, String text) {
+        return insertParagraphInPart(volumeId, 1, position, 10, text);
+    }
+
+    private int insertParagraphInPart(int volumeId, int partId, int position, int pageNumber, String text) {
         dsl.insertInto(DSL.table("paragraphs"),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
-                .values(volumeId, 1, position, 10, text)
+                .values(volumeId, partId, position, pageNumber, text)
                 .execute();
         return dsl.select(DSL.field("id", Integer.class))
                 .from(DSL.table("paragraphs"))

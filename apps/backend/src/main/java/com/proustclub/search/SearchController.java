@@ -2,6 +2,7 @@ package com.proustclub.search;
 
 import com.proustclub.common.ProustVolumes;
 import com.proustclub.ratelimit.RateLimiter;
+import com.proustclub.search.dto.SearchOverviewResponse;
 import com.proustclub.search.dto.SearchResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,7 +36,7 @@ class SearchController {
     @Operation(
         summary = "Search the corpus",
         description = """
-            Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to one of the corpus volumes.
+            Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to a volume and one of its parts.
 
             Each result includes the `startOffset` (inclusive) and `endOffset` (exclusive)
             using 0-based indexes, ready to use with `String.substring()` in Java or JavaScript.
@@ -57,6 +58,9 @@ class SearchController {
         @Parameter(description = "Only search paragraphs in this volume (1–7)", example = "1")
         @RequestParam(required = false) @Min(value = 1, message = "volumeId must be >= {value}") @Max(value = ProustVolumes.COUNT, message = "volumeId must be <= {value}") Integer volumeId,
 
+        @Parameter(description = "Only search paragraphs in this part (positive identifier)", example = "4")
+        @RequestParam(required = false) @Min(value = 1, message = "partId must be >= {value}") Integer partId,
+
         @Parameter(description = "Zero-based page index (default: 0). This paginates the search results, not the book's page numbers.", example = "0")
         @RequestParam(defaultValue = "0") @Min(value = 0, message = "page must be >= {value}") int page,
 
@@ -66,6 +70,27 @@ class SearchController {
         HttpServletRequest httpRequest
     ) {
         rateLimiter.checkSearchByIp(httpRequest);
-        return service.search(q, volumeId, page, size);
+        return service.search(q, volumeId, partId, page, size);
+    }
+
+    @Operation(
+        summary = "Get a lightweight corpus-wide search overview",
+        description = "Returns the position, part/volume counts, and a five-word hover preview for every paragraph matching the query. Unlike /api/search, this response is not paginated and does not include full paragraph text."
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Corpus-wide match positions and distribution",
+        content = @Content(schema = @Schema(implementation = SearchOverviewResponse.class))
+    )
+    @ApiResponse(responseCode = "400", description = "Invalid search query", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    @GetMapping(value = "/api/search/overview", produces = MediaType.APPLICATION_JSON_VALUE)
+    SearchOverviewResponse overview(
+        @Parameter(description = "Phrase to search for (2–500 characters)", example = "petite madeleine")
+        @RequestParam @NotBlank(message = "q must not be blank") @Size(min = 2, max = 500, message = "q must be between {min} and {max} characters") String q,
+
+        HttpServletRequest httpRequest
+    ) {
+        rateLimiter.checkSearchByIp(httpRequest);
+        return service.overview(q);
     }
 }

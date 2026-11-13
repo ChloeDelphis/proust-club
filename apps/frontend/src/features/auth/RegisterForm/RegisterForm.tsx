@@ -8,7 +8,7 @@ import { passwordMatchesIdentifierError } from '../passwordIdentifierValidation'
 import { validationConstraints } from '../../../api/generated/validationConstraints.generated'
 import styles from '../AuthForm.module.css'
 
-const { username: usernameConstraints, email: emailConstraints, password: passwordConstraints } =
+const { email: emailConstraints, password: passwordConstraints } =
   validationConstraints.RegisterRequest
 // Computed once at module scope, not per render: the constraint is a module-level constant, and
 // i18n.init() already completes synchronously before any module's top-level code runs (see
@@ -17,20 +17,14 @@ const passwordHint = passwordLengthHint(passwordConstraints)
 
 export default function RegisterForm({ onSubmit }: RegisterFormProps) {
   const { t } = useTranslation()
-  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmedUsername = username.trim()
     const trimmedEmail = email.trim()
 
-    if (trimmedUsername.length < usernameConstraints.minLength) {
-      setError(t('registerForm.usernameTooShortError', { min: usernameConstraints.minLength }))
-      return
-    }
     const emailError = emailFormatError(trimmedEmail)
     if (emailError) {
       setError(emailError)
@@ -41,25 +35,17 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
       setError(passwordError)
       return
     }
-    const identifierError = passwordMatchesIdentifierError(password, trimmedUsername, trimmedEmail)
+    const identifierError = passwordMatchesIdentifierError(password, null, trimmedEmail)
     if (identifierError) {
       setError(identifierError)
       return
     }
     setError('')
-    onSubmit({ username: trimmedUsername, email: trimmedEmail, password })
+    onSubmit({ email: trimmedEmail, password })
   }
 
   return (
     <form className={styles.root} onSubmit={handleSubmit} noValidate>
-      <FormField
-        label={t('registerForm.usernameLabel')}
-        type="text"
-        value={username}
-        onChange={e => setUsername(e.target.value)}
-        autoComplete="username"
-        maxLength={usernameConstraints.maxLength}
-      />
       <FormField
         label={t('registerForm.emailLabel')}
         type="email"

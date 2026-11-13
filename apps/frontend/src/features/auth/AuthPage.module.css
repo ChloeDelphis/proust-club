@@ -1,20 +1,106 @@
 .root {
-  max-width: 28rem;
+  max-width: 36rem;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6);
+  padding: clamp(var(--space-8), 7vh, var(--space-16)) var(--space-6) var(--space-8);
 }
 
 .title {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: var(--text-3xl);
+  font-size: clamp(var(--text-2xl), 3vw, var(--text-3xl));
   color: var(--color-text);
-  margin: 0 0 var(--space-6);
+  margin: 0 0 var(--space-8);
   letter-spacing: var(--font-tracking-wide);
+  text-align: center;
+}
+
+.title::after {
+  content: '';
+  display: block;
+  width: 6rem;
+  height: var(--border-width);
+  margin: var(--space-4) auto 0;
+  background: var(--color-frieze);
+}
+
+.description,
+.confirmationMessage {
+  max-width: 28rem;
+  margin-inline: auto;
+  font-family: var(--font-reading);
+  font-size: var(--text-md);
+  line-height: var(--line-height-snug);
+  text-align: center;
+}
+
+.description {
+  margin-top: calc(0px - var(--space-4));
+  margin-bottom: var(--space-8);
+  color: var(--color-text-muted);
+}
+
+.registerDescription {
+  max-width: 32rem;
+  margin: calc(0px - var(--space-4)) auto var(--space-8);
+  color: var(--color-text-subtle);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-normal);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.confirmationMessage {
+  color: var(--color-text);
+}
+
+.resendHint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-reading);
+  font-size: var(--text-sm);
+  text-align: center;
 }
 
 .switch {
-  margin-top: var(--space-4);
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+  margin-top: var(--space-3);
   font-size: var(--text-sm);
+  font-family: var(--font-reading);
+  text-align: left;
+}
+
+.root a,
+.root a:visited {
+  color: var(--color-accent);
+  text-decoration-color: var(--color-frieze);
+  text-underline-offset: var(--space-1);
+}
+
+.root a:hover {
+  color: var(--color-accent-hover);
+}
+
+.root a:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: var(--border-width) solid var(--color-accent);
+  outline-offset: var(--space-1);
+}
+
+@media (width < 48rem) {
+  .root {
+    padding: var(--space-8) var(--space-4);
+  }
 }

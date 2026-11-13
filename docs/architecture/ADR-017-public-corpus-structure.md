@@ -5,7 +5,7 @@
 
 ## Decision
 
-Expose the fixed volume structure through public `GET /api/volumes`. Keep `GET /api/quotes/timeline` authenticated and return personal bookmarks only to the current session.
+Expose the fixed volume and named part structure through public `GET /api/volumes`. Each volume includes ordered parts and their first pages. Keep `GET /api/quotes/timeline` authenticated and return personal bookmarks only to the current session.
 
 ## Context
 
@@ -21,8 +21,8 @@ Hardcoded titles and page ranges would duplicate data already stored and maintai
 
 ## Why this decision
 
-The public response is backed by the existing `volumes` table and a DTO that contains only structural fields. The personal timeline continues to resolve its owner from the authenticated session and is requested only after the frontend confirms a connected user.
+The public response is backed by the existing `volumes` and `parts` tables and DTOs that contain only structural fields. The personal timeline continues to resolve its owner from the authenticated session and is requested only after the frontend confirms a connected user.
 
 ## Tradeoff accepted
 
-Public corpus structure now has its own endpoint and frontend query cache. This is a small addition in exchange for an explicit boundary between public navigation metadata and user-owned data.
+Public corpus structure now has its own endpoint and frontend query cache. It includes tome and part boundaries needed by the frieze, in exchange for an explicit boundary between public navigation metadata and user-owned data. Updated 2026-11-06 to include named parts and their first-page boundaries in the public structure.

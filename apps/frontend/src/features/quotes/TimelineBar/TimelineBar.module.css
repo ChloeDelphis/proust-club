@@ -1,33 +1,125 @@
 .root {
+  --timeline-bg: #fbf5f8;
+  --timeline-bookmark-bg: #F4E9EF;
+  --timeline-title-hover-bg: color-mix(in srgb, var(--timeline-bg) 95%, var(--color-frieze-hover-text));
+  --timeline-bookmark-hover-bg: color-mix(in srgb, var(--timeline-bookmark-bg) 95%, var(--color-frieze-hover-text));
   margin-bottom: var(--space-6);
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--color-surface);
+  background: var(--color-page-bg);
   container-type: inline-size;
 }
 
 .track {
   width: 100%;
-  height: 6.25rem;
+  height: 9rem;
   display: block;
+  border: var(--border-width) solid var(--color-frieze);
+}
+
+.titleTrackBackground {
+  fill: var(--timeline-bg);
+}
+
+.bookmarkTrackBackground {
+  fill: var(--timeline-bookmark-bg);
+}
+
+.zoomTitle {
+  box-sizing: border-box;
+  height: var(--space-12);
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  margin-bottom: var(--space-2);
+  color: var(--color-text);
+  font-family: var(--font-reading);
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: var(--line-height-snug);
+  overflow: hidden;
+}
+
+.zoomTitleBreadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-5);
+  min-width: 0;
+  height: 100%;
+  white-space: nowrap;
+}
+
+.zoomTitleLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-style: inherit;
+  text-align: left;
+}
+
+.zoomTitleRoot {
+  flex: 0 0 auto;
+}
+
+.zoomTitleVolume,
+.zoomTitleCurrent {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zoomTitleSeparator {
+  flex: 0 0 auto;
+}
+
+.zoomTitleLink:hover,
+.zoomTitleLink:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: var(--space-1);
 }
 
 .volumeZone {
-  fill: var(--color-surface);
+  fill: transparent;
   cursor: pointer;
   transition:
-    fill var(--motion-duration-fast) var(--motion-ease-standard),
-    opacity var(--motion-duration-fast) var(--motion-ease-standard),
-    y var(--motion-duration-fast) var(--motion-ease-standard),
-    x var(--motion-duration-fast) var(--motion-ease-standard),
-    width var(--motion-duration-fast) var(--motion-ease-standard),
-    height var(--motion-duration-fast) var(--motion-ease-standard);
+    fill var(--motion-duration-hover) var(--motion-ease-standard),
+    opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
-.volumeZone:hover,
-.volumeZone:focus-visible {
-  fill: var(--color-surface-subtle);
+.volumeZoneHoverTitle,
+.volumeZoneHoverBookmarks,
+.partZoneHoverTitle,
+.partZoneHoverBookmarks {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-hover) var(--motion-ease-standard);
+}
+
+.volumeZoneHoverTitle,
+.partZoneHoverTitle {
+  fill: var(--timeline-title-hover-bg);
+}
+
+.volumeZoneHoverBookmarks,
+.partZoneHoverBookmarks {
+  fill: var(--timeline-bookmark-hover-bg);
+}
+
+.volumeZone:hover ~ .volumeZoneHoverTitle,
+.volumeZone:focus-visible ~ .volumeZoneHoverTitle,
+.volumeZone:hover ~ .volumeZoneHoverBookmarks,
+.volumeZone:focus-visible ~ .volumeZoneHoverBookmarks,
+.partZone:hover ~ .partZoneHoverTitle,
+.partZone:focus-visible ~ .partZoneHoverTitle,
+.partZone:hover ~ .partZoneHoverBookmarks,
+.partZone:focus-visible ~ .partZoneHoverBookmarks {
+  opacity: 1;
 }
 
 .volumeZone:focus {
@@ -40,73 +132,164 @@
 }
 
 .volumeZone.isActiveZone {
-  fill: var(--color-surface-subtle);
+  fill: transparent;
 }
 
 .volumeZone.isActiveZone:hover,
 .volumeZone.isActiveZone:focus-visible {
-  fill: var(--color-surface-subtle);
+  fill: transparent;
 }
 
 .volumeZone.isHidden,
-.delimiter.isHidden {
+.delimiter.isHidden,
+.partDelimiter.isHidden {
   opacity: 0;
   pointer-events: none;
 }
 
 .volumeLabel {
   pointer-events: none;
-  transition:
-    opacity var(--motion-duration-fast) var(--motion-ease-standard),
-    x var(--motion-duration-fast) var(--motion-ease-standard),
-    width var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
 .volumeLabel.isHidden {
   opacity: 0;
 }
 
-.volumeZone:not(.isActiveZone):hover + .volumeLabel .volumeLabelText,
-.volumeZone:not(.isActiveZone):focus-visible + .volumeLabel .volumeLabelText {
-  color: var(--color-text-muted);
+.volumeZone:not(.isActiveZone):hover ~ .volumeLabel .volumeLabelText,
+.volumeZone:not(.isActiveZone):focus-visible ~ .volumeLabel .volumeLabelText {
+  color: var(--color-text);
 }
 
 .volumeLabelText {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
   width: 100%;
   height: 100%;
-  padding: 0 var(--space-1);
+  padding: 0 var(--space-1) var(--space-2);
   overflow: hidden;
   font-family: var(--font-reading);
-  font-size: clamp(var(--text-sm), 1.05cqw, var(--text-lg));
+  text-align: left;
+  color: var(--color-text);
+  transition: color var(--motion-duration-hover) var(--motion-ease-standard);
+}
+
+.volumeNumeral {
+  grid-row: 1;
+  align-self: center;
+  justify-self: start;
+  font-family: var(--font-frieze);
+  font-size: clamp(1.25rem, 1.75cqw, 1.6rem);
+  font-style: normal;
+  font-weight: 100;
+  line-height: var(--line-height-tight);
+}
+
+.volumeTitle {
+  grid-row: 2;
+  align-self: start;
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 0.625rem;
+  font-style: normal;
   font-weight: 400;
-  letter-spacing: normal;
-  text-align: center;
   line-height: var(--line-height-snug);
-  color: var(--color-text-quiet);
+}
+
+.volumeTitle.compactTitle,
+.partTitle.compactTitle {
+  font-size: 0.5625rem;
+}
+
+.volumeTitle.denseTitle,
+.partTitle.denseTitle {
+  font-size: 0.5rem;
+}
+
+.volumeTitle.tinyTitle,
+.partTitle.tinyTitle {
+  font-size: 0.4375rem;
+}
+
+.volumeTitle.microTitle,
+.partTitle.microTitle {
+  font-size: 0.375rem;
 }
 
 .volumeLabel.isActiveLabel .volumeLabelText {
-  color: var(--color-text-quiet);
+  opacity: 0;
+}
+
+.partTitle {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2) var(--space-1) var(--space-2) var(--space-1);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-family: var(--font-reading);
+  font-size: 0.625rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: var(--line-height-snug);
+  text-align: left;
+}
+
+.partLabel {
+  pointer-events: none;
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
+}
+
+.partLabel.isHidden {
+  opacity: 0;
+}
+
+.partZone {
+  fill: transparent;
+  cursor: pointer;
+  transition: fill var(--motion-duration-hover) var(--motion-ease-standard), opacity var(--motion-duration-zoom) var(--motion-ease-out);
+}
+
+.partZone:focus {
+  outline: none;
+}
+
+.partZone:focus-visible {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
+.partZone.isActivePart {
+  fill: transparent;
+}
+
+.partZone.isHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.partDelimiter {
+  stroke: var(--color-frieze);
+  stroke-width: var(--border-width);
+  vector-effect: non-scaling-stroke;
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
 .delimiter {
-  stroke: var(--color-border-strong);
-  stroke-width: 1.5;
-  transition:
-    opacity var(--motion-duration-fast) var(--motion-ease-standard),
-    x1 var(--motion-duration-fast) var(--motion-ease-standard),
-    x2 var(--motion-duration-fast) var(--motion-ease-standard);
+  stroke: var(--color-frieze);
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
 }
 
 .bookmark {
   fill: var(--color-accent);
   cursor: pointer;
-  transition:
-    fill var(--motion-duration-fast) var(--motion-ease-standard),
-    x var(--motion-duration-fast) var(--motion-ease-standard);
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .bookmark:hover,
@@ -114,14 +297,45 @@
   fill: var(--color-accent-hover);
 }
 
+.searchMatch {
+  fill: var(--color-frieze);
+  cursor: default;
+  transition: fill var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.searchMatch:hover,
+.searchMatch:focus-visible {
+  fill: var(--color-frieze-hover-text);
+}
+
+.searchCountBadge {
+  pointer-events: none;
+  transition: opacity var(--motion-duration-zoom) var(--motion-ease-out);
+}
+
+.searchCountBadge.isHidden {
+  opacity: 0;
+}
+
+.searchCountBadgeBg {
+  fill: var(--color-accent);
+}
+
+.searchCountBadgeText {
+  fill: var(--color-text-on-accent);
+  font-family: var(--font-ui);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
 @media (max-width: 64rem) {
   .volumeLabelText {
     padding-inline: var(--space-0-5);
-    font-size: clamp(var(--text-xs), 1.25cqw, var(--text-sm));
-    line-height: var(--line-height-tight);
   }
-}
 
+}
 @media (width < 48rem) {
   .root {
     margin-bottom: var(--space-4);

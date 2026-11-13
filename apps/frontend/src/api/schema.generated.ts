@@ -37,14 +37,14 @@ export interface paths {
         };
         /**
          * List my quote selections
-         * @description Returns the authenticated user's quotes, most recent first. Filterable by volumeId, tagId, and/or a free-text search within the saved selection's own text.
+         * @description Returns the authenticated user's quotes, most recent first. Filterable by volumeId, partId, tagId, and/or a free-text search within the saved selection's own text.
          */
         get: operations["list_1"];
         put?: never;
         /**
          * Save a quote selection
          * @description Saves a selection of text found in a paragraph (whole paragraph or a substring),
-         *     with optional tags. The server re-validates that `selectedText` matches the paragraph's actual text at the given offsets, rejecting the request otherwise.
+         *     with optional tags. A supplied `newTagName` is created strictly and returns 409 if the authenticated user already has that name. The server re-validates that `selectedText` matches the paragraph's actual text at the given offsets, rejecting the request otherwise.
          */
         post: operations["create_1"];
         delete?: never;
@@ -281,6 +281,26 @@ export interface paths {
         patch: operations["updateComment"];
         trace?: never;
     };
+    "/api/volumes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List corpus volumes
+         * @description Returns only the fixed public structure of the work. Contains no user quotes, bookmarks, or tags.
+         */
+        get: operations["list_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -290,7 +310,7 @@ export interface paths {
         };
         /**
          * Search the corpus
-         * @description Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to one of the corpus volumes.
+         * @description Returns paragraphs containing the requested phrase (case-insensitive exact match), optionally restricted to a volume and one of its parts.
          *
          *     Each result includes the `startOffset` (inclusive) and `endOffset` (exclusive)
          *     using 0-based indexes, ready to use with `String.substring()` in Java or JavaScript.
@@ -298,6 +318,26 @@ export interface paths {
          *     Results are paginated: `size` controls how many are returned at once, `page` selects which batch. Both parameters are optional and default to the first 10 results.
          */
         get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/search/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a lightweight corpus-wide search overview
+         * @description Returns the position, part/volume counts, and a five-word hover preview for every paragraph matching the query. Unlike /api/search, this response is not paginated and does not include full paragraph text.
+         */
+        get: operations["overview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -516,11 +556,6 @@ export interface components {
         /** @description Account creation request */
         RegisterRequest: {
             /**
-             * @description Unique username (3-50 characters)
-             * @example marcel
-             */
-            username: string;
-            /**
              * Format: email
              * @description Unique email address
              * @example marcel@example.com
@@ -540,10 +575,10 @@ export interface components {
              */
             uuid?: string;
             /**
-             * @description Username
+             * @description Public display name, set when social features require one
              * @example marcel
              */
-            username?: string;
+            username?: string | null;
             /**
              * @description Email address
              * @example marcel@example.com
@@ -629,6 +664,66 @@ export interface components {
              */
             comment?: string;
         };
+        /** @description A named part within a volume */
+        PartResponse: {
+            /**
+             * Format: int32
+             * @description Part identifier
+             * @example 4
+             */
+            id?: number;
+            /**
+             * @description Part title
+             * @example Autour de Mme Swann
+             */
+            title?: string;
+            /**
+             * Format: int32
+             * @description Order of this part within its volume (1-based)
+             * @example 1
+             */
+            position?: number;
+            /**
+             * Format: int32
+             * @description First page of this part
+             * @example 104
+             */
+            startPage?: number;
+        };
+        /** @description Public structural information for one volume of the corpus */
+        VolumeResponse: {
+            /**
+             * Format: int32
+             * @description Volume identifier
+             * @example 2
+             */
+            id?: number;
+            /**
+             * @description Volume title
+             * @example À l'ombre des jeunes filles en fleurs
+             */
+            title?: string;
+            /**
+             * Format: int32
+             * @description Order of this volume in the work (1-based)
+             * @example 2
+             */
+            position?: number;
+            /**
+             * Format: int32
+             * @description First page of this volume
+             * @example 104
+             */
+            minPage?: number;
+            /**
+             * Format: int32
+             * @description Last page of this volume
+             * @example 183
+             */
+            maxPage?: number;
+            /** @description Named parts in reading order */
+            parts?: components["schemas"]["PartResponse"][];
+        };
         /** @description A paragraph matching the search query */
         SearchHit: {
             /**
@@ -689,6 +784,47 @@ export interface components {
              * @example 10
              */
             size?: number;
+        };
+        /** @description A lightweight marker for one matching paragraph */
+        Marker: {
+            /** Format: int32 */
+            paragraphId?: number;
+            /** Format: int32 */
+            volumeId?: number;
+            /** Format: int32 */
+            partId?: number;
+            /** Format: int32 */
+            pageNumber?: number;
+            previewText?: string;
+        };
+        /** @description Search result count for one part */
+        PartCount: {
+            /** Format: int32 */
+            partId?: number;
+            /** Format: int64 */
+            count?: number;
+        };
+        /** @description Lightweight corpus-wide distribution for a search query */
+        SearchOverviewResponse: {
+            /**
+             * Format: int64
+             * @description Total number of matching paragraphs
+             * @example 622
+             */
+            total?: number;
+            /** @description Matching paragraph positions and short hover previews, in reading order */
+            markers?: components["schemas"]["Marker"][];
+            /** @description Number of matching paragraphs in each volume; volumes without matches are omitted */
+            volumeCounts?: components["schemas"]["VolumeCount"][];
+            /** @description Number of matching paragraphs in each part; parts without matches are omitted */
+            partCounts?: components["schemas"]["PartCount"][];
+        };
+        /** @description Search result count for one volume */
+        VolumeCount: {
+            /** Format: int32 */
+            volumeId?: number;
+            /** Format: int64 */
+            count?: number;
         };
         /** @description Paginated list of the current user's quote selections */
         QuoteSelectionListResponse: {
@@ -757,41 +893,9 @@ export interface components {
         /** @description The user's saved quotes positioned on the work's structure, for the personal timeline */
         TimelineResponse: {
             /** @description All 7 volumes, always present regardless of whether they contain any saved quote */
-            volumes?: components["schemas"]["TimelineVolume"][];
+            volumes?: components["schemas"]["VolumeResponse"][];
             /** @description The user's saved quotes, ordered by their position in the work */
             quotes?: components["schemas"]["TimelineQuote"][];
-        };
-        /** @description A volume of the work, with the page range it spans (used to draw delimiters and position bookmarks) */
-        TimelineVolume: {
-            /**
-             * Format: int32
-             * @description Volume identifier
-             * @example 2
-             */
-            id?: number;
-            /**
-             * @description Volume title
-             * @example À l'ombre des jeunes filles en fleurs
-             */
-            title?: string;
-            /**
-             * Format: int32
-             * @description Order of this volume in the work (1-based)
-             * @example 2
-             */
-            position?: number;
-            /**
-             * Format: int32
-             * @description First page of this volume
-             * @example 104
-             */
-            minPage?: number;
-            /**
-             * Format: int32
-             * @description Last page of this volume
-             * @example 183
-             */
-            maxPage?: number;
         };
         /** @description A single neighboring paragraph returned as context */
         ParagraphContextEntry: {
@@ -916,6 +1020,11 @@ export interface operations {
                  * @example 1
                  */
                 volumeId?: number;
+                /**
+                 * @description Only return quotes from this part (positive identifier)
+                 * @example 4
+                 */
+                partId?: number;
                 /**
                  * @description Zero-based page index (default: 0)
                  * @example 0
@@ -1079,7 +1188,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserResponse"];
                 };
             };
-            /** @description Invalid request body or password matches the username/email (code: password_matches_identifier) */
+            /** @description Invalid request body or password matches the email (code: password_matches_identifier) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1088,7 +1197,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetail"];
                 };
             };
-            /** @description Username or email already taken */
+            /** @description Email already taken */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1505,6 +1614,26 @@ export interface operations {
             };
         };
     };
+    list_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Volumes in corpus order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VolumeResponse"][];
+                };
+            };
+        };
+    };
     search: {
         parameters: {
             query: {
@@ -1518,6 +1647,11 @@ export interface operations {
                  * @example 1
                  */
                 volumeId?: number;
+                /**
+                 * @description Only search paragraphs in this part (positive identifier)
+                 * @example 4
+                 */
+                partId?: number;
                 /**
                  * @description Zero-based page index (default: 0). This paginates the search results, not the book's page numbers.
                  * @example 0
@@ -1545,6 +1679,41 @@ export interface operations {
                 };
             };
             /** @description Invalid request parameters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    overview: {
+        parameters: {
+            query: {
+                /**
+                 * @description Phrase to search for (2–500 characters)
+                 * @example petite madeleine
+                 */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Corpus-wide match positions and distribution */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchOverviewResponse"];
+                };
+            };
+            /** @description Invalid search query */
             400: {
                 headers: {
                     [name: string]: unknown;

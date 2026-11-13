@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import TimelineBar from './TimelineBar'
 import * as quoteApi from '../../../api/quote'
 import type { TimelineResponse } from '../../../api/quote'
+import type { SearchOverviewResponse } from '../../../api/search'
 import * as volumeApi from '../../../api/volume'
 import * as tagApi from '../../../api/tag'
 import ToastProvider from '../../../components/Toast/ToastProvider'
@@ -16,7 +17,26 @@ import { quoteId } from './timelineTestFixtures'
 // directly in the bar, same pattern as any other controlled-component test in this codebase.
 function ControlledTimelineBar({ activeTagId }: { activeTagId: string | null }) {
   const [selectedVolumeId, setSelectedVolumeId] = useState<number | null>(null)
-  return <TimelineBar isConnected={true} activeTagId={activeTagId} selectedVolumeId={selectedVolumeId} onSelectVolume={setSelectedVolumeId} onOpenQuote={vi.fn()} />
+  const [selectedPartId, setSelectedPartId] = useState<number | null>(null)
+  function selectVolume(id: number | null) {
+    if (id === null) {
+      setSelectedVolumeId(null)
+      setSelectedPartId(null)
+      return
+    }
+
+    if (selectedVolumeId === id && selectedPartId !== null) {
+      setSelectedPartId(null)
+      return
+    }
+    setSelectedVolumeId(current => current === id ? null : id)
+    setSelectedPartId(null)
+  }
+  function selectPart(partId: number, volumeId: number) {
+    setSelectedVolumeId(volumeId)
+    setSelectedPartId(current => current === partId ? null : partId)
+  }
+  return <TimelineBar isConnected={true} activeTagId={activeTagId} selectedVolumeId={selectedVolumeId} selectedPartId={selectedPartId} onSelectVolume={selectVolume} onSelectPart={selectPart} onOpenQuote={vi.fn()} />
 }
 
 vi.mock('../../../api/quote')
@@ -32,9 +52,15 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
-const volumes: TimelineResponse['volumes'] = [
-  { id: 1, title: 'Du Côté de Chez Swann', position: 1, minPage: 1, maxPage: 103 },
-  { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183 },
+const volumes: volumeApi.VolumeResponse[] = [
+  { id: 1, title: 'Du Côté de Chez Swann', position: 1, minPage: 1, maxPage: 103, parts: [
+    { id: 11, title: 'Combray', position: 1, startPage: 1 },
+    { id: 12, title: 'Un amour de Swann', position: 2, startPage: 44 },
+    { id: 13, title: 'Noms de pays : le nom', position: 3, startPage: 96 },
+  ] },
+  { id: 2, title: "À l'Ombre des Jeunes Filles en Fleurs", position: 2, minPage: 104, maxPage: 183, parts: [
+    { id: 21, title: 'Autour de Mme Swann', position: 1, startPage: 104 },
+  ] },
 ]
 
 function makeQuote(n: number, pageNumber: number, volumeId: number, selectedText = `citation ${n}`): TimelineResponse['quotes'][number] {
@@ -48,9 +74,9 @@ beforeEach(() => {
 })
 
 it('shows the corpus structure without requesting personal bookmarks for a guest', async () => {
-  render(<TimelineBar isConnected={false} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={false} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
-  expect(await screen.findByRole('img', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
+  expect(await screen.findByRole('group', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /^Citation page/ })).not.toBeInTheDocument()
   expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
   expect(volumeApi.getVolumes).toHaveBeenCalledOnce()
@@ -59,7 +85,7 @@ it('shows the corpus structure without requesting personal bookmarks for a guest
 it('shows a spinner while loading', () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockReturnValue(new Promise(() => {}))
 
-  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(screen.getByRole('status')).toBeInTheDocument()
 })
@@ -67,7 +93,7 @@ it('shows a spinner while loading', () => {
 it('shows an error message when the request fails', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockRejectedValue(new Error('HTTP 500'))
 
-  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('alert')).toBeInTheDocument()
 })
@@ -78,7 +104,7 @@ it('renders one bookmark per saved quote', async () => {
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
 
-  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   expect(await screen.findByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
@@ -92,7 +118,7 @@ it('keeps multiple bookmarks on the same page independently clickable and identi
   const onOpenQuote = vi.fn()
   const user = userEvent.setup()
 
-  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
 
   const firstBookmark = await screen.findByRole('button', { name: 'Citation page 9, 1 sur 2' })
   const secondBookmark = screen.getByRole('button', { name: 'Citation page 9, 2 sur 2' })
@@ -118,6 +144,32 @@ it('zooming by clicking directly on a volume zone in the bar hides bookmarks fro
   await user.click(screen.getByRole('button', { name: 'Filtrer les résultats sur Du Côté de Chez Swann et zoomer sur ce tome' }))
 
   expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
+})
+
+it('filters bookmarks by part and returns to the tome when the active part is selected again', async () => {
+  vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({
+    volumes,
+    quotes: [makeQuote(1, 9, 1), makeQuote(2, 50, 1), makeQuote(3, 100, 1), makeQuote(4, 150, 2)],
+  })
+  const user = userEvent.setup()
+
+  render(<ControlledTimelineBar activeTagId={null} />, { wrapper })
+  await screen.findByRole('button', { name: 'Citation page 150' })
+
+  await user.click(screen.getByRole('button', { name: 'Filtrer les résultats sur Du Côté de Chez Swann et zoomer sur ce tome' }))
+  await user.click(screen.getByRole('button', { name: 'Filtrer les résultats sur Un amour de Swann et zoomer sur cette partie' }))
+
+  expect(screen.getByRole('button', { name: 'Citation page 50' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Citation page 9' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Citation page 100' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
+
+  await user.click(screen.getAllByRole('button', { name: 'Revenir au tome Du Côté de Chez Swann' })[0])
+
+  expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Citation page 50' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Citation page 100' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
 })
 
@@ -153,11 +205,11 @@ it('returns to the full view when selectedVolumeId goes back to null', async () 
     quotes: [makeQuote(1, 9, 1), makeQuote(2, 150, 2)],
   })
 
-  const { rerender } = render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={1} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  const { rerender } = render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={1} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
   await screen.findByRole('button', { name: 'Citation page 9' })
   expect(screen.queryByRole('button', { name: 'Citation page 150' })).not.toBeInTheDocument()
 
-  rerender(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />)
+  rerender(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />)
 
   expect(screen.getByRole('button', { name: 'Citation page 9' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Citation page 150' })).toBeInTheDocument()
@@ -171,7 +223,7 @@ it('clicking a bookmark reports which quote to the parent, which owns the detail
   const onOpenQuote = vi.fn()
   const user = userEvent.setup()
 
-  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={onOpenQuote} />, { wrapper })
   await user.click(await screen.findByRole('button', { name: 'Citation page 9' }))
 
   expect(onOpenQuote).toHaveBeenCalledWith(quoteId(1))
@@ -184,7 +236,7 @@ it('hovering a bookmark shows a preview, leaving hides it', async () => {
   })
   const user = userEvent.setup()
 
-  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={null} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
   const bookmark = await screen.findByRole('button', { name: 'Citation page 9' })
 
   await user.hover(bookmark)
@@ -198,9 +250,81 @@ it('refetches with the active tag filter', async () => {
   vi.mocked(quoteApi.getQuoteTimeline).mockResolvedValue({ volumes, quotes: [] })
   const tagId = '00000000-0000-4000-8000-000000000101'
 
-  render(<TimelineBar isConnected={true} activeTagId={tagId} selectedVolumeId={null} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
+  render(<TimelineBar isConnected={true} activeTagId={tagId} selectedVolumeId={null} selectedPartId={null} onSelectPart={vi.fn()} onSelectVolume={vi.fn()} onOpenQuote={vi.fn()} />, { wrapper })
 
   await waitFor(() => {
     expect(quoteApi.getQuoteTimeline).toHaveBeenCalledWith({ tagId }, expect.anything())
   })
+})
+
+it('shows corpus search markers, volume counts, and a preview without requesting personal quotes', async () => {
+  const overview: SearchOverviewResponse = {
+    total: 3,
+    markers: [
+      { paragraphId: 101, volumeId: 1, partId: 11, pageNumber: 9, previewText: 'un premier passage' },
+      { paragraphId: 102, volumeId: 1, partId: 12, pageNumber: 50, previewText: 'un passage au milieu' },
+      { paragraphId: 201, volumeId: 2, partId: 21, pageNumber: 150, previewText: 'un dernier passage' },
+    ],
+    volumeCounts: [{ volumeId: 1, count: 2 }, { volumeId: 2, count: 1 }],
+    partCounts: [{ partId: 11, count: 1 }, { partId: 12, count: 1 }, { partId: 21, count: 1 }],
+  }
+
+  render(
+    <TimelineBar
+      isConnected={false}
+      activeTagId={null}
+      selectedVolumeId={null}
+      selectedPartId={null}
+      corpusSearchActive
+      corpusSearchOverview={overview}
+      onSelectPart={vi.fn()}
+      onSelectVolume={vi.fn()}
+      onOpenQuote={vi.fn()}
+    />,
+    { wrapper },
+  )
+
+  expect(await screen.findByRole('group', { name: 'Résultats de recherche dans les sept tomes' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Filtrer sur Du Côté de Chez Swann, 2 passages trouvés, et zoomer sur ce tome' })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Passage trouvé page 50 : un passage au milieu' })).toBeInTheDocument()
+  expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
+
+  const marker = screen.getByRole('img', { name: 'Passage trouvé page 50 : un passage au milieu' })
+  fireEvent.focus(marker)
+  expect(screen.getByRole('tooltip')).toHaveTextContent('un passage au milieu')
+  fireEvent.blur(marker)
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+})
+
+it('filters corpus search markers to the selected part and announces its match count', async () => {
+  const overview: SearchOverviewResponse = {
+    total: 3,
+    markers: [
+      { paragraphId: 101, volumeId: 1, partId: 11, pageNumber: 9, previewText: 'Combray' },
+      { paragraphId: 102, volumeId: 1, partId: 12, pageNumber: 50, previewText: 'Un amour de Swann' },
+      { paragraphId: 103, volumeId: 1, partId: 13, pageNumber: 96, previewText: 'Noms de pays' },
+    ],
+    volumeCounts: [{ volumeId: 1, count: 3 }],
+    partCounts: [{ partId: 11, count: 1 }, { partId: 12, count: 1 }, { partId: 13, count: 1 }],
+  }
+
+  render(
+    <TimelineBar
+      isConnected={false}
+      activeTagId={null}
+      selectedVolumeId={1}
+      selectedPartId={12}
+      corpusSearchActive
+      corpusSearchOverview={overview}
+      onSelectPart={vi.fn()}
+      onSelectVolume={vi.fn()}
+      onOpenQuote={vi.fn()}
+    />,
+    { wrapper },
+  )
+
+  expect(await screen.findByRole('group', { name: '1 passages trouvés dans la partie Un amour de Swann du tome Du Côté de Chez Swann' })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: 'Passage trouvé page 50 : Un amour de Swann' })).toBeInTheDocument()
+  expect(screen.queryByRole('img', { name: 'Passage trouvé page 9 : Combray' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('img', { name: 'Passage trouvé page 96 : Noms de pays' })).not.toBeInTheDocument()
 })

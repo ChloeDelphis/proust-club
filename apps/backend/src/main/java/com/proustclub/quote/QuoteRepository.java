@@ -60,14 +60,14 @@ class QuoteRepository {
                 ));
     }
 
-    List<QuoteSelection> findByUserId(UUID userId, UUID tagId, String q, Integer volumeId, int page, int size) {
+    List<QuoteSelection> findByUserId(UUID userId, UUID tagId, String q, Integer volumeId, Integer partId, int page, int size) {
         // id DESC is a tiebreak for equal created_at values, which PostgreSQL can give to inserts
         // in the same transaction. It gives a stable total order; ties have no business ordering.
         return dsl.select(QUOTE_SELECTIONS.ID, QUOTE_SELECTIONS.PARAGRAPH_ID,
                         QUOTE_SELECTIONS.START_OFFSET, QUOTE_SELECTIONS.END_OFFSET,
                         QUOTE_SELECTIONS.SELECTED_TEXT, QUOTE_SELECTIONS.COMMENT, QUOTE_SELECTIONS.CREATED_AT)
                 .from(QUOTE_SELECTIONS)
-                .where(QuoteQueryConditions.forUser(QUOTE_SELECTIONS, userId, tagId, q, volumeId))
+                .where(QuoteQueryConditions.forUser(QUOTE_SELECTIONS, userId, tagId, q, volumeId, partId))
                 .orderBy(QUOTE_SELECTIONS.CREATED_AT.desc(), QUOTE_SELECTIONS.ID.desc())
                 .limit(size)
                 .offset((long) page * size)
@@ -97,10 +97,10 @@ class QuoteRepository {
                 ));
     }
 
-    long countByUserId(UUID userId, UUID tagId, String q, Integer volumeId) {
+    long countByUserId(UUID userId, UUID tagId, String q, Integer volumeId, Integer partId) {
         return dsl.selectCount()
                 .from(QUOTE_SELECTIONS)
-                .where(QuoteQueryConditions.forUser(QUOTE_SELECTIONS, userId, tagId, q, volumeId))
+                .where(QuoteQueryConditions.forUser(QUOTE_SELECTIONS, userId, tagId, q, volumeId, partId))
                 .fetchOne(0, Long.class);
     }
 

@@ -9,8 +9,8 @@ export type PageRange = { minPage: number; maxPage: number }
 // but the rendering layer would still need
 // real work (plural aria-labels, a multi-quote preview/modal) — this shape saves that one
 // rewrite, not the whole feature.
-export interface TimelineGroup {
-  quotes: TimelineQuote[]
+export interface TimelineGroup<T extends { pageNumber: number } = TimelineQuote> {
+  quotes: T[]
   offsetPercent: number
   isExtended: boolean
 }
@@ -28,14 +28,14 @@ export function pageToPercent(page: number, pageRange: PageRange): number {
 // Pure by design: no DOM measurement (no getBoundingClientRect/ResizeObserver anywhere in
 // this codebase yet) — the component converts offsetPercent to a CSS `left` percentage,
 // this function never needs to know the container's actual pixel width.
-export function positionTimelineQuotes(
-  quotes: TimelineQuote[],
+export function positionTimelineQuotes<T extends { pageNumber: number }>(
+  quotes: T[],
   pageRange: PageRange,
   overlapThresholdPercent = DEFAULT_OVERLAP_THRESHOLD_PERCENT,
-): TimelineGroup[] {
+): TimelineGroup<T>[] {
   const sorted = [...quotes].sort((a, b) => a.pageNumber - b.pageNumber)
 
-  const groups: TimelineGroup[] = sorted.map((quote) => ({
+  const groups: TimelineGroup<T>[] = sorted.map((quote) => ({
     quotes: [quote],
     offsetPercent: pageToPercent(quote.pageNumber, pageRange),
     isExtended: false,

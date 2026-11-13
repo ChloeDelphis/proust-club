@@ -69,7 +69,7 @@ describe('connected', () => {
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'MARCEL-LONG-USERNAME')
     await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
 
-    expect(screen.getByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.')).toBeInTheDocument()
+    expect(screen.getByText('Le mot de passe doit être différent des identifiants du compte.')).toBeInTheDocument()
     expect(authApi.changePassword).not.toHaveBeenCalled()
   })
 
@@ -122,7 +122,7 @@ describe('connected', () => {
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'mot-de-passe-different')
     await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
 
-    expect(await screen.findByText('Le mot de passe ne peut pas être identique à votre nom d’utilisateur ou à votre email.')).toBeInTheDocument()
+    expect(await screen.findByText('Le mot de passe doit être différent des identifiants du compte.')).toBeInTheDocument()
   })
 
   it('shows a generic message on an unexpected server error', async () => {

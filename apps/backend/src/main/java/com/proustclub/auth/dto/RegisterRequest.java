@@ -7,10 +7,6 @@ import jakarta.validation.constraints.Size;
 
 @Schema(description = "Account creation request")
 public record RegisterRequest(
-        @Schema(description = "Unique username (3-50 characters)", example = "marcel")
-        @NotBlank @Size(min = 3, max = 50)
-        String username,
-
         @Schema(description = "Unique email address", example = "marcel@example.com")
         @NotBlank @Email @Size(max = 255)
         String email,

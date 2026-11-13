@@ -28,7 +28,7 @@ class QuoteTimelineRepository {
                         quoteSelections.CREATED_AT)
                 .from(quoteSelections)
                 .join(paragraphs).on(quoteSelections.PARAGRAPH_ID.eq(paragraphs.ID))
-                .where(QuoteQueryConditions.forUser(quoteSelections, userId, tagId, q, null))
+                .where(QuoteQueryConditions.forUser(quoteSelections, userId, tagId, q, null, null))
                 .orderBy(paragraphs.POSITION)
                 .fetch(r -> new TimelineEntry(
                         r.get(quoteSelections.ID), r.get(quoteSelections.PARAGRAPH_ID), r.get(paragraphs.PAGE_NUMBER),

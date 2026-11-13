@@ -20,6 +20,7 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage'
 import EmptyState from '../../components/EmptyState/EmptyState'
 import styles from './SearchPage.module.css'
 import { useCorpusSearchQuery } from './useCorpusSearchQuery'
+import { useCorpusSearchOverviewQuery } from './useCorpusSearchOverviewQuery'
 import { useSavedQuotesQuery } from './useSavedQuotesQuery'
 import { useGuestQuoteSave } from './useGuestQuoteSave'
 import { useVolumeSelection } from './useVolumeSelection'
@@ -38,25 +39,26 @@ function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
 export default function SearchPage() {
   const { t } = useTranslation()
   const { draft } = useGuestQuoteSave()
-  const { selectedVolumeId, selectVolume } = useVolumeSelection()
+  const { selectedVolumeId, selectedPartId, selectVolume, selectPart } = useVolumeSelection()
   const { data: currentUser } = useCurrentUser()
   const isConnected = currentUser !== null && currentUser !== undefined
   const [query, setQuery] = useState(() => draft?.query ?? '')
+  const isQueryValid = query.trim().length >= 2
   const [scope, setScope] = useState<'corpus' | 'saved'>('corpus')
   const [tagId, setTagId] = useState<string | null>(null)
-  const [pagination, setPagination] = useState(() => ({ volumeId: selectedVolumeId, page: draft?.page ?? 0 }))
-  const page = pagination.volumeId === selectedVolumeId ? pagination.page : 0
+  const [pagination, setPagination] = useState(() => ({ volumeId: selectedVolumeId, partId: selectedPartId, page: draft?.page ?? 0 }))
+  const page = pagination.volumeId === selectedVolumeId && pagination.partId === selectedPartId ? pagination.page : 0
   const resultsAnchorRef = useRef<HTMLDivElement>(null)
   const shouldScrollToResultsRef = useRef(false)
   // The selected quote is a snapshot owned by the modal, not a pointer into a filtered query.
   // It must remain available if removing a tag makes the quote disappear from the frieze/list, or
   // if the frieze request fails after a quote was opened from the saved-citations list.
   const [selectedDetailQuote, setSelectedDetailQuote] = useState<{ userId: string; quote: QuoteDetailModalQuote } | null>(null)
-  const timelineQuery = useTimeline(tagId, isConnected)
+  const timelineQuery = useTimeline(tagId, isConnected && (scope === 'saved' || !isQueryValid))
   const [detailHit, setDetailHit] = useState<SearchHit | null>(null)
 
   function setPage(nextPage: number) {
-    setPagination({ volumeId: selectedVolumeId, page: nextPage })
+    setPagination({ volumeId: selectedVolumeId, partId: selectedPartId, page: nextPage })
   }
 
   function handlePageChange(nextPage: number) {
@@ -81,10 +83,13 @@ export default function SearchPage() {
     setPage(0)
   }
 
-  // Selecting the already-selected volume again zooms back out — the frieze zone and the sidebar
-  // entry both call this, there's no separate "Tous les tomes" control.
-  function handleSelectVolume(id: number) {
+  function handleSelectVolume(id: number | null) {
     selectVolume(id)
+    setPage(0)
+  }
+
+  function handleSelectPart(partId: number, volumeId: number) {
+    selectPart(partId, volumeId)
     setPage(0)
   }
 
@@ -108,19 +113,20 @@ export default function SearchPage() {
       : current)
   }
 
-  const isQueryValid = query.trim().length >= 2
-
   const corpusQuery = useCorpusSearchQuery({
     query,
     volumeId: selectedVolumeId,
+    partId: selectedPartId,
     page,
     enabled: scope === 'corpus' && isQueryValid,
   })
+  const corpusOverviewQuery = useCorpusSearchOverviewQuery(query, scope === 'corpus' && isQueryValid)
 
   const savedQuery = useSavedQuotesQuery({
     tagId,
     query,
     volumeId: selectedVolumeId,
+    partId: selectedPartId,
     page,
     enabled: scope === 'saved' && isConnected,
   })
@@ -137,7 +143,12 @@ export default function SearchPage() {
 
   if (scope === 'corpus') {
     if (!isQueryValid) {
-      content = <EmptyState message={t('searchPage.typeToSearch')} />
+      content = (
+        <div className={styles.searchPrompt}>
+          <span className={styles.searchPromptRule} aria-hidden="true" />
+          <p className={styles.searchPromptMessage}>{t('searchPage.typeToSearch')}</p>
+        </div>
+      )
     } else if (corpusQuery.isPending) {
       content = <Spinner />
     } else if (corpusQuery.isError) {
@@ -154,7 +165,7 @@ export default function SearchPage() {
               hit={hit}
               onOpenDetail={setDetailHit}
               resumeDraft={draft?.paragraphId === hit.paragraphId ? draft : null}
-              searchContext={{ query, page, volumeId: selectedVolumeId }}
+              searchContext={{ query, page, volumeId: selectedVolumeId, partId: selectedPartId }}
             />
           )}
           total={corpusQuery.data.total}
@@ -192,7 +203,11 @@ export default function SearchPage() {
         isConnected={isConnected}
         activeTagId={tagId}
         selectedVolumeId={selectedVolumeId}
+        selectedPartId={selectedPartId}
+        corpusSearchActive={scope === 'corpus' && isQueryValid}
+        corpusSearchOverview={corpusOverviewQuery.data}
         onSelectVolume={handleSelectVolume}
+        onSelectPart={handleSelectPart}
         onOpenQuote={handleOpenQuote}
       />
       <div className={styles.layout}>

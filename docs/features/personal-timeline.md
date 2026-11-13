@@ -16,10 +16,10 @@ GET /api/quotes/timeline?tagId=   (authenticated, unpaginated — needs every qu
 
 GET /api/volumes (public structural metadata)
   → VolumeController → VolumeService → VolumeRepository
-  → VolumeResponse[7] (no quote, bookmark, or tag data)
+  → VolumeResponse[7] with their named parts and first pages (no quote, bookmark, or tag data)
 ```
 
-The public volume endpoint supplies only the fixed structure needed to navigate and filter the corpus. The personal timeline endpoint remains authenticated and is fetched only when a session is present. Anonymous visitors therefore get the same frieze geometry and volume filters without loading personal data. The boundary is recorded in [ADR-017](../architecture/ADR-017-public-corpus-structure.md).
+The public volume endpoint supplies the fixed volume and part structure needed to navigate the corpus. Each part includes its identifier, title, position, and first page; its last page is the next part's first page, or the containing volume's last page. The personal timeline endpoint remains authenticated and is fetched only when a session is present and the user is not viewing an active corpus search. During a valid corpus search, the frieze instead displays the public match overview from `GET /api/search/overview`; this overview has passage positions and counts but no saved citations or tags. Anonymous visitors therefore get the same frieze geometry and corpus-search markers without loading personal data. The structural boundary is recorded in [ADR-017](../architecture/ADR-017-public-corpus-structure.md).
 
 `GET /api/quotes` (paginated, `size` ≤ 20) could never have served this: the timeline needs every saved quote in one response to place every bookmark, not one page of results.
 
@@ -40,7 +40,14 @@ WHERE volumes.id = ranges.volume_id
 ```json
 {
   "volumes": [
-    { "id": 1, "title": "Du côté de chez Swann", "position": 1, "minPage": 1, "maxPage": 103 },
+    {
+      "id": 1, "title": "Du côté de chez Swann", "position": 1, "minPage": 1, "maxPage": 103,
+      "parts": [
+        { "id": 1, "title": "Combray", "position": 1, "startPage": 1 },
+        { "id": 2, "title": "Un amour de Swann", "position": 2, "startPage": 44 },
+        { "id": 3, "title": "Noms de pays : le nom", "position": 3, "startPage": 96 }
+      ]
+    },
     ...
   ],
   "quotes": [
@@ -53,13 +60,14 @@ WHERE volumes.id = ranges.volume_id
 
 ## Frontend
 
-**Layout** — the frieze spans the page above the tome list and search results. On narrow screens, the list moves into the header drawer and the frieze is hidden on phones. These navigation controls are public; personal bookmarks and saved-citation controls require a session.
-
-**Frieze rendering** — SVG positions bookmarks along the page range without inline styles. `ResizeObserver` keeps its aspect ratio responsive; HTML labels wrap and center in each volume zone.
+**Layout** — the frieze spans the search content on desktop, where it replaces the left tome list. The left column is hidden from 426px upward. Below 48rem, the frieze is hidden and the tome list remains available in the header drawer. These navigation controls are public; personal bookmarks and saved-citation controls require a session.
 
 - **Positioning** — bookmark positions follow each quote's page within its tome. Overlapping bookmarks alternate between two heights.
+- **Volume and part titles** — the upper title band uses more of the frieze height; Roman numerals and titles sit closer together, and titles start at the same vertical position within the band. All titles use the same base font size; an individual title steps down only when measured wrapping would make it exceed its segment's available height. Labels wrap fully instead of being line-clamped. The lower band retains enough height for extended bookmarks.
 - **Tome selection** — the frieze and desktop list or drawer share one selection. It zooms the frieze, filters bookmarks and results, and resets pagination. Selecting the active tome again clears the filter. The unpaginated timeline response supplies all bookmarks.
-- **Keyboard and pointer access** — inactive tome zones leave the tab order when hidden. The frieze stays sticky while scrolling.
+- **Parts within a zoomed tome** — the public volume structure supplies each part's first page. The zoom uses these page boundaries to draw internal delimiters and position each part title while leaving bookmark positions on the same page scale. A fixed-height, right-aligned breadcrumb above the frieze shows the current level: `Toute l’œuvre › I. [tome]` or `Toute l’œuvre › I. [tome] › [partie]`. Earlier levels are clickable and return to the whole work or the selected tome. Part titles use the tome-title typography without Roman numerals. The accessible track label includes the selected tome and its part names.
+- **Part filter** — selecting a part from the zoomed frieze filters corpus search and saved citations with `partId`; the backend applies that filter before pagination and counting. Personal timelines and corpus overview markers are unpaginated and filter visible bookmarks/markers locally. Selecting the active part returns to the tome; the breadcrumb links return to the tome or whole work.
+- **Keyboard and pointer access** — the named SVG group exposes each visible tome and part zone as a separately named button. Tab moves between controls; Enter or Space activates them. Inactive zones leave the tab order when hidden. The frieze stays sticky while scrolling.
 - **Bookmark preview** — HTML labels inside the SVG wrap naturally and open on hover or keyboard focus.
 - **Quote details** — selecting a bookmark opens the shared detail modal with reading context and tag controls. Deletion remains in the saved-quote list. See [Quote save and tags](quote-save-tags.md) and [Paragraph context](paragraph-context.md).
 
@@ -70,8 +78,13 @@ WHERE volumes.id = ranges.volume_id
 
 ## Manual verification
 
+- **Responsive tome navigation:** at 425px and below, confirm the tome list remains in the header drawer; between 426px and 48rem, confirm the drawer remains available; from 48rem upward, confirm the left column is gone and the frieze spans the search content.
 - **Anonymous structure and privacy:** without a session, confirm the frieze and tome list show all seven tomes with no bookmarks; `GET /api/volumes` returns only structure, `/api/quotes/timeline` returns `401`, and the browser makes no personal quote/tag requests.
-- **Select a tome:** choose one from the desktop list, drawer, or frieze; confirm the active result list and frieze reflect the same selection.
-- **Select from frieze:** click another tome zone and confirm sidebar selection, frieze zoom, and result filter stay synchronized.
-- **Clear selection:** click the selected tome again in either control and confirm all bookmarks and results return.
+- **Corpus search:** during a valid corpus query, confirm the frieze uses corpus search markers rather than the personal quote timeline, regardless of session state.
+- **Select a tome:** choose one from the desktop list, drawer, or frieze; confirm the frieze expands to the selected tome as the other tomes fade away, and the active result list stays in sync.
+- **Title fit:** inspect narrow and wide tome/part segments at desktop, 1440px, and tablet widths; confirm narrow labels reduce in size only as needed, all title text remains visible, and proportional segment widths and extended bookmarks are preserved.
+- **Select from frieze:** click or keyboard-focus another tome zone and activate it with Enter or Space; confirm sidebar selection, frieze zoom, and result filter stay synchronized.
+- **Part structure:** zoom into tomes with two and six parts; confirm each part title and vertical delimiter appears at its page boundary, with the selected tome title above the track. Confirm bookmarks stay at their original page positions.
+- **Part filter:** select a part in a tome and confirm search results, saved citations, pagination totals, and visible bookmarks follow that part. Select the active part to return to the tome; use the breadcrumb to return to the tome or whole work.
+- **Clear selection:** click the selected tome again in either control, or click `Toute l’œuvre` in the breadcrumb from a tome or part; confirm all bookmarks and results return and the frieze does not move vertically.
 - **Saved-citations scope:** repeat while saved citations are active; confirm filtering combines with the selected tag and resets pagination.

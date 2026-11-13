@@ -60,8 +60,14 @@ const mockResponse: searchApi.SearchResponse = {
 }
 
 const mockVolumes: volumeApi.VolumeResponse[] = [
-  { id: 1, title: 'Du côté de chez Swann', position: 1, minPage: 1, maxPage: 103 },
-  { id: 2, title: 'À l’ombre des jeunes filles en fleurs', position: 2, minPage: 104, maxPage: 183 },
+  { id: 1, title: 'Du côté de chez Swann', position: 1, minPage: 1, maxPage: 103, parts: [
+    { id: 11, title: 'Combray', position: 1, startPage: 1 },
+    { id: 12, title: 'Un amour de Swann', position: 2, startPage: 44 },
+    { id: 13, title: 'Noms de pays : le nom', position: 3, startPage: 96 },
+  ] },
+  { id: 2, title: 'À l’ombre des jeunes filles en fleurs', position: 2, minPage: 104, maxPage: 183, parts: [
+    { id: 21, title: 'Autour de Mme Swann', position: 1, startPage: 104 },
+  ] },
 ]
 
 beforeEach(() => {
@@ -82,7 +88,7 @@ describe('SearchPage', () => {
     vi.mocked(searchApi.searchParagraphs).mockResolvedValue(mockResponse)
     const draft: GuestQuoteSaveDraft = {
       paragraphId: mockHit.paragraphId, start: 0, end: 9, selectedText: 'Longtemps', listName: 'Combray',
-      query: 'Longtemps', page: 2, volumeId: 1, scrollY: 0,
+      query: 'Longtemps', page: 2, volumeId: 1, partId: null, scrollY: 0,
     }
     function resumeWrapper({ children }: { children: ReactNode }) {
       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -119,7 +125,7 @@ describe('SearchPage', () => {
 
     expect(await screen.findByRole('article')).toBeInTheDocument()
     expect(screen.getByText(/Longtemps/)).toBeInTheDocument()
-    const resultLocation = /Du côté de chez Swann · Combray · p\. 1/
+    const resultLocation = /Du côté de chez Swann · Combray/
     expect(screen.getByText(resultLocation)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /Longtemps/ }))
@@ -138,6 +144,23 @@ describe('SearchPage', () => {
 
     expect(searchApi.searchParagraphs).toHaveBeenCalledWith(
       { q: 'petite madeleine', page: 0, size: 10 },
+      expect.any(AbortSignal),
+    )
+  })
+
+  it('filtre la recherche du corpus par la partie sélectionnée dans la frise', async () => {
+    vi.mocked(searchApi.searchParagraphs).mockResolvedValue(mockResponse)
+    const user = userEvent.setup()
+
+    render(<SearchPage />, { wrapper })
+    await user.click(await screen.findByRole('button', { name: 'Filtrer les résultats sur Du côté de chez Swann et zoomer sur ce tome' }))
+    await user.click(screen.getByRole('button', { name: 'Filtrer les résultats sur Un amour de Swann et zoomer sur cette partie' }))
+    await user.type(screen.getByRole('searchbox'), 'madeleine')
+    await user.click(screen.getByRole('button', { name: 'Chercher' }))
+
+    await screen.findByRole('article')
+    expect(searchApi.searchParagraphs).toHaveBeenLastCalledWith(
+      { q: 'madeleine', volumeId: 1, partId: 12, page: 0, size: 10 },
       expect.any(AbortSignal),
     )
   })
@@ -263,7 +286,7 @@ describe('SearchPage', () => {
     render(<SearchPage />, { wrapper })
 
     expect(await screen.findByText("Tapez une recherche pour explorer l'œuvre.")).toBeInTheDocument()
-    expect(await screen.findByRole('img', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
+    expect(await screen.findByRole('group', { name: 'Structure des tomes de l’œuvre' })).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Du côté de chez Swann' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Filtrer par tag' })).not.toBeInTheDocument()
     expect(quoteApi.getQuoteTimeline).not.toHaveBeenCalled()
@@ -337,6 +360,37 @@ describe('connected', () => {
     expect(await screen.findByText('citation 1')).toBeInTheDocument()
     expect(screen.getByText('citation 2')).toBeInTheDocument()
     expect(quoteApi.listQuotes).toHaveBeenCalledWith({ tagId: undefined, q: undefined, page: 0, size: 10 }, expect.anything())
+  })
+
+  it('filters saved citations by the selected part', async () => {
+    vi.mocked(quoteApi.listQuotes).mockResolvedValue({ results: [makeQuote(1)], total: 1, page: 0, size: 10 })
+    const user = userEvent.setup()
+    const draft: GuestQuoteSaveDraft = {
+      paragraphId: mockHit.paragraphId, start: 0, end: 9, selectedText: 'Longtemps', listName: 'Combray',
+      query: '', page: 0, volumeId: 1, partId: 12, scrollY: 0,
+    }
+    function partFilterWrapper({ children }: { children: ReactNode }) {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      return (
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <GuestQuoteSaveContext.Provider value={{ draft, setDraft: vi.fn(), clearDraft: vi.fn() }}>
+              <VolumeSelectionProvider>
+                <ToastProvider>{children}</ToastProvider>
+              </VolumeSelectionProvider>
+            </GuestQuoteSaveContext.Provider>
+          </MemoryRouter>
+        </QueryClientProvider>
+      )
+    }
+
+    render(<SearchPage />, { wrapper: partFilterWrapper })
+    await user.click(await screen.findByRole('button', { name: 'Mes citations enregistrées' }))
+
+    await waitFor(() => expect(quoteApi.listQuotes).toHaveBeenLastCalledWith(
+      { tagId: undefined, q: undefined, volumeId: 1, partId: 12, page: 0, size: 10 },
+      expect.anything(),
+    ))
   })
 
   it('refetches the last valid page when saved citations shrink during pagination', async () => {

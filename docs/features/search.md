@@ -2,6 +2,8 @@
 
 How phrase search works in Proust Club: from user input to highlighted paragraph.
 
+The public search accepts optional `volumeId` and `partId` filters. Both are applied before pagination and counting, so `total` describes the filtered result set. `partId` must be a positive identifier; when combined with `volumeId`, both filters apply.
+
 ---
 
 ## The search unit: one paragraph, one row
@@ -79,6 +81,12 @@ Each search hit includes everything the frontend needs to display the result in 
 
 Results are ordered by `paragraphs.position`, which reflects the reading order of the work.
 
+### Corpus overview for the frieze
+
+`GET /api/search/overview?q=...` supplies the unpaginated corpus distribution used by the frieze during an active corpus search. It returns one lightweight marker per matching paragraph (`paragraphId`, `volumeId`, `partId`, `pageNumber`, and `previewText`), plus counts grouped by volume and part. `previewText` contains at most five words around the first occurrence of the query, with ellipses when surrounding text was omitted. It does not return full paragraph text or personal tags. The separation from paginated full-text search is recorded in [ADR-018](../architecture/ADR-018-search-overview-for-frieze.md).
+
+The list endpoint remains paginated and continues returning complete paragraphs for the visible result page. The overview is independent of page, tome, and part filters: the frieze fetches it once per query, then filters markers locally as the user zooms into a tome or part. This keeps the full-corpus distribution stable while navigating and avoids repeating all markers for each result-list page.
+
 Note: `paragraphs` holds both `part_id` and `volume_id` directly (denormalized). The JOIN to `volumes` goes straight from `paragraphs`, not through `parts`.
 
 ---
@@ -86,3 +94,10 @@ Note: `paragraphs` holds both `part_id` and `volume_id` directly (denormalized).
 ## Rate limiting
 
 `GET /api/search` is rate-limited per client IP (60 requests/minute by default) — see [Rate limiting](rate-limiting.md).
+`GET /api/search/overview` uses the same per-IP limit.
+
+## Manual verification
+
+- Search a known phrase with no location filter, then with `volumeId` and `partId`; confirm each result belongs to the selected scope and `total` reflects the filtered count before pagination.
+- Call `GET /api/search/overview` for a known phrase; confirm each matching paragraph has one marker, volume/part counts sum to `total`, previews contain no more than five words, and no full paragraph text or tags are returned. Confirm an unknown phrase returns empty markers and counts.
+- Confirm `partId=0` returns `400`, while omitting `partId` preserves the existing search behavior.

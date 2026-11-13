@@ -61,7 +61,7 @@ class ErrorHandlingIntegrationTest {
     void missingCsrfTokenAnonymousReturnsProblemDetailBody() throws Exception {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new RegisterRequest("errhandling1", "errhandling1@example.com", "hunter2222password"))))
+                                new RegisterRequest("errhandling1@example.com", "hunter2222password"))))
                 .andExpect(status().isForbidden())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.status").value(403))
@@ -73,7 +73,7 @@ class ErrorHandlingIntegrationTest {
     void missingCsrfTokenWithActiveSessionReturnsProblemDetailBody() throws Exception {
         MvcResult registerResult = mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new RegisterRequest("errhandling2", "errhandling2@example.com", "hunter2222password"))))
+                                new RegisterRequest("errhandling2@example.com", "hunter2222password"))))
                 .andExpect(status().isCreated())
                 .andReturn();
 
@@ -110,7 +110,7 @@ class ErrorHandlingIntegrationTest {
     void unsupportedHttpMethodReturnsMethodNotAllowed() throws Exception {
         MvcResult registerResult = mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new RegisterRequest("errhandling3", "errhandling3@example.com", "hunter2222password"))))
+                                new RegisterRequest("errhandling3@example.com", "hunter2222password"))))
                 .andExpect(status().isCreated())
                 .andReturn();
 

@@ -1,3 +1,5 @@
+import type { RegisterParams } from '../../../api/auth'
+
 export interface RegisterFormProps {
-  onSubmit: (params: { username: string; email: string; password: string }) => void
+  onSubmit: (params: RegisterParams) => void
 }

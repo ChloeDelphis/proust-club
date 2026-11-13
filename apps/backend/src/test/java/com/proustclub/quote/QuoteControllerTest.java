@@ -347,6 +347,26 @@ class QuoteControllerTest {
     }
 
     @Test
+    void listQuotesFiltersByPartBeforePaginationAndCounting() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+        int partParagraphId = insertParagraphInPart(1, 2, 2, 44, "Un souvenir de Swann.");
+        createQuote(session, paragraphId, 3, 12, "madeleine");
+        createQuote(session, paragraphId, 0, 2, "La");
+        createQuote(session, partParagraphId, 0, 11, "Un souvenir");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("partId", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.results.length()").value(1))
+                .andExpect(jsonPath("$.results[0].selectedText").value("Un souvenir"));
+
+        mockMvc.perform(get("/api/quotes").session(session).param("partId", "1").param("page", "1").param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.results.length()").value(1));
+    }
+
+    @Test
     void listQuotesRejectsVolumeIdsOutsideCorpusRange() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
 
@@ -359,6 +379,14 @@ class QuoteControllerTest {
         mockMvc.perform(get("/api/quotes").session(session).param("volumeId", "7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void listQuotesRejectsNonPositivePartId() throws Exception {
+        var session = registerAndLogin("alice", "alice@example.com");
+
+        mockMvc.perform(get("/api/quotes").session(session).param("partId", "0"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -799,9 +827,9 @@ class QuoteControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private MockHttpSession registerAndLogin(String username, String email) throws Exception {
+    private MockHttpSession registerAndLogin(String ignoredDisplayName, String email) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new RegisterRequest(username, email, "hunter2222password"))))
+                        .content(objectMapper.writeValueAsString(new RegisterRequest(email, "hunter2222password"))))
                 .andExpect(status().isCreated())
                 .andReturn();
         return (MockHttpSession) result.getRequest().getSession(false);
@@ -824,10 +852,14 @@ class QuoteControllerTest {
     }
 
     private int insertParagraphInVolume(int volumeId, int position, String text) {
+        return insertParagraphInPart(volumeId, 1, position, 1, text);
+    }
+
+    private int insertParagraphInPart(int volumeId, int partId, int position, int pageNumber, String text) {
         return dsl.insertInto(DSL.table("paragraphs"),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
-                .values(volumeId, 1, position, 1, text)
+                .values(volumeId, partId, position, pageNumber, text)
                 .returning(DSL.field("id", Integer.class))
                 .fetchOne(DSL.field("id", Integer.class));
     }

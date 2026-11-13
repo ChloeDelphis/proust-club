@@ -9,6 +9,7 @@ export type GuestQuoteSaveDraft = {
   query: string
   page: number
   volumeId: number | null
+  partId: number | null
   scrollY: number
 }
 
