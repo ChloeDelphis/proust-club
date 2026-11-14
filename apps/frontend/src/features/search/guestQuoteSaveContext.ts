@@ -6,6 +6,7 @@ export type GuestQuoteSaveDraft = {
   end: number
   selectedText: string
   listName: string
+  resumeInDetail?: boolean
   query: string
   page: number
   volumeId: number | null

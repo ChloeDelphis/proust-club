@@ -8,4 +8,6 @@ export interface DetailModalProps {
   onOpenChange: (open: boolean) => void
   /** Disables the × close button — for a caller with its own irreversible action in flight. */
   closeDisabled?: boolean
+  /** Adds a subtle veil while a nested dialog is active. */
+  isDimmed?: boolean
 }

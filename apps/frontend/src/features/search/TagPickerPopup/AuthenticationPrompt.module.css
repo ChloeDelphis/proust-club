@@ -1,0 +1,128 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-surface-inverse) 35%, transparent);
+  z-index: var(--z-index-modal);
+  animation: backdrop-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.transparentBackdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: var(--z-index-modal);
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(26rem, 90vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--space-8);
+  background: var(--color-result-card);
+  border: var(--border-width) solid var(--color-frieze);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-index-modal);
+  animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.closeButton {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: grid;
+  width: var(--space-8);
+  height: var(--space-8);
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-xl);
+  line-height: var(--line-height-tight);
+  cursor: pointer;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-right: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-brand);
+  font-size: var(--text-2xl);
+  font-weight: 400;
+  line-height: var(--line-height-snug);
+}
+
+.message {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-reading);
+  font-size: var(--text-md);
+  line-height: var(--line-height-relaxed);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+.promptButton,
+.promptButtonSecondary {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.promptButton {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.promptButton:hover {
+  background: var(--color-accent-hover);
+}
+
+.promptButtonSecondary {
+  background: var(--color-selection-bg);
+  color: var(--color-accent);
+}
+
+.promptButtonSecondary:hover {
+  background: var(--color-frieze-hover-bg);
+}
+
+.closeButton:focus-visible,
+.promptButton:focus-visible,
+.promptButtonSecondary:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
+}
+
+@media (width < 32rem) {
+  .popup {
+    padding: var(--space-6);
+  }
+
+  .title {
+    font-size: var(--text-xl);
+  }
+}

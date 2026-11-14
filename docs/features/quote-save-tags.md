@@ -136,9 +136,9 @@ Tag search/creation is staged locally: nothing is sent to the backend while the 
 
 `src/features/search/SearchResultDetailModal/`, opened by clicking or keyboard-activating the excerpt in `ParagraphCard`. Native text selection within the excerpt remains available for `QuoteSelection`'s own "Sauvegarder" flow; an active selection suppresses the detail action. `SearchPage` owns the open/close state (`detailHit: SearchHit | null`), the same "parent owns the single modal instance" pattern as `QuoteDetailModal`. The modal receives the original `SearchHit` and displays the full paragraph, not just the excerpt.
 
-Same `DetailModal` layout as `QuoteDetailModal`, but for a paragraph that isn't saved yet: `centerContent` highlights the matched phrase (`buildHighlightSegments`, the same helper `ParagraphCard`/`QuoteSelection` use) instead of showing a bare `selectedText`, and `sideContent` is `TagPickerContent` directly (no second `Dialog`), wired to a local `createQuote` mutation instead of `onSave` bubbling up to a parent. On a successful save: invalidates `['quotes']`, shows the same toast as `QuoteSelection`'s own save flow (`quoteSelection.savedToast`/`saveErrorToast`), and closes the modal. `closeDisabled`/the `onOpenChange` guard mirror `TagPickerPopup`'s in-flight-save behavior above.
+Same `DetailModal` layout as `QuoteDetailModal`, but for a paragraph that isn't saved yet. The side column shows the tome reference and a quiet instruction until text is selected, then "Enregistrer ce passage". The action keeps the browser selection; connected readers continue to the existing tag picker, while anonymous readers can log in or register. During authentication, a light veil marks the reading modal as inactive. Their in-memory draft restores the selected passage in the same modal after authentication and is discarded when that modal closes. Saving still uses the existing `createQuote` mutation and toast flow.
 
-Reading context is public — the modal itself (and its progressive context) is available to anonymous visitors too, same as `/api/search`/`/api/paragraphs/{id}/context`. Only the tag picker in the side panel is gated on `useCurrentUser()`, mirroring `QuoteSelection`'s own contextual "Sauvegarder" menu.
+Reading context is public — the modal itself (and its progressive context) is available to anonymous visitors too, same as `/api/search`/`/api/paragraphs/{id}/context`. The instruction and passage-selection action are also available to anonymous visitors; only the tag picker requires a session.
 
 ---
 
@@ -185,6 +185,8 @@ The context window resets to `before: 0, after: 0` whenever `paragraphId` change
 - Open a search result at desktop and mobile widths. Confirm the full paragraph is available in the wider dialog, the close button has clear space above the content, and the action panel stacks below the text on a narrow viewport.
 
 ### Happy path
+
+- Open an unsaved result, select text, and confirm the muted instruction becomes "Enregistrer ce passage" without clearing the selection. Confirm a signed-in reader reaches the tag picker; a signed-out reader sees login/register choices and returns from authentication to the same modal with the passage selected.
 
 - As an anonymous visitor, search and select a passage, open the list form, enter a name, and save the form. Confirm the explanatory prompt offers signup and login. Close it and confirm no quote or tag was created.
 - Repeat through signup and login separately. After success, confirm the same search, result page, volume filter, selected passage, scroll position, and list name return. Confirm nothing has been saved yet. Reopen the list form and confirm `POST /api/quotes` returns `201`, the quote appears once, and the trimmed list name is attached.

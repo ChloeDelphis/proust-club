@@ -28,6 +28,16 @@
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
+.isDimmed::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-surface-inverse) 30%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
 .closeButton {
   position: absolute;
   top: var(--space-4);

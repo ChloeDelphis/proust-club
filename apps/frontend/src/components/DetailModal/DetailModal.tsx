@@ -8,7 +8,7 @@ import ErrorMessage from '../ErrorMessage/ErrorMessage'
 import type { DetailModalProps } from './DetailModal.types'
 import styles from './DetailModal.module.css'
 
-export default function DetailModal({ paragraphId, centerContent, sideContent, ariaLabel, onOpenChange, closeDisabled }: DetailModalProps) {
+export default function DetailModal({ paragraphId, centerContent, sideContent, ariaLabel, onOpenChange, closeDisabled, isDimmed = false }: DetailModalProps) {
   const { t } = useTranslation()
 
   // Resets the context window when a different paragraph opens, without a useEffect — same
@@ -34,7 +34,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
     <Dialog.Root open={paragraphId !== null} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} />
-        <Dialog.Popup className={styles.popup} aria-label={ariaLabel}>
+        <Dialog.Popup className={`${styles.popup} ${isDimmed ? styles.isDimmed : ''}`} aria-label={ariaLabel}>
           <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')} disabled={closeDisabled}>×</Dialog.Close>
 
           {paragraphId !== null && (
