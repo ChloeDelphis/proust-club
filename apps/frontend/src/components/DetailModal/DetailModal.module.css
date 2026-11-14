@@ -51,7 +51,7 @@
   font-family: inherit;
   background: none;
   border: none;
-  color: var(--color-text-muted);
+  color: var(--color-surface-inverse);
   cursor: pointer;
   transition: color var(--motion-duration-fast) var(--motion-ease-standard);
 }
