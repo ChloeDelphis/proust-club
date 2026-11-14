@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
@@ -529,18 +529,36 @@ describe('connected', () => {
     const user = userEvent.setup()
 
     render(<SearchPage />, { wrapper })
+    await screen.findByRole('button', { name: 'Mes citations enregistrées' })
     await user.type(screen.getByRole('searchbox'), 'Longtemps')
     await user.click(screen.getByRole('button', { name: 'Chercher' }))
     await user.click(await screen.findByRole('button', { name: /Longtemps/ }))
 
+    const detailModal = screen.getByRole('dialog', { name: 'Résultat de recherche' })
+    const paragraph = within(detailModal).getByText((_, element) =>
+      element?.tagName === 'P' && element.textContent === mockHit.text,
+    )
+    const highlightedText = paragraph.querySelector('mark')?.firstChild
+    expect(highlightedText).not.toBeNull()
+    const range = document.createRange()
+    range.setStart(highlightedText!, 0)
+    range.setEnd(highlightedText!, highlightedText?.textContent?.length ?? 0)
+    act(() => {
+      const selection = window.getSelection()
+      selection?.removeAllRanges()
+      selection?.addRange(range)
+      document.dispatchEvent(new Event('selectionchange'))
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Enregistrer ce passage' }))
     await user.click(await screen.findByRole('checkbox', { name: 'Combray' }))
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(quoteApi.createQuote).toHaveBeenCalledWith({
       paragraphId: mockHit.paragraphId,
-      startOffset: mockHit.startOffset,
-      endOffset: mockHit.endOffset,
-      selectedText: mockHit.text.slice(mockHit.startOffset, mockHit.endOffset),
+      startOffset: 0,
+      endOffset: 10,
+      selectedText: 'Longtemps,',
       tagNames: ['Combray'],
     })
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Résultat de recherche' })).not.toBeInTheDocument())

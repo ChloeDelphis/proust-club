@@ -8,7 +8,7 @@ import ErrorMessage from '../ErrorMessage/ErrorMessage'
 import type { DetailModalProps } from './DetailModal.types'
 import styles from './DetailModal.module.css'
 
-export default function DetailModal({ paragraphId, centerContent, sideContent, ariaLabel, onOpenChange, closeDisabled, isDimmed = false }: DetailModalProps) {
+export default function DetailModal({ paragraphId, centerContent, sideContent, ariaLabel, onOpenChange, contextTextClassName, closeDisabled, isDimmed = false }: DetailModalProps) {
   const { t } = useTranslation()
 
   // Resets the context window when a different paragraph opens, without a useEffect — same
@@ -51,7 +51,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
                 </button>
 
                 {context?.before.map(entry => (
-                  <p key={entry.paragraphId} className={styles.contextParagraph}>{entry.text}</p>
+                  <p key={entry.paragraphId} className={contextTextClassName ?? styles.contextParagraph}>{entry.text}</p>
                 ))}
 
                 <div className={styles.center}>{centerContent}</div>
@@ -67,7 +67,7 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
                 )}
 
                 {context?.after.map(entry => (
-                  <p key={entry.paragraphId} className={styles.contextParagraph}>{entry.text}</p>
+                  <p key={entry.paragraphId} className={contextTextClassName ?? styles.contextParagraph}>{entry.text}</p>
                 ))}
 
                 <button

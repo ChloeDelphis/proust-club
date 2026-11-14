@@ -34,17 +34,23 @@ export default function SearchResultDetailModal({
   const textRef = useRef<HTMLParagraphElement>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [phaseState, setPhaseState] = useState<PhaseState | null>(null)
+  const phaseRef = useRef<PhaseState | null>(null)
   const phase = phaseState && phaseState.paragraphId === hit?.paragraphId ? phaseState.phase : 'idle'
 
   const updatePhase = useCallback((next: ActionPhase, paragraphId: number) => {
-    setPhaseState({ paragraphId, phase: next })
+    const nextState = { paragraphId, phase: next }
+    phaseRef.current = nextState
+    setPhaseState(nextState)
   }, [])
 
   const activeSelection = selection?.paragraphId === hit?.paragraphId ? selection : null
 
   useEffect(() => {
     function handleSelectionChange() {
-      if (phase === 'tagPanel' || phase === 'authPrompt') return
+      const currentPhase = phaseRef.current && phaseRef.current.paragraphId === hit?.paragraphId
+        ? phaseRef.current.phase
+        : 'idle'
+      if (currentPhase === 'tagPanel' || currentPhase === 'authPrompt') return
       const container = textRef.current
       const nativeSelection = window.getSelection()
       if (!container || !hit || !nativeSelection || nativeSelection.isCollapsed || nativeSelection.rangeCount === 0) {
@@ -76,7 +82,7 @@ export default function SearchResultDetailModal({
 
     document.addEventListener('selectionchange', handleSelectionChange)
     return () => document.removeEventListener('selectionchange', handleSelectionChange)
-  }, [hit, resumeDraft, clearDraft, updatePhase, phase])
+  }, [hit, resumeDraft, clearDraft, updatePhase])
 
   useEffect(() => {
     const container = textRef.current
@@ -159,6 +165,7 @@ export default function SearchResultDetailModal({
     <DetailModal
       paragraphId={hit?.paragraphId ?? null}
       ariaLabel={t('searchResultDetailModal.ariaLabel')}
+      contextTextClassName={styles.text}
       closeDisabled={createQuoteMutation.isPending}
       isDimmed={phase === 'authPrompt'}
       onOpenChange={open => {

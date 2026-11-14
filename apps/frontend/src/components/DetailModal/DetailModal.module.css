@@ -99,7 +99,7 @@
   font-family: var(--font-reading);
   font-size: var(--text-xl);
   line-height: var(--line-height-relaxed);
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .center {
