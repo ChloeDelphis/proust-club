@@ -55,7 +55,12 @@
     "retryContext": "Réessayer"
   },
   "searchResultDetailModal": {
-    "ariaLabel": "Résultat de recherche"
+    "ariaLabel": "Résultat de recherche",
+    "selectionHint": "Sélectionnez un passage dans le texte pour le conserver.",
+    "savePassageButton": "Enregistrer ce passage",
+    "authenticationTitle": "Enregistrer ce passage",
+    "authenticationMessage": "Connectez-vous ou créez un compte pour conserver ce passage dans vos listes.",
+    "registerButton": "Créer un compte"
   },
   "resultList": {
     "resultCount_one": "{{count}} résultat",

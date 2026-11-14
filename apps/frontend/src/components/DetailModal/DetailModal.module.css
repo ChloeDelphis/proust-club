@@ -28,20 +28,30 @@
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
+.isDimmed::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-surface-inverse) 30%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
 .closeButton {
   position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
+  top: var(--space-1);
+  right: var(--space-1);
   display: grid;
-  width: var(--space-8);
-  height: var(--space-8);
+  width: calc(var(--space-16) + var(--space-2));
+  height: calc(var(--space-16) + var(--space-2));
   place-items: center;
   padding: 0;
-  font-size: var(--text-xl);
+  font-size: calc(var(--text-3xl) + var(--space-5) + var(--space-2));
   font-family: inherit;
   background: none;
   border: none;
-  color: var(--color-text-muted);
+  color: var(--color-surface-inverse);
   cursor: pointer;
   transition: color var(--motion-duration-fast) var(--motion-ease-standard);
 }
@@ -61,6 +71,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-2);
+  padding-inline: var(--space-4);
 }
 
 .contextArrow {
@@ -89,7 +100,7 @@
   font-family: var(--font-reading);
   font-size: var(--text-xl);
   line-height: var(--line-height-relaxed);
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .center {
@@ -103,6 +114,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  padding-top: var(--space-8);
   padding-left: var(--space-6);
   border-left: 1px solid var(--color-border);
 }

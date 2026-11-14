@@ -38,7 +38,7 @@ function savedScopeEmptyStateKey(tagId: string | null, query: string): string {
 // defaulting to corpus search. Not route-split: this is one page, matching the reference mockup.
 export default function SearchPage() {
   const { t } = useTranslation()
-  const { draft } = useGuestQuoteSave()
+  const { draft, clearDraft } = useGuestQuoteSave()
   const { selectedVolumeId, selectedPartId, selectVolume, selectPart } = useVolumeSelection()
   const { data: currentUser } = useCurrentUser()
   const isConnected = currentUser !== null && currentUser !== undefined
@@ -121,6 +121,9 @@ export default function SearchPage() {
     enabled: scope === 'corpus' && isQueryValid,
   })
   const corpusOverviewQuery = useCorpusSearchOverviewQuery(query, scope === 'corpus' && isQueryValid)
+  const resumedDetailHit = draft?.resumeInDetail
+    ? corpusQuery.data?.results.find(hit => hit.paragraphId === draft.paragraphId) ?? null
+    : null
 
   const savedQuery = useSavedQuotesQuery({
     tagId,
@@ -164,7 +167,7 @@ export default function SearchPage() {
             <ParagraphCard
               hit={hit}
               onOpenDetail={setDetailHit}
-              resumeDraft={draft?.paragraphId === hit.paragraphId ? draft : null}
+              resumeDraft={draft?.paragraphId === hit.paragraphId && !draft.resumeInDetail ? draft : null}
               searchContext={{ query, page, volumeId: selectedVolumeId, partId: selectedPartId }}
             />
           )}
@@ -238,7 +241,15 @@ export default function SearchPage() {
           onClose={() => setSelectedDetailQuote(null)}
         />
       )}
-      <SearchResultDetailModal hit={detailHit} onClose={() => setDetailHit(null)} />
+      <SearchResultDetailModal
+        hit={detailHit ?? resumedDetailHit}
+        onClose={() => {
+          setDetailHit(null)
+          if (draft?.resumeInDetail) clearDraft()
+        }}
+        resumeDraft={draft?.resumeInDetail ? draft : null}
+        searchContext={{ query, page, volumeId: selectedVolumeId, partId: selectedPartId }}
+      />
     </main>
   )
 }
