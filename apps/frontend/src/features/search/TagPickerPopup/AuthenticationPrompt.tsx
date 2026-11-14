@@ -26,9 +26,15 @@ export default function AuthenticationPrompt({
   const titleId = useId()
   const messageId = useId()
   return (
-    <Dialog.Root open onOpenChange={open => { if (!open) onCancel() }}>
+    <Dialog.Root
+      open
+      onOpenChange={open => { if (!open) onCancel() }}
+    >
       <Dialog.Portal>
-        <Dialog.Backdrop className={dimBackground ? styles.backdrop : styles.transparentBackdrop} />
+        <Dialog.Backdrop
+          forceRender={!dimBackground}
+          className={dimBackground ? styles.backdrop : styles.readerBackdrop}
+        />
         <Dialog.Popup className={styles.popup} aria-labelledby={titleId} aria-describedby={messageId}>
           <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')}>×</Dialog.Close>
           <div className={styles.copy}>

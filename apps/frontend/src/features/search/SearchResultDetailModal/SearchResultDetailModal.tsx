@@ -141,6 +141,18 @@ export default function SearchResultDetailModal({
     onClose()
   }
 
+  function returnToTextSelection() {
+    if (!hit || !activeSelection) return
+    const container = textRef.current
+    const range = container && createRangeForOffsets(container, activeSelection.start, activeSelection.end)
+    if (range) {
+      const nativeSelection = window.getSelection()
+      nativeSelection?.removeAllRanges()
+      nativeSelection?.addRange(range)
+    }
+    updatePhase('selected', hit.paragraphId)
+  }
+
   const segments = hit ? buildHighlightSegments(hit.text, { start: hit.startOffset, end: hit.endOffset }) : []
 
   return (
@@ -149,7 +161,14 @@ export default function SearchResultDetailModal({
       ariaLabel={t('searchResultDetailModal.ariaLabel')}
       closeDisabled={createQuoteMutation.isPending}
       isDimmed={phase === 'authPrompt'}
-      onOpenChange={open => { if (!open && !createQuoteMutation.isPending) handleClose() }}
+      onOpenChange={open => {
+        if (open || createQuoteMutation.isPending) return
+        if (phase === 'authPrompt') {
+          returnToTextSelection()
+          return
+        }
+        handleClose()
+      }}
       centerContent={hit && (
         <p ref={textRef} className={styles.text}>
           {segments.map((segment, index) =>
@@ -188,7 +207,7 @@ export default function SearchResultDetailModal({
                 dimBackground={false}
               onRegister={() => continueToAuthentication('/register')}
               onLogin={() => continueToAuthentication('/login')}
-              onCancel={() => updatePhase('selected', hit.paragraphId)}
+              onCancel={returnToTextSelection}
             />
           )}
         </>

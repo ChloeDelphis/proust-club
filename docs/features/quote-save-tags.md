@@ -186,7 +186,7 @@ The context window resets to `before: 0, after: 0` whenever `paragraphId` change
 
 ### Happy path
 
-- Open an unsaved result, select text, and confirm the muted instruction becomes "Enregistrer ce passage" without clearing the selection. Confirm a signed-in reader reaches the tag picker; a signed-out reader sees login/register choices and returns from authentication to the same modal with the passage selected.
+- Open an unsaved result, select text, and confirm the muted instruction becomes "Enregistrer ce passage" without clearing the selection. Confirm a signed-in reader reaches the tag picker; a signed-out reader can dismiss the auth prompt with Escape or an outside click and return to the text modal with the selection intact, or authenticate and return to the same modal with the passage selected.
 
 - As an anonymous visitor, search and select a passage, open the list form, enter a name, and save the form. Confirm the explanatory prompt offers signup and login. Close it and confirm no quote or tag was created.
 - Repeat through signup and login separately. After success, confirm the same search, result page, volume filter, selected passage, scroll position, and list name return. Confirm nothing has been saved yet. Reopen the list form and confirm `POST /api/quotes` returns `201`, the quote appears once, and the trimmed list name is attached.

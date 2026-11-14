@@ -6,11 +6,11 @@
   animation: backdrop-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
-.transparentBackdrop {
+.readerBackdrop {
   position: fixed;
   inset: 0;
+  z-index: calc(var(--z-index-modal) + 1);
   background: transparent;
-  z-index: var(--z-index-modal);
 }
 
 .popup {
@@ -26,7 +26,7 @@
   border: var(--border-width) solid var(--color-frieze);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  z-index: var(--z-index-modal);
+  z-index: calc(var(--z-index-modal) + 2);
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
