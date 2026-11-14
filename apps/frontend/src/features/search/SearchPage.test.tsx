@@ -129,8 +129,9 @@ describe('SearchPage', () => {
     expect(screen.getByText(resultLocation)).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: /Longtemps/ }))
-    expect(await screen.findByText('Du côté de chez Swann')).toBeInTheDocument()
-    expect(screen.getByText('Combray')).toBeInTheDocument()
+    const detailModal = await screen.findByRole('dialog', { name: 'Résultat de recherche' })
+    expect(within(detailModal).getByText('Du côté de chez Swann')).toBeInTheDocument()
+    expect(within(detailModal).getByText('Combray')).toBeInTheDocument()
   })
 
   it('transmet les bons paramètres à searchParagraphs', async () => {

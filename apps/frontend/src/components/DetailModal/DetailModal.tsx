@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MAX_PARAGRAPH_CONTEXT } from '../../api/paragraph'
 import { Dialog } from '@base-ui/react/dialog'
@@ -10,6 +10,7 @@ import styles from './DetailModal.module.css'
 
 export default function DetailModal({ paragraphId, centerContent, sideContent, ariaLabel, onOpenChange, contextTextClassName, closeDisabled, isDimmed = false }: DetailModalProps) {
   const { t } = useTranslation()
+  const mainRef = useRef<HTMLDivElement>(null)
 
   // Resets the context window when a different paragraph opens, without a useEffect — same
   // reasoning as QuoteDetailModal's renderedQuoteId: this component can stay mounted across
@@ -34,12 +35,12 @@ export default function DetailModal({ paragraphId, centerContent, sideContent, a
     <Dialog.Root open={paragraphId !== null} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} />
-        <Dialog.Popup className={`${styles.popup} ${isDimmed ? styles.isDimmed : ''}`} aria-label={ariaLabel}>
+        <Dialog.Popup className={`${styles.popup} ${isDimmed ? styles.isDimmed : ''}`} aria-label={ariaLabel} initialFocus={mainRef}>
           <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')} disabled={closeDisabled}>×</Dialog.Close>
 
           {paragraphId !== null && (
             <div className={styles.layout}>
-              <div className={styles.main} aria-busy={isFetching}>
+              <div ref={mainRef} className={styles.main} tabIndex={-1} aria-busy={isFetching}>
                 <button
                   type="button"
                   className={styles.contextArrow}

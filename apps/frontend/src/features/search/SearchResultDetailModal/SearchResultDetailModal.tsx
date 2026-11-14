@@ -85,15 +85,22 @@ export default function SearchResultDetailModal({
   }, [hit, resumeDraft, clearDraft, updatePhase])
 
   useEffect(() => {
-    const container = textRef.current
-    if (!hit || !resumeDraft?.resumeInDetail || resumeDraft.paragraphId !== hit.paragraphId || !container) return
-    const range = createRangeForOffsets(container, resumeDraft.start, resumeDraft.end)
-    if (!range || range.toString() !== resumeDraft.selectedText) return
-    const nativeSelection = window.getSelection()
-    nativeSelection?.removeAllRanges()
-    nativeSelection?.addRange(range)
-    document.dispatchEvent(new Event('selectionchange'))
-  }, [hit, resumeDraft])
+    if (!hit || !resumeDraft?.resumeInDetail || resumeDraft.paragraphId !== hit.paragraphId) return
+    const frame = window.requestAnimationFrame(() => {
+      const container = textRef.current
+      if (!container) return
+      const range = createRangeForOffsets(container, resumeDraft.start, resumeDraft.end)
+      if (!range || range.toString() !== resumeDraft.selectedText) return
+      const nativeSelection = window.getSelection()
+      if (!nativeSelection) return
+      nativeSelection.removeAllRanges()
+      nativeSelection.addRange(range)
+      setSelection({ paragraphId: hit.paragraphId, start: resumeDraft.start, end: resumeDraft.end })
+      updatePhase('selected', hit.paragraphId)
+      document.dispatchEvent(new Event('selectionchange'))
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [hit, resumeDraft, updatePhase])
 
   function handleActionClick() {
     if (!activeSelection || !hit) return
