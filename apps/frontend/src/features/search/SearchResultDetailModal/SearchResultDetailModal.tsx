@@ -190,21 +190,27 @@ export default function SearchResultDetailModal({
       sideContent={hit && (
         <>
           <p className={styles.meta}>
-            {t('searchPage.resultLocation', { volume: hit.volume, part: hit.part })}
+            <span>{hit.volume}</span>
+            <span>{hit.part}</span>
           </p>
           {phase === 'tagPanel' ? (
             <TagPickerContent onSave={handleSave} isSaving={createQuoteMutation.isPending} />
-          ) : phase === 'selected' ? (
-            <button
-              type="button"
-              className={styles.saveButton}
-              onMouseDown={event => event.preventDefault()}
-              onClick={handleActionClick}
-            >
-              {t('searchResultDetailModal.savePassageButton')}
-            </button>
-          ) : phase === 'idle' ? (
-            <p className={styles.selectionHint}>{t('searchResultDetailModal.selectionHint')}</p>
+          ) : phase === 'idle' || phase === 'selected' ? (
+            <div className={styles.selectionAction}>
+              <span className={styles.selectionDivider} aria-hidden="true" />
+              {phase === 'idle' ? (
+                <p className={styles.selectionHint}>{t('searchResultDetailModal.selectionHint')}</p>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.saveButton}
+                  onMouseDown={event => event.preventDefault()}
+                  onClick={handleActionClick}
+                >
+                  {t('searchResultDetailModal.savePassageButton')}
+                </button>
+              )}
+            </div>
           ) : null}
           {phase === 'authPrompt' && (
             <AuthenticationPrompt
