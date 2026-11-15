@@ -146,7 +146,7 @@ ChangePasswordForm (current password + new password fields)
 
 Route: `/account`. Connected users reach it from the account menu in `Header`; `AccountPage` redirects unauthenticated users to `/login` after the current-user query resolves.
 
-The account page presents the signed-in email, password controls, and account-deletion information as a standalone, unframed page, centered in a 480 px column with 24 px side margins. Its centered italic title sits above left-aligned sections separated by muted rose rules; functional text and controls use the interface sans serif, while 20 px section headings remain serif. The password form starts collapsed and opens inline in place of the password row, with full-width fields and “Enregistrer” / “Annuler” actions on one line. Success closes the form and shows a confirmation toast; a failed request leaves it open with its localized error.
+The account page presents the signed-in email, password controls, and account-deletion information as a standalone, unframed page, centered in a 480 px column with 24 px side margins. Its centered italic title sits above left-aligned sections separated by muted rose rules; functional text and controls use the interface sans serif, while 22 px section headings remain serif. The password form starts collapsed and opens inline in place of the password row, with full-width fields and “Enregistrer” / “Annuler” actions on one line. The length guidance stays visible while a reserved status icon changes from a cross to a green check at the required minimum. Success closes the form and shows a confirmation toast; a failed request leaves it open with its localized error.
 
 ### Account deletion
 
@@ -160,6 +160,7 @@ The deletion event is logged with the account UUID for audit traceability, witho
 
 - Change password with the correct current password and a new password distinct from both account identifiers: `POST /api/auth/password` returns `204`; the current session remains open and other sessions are invalidated.
 - On `/account`, verify the email and section hierarchy are readable at desktop and mobile widths; open the password form with “Modifier”, cancel it, then submit a valid change and confirm the form closes with a toast.
+- On `/account`, enter a password shorter than the required minimum and confirm the cross appears next to the unchanged length guidance; reach the minimum and confirm the cross becomes a green check without moving the form below it.
 - On `/account`, submit an incorrect current password and confirm the password form remains open with the localized error.
 - Delete an account with saved citations, comments, and tags: confirm the modal requires the current password, the endpoint returns `204`, all personal rows and sessions disappear, the browser returns home, and the success toast appears. Confirm the corpus remains available.
 - Attempt deletion with an incorrect password: confirm `401`, the dialog stays open with an error, and the account and data remain. Attempt without a session (`401`) and with a blank password (`400`).

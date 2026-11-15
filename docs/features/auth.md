@@ -113,6 +113,8 @@ Registration places a short, centered description of saved quotes, lists, and an
 
 Password fields share a visibility toggle in `FormField`. It switches the current input between masked and plain text without changing its value, and its button exposes a localized show/hide action label.
 
+Registration and account password-change fields show the password length guidance beside a reserved status icon. The icon is hidden before typing, becomes a cross while the password is below the backend-provided minimum, and becomes a green check when the minimum is met. The guidance text stays in place as the status changes to avoid shifting the form below it.
+
 On `/login`, the password-recovery link sits directly below the password field and aligns to its right edge, keeping it visually associated with the field rather than the submit action.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
@@ -123,6 +125,7 @@ Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/rese
 - Review `/login`, `/forgot-password`, `/reset-password`, `/register`, and `/account` at desktop and narrow widths. Confirm headings, fields, buttons, and links use the shared design tokens, and revisit the “Créer un compte” link to verify its color does not change after visiting. Open the account dropdown and check its colors, typography, hover state, and keyboard focus.
 - On `/register`, confirm the description sits below the decorative rule, stays visually secondary to the heading, and wraps to no more than two lines at common viewport widths.
 - For every password field, enter a long passphrase, toggle visibility on and off, and confirm the value is preserved and the control remains keyboard-operable.
+- On `/register` and `/account`, confirm the status icon appears after typing, changes from a cross to a green check at the minimum length, and leaves the guidance text and form layout in place.
 - On `/login`, confirm “Mot de passe oublié ?” appears beneath the password field, aligned right, while the registration link remains below the form.
 
 ### Happy path

@@ -62,6 +62,11 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
         autoComplete="new-password"
         maxLength={passwordConstraints.maxLength}
         hint={passwordHint}
+        hintStatus={password.length === 0
+          ? 'idle'
+          : password.length >= passwordConstraints.minLength
+            ? 'success'
+            : 'invalid'}
       />
       <button className={styles.button} type="submit">
         {t('registerForm.submitButton')}

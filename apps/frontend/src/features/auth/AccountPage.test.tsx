@@ -70,6 +70,22 @@ describe('connected', () => {
     expect(authApi.changePassword).not.toHaveBeenCalled()
   })
 
+  it('shows a green length confirmation once the new password reaches the minimum', async () => {
+    render(<AccountPage />, { wrapper })
+    await openPasswordForm()
+
+    const passwordInput = screen.getByLabelText('Nouveau mot de passe')
+    await userEvent.type(passwordInput, '12345678901234')
+
+    expect(screen.getByText('Longueur insuffisante.')).toBeInTheDocument()
+    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+
+    await userEvent.type(passwordInput, '5')
+
+    expect(screen.getByText('Longueur suffisante.')).toBeInTheDocument()
+    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+  })
+
   it('rejects a new password matching the username before calling the API', async () => {
     render(<AccountPage />, { wrapper })
     await openPasswordForm()

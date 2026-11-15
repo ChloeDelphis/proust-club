@@ -6,5 +6,6 @@ import type { InputHTMLAttributes } from 'react'
 export interface FormFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   label: string
   hint?: string
+  hintStatus?: 'idle' | 'invalid' | 'success'
   isAccountField?: boolean
 }

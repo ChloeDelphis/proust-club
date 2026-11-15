@@ -117,3 +117,50 @@
   font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
+
+.hintWithStatus {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.hintText {
+  min-width: 0;
+  flex: 1;
+}
+
+.hintStatusIcon {
+  width: var(--text-xs);
+  height: var(--text-xs);
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.hintStatusIdle {
+  opacity: 0;
+}
+
+.hintStatusInvalid {
+  color: var(--color-danger-muted);
+}
+
+.hintStatusSuccess {
+  color: var(--color-success);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

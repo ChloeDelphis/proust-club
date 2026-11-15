@@ -61,6 +61,11 @@ export default function ChangePasswordForm({ username, email, isSubmitting, isAc
         autoComplete="new-password"
         maxLength={newPasswordConstraints.maxLength}
         hint={passwordHint}
+        hintStatus={newPassword.length === 0
+          ? 'idle'
+          : newPassword.length >= newPasswordConstraints.minLength
+            ? 'success'
+            : 'invalid'}
       />
       <div className={`${styles.formActions}${isAccountForm ? ` ${styles.formActionsInline}` : ''}`}>
         <button className={styles.button} type="submit" disabled={isSubmitting}>
