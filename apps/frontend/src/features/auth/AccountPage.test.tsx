@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router'
@@ -173,8 +173,14 @@ describe('connected', () => {
     render(<AccountPage />, { wrapper })
 
     await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByRole('heading', { name: 'Supprimer mon compte ?' })).toBeInTheDocument()
+    expect(within(dialog).getByText('Vos citations enregistrées, vos listes et vos annotations seront définitivement supprimées.')).toBeInTheDocument()
+    expect(within(dialog).getByText('Pour confirmer la suppression, saisissez votre mot de passe.')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeDisabled()
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mot-de-passe-actuel')
-    await userEvent.click(screen.getByRole('button', { name: 'Supprimer définitivement mon compte' }))
+    expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeEnabled()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer mon compte' }))
 
     expect(authApi.deleteAccount).toHaveBeenCalledWith({ currentPassword: 'mot-de-passe-actuel' })
     expect(await screen.findByText('Accueil')).toBeInTheDocument()
@@ -187,10 +193,11 @@ describe('connected', () => {
     render(<AccountPage />, { wrapper })
 
     await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    const dialog = screen.getByRole('dialog')
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mauvais-mot-de-passe')
-    await userEvent.click(screen.getByRole('button', { name: 'Supprimer définitivement mon compte' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer mon compte' }))
 
     expect(await screen.findByText('Mot de passe actuel incorrect.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Supprimer définitivement mon compte' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeInTheDocument()
   })
 })

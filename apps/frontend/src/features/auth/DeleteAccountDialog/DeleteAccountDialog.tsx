@@ -46,9 +46,14 @@ export default function DeleteAccountDialog({
           <Dialog.Title className={styles.title} id={titleId}>
             {t('deleteAccountDialog.title')}
           </Dialog.Title>
-          <p className={styles.description} id={descriptionId}>
-            {t('deleteAccountDialog.description')}
-          </p>
+          <div className={styles.copy} id={descriptionId}>
+            <p className={styles.description}>
+              {t('deleteAccountDialog.description')}
+            </p>
+            <p className={styles.instruction}>
+              {t('deleteAccountDialog.confirmationInstruction')}
+            </p>
+          </div>
           <form className={styles.form} onSubmit={submit}>
             <FormField
               label={t('deleteAccountDialog.currentPasswordLabel')}
@@ -63,7 +68,11 @@ export default function DeleteAccountDialog({
               <button className={styles.cancelButton} type="button" onClick={cancel} disabled={isDeleting}>
                 {t('deleteAccountDialog.cancelButton')}
               </button>
-              <button className={styles.deleteButton} type="submit" disabled={isDeleting}>
+              <button
+                className={styles.deleteButton}
+                type="submit"
+                disabled={isDeleting || currentPassword.trim().length === 0}
+              >
                 {t(isDeleting ? 'deleteAccountDialog.pendingButton' : 'deleteAccountDialog.confirmButton')}
               </button>
             </div>

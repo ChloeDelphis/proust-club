@@ -38,6 +38,10 @@
   --palette-danger-border: #fecaca;
   --palette-danger-accent: #b3423f;
   --palette-danger-muted: #a33d48;
+  --palette-danger-modal: #963f4d;
+  --palette-danger-modal-hover: #80323f;
+  --palette-danger-modal-disabled: #d7b6bc;
+  --palette-modal-secondary: #78616e;
   --palette-success: #2f6b45;
 
   /* Semantic tokens */
@@ -84,6 +88,10 @@
   --color-danger-border: var(--palette-danger-border);
   --color-danger-accent: var(--palette-danger-accent);
   --color-danger-muted: var(--palette-danger-muted);
+  --color-danger-modal: var(--palette-danger-modal);
+  --color-danger-modal-hover: var(--palette-danger-modal-hover);
+  --color-danger-modal-disabled: var(--palette-danger-modal-disabled);
+  --color-modal-secondary: var(--palette-modal-secondary);
   --color-success: var(--palette-success);
 
   /* Typography — font families for display titles, the brand, reading text,
@@ -157,6 +165,7 @@
      than --shadow-lg, despite the slightly lower blur/alpha. */
   --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-modal-soft: 0 8px 28px color-mix(in srgb, var(--color-text) 10%, transparent);
   /* Mirrors --color-accent at ~15% opacity. */
   --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--palette-signature) 15%, transparent);
 

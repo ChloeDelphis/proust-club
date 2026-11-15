@@ -157,11 +157,12 @@
     "accountDeletedToast": "Votre compte et vos données personnelles ont été supprimés."
   },
   "deleteAccountDialog": {
-    "title": "Confirmer la suppression du compte",
-    "description": "Cette action est définitive. Vos citations enregistrées, commentaires et tags seront supprimés. Saisissez votre mot de passe pour confirmer.",
+    "title": "Supprimer mon compte ?",
+    "description": "Vos citations enregistrées, vos listes et vos annotations seront définitivement supprimées.",
+    "confirmationInstruction": "Pour confirmer la suppression, saisissez votre mot de passe.",
     "currentPasswordLabel": "Mot de passe actuel",
     "cancelButton": "Annuler",
-    "confirmButton": "Supprimer définitivement mon compte",
+    "confirmButton": "Supprimer mon compte",
     "pendingButton": "Suppression en cours…",
     "wrongCurrentPasswordError": "Mot de passe actuel incorrect.",
     "rateLimitError": "Trop de tentatives. Réessayez plus tard.",

@@ -16,10 +16,10 @@
   max-height: min(90dvh, 42rem);
   overflow-y: auto;
   padding: var(--space-8);
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid var(--color-border-soft);
   border-radius: var(--radius-xl);
-  background: var(--color-result-card);
-  box-shadow: var(--shadow-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-modal-soft);
   transform: translate(-50%, -50%);
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
 }
@@ -29,16 +29,27 @@
   color: var(--color-text);
   font-family: var(--font-brand);
   font-size: var(--text-xl);
-  font-weight: 600;
+  font-weight: 500;
   line-height: var(--line-height-snug);
 }
 
-.description {
-  margin: 0 0 var(--space-6);
+.copy {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.description,
+.instruction {
+  margin: 0;
   color: var(--color-text-muted);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   line-height: var(--line-height-relaxed);
+}
+
+.instruction {
+  color: var(--color-modal-secondary);
 }
 
 .form {
@@ -58,28 +69,27 @@
   padding: var(--space-3) var(--space-4);
   border: var(--border-width) solid transparent;
   border-radius: var(--radius-md);
-  font: 600 var(--text-xs) / var(--line-height-normal) var(--font-ui);
+  font: 500 var(--text-xs) / var(--line-height-normal) var(--font-ui);
   cursor: pointer;
 }
 
 .cancelButton {
-  border-color: var(--color-border-soft);
+  border: 0;
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--color-modal-secondary);
 }
 
 .cancelButton:hover {
-  background: var(--color-selection-bg);
   color: var(--color-accent-quiet);
 }
 
 .deleteButton {
-  background: var(--color-danger-muted);
+  background: var(--color-danger-modal);
   color: var(--color-text-on-accent);
 }
 
 .deleteButton:hover {
-  background: var(--color-danger-muted);
+  background: var(--color-danger-modal-hover);
 }
 
 .cancelButton:focus-visible,
@@ -88,17 +98,19 @@
   outline-offset: var(--space-1);
 }
 
-.cancelButton:disabled,
-.deleteButton:disabled {
+.cancelButton:disabled {
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-@media (width < 32rem) {
-  .popup {
-    padding: var(--space-6);
-  }
+.deleteButton:disabled {
+  border-color: transparent;
+  background: var(--color-danger-modal-disabled);
+  color: var(--color-modal-secondary);
+  cursor: not-allowed;
+}
 
+@media (width < 32rem) {
   .actions {
     flex-direction: column-reverse;
   }
