@@ -38,6 +38,7 @@ const connectedUser: authApi.UserResponse = {
 async function openPasswordForm() {
   await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
   expect(screen.queryByRole('heading', { name: 'Mot de passe' })).not.toBeInTheDocument()
+  expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
 }
 
 beforeEach(() => {

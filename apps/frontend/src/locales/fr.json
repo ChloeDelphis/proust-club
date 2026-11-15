@@ -106,7 +106,7 @@
     "passphraseSuggestion": "une phrase fonctionne très bien.",
     "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — $t(passwordValidation.passphraseSuggestion)",
     "defaultLabel": "Le mot de passe",
-    "minLengthHint": "{{min}} caractères minimum — $t(passwordValidation.passphraseSuggestion)"
+    "minLengthHint": "Choisissez un mot de passe d’au moins {{min}} caractères. Une phrase fonctionne très bien."
   },
   "loginForm": {
     "missingFieldsError": "Renseignez votre adresse email et votre mot de passe.",

@@ -38,6 +38,12 @@ beforeEach(() => {
 })
 
 describe('RegisterPage', () => {
+  it('affiche le conseil de création du mot de passe', () => {
+    render(<RegisterPage />, { wrapper })
+
+    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+  })
+
   it('valide le format de l’adresse e-mail avant envoi', async () => {
     render(<RegisterPage />, { wrapper })
 

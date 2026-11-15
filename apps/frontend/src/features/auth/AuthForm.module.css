@@ -14,6 +14,7 @@
 }
 
 .accountRoot .cancelButton {
+  font-size: var(--text-xs);
   text-decoration: none;
 }
 
