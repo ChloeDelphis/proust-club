@@ -1,0 +1,182 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-modal);
+  background: color-mix(in srgb, var(--color-surface-inverse) 35%, transparent);
+  animation: backdrop-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: calc(var(--z-index-modal) + 1);
+  box-sizing: border-box;
+  width: min(32rem, calc(100% - var(--space-8)));
+  max-height: min(90dvh, 42rem);
+  overflow-y: auto;
+  padding: var(--space-8);
+  border: var(--border-width) solid var(--color-border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--color-page-bg);
+  box-shadow: var(--shadow-modal-soft);
+  transform: translate(-50%, -50%);
+  animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.closeButton {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  width: var(--space-8);
+  height: var(--space-8);
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 400 var(--text-xl) / var(--line-height-tight) var(--font-ui);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  color: var(--color-accent-quiet);
+}
+
+.closeButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent-quiet);
+  outline-offset: var(--space-1);
+}
+
+.closeButton:disabled {
+  cursor: not-allowed;
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+  padding-right: var(--space-8);
+  color: var(--color-text);
+  font-family: var(--font-brand);
+  font-size: var(--text-xl);
+  font-weight: 500;
+  line-height: var(--line-height-snug);
+}
+
+.copy {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.description,
+.instruction {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.instruction {
+  color: var(--color-modal-secondary);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.cancelButton,
+.deleteButton {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  font: 500 var(--text-xs) / var(--line-height-normal) var(--font-ui);
+  cursor: pointer;
+}
+
+.cancelButton {
+  border: 0;
+  background: transparent;
+  color: var(--color-modal-secondary);
+}
+
+.cancelButton:hover {
+  color: var(--color-accent-quiet);
+}
+
+.deleteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--color-danger-modal);
+  color: var(--color-text-on-accent);
+}
+
+.deleteButton:hover {
+  background: var(--color-danger-modal-hover);
+}
+
+.cancelButton:focus-visible,
+.deleteButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent-quiet);
+  outline-offset: var(--space-1);
+}
+
+.cancelButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.deleteButton:disabled {
+  border-color: transparent;
+  background: var(--color-danger-modal-disabled);
+  color: var(--color-modal-secondary);
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: var(--text-xs);
+  height: var(--text-xs);
+  flex: 0 0 auto;
+  border: var(--border-width) solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-full);
+  animation: delete-spinner var(--motion-duration-spin) linear infinite;
+}
+
+@keyframes delete-spinner {
+  to { transform: rotate(1turn); }
+}
+
+@media (width < 32rem) {
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .deleteButton {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .popup {
+    animation: none;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}

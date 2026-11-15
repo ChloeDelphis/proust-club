@@ -3,18 +3,33 @@ import { useTranslation } from 'react-i18next'
 import type { FormFieldProps } from './FormField.types'
 import styles from './FormField.module.css'
 
-export default function FormField({ label, hint, 'aria-describedby': describedBy, ...inputProps }: FormFieldProps) {
+export default function FormField({ label, hint, error, feedback, reserveErrorSpace = false, hintStatus, isAccountField = false, isUiField = false, 'aria-describedby': describedBy, ...inputProps }: FormFieldProps) {
   const { t } = useTranslation()
   const inputId = useId()
   const hintId = `${inputId}-hint`
+  const errorId = `${inputId}-error`
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const isPasswordField = inputProps.type === 'password'
+  const hintStatusClass = hintStatus === 'success'
+    ? styles.hintStatusSuccess
+    : hintStatus === 'invalid'
+      ? styles.hintStatusInvalid
+      : styles.hintStatusIdle
   // Merged, not overridden — but only for aria-describedby: this diff is what makes FormField
   // start setting it (for the hint), so a caller already passing their own would otherwise be
   // silently clobbered by a risk this same change introduces. className has no such new risk
   // (FormField has always set it unconditionally) and no caller needs to extend it today — YAGNI
   // until one does, rather than merging preemptively.
-  const mergedDescribedBy = [describedBy, hint ? hintId : undefined].filter(Boolean).join(' ') || undefined
+  const mergedDescribedBy = [describedBy, hint ? hintId : undefined, error ? errorId : undefined]
+    .filter(Boolean)
+    .join(' ') || undefined
+  const fieldClassName = [
+    styles.field,
+    isAccountField && styles.accountField,
+    isUiField && styles.uiField,
+    error && styles.hasError,
+    reserveErrorSpace && styles.reserveErrorSpace,
+  ].filter(Boolean).join(' ')
   const input = (
     <input
       {...inputProps}
@@ -22,11 +37,12 @@ export default function FormField({ label, hint, 'aria-describedby': describedBy
       type={isPasswordField && isPasswordVisible ? 'text' : inputProps.type}
       className={`${styles.input}${isPasswordField ? ` ${styles.passwordInput}` : ''}`}
       aria-describedby={mergedDescribedBy}
+      aria-invalid={error ? true : undefined}
     />
   )
 
   return (
-    <div className={styles.field}>
+    <div className={fieldClassName}>
       <label className={styles.label} htmlFor={inputId}>{label}</label>
       {isPasswordField ? (
         <div className={styles.passwordControl}>
@@ -48,7 +64,41 @@ export default function FormField({ label, hint, 'aria-describedby': describedBy
       {/* A sibling of the label, not nested inside it — text inside a wrapping <label> is folded
           into the input's accessible NAME (always announced on every focus), not its
           DESCRIPTION. aria-describedby above is what actually associates it as a description. */}
-      {hint && <span id={hintId} className={styles.hint}>{hint}</span>}
+      {hint && (
+        <span
+          id={hintId}
+          className={`${styles.hint}${hintStatus ? ` ${styles.hintWithStatus}` : ''}`}
+        >
+          <span className={styles.hintText}>{hint}</span>
+          {hintStatus && (
+            <>
+              <svg className={`${styles.hintStatusIcon} ${hintStatusClass}`} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                {hintStatus === 'success'
+                  ? <path d="m3 8 3.2 3.2L13 4.8" />
+                  : <path d="m4 4 8 8M12 4l-8 8" />}
+              </svg>
+              <span className={styles.visuallyHidden} aria-live="polite">
+                {hintStatus === 'idle'
+                  ? ''
+                  : t(hintStatus === 'success'
+                    ? 'passwordValidation.lengthSatisfied'
+                    : 'passwordValidation.lengthInsufficient')}
+              </span>
+            </>
+          )}
+        </span>
+      )}
+      {(error || feedback || reserveErrorSpace) && (
+        <div
+          id={error ? errorId : undefined}
+          className={styles.errorSlot}
+          aria-hidden={error || feedback ? undefined : true}
+        >
+          {error
+            ? <span className={styles.error} role="alert">{error}</span>
+            : feedback ?? <span className={styles.errorPlaceholder} aria-hidden="true" />}
+        </div>
+      )}
     </div>
   )
 }

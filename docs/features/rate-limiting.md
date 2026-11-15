@@ -17,8 +17,9 @@ Token-bucket throttling across most auth endpoints and `GET /api/search`, backed
 | `POST /api/auth/password-reset/confirm` | per client IP | 5 attempts / hour |
 | `POST /api/auth/password` (change password) | per account (authenticated) | 5 attempts / 15 minutes |
 | `POST /api/auth/email/confirm/resend` | per account (authenticated) | 3 requests / 15 minutes |
+| `POST /api/auth/account/delete` | per account (authenticated) | 3 attempts / 15 minutes |
 
-`password-reset/confirm` has no account bucket (the account isn't known until the token is resolved) and `password` (change) / `email/confirm/resend` have no IP bucket (both already require an authenticated session, so an anonymous IP-based bucket adds nothing a session cookie doesn't already gate) — same "no bucket that adds nothing" reasoning applied per endpoint, not a uniform IP+account pair everywhere. `password-reset/confirm` has an IP bucket because it can trigger a real outbound HTTP call (the compromised-password check, see [ADR-011](../architecture/ADR-011-compromised-password-check.md)), unlike the cheap local-only DB work the rest of the endpoint does.
+`password-reset/confirm` has no account bucket (the account isn't known until the token is resolved) and `password` (change), `email/confirm/resend`, and `account/delete` have no IP bucket (they already require an authenticated session, so an anonymous IP-based bucket adds nothing a session cookie doesn't already gate) — same "no bucket that adds nothing" reasoning applied per endpoint, not a uniform IP+account pair everywhere. `password-reset/confirm` has an IP bucket because it can trigger a real outbound HTTP call (the compromised-password check, see [ADR-011](../architecture/ADR-011-compromised-password-check.md)), unlike the cheap local-only DB work the rest of the endpoint does.
 
 Configurable under `rate-limit.*` in `application.yml` — never hardcoded scattered across controllers:
 
@@ -40,11 +41,13 @@ rate-limit:
     per-account: { capacity: 5, refill-period: 15m }
   email-verification-resend:
     per-account: { capacity: 3, refill-period: 15m }
+  account-deletion:
+    per-account: { capacity: 3, refill-period: 15m }
 ```
 
 Login checks **both** buckets before attempting authentication — either one being exhausted rejects the request. This is deliberate: a single IP-only limit lets an attacker distribute attempts across many IPs against one account; a single combined `ip+email` key lets one IP try many different accounts without ever tripping a per-IP limit. Two independent buckets close both gaps. The account bucket is keyed by the submitted, normalized email whether or not that account exists, so its behavior never reveals account existence — same reasoning as `password-reset`'s account bucket, see [ADR-013](../architecture/ADR-013-authentication-identifiers-and-stable-identity.md).
 
-The `password-change`/`email-verification-resend` account buckets are keyed differently — by `userId`, not by any credential — since both endpoints are already authenticated by the time the bucket is checked; there's no "unresolved input" to key on, and the stable database id is a better key than a value that could change (see ADR-013).
+The `password-change`/`email-verification-resend`/`account-deletion` account buckets are keyed differently — by `userId`, not by any credential — since these endpoints are already authenticated by the time the bucket is checked; there's no "unresolved input" to key on, and the stable database id is a better key than a value that could change (see ADR-013).
 
 ---
 

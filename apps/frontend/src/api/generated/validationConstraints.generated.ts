@@ -70,6 +70,11 @@ export const validationConstraints = {
       "maxLength": 200
     }
   },
+  "AccountDeletionRequest": {
+    "currentPassword": {
+      "minLength": 1
+    }
+  },
   "RenameTagRequest": {
     "name": {
       "maxLength": 50

@@ -92,6 +92,10 @@ rate-limit:
     per-account:
       capacity: 3
       refill-period: 15m
+  account-deletion:
+    per-account:
+      capacity: 3
+      refill-period: 15m
 
 logging:
   level:

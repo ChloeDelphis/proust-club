@@ -233,6 +233,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/account/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete the authenticated account
+         * @description Re-verifies the current password, permanently deletes the account and all personal data, then invalidates every active session. The fixed Proust corpus is retained.
+         */
+        post: operations["deleteAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tags/{id}": {
         parameters: {
             query?: never;
@@ -647,6 +667,9 @@ export interface components {
         EmailVerificationConfirmRequest: {
             /** @description Confirmation token received by email */
             token: string;
+        };
+        AccountDeletionRequest: {
+            currentPassword: string;
         };
         /** @description Request to rename an existing tag */
         RenameTagRequest: {
@@ -1450,6 +1473,55 @@ export interface operations {
             };
             /** @description Email already verified */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountDeletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Account and personal data permanently deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Current password is required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not authenticated or current password incorrect */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Too many account deletion attempts */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

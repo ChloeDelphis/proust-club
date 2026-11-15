@@ -85,4 +85,10 @@ class UserRepository {
                 .where(USERS.UUID.eq(uuid))
                 .execute();
     }
+
+    int deleteByUuid(UUID uuid) {
+        return dsl.deleteFrom(USERS)
+                .where(USERS.UUID.eq(uuid))
+                .execute();
+    }
 }

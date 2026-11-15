@@ -50,3 +50,7 @@ rate-limit:
     per-account:
       capacity: 100000
       refill-period: 1m
+  account-deletion:
+    per-account:
+      capacity: 100000
+      refill-period: 1m

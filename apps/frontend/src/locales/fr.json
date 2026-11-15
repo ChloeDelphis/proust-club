@@ -106,7 +106,9 @@
     "passphraseSuggestion": "une phrase fonctionne très bien.",
     "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — $t(passwordValidation.passphraseSuggestion)",
     "defaultLabel": "Le mot de passe",
-    "minLengthHint": "{{min}} caractères minimum — $t(passwordValidation.passphraseSuggestion)"
+    "minLengthHint": "Choisissez un mot de passe d’au moins {{min}} caractères. Une phrase fonctionne très bien.",
+    "lengthInsufficient": "Longueur insuffisante.",
+    "lengthSatisfied": "Longueur suffisante."
   },
   "loginForm": {
     "missingFieldsError": "Renseignez votre adresse email et votre mot de passe.",
@@ -136,13 +138,40 @@
     "currentPasswordLabel": "Mot de passe actuel",
     "newPasswordLabel": "Nouveau mot de passe",
     "newPasswordSubject": "Le nouveau mot de passe",
-    "submitButton": "Changer le mot de passe"
+    "submitButton": "Enregistrer",
+    "cancelButton": "Annuler"
   },
   "accountPage": {
     "passwordChangedToast": "Mot de passe changé.",
     "wrongCurrentPasswordError": "Mot de passe actuel incorrect.",
     "genericError": "Le changement de mot de passe a échoué. Réessayez.",
-    "title": "Compte"
+    "title": "Mon compte",
+    "personalInformationTitle": "Informations du compte",
+    "emailLabel": "Adresse e-mail",
+    "securityTitle": "Sécurité",
+    "passwordTitle": "Mot de passe",
+    "editPasswordButton": "Modifier",
+    "deleteTitle": "Suppression du compte",
+    "deleteDescription": "Vos citations enregistrées, vos listes et vos annotations seront définitivement supprimées.",
+    "deleteAccountButton": "Supprimer mon compte",
+    "accountDeletedToast": "Votre compte et vos données personnelles ont été supprimés."
+  },
+  "deleteAccountDialog": {
+    "title": "Supprimer mon compte ?",
+    "description": "Vos citations enregistrées, vos listes et vos annotations seront définitivement supprimées.",
+    "confirmationInstruction": "Pour confirmer, saisissez votre mot de passe.",
+    "currentPasswordLabel": "Mot de passe actuel",
+    "cancelButton": "Annuler",
+    "confirmButton": "Supprimer mon compte",
+    "pendingButton": "Suppression en cours…",
+    "wrongCurrentPasswordError": "Le mot de passe est incorrect.",
+    "rateLimitMessage": "Trop de tentatives.",
+    "retryAfterOneMinute": "Vous pourrez réessayer dans 1 minute.",
+    "retryAfterMinutes": "Vous pourrez réessayer dans {{minutes}} minutes.",
+    "retryAfterFallback": "Vous pourrez réessayer plus tard.",
+    "technicalErrorTitle": "Erreur technique",
+    "technicalErrorTitleWithStatus": "Erreur technique · {{status}}",
+    "genericError": "Votre compte n'a pas pu être supprimé. Veuillez réessayer."
   },
   "forgotPasswordForm": {
     "emailLabel": "Adresse e-mail",

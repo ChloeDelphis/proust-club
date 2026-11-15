@@ -1,0 +1,180 @@
+.root {
+  box-sizing: border-box;
+  width: min(calc(100% - var(--space-12)), 30rem);
+  margin: var(--space-6) auto var(--space-12);
+  padding: 0;
+}
+
+.title {
+  margin: 0 0 var(--space-6);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-style: italic;
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+  text-align: center;
+}
+
+.title::after {
+  display: block;
+  width: 4rem;
+  height: var(--border-width);
+  margin: var(--space-4) auto 0;
+  background: var(--color-border-soft);
+  content: '';
+}
+
+.section + .section {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-border-soft);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text);
+  font-family: var(--font-brand);
+  font-size: calc(var(--text-lg) + var(--space-0-5));
+  font-weight: 500;
+  line-height: var(--line-height-snug);
+}
+
+.informationList {
+  margin: 0;
+}
+
+.informationItem {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.informationLabel,
+.itemDescription,
+.email {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-normal);
+}
+
+.informationLabel,
+.itemDescription {
+  color: var(--color-text-muted);
+}
+
+.email {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.passwordRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.passwordCopy {
+  min-width: 0;
+}
+
+.itemTitle {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: var(--line-height-normal);
+}
+
+.secondaryButton {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-5);
+  border: var(--border-width) solid var(--color-accent-quiet);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-accent-quiet);
+  font: 500 var(--text-xs) / var(--line-height-normal) var(--font-ui);
+  cursor: pointer;
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.secondaryButton:hover {
+  border-color: var(--color-accent-quiet);
+  background: var(--color-selection-bg);
+  color: var(--color-accent-quiet);
+}
+
+.secondaryButton:focus-visible,
+.deleteButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent-quiet);
+  outline-offset: var(--space-1);
+}
+
+.passwordForm {
+  width: 100%;
+}
+
+.passwordForm form {
+  margin: 0;
+}
+
+.passwordForm form button[type='submit'] {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-5);
+  background: var(--color-accent-quiet);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.passwordForm form button[type='submit']:hover {
+  background: var(--color-accent-quiet);
+}
+
+.passwordForm form button[type='submit']:focus-visible {
+  outline-color: var(--color-accent-quiet);
+}
+
+.deleteSection .itemDescription {
+  margin-bottom: var(--space-3);
+}
+
+.deleteSection {
+  padding-bottom: var(--space-6);
+}
+
+.deleteButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-danger-muted);
+  font: 500 var(--text-sm) / var(--line-height-normal) var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.deleteButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (width < 34rem) {
+  .root {
+    margin-top: var(--space-5);
+  }
+
+  .passwordRow {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondaryButton {
+    transition: none;
+  }
+}

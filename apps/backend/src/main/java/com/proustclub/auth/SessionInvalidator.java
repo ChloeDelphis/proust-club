@@ -27,4 +27,9 @@ class SessionInvalidator {
                 .filter(session -> !session.getSessionId().equals(currentSessionId))
                 .forEach(SessionInformation::expireNow);
     }
+
+    void invalidateAllSessions(ProustClubPrincipal principal) {
+        sessionRegistry.getAllSessions(principal, false)
+                .forEach(SessionInformation::expireNow);
+    }
 }
