@@ -36,7 +36,7 @@
 .description {
   margin: 0 0 var(--space-6);
   color: var(--color-text-muted);
-  font-family: var(--font-reading);
+  font-family: var(--font-ui);
   font-size: var(--text-sm);
   line-height: var(--line-height-relaxed);
 }
@@ -63,28 +63,28 @@
 }
 
 .cancelButton {
-  border-color: var(--color-border);
+  border-color: var(--color-border-soft);
   background: transparent;
   color: var(--color-text-muted);
 }
 
 .cancelButton:hover {
   background: var(--color-selection-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-quiet);
 }
 
 .deleteButton {
-  background: var(--color-danger-text);
+  background: var(--color-danger-muted);
   color: var(--color-text-on-accent);
 }
 
 .deleteButton:hover {
-  background: var(--color-danger-accent);
+  background: var(--color-danger-muted);
 }
 
 .cancelButton:focus-visible,
 .deleteButton:focus-visible {
-  outline: var(--border-width) solid var(--color-accent);
+  outline: var(--border-width) solid var(--color-accent-quiet);
   outline-offset: var(--space-1);
 }
 

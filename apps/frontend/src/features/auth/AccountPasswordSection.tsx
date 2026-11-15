@@ -42,7 +42,6 @@ export default function AccountPasswordSection({ username, email }: AccountPassw
       <div className={styles.passwordRow}>
         <div className={styles.passwordCopy}>
           <h3 className={styles.itemTitle}>{t('accountPage.passwordTitle')}</h3>
-          <p className={styles.itemDescription}>{t('accountPage.passwordDescription')}</p>
         </div>
         {!isFormOpen && (
           <button

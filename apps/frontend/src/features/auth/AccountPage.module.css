@@ -1,10 +1,8 @@
 .root {
   box-sizing: border-box;
-  width: min(100% - var(--space-8), 32rem);
-  margin: var(--space-8) auto var(--space-12);
-  padding: var(--space-6);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-xl);
+  width: min(calc(100% - var(--space-8)), 48rem);
+  margin: var(--space-6) auto var(--space-12);
+  padding: 0;
 }
 
 .title {
@@ -23,14 +21,14 @@
   width: 4rem;
   height: var(--border-width);
   margin: var(--space-4) auto 0;
-  background: var(--color-frieze);
+  background: var(--color-border-soft);
   content: '';
 }
 
 .section + .section {
   margin-top: var(--space-6);
   padding-top: var(--space-6);
-  border-top: var(--border-width) solid var(--color-border);
+  border-top: var(--border-width) solid var(--color-border-soft);
 }
 
 .sectionTitle {
@@ -38,7 +36,7 @@
   color: var(--color-text);
   font-family: var(--font-brand);
   font-size: var(--text-lg);
-  font-weight: 600;
+  font-weight: 500;
   line-height: var(--line-height-snug);
 }
 
@@ -55,6 +53,7 @@
 .itemDescription,
 .email {
   margin: 0;
+  font-family: var(--font-ui);
   font-size: var(--text-sm);
   line-height: var(--line-height-normal);
 }
@@ -81,26 +80,22 @@
 }
 
 .itemTitle {
-  margin: 0 0 var(--space-1);
+  margin: 0;
   color: var(--color-text);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   line-height: var(--line-height-normal);
-}
-
-.itemDescription {
-  font-family: var(--font-reading);
 }
 
 .secondaryButton {
   flex: 0 0 auto;
   padding: var(--space-2) var(--space-5);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--color-accent-quiet);
+  border-radius: var(--radius-md);
   background: transparent;
-  color: var(--color-text-muted);
-  font: 600 var(--text-sm) / var(--line-height-normal) var(--font-ui);
+  color: var(--color-accent-quiet);
+  font: 500 var(--text-sm) / var(--line-height-normal) var(--font-ui);
   cursor: pointer;
   transition: color var(--motion-duration-fast) var(--motion-ease-standard),
     border-color var(--motion-duration-fast) var(--motion-ease-standard),
@@ -108,14 +103,14 @@
 }
 
 .secondaryButton:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-quiet);
   background: var(--color-selection-bg);
-  color: var(--color-accent);
+  color: var(--color-accent-quiet);
 }
 
 .secondaryButton:focus-visible,
 .deleteButton:focus-visible {
-  outline: var(--border-width) solid var(--color-accent);
+  outline: var(--border-width) solid var(--color-accent-quiet);
   outline-offset: var(--space-1);
 }
 
@@ -124,11 +119,24 @@
   gap: var(--space-4);
   margin-top: var(--space-5);
   padding-top: var(--space-5);
-  border-top: var(--border-width) solid var(--color-border);
+  border-top: var(--border-width) solid var(--color-border-soft);
 }
 
 .passwordForm > form {
   margin: 0;
+}
+
+.passwordForm form button[type='submit'] {
+  background: var(--color-accent-quiet);
+  font-weight: 500;
+}
+
+.passwordForm form button[type='submit']:hover {
+  background: var(--color-accent-quiet);
+}
+
+.passwordForm form button[type='submit']:focus-visible {
+  outline-color: var(--color-accent-quiet);
 }
 
 .deleteSection .itemDescription {
@@ -139,8 +147,8 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--color-danger-text);
-  font: 600 var(--text-sm) / var(--line-height-normal) var(--font-ui);
+  color: var(--color-danger-muted);
+  font: 500 var(--text-sm) / var(--line-height-normal) var(--font-ui);
   text-align: left;
 }
 
@@ -151,9 +159,8 @@
 
 @media (width < 34rem) {
   .root {
-    width: calc(100% - var(--space-6));
+    width: calc(100% - var(--space-8));
     margin-top: var(--space-5);
-    padding: var(--space-5);
   }
 
   .passwordRow {

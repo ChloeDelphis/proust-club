@@ -26,6 +26,8 @@
   --palette-accent-lavender: #d5d0ef;
   --palette-accent-highlight: #F7E8D4;
   --palette-rule: #f3dec4;
+  --palette-border-soft: #e6dce1;
+  --palette-accent-quiet: #6b3852;
   --palette-frieze: #C9AFB5;
   --palette-result-border: #AA8193;
   --palette-frieze-hover-bg: #F8EFED;
@@ -35,6 +37,7 @@
   --palette-danger-bg: #fef2f2;
   --palette-danger-border: #fecaca;
   --palette-danger-accent: #b3423f;
+  --palette-danger-muted: #a33d48;
 
   /* Semantic tokens */
   --color-text: var(--palette-ink);
@@ -61,6 +64,7 @@
   --color-surface-inverse: var(--palette-ink);
 
   --color-border: var(--palette-rule);
+  --color-border-soft: var(--palette-border-soft);
   --color-border-strong: var(--palette-ink-soft);
   --color-frieze: var(--palette-frieze);
   --color-result-border: var(--palette-result-border);
@@ -69,6 +73,7 @@
 
   --color-accent: var(--palette-signature);
   --color-accent-hover: var(--palette-signature-hover);
+  --color-accent-quiet: var(--palette-accent-quiet);
 
   /* Pale apricot highlight used for search matches and selected controls. */
   --color-highlight-bg: var(--palette-accent-highlight);
@@ -77,6 +82,7 @@
   --color-danger-bg: var(--palette-danger-bg);
   --color-danger-border: var(--palette-danger-border);
   --color-danger-accent: var(--palette-danger-accent);
+  --color-danger-muted: var(--palette-danger-muted);
 
   /* Typography — font families for display titles, the brand, reading text,
      and interface chrome. */
