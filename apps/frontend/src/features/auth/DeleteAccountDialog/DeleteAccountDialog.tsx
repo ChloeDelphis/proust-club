@@ -57,6 +57,7 @@ export default function DeleteAccountDialog({
           <form className={styles.form} onSubmit={submit}>
             <FormField
               label={t('deleteAccountDialog.currentPasswordLabel')}
+              isUiField
               type="password"
               value={currentPassword}
               onChange={event => setCurrentPassword(event.target.value)}

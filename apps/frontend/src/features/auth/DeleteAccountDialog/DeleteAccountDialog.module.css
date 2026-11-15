@@ -18,7 +18,7 @@
   padding: var(--space-8);
   border: var(--border-width) solid var(--color-border-soft);
   border-radius: var(--radius-xl);
-  background: var(--color-surface);
+  background: var(--color-page-bg);
   box-shadow: var(--shadow-modal-soft);
   transform: translate(-50%, -50%);
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);

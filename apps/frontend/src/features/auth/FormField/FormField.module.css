@@ -8,6 +8,9 @@
   width: 100%;
 }
 
+.uiField .label,
+.uiField .hint,
+.uiField .input,
 .accountField .label,
 .accountField .hint,
 .accountField .input {

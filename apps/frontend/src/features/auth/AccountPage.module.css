@@ -144,6 +144,10 @@
   margin-bottom: var(--space-3);
 }
 
+.deleteSection {
+  padding-bottom: var(--space-6);
+}
+
 .deleteButton {
   padding: 0;
   border: 0;

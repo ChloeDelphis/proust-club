@@ -8,4 +8,5 @@ export interface FormFieldProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   hint?: string
   hintStatus?: 'idle' | 'invalid' | 'success'
   isAccountField?: boolean
+  isUiField?: boolean
 }

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { FormFieldProps } from './FormField.types'
 import styles from './FormField.module.css'
 
-export default function FormField({ label, hint, hintStatus, isAccountField = false, 'aria-describedby': describedBy, ...inputProps }: FormFieldProps) {
+export default function FormField({ label, hint, hintStatus, isAccountField = false, isUiField = false, 'aria-describedby': describedBy, ...inputProps }: FormFieldProps) {
   const { t } = useTranslation()
   const inputId = useId()
   const hintId = `${inputId}-hint`
@@ -31,7 +31,7 @@ export default function FormField({ label, hint, hintStatus, isAccountField = fa
   )
 
   return (
-    <div className={`${styles.field}${isAccountField ? ` ${styles.accountField}` : ''}`}>
+    <div className={`${styles.field}${isAccountField ? ` ${styles.accountField}` : ''}${isUiField ? ` ${styles.uiField}` : ''}`}>
       <label className={styles.label} htmlFor={inputId}>{label}</label>
       {isPasswordField ? (
         <div className={styles.passwordControl}>
