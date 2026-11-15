@@ -33,9 +33,9 @@
   --palette-frieze-hover-bg: #F8EFED;
   --palette-frieze-hover-text: #947581;
   --palette-on-signature: #fff;
-  --palette-danger: #b91c1c;
-  --palette-danger-bg: #fef2f2;
-  --palette-danger-border: #fecaca;
+  --palette-danger: var(--palette-danger-modal);
+  --palette-danger-bg: #faf1f2;
+  --palette-danger-border: #e5c8ce;
   --palette-danger-accent: #b3423f;
   --palette-danger-muted: #a33d48;
   --palette-danger-modal: #a34b57;

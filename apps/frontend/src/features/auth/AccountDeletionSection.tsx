@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { deleteAccount } from '../../api/auth'
+import { ApiError } from '../../api/client'
 import { useToast } from '../../components/Toast/useToast'
-import { apiErrorMessage } from './apiErrorMessage'
 import DeleteAccountDialog from './DeleteAccountDialog/DeleteAccountDialog'
 import styles from './AccountPage.module.css'
 
@@ -22,16 +22,32 @@ export default function AccountDeletionSection() {
       navigate('/', { replace: true })
     },
   })
-  const errorMessage = !mutation.isError
+  const apiError = mutation.error
+  const passwordApiError = mutation.isError && apiError instanceof ApiError && apiError.status === 401
+    ? apiError
+    : null
+  const rateLimitApiError = mutation.isError && apiError instanceof ApiError && apiError.status === 429
+    ? apiError
+    : null
+  const retryAfterSeconds = rateLimitApiError?.retryAfterSeconds
+  const passwordError = passwordApiError ? t('deleteAccountDialog.wrongCurrentPasswordError') : null
+  const globalError = !mutation.isError || passwordApiError
     ? null
-    : apiErrorMessage(
-        mutation.error,
-        {
-          401: t('deleteAccountDialog.wrongCurrentPasswordError'),
-          429: t('deleteAccountDialog.rateLimitError'),
-        },
-        t('deleteAccountDialog.genericError'),
-      )
+    : rateLimitApiError
+      ? {
+          message: t('deleteAccountDialog.rateLimitMessage'),
+          detail: retryAfterSeconds === undefined
+            ? t('deleteAccountDialog.retryAfterFallback')
+            : Math.ceil(retryAfterSeconds / 60) === 1
+              ? t('deleteAccountDialog.retryAfterOneMinute')
+              : t('deleteAccountDialog.retryAfterMinutes', { minutes: Math.ceil(retryAfterSeconds / 60) }),
+        }
+      : {
+          title: apiError instanceof ApiError
+            ? t('deleteAccountDialog.technicalErrorTitleWithStatus', { status: apiError.status })
+            : t('deleteAccountDialog.technicalErrorTitle'),
+          message: t('deleteAccountDialog.genericError'),
+        }
 
   return (
     <>
@@ -52,7 +68,8 @@ export default function AccountDeletionSection() {
       <DeleteAccountDialog
         open={isDialogOpen}
         isDeleting={mutation.isPending}
-        errorMessage={errorMessage}
+        passwordError={passwordError}
+        globalError={globalError}
         onCancel={() => {
           mutation.reset()
           setIsDialogOpen(false)

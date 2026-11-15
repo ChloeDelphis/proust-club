@@ -8,7 +8,8 @@ import styles from './DeleteAccountDialog.module.css'
 interface DeleteAccountDialogProps {
   open: boolean
   isDeleting: boolean
-  errorMessage: string | null
+  passwordError: string | null
+  globalError: { title?: string; message: string; detail?: string } | null
   onCancel: () => void
   onConfirm: (currentPassword: string) => void
 }
@@ -16,7 +17,8 @@ interface DeleteAccountDialogProps {
 export default function DeleteAccountDialog({
   open,
   isDeleting,
-  errorMessage,
+  passwordError,
+  globalError,
   onCancel,
   onConfirm,
 }: DeleteAccountDialogProps) {
@@ -65,13 +67,22 @@ export default function DeleteAccountDialog({
             <FormField
               label={t('deleteAccountDialog.currentPasswordLabel')}
               isUiField
+              error={passwordError ?? undefined}
+              feedback={globalError ? (
+                <ErrorMessage
+                  title={globalError.title}
+                  message={globalError.message}
+                  detail={globalError.detail}
+                  plain
+                />
+              ) : undefined}
+              reserveErrorSpace
               type="password"
               value={currentPassword}
               onChange={event => setCurrentPassword(event.target.value)}
               autoComplete="current-password"
               required
             />
-            {errorMessage && <ErrorMessage message={errorMessage} />}
             <div className={styles.actions}>
               <button className={styles.cancelButton} type="button" onClick={cancel} disabled={isDeleting}>
                 {t('deleteAccountDialog.cancelButton')}

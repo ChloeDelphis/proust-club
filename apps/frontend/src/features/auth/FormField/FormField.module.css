@@ -4,6 +4,39 @@
   gap: var(--space-1);
 }
 
+.hasError > .input,
+.hasError .passwordControl {
+  border-color: var(--color-danger-text);
+}
+
+.errorSlot {
+  display: grid;
+  align-content: start;
+  min-height: var(--space-12);
+  margin-top: var(--space-1);
+}
+
+.errorPlaceholder {
+  visibility: hidden;
+}
+
+.reserveErrorSpace .errorSlot {
+  min-height: var(--space-12);
+}
+
+.error {
+  display: block;
+  color: var(--color-danger-text);
+  font-size: var(--text-xs);
+  line-height: var(--line-height-normal);
+}
+
+@media (width < 34rem) {
+  .reserveErrorSpace .errorSlot {
+    min-height: calc(var(--space-16) + var(--space-2));
+  }
+}
+
 .accountField {
   width: 100%;
 }

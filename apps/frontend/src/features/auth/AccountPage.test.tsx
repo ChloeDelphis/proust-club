@@ -175,6 +175,7 @@ describe('connected', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByRole('heading', { name: 'Supprimer mon compte ?' })).toBeInTheDocument()
+    expect(within(dialog).queryByText('\\u00a0')).not.toBeInTheDocument()
     expect(within(dialog).getByText('Vos citations enregistrées, vos listes et vos annotations seront définitivement supprimées.')).toBeInTheDocument()
     expect(within(dialog).getByText('Pour confirmer, saisissez votre mot de passe.')).toBeInTheDocument()
     expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeDisabled()
@@ -197,8 +198,39 @@ describe('connected', () => {
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mauvais-mot-de-passe')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer mon compte' }))
 
-    expect(await screen.findByText('Mot de passe actuel incorrect.')).toBeInTheDocument()
+    expect(await screen.findByText('Le mot de passe est incorrect.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Mot de passe actuel')).toHaveAttribute('aria-invalid', 'true')
     expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeInTheDocument()
+  })
+
+  it('shows a discreet global error for technical account deletion failures', async () => {
+    vi.mocked(authApi.deleteAccount).mockRejectedValue(new ApiError(500))
+
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mot-de-passe-actuel')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer mon compte' }))
+
+    expect(await within(dialog).findByText('Erreur technique · 500')).toBeInTheDocument()
+    expect(within(dialog).getByText("Votre compte n'a pas pu être supprimé. Veuillez réessayer.")).toBeInTheDocument()
+    expect(screen.getByLabelText('Mot de passe actuel')).not.toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('shows the retry delay returned by the API when account deletion is rate-limited', async () => {
+    vi.mocked(authApi.deleteAccount).mockRejectedValue(new ApiError(429, undefined, 271))
+
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mot-de-passe-actuel')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer mon compte' }))
+
+    expect(await within(dialog).findByText('Trop de tentatives.')).toBeInTheDocument()
+    expect(within(dialog).getByText('Vous pourrez réessayer dans 5 minutes.')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Limite de tentatives atteinte · 429')).not.toBeInTheDocument()
   })
 
   it('shows a loading state while the account deletion request is pending', async () => {

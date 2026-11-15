@@ -71,6 +71,16 @@ describe('apiFetch', () => {
       .rejects.toMatchObject({ status: 400, code: 'password_matches_identifier' })
   })
 
+  it('carries Retry-After seconds on a rate-limited response', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, {
+      status: 429,
+      headers: { 'Retry-After': '271' },
+    }))
+
+    await expect(apiFetch('/api/auth/account/delete'))
+      .rejects.toMatchObject({ status: 429, retryAfterSeconds: 271 })
+  })
+
   it('returns undefined for a 204 No Content response instead of parsing an empty body', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
 

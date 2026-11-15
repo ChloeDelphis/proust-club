@@ -1,11 +1,13 @@
 export class ApiError extends Error {
   status: number
   code?: string
+  retryAfterSeconds?: number
 
-  constructor(status: number, code?: string) {
+  constructor(status: number, code?: string, retryAfterSeconds?: number) {
     super(`HTTP ${status}`)
     this.status = status
     this.code = code
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
@@ -38,7 +40,11 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     const code = body && typeof body === 'object' && 'code' in body && typeof body.code === 'string'
       ? body.code
       : undefined
-    throw new ApiError(response.status, code)
+    const retryAfterHeader = response.headers.get('Retry-After')
+    const retryAfterSeconds = retryAfterHeader && /^\d+$/.test(retryAfterHeader)
+      ? Number(retryAfterHeader)
+      : undefined
+    throw new ApiError(response.status, code, retryAfterSeconds)
   }
   if (response.status === 204) {
     return undefined as T

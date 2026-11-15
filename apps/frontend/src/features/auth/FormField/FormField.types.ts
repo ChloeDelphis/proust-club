@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode } from 'react'
 
 // `id` excluded, not just overridden at runtime: FormField always owns the label/input
 // association itself (generated via useId), so there's no legitimate caller-supplied id — this
@@ -6,6 +6,9 @@ import type { InputHTMLAttributes } from 'react'
 export interface FormFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   label: string
   hint?: string
+  error?: string
+  feedback?: ReactNode
+  reserveErrorSpace?: boolean
   hintStatus?: 'idle' | 'invalid' | 'success'
   isAccountField?: boolean
   isUiField?: boolean

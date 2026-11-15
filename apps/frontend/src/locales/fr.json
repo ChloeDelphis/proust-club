@@ -164,9 +164,14 @@
     "cancelButton": "Annuler",
     "confirmButton": "Supprimer mon compte",
     "pendingButton": "Suppression en cours…",
-    "wrongCurrentPasswordError": "Mot de passe actuel incorrect.",
-    "rateLimitError": "Trop de tentatives. Réessayez plus tard.",
-    "genericError": "La suppression du compte a échoué. Réessayez."
+    "wrongCurrentPasswordError": "Le mot de passe est incorrect.",
+    "rateLimitMessage": "Trop de tentatives.",
+    "retryAfterOneMinute": "Vous pourrez réessayer dans 1 minute.",
+    "retryAfterMinutes": "Vous pourrez réessayer dans {{minutes}} minutes.",
+    "retryAfterFallback": "Vous pourrez réessayer plus tard.",
+    "technicalErrorTitle": "Erreur technique",
+    "technicalErrorTitleWithStatus": "Erreur technique · {{status}}",
+    "genericError": "Votre compte n'a pas pu être supprimé. Veuillez réessayer."
   },
   "forgotPasswordForm": {
     "emailLabel": "Adresse e-mail",
