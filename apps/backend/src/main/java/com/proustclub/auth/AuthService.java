@@ -111,15 +111,10 @@ class AuthService {
 
     @Transactional(readOnly = true)
     Authentication authenticate(String email, String password) {
-        var authentication = reauthenticate(email, password);
-        log.info("User logged in");
-        return authentication;
+        return reauthenticate(email, password);
     }
 
-    // Same AuthenticationManager round-trip as authenticate(), without the "User logged in" log —
-    // for callers re-verifying a password on an already-open session (e.g. PasswordChangeService),
-    // where no new login actually happens and that log line would be misleading.
-    //
+    // Reuses the same AuthenticationManager round-trip for login and current-password checks.
     // Normalizes here, not by the caller: this is the one place the login credential enters
     // AuthenticationManager, so every caller (register()'s auto-login, AuthController.login(),
     // PasswordChangeService's reauthentication) gets the same normalization without having to
@@ -133,8 +128,6 @@ class AuthService {
         try {
             return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(normalizedEmail, password));
         } catch (AuthenticationException e) {
-            // Never the raw identifier — even normalized, it's still an email (see ADR-013).
-            log.warn("Authentication failed");
             throw ApiException.invalidCredentials();
         }
     }

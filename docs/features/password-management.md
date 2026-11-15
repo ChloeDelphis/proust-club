@@ -122,7 +122,7 @@ No new Flyway migration — `users.password_hash` already exists (V4).
 
 ### Current password re-verification
 
-Goes through the same `AuthenticationManager` round-trip as login (`AuthService.reauthenticate`, extracted from `AuthService.authenticate` so the "User logged in" log line — accurate for an actual login — isn't emitted for what is really a re-verification on an already-open session). A wrong current password returns the exact same generic `401 Invalid email or password.` as a failed login — no distinct error code or message that would tell a caller *why* it failed beyond "the endpoint requires proof of the current password." The current session's own principal carries any existing display username and normalized email; the password policy checks those server-resolved values after re-authentication and before HIBP.
+Goes through the same `AuthenticationManager` round-trip as login. A wrong current password returns the exact same generic `401 Invalid email or password.` as a failed login — no distinct error code or message that would tell a caller *why* it failed beyond "the endpoint requires proof of the current password." Internally, failed current-password checks are logged as a `reauthentication_attempt` with the action, without account identifiers. The current session's own principal carries any existing display username and normalized email; the password policy checks those server-resolved values after re-authentication and before HIBP.
 
 ### Session handling
 

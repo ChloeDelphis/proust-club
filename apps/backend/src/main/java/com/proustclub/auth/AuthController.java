@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -81,17 +82,30 @@ class AuthController {
         // Baseline instrumentation for credential-stuffing detection (Phase A1) — see
         // docs/features/rate-limiting.md "Login attempt baseline" for scope/rationale.
         Authentication authentication;
+        UserResponse user;
+        boolean credentialsAccepted = false;
         try {
             rateLimiter.checkLoginByIp(httpRequest);
             rateLimiter.checkLoginByAccount(request.email());
             authentication = service.authenticate(request.email(), request.password());
+            credentialsAccepted = true;
+            sessionPersister.persist(authentication, httpRequest, httpResponse);
+            user = service.currentUser(currentUser.resolveUuid(authentication));
+        } catch (ErrorResponseException e) {
+            if (!credentialsAccepted && e.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
+                log.warn("login_attempt outcome=rate_limited");
+            } else if (!credentialsAccepted && e.getStatusCode().value() == HttpStatus.UNAUTHORIZED.value()) {
+                log.warn("login_attempt outcome=failure reason=invalid_credentials");
+            } else {
+                log.error("login_attempt outcome=error exceptionType={}", e.getClass().getSimpleName());
+            }
+            throw e;
         } catch (RuntimeException e) {
-            log.warn("login_attempt outcome=failure");
+            log.error("login_attempt outcome=error exceptionType={}", e.getClass().getSimpleName());
             throw e;
         }
         log.info("login_attempt outcome=success");
-        sessionPersister.persist(authentication, httpRequest, httpResponse);
-        return service.currentUser(currentUser.resolveUuid(authentication));
+        return user;
     }
 
     @Operation(summary = "Log out", description = "Invalidates the current session.")
@@ -100,8 +114,8 @@ class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        log.info("User logged out");
         logoutHandlers.forEach(handler -> handler.logout(httpRequest, httpResponse, authentication));
+        log.info("User logged out");
     }
 
     @Operation(summary = "Current user", description = "Returns the authenticated user, or 401 if there is no active session.")

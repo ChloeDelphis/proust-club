@@ -83,12 +83,14 @@ WARN rate_limit_exceeded endpoint=login keyType=ip
 
 ```
 INFO login_attempt outcome=success
-WARN login_attempt outcome=failure
+WARN login_attempt outcome=failure reason=invalid_credentials
+WARN login_attempt outcome=rate_limited
+ERROR login_attempt outcome=error exceptionType=...
 ```
 
 No account/IP identifier, same reasoning as above. Purpose: establish a real-traffic baseline (volume, failure rate) to inform a future anomaly-detection threshold. Scoped to this endpoint only, not to `AuthService.authenticate()`/`reauthenticate()`, which are also reached by `register()`'s auto-login and by password-change reauthentication — neither is a login attempt and counting them would skew the baseline. No counter, no sliding window, no threshold yet: this is pure per-attempt telemetry, aggregated after the fact (there is no log-aggregation/observability layer in the project today). A threshold-based anomaly-detection event is a separate, not-yet-built capability, gated on having observed real traffic and having somewhere to actually consume the signal.
 
-A rate-limited login (`rate_limit_exceeded` above) also produces `login_attempt outcome=failure` — two log lines for one rejected request, deliberately: `rate_limit_exceeded` identifies which bucket tripped, `login_attempt` keeps the attempt in the overall baseline. Not a bug if both appear together.
+A successful event is emitted only after the session is persisted. Invalid credentials, rate limiting, and unexpected errors have distinct outcomes; unexpected errors include only the exception class, never the exception message or request data. A rate-limited login also emits `rate_limit_exceeded` above; both events are intentional, one recording the limit and one recording the login outcome. Failed current-password checks on password change/account deletion are logged separately as `reauthentication_attempt`, without account identifiers. If session setup fails after credentials were accepted, the attempt is classified as an error rather than a successful login.
 
 ---
 

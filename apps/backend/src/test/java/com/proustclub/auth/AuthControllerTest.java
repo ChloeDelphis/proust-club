@@ -5,12 +5,17 @@ import com.proustclub.TestcontainersConfiguration;
 import com.proustclub.auth.dto.LoginRequest;
 import com.proustclub.auth.dto.RegisterRequest;
 import com.proustclub.mail.MailService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -26,10 +31,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,10 +46,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
+@ExtendWith(OutputCaptureExtension.class)
 class AuthControllerTest {
 
     @Autowired
@@ -64,6 +73,9 @@ class AuthControllerTest {
     // test below is to observe how many times the real query path is actually hit, not to stub it.
     @MockitoSpyBean
     UserRepository userRepository;
+
+    @MockitoSpyBean
+    SessionPersister sessionPersister;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -287,7 +299,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void loginWithCorrectCredentialsOpensSession() throws Exception {
+    void loginWithCorrectCredentialsOpensSession(CapturedOutput output) throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
                 .andExpect(status().isCreated());
@@ -295,7 +307,13 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("marcel@example.com", "hunter2222password")))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("marcel@example.com"))
+                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.uuid").exists())
                 .andExpect(jsonPath("$.username").value(org.hamcrest.Matchers.nullValue()));
+
+        assertThat(output).contains("login_attempt outcome=success");
+        assertThat(output).doesNotContain("User logged in");
     }
 
     @Test
@@ -312,7 +330,7 @@ class AuthControllerTest {
 
     // Status only, not the ProblemDetail body — see the error-handling integration test.
     @Test
-    void loginWithWrongPasswordReturnsUnauthorized() throws Exception {
+    void loginWithWrongPasswordReturnsUnauthorized(CapturedOutput output) throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
                 .andExpect(status().isCreated());
@@ -320,6 +338,10 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("marcel@example.com", "wrong-password")))
                 .andExpect(status().isUnauthorized());
+
+        assertThat(output).contains("login_attempt outcome=failure reason=invalid_credentials");
+        assertThat(output).doesNotContain("Authentication failed");
+        assertThat(output).doesNotContain("marcel@example.com");
     }
 
     @Test
@@ -337,7 +359,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void unknownEmailAndWrongPasswordReturnIdenticalBody() throws Exception {
+    void unknownEmailAndWrongPasswordReturnIdenticalBody(CapturedOutput output) throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("identicalbody", "identicalbody@example.com", "hunter2222password")))
                 .andExpect(status().isCreated());
@@ -354,6 +376,10 @@ class AuthControllerTest {
 
         assertThat(wrongPassword.getResponse().getContentAsString())
                 .isEqualTo(unknownUser.getResponse().getContentAsString());
+        assertThat(output.toString().lines()
+                .filter(line -> line.contains("login_attempt outcome=failure reason=invalid_credentials")))
+                .hasSize(2);
+        assertThat(output).doesNotContain("ghost-user-xyz@example.com");
     }
 
     // Structural anti-enumeration guard, deliberately not a wall-clock timing test (noisy, flaky
@@ -403,6 +429,23 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("csrflogin@example.com", "hunter2222password")))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void sessionPersistenceFailureLogsErrorWithoutExceptionMessage(CapturedOutput output) throws Exception {
+        mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("sessionerror", "sessionerror@example.com", "hunter2222password")))
+                .andExpect(status().isCreated());
+
+        doThrow(new IllegalStateException("sensitive exception detail"))
+                .when(sessionPersister).persist(any(), any(HttpServletRequest.class), any(HttpServletResponse.class));
+
+        assertThatThrownBy(() -> mockMvc.perform(post("/api/auth/login").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("sessionerror@example.com", "hunter2222password"))))
+                .hasRootCauseInstanceOf(IllegalStateException.class);
+
+        assertThat(output).contains("login_attempt outcome=error exceptionType=IllegalStateException");
+        assertThat(output).doesNotContain("sensitive exception detail");
     }
 
     @Test

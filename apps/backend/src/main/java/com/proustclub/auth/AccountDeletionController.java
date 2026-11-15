@@ -71,7 +71,12 @@ class AccountDeletionController {
     ) {
         var principal = currentUser.resolvePrincipal(authentication);
         rateLimiter.checkAccountDeletionByAccount(principal.getUserId());
-        authService.reauthenticate(authentication.getName(), request.currentPassword());
+        try {
+            authService.reauthenticate(authentication.getName(), request.currentPassword());
+        } catch (ApiException e) {
+            log.warn("reauthentication_attempt outcome=failure action=account_deletion");
+            throw e;
+        }
         accountDeletionService.deleteAccount(principal.getUserId());
         sessionInvalidator.invalidateAllSessions(principal);
         logoutHandlers.forEach(handler -> handler.logout(httpRequest, httpResponse, authentication));
