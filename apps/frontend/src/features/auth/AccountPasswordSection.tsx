@@ -39,11 +39,11 @@ export default function AccountPasswordSection({ username, email }: AccountPassw
   return (
     <section className={styles.section} aria-labelledby="account-security">
       <h2 className={styles.sectionTitle} id="account-security">{t('accountPage.securityTitle')}</h2>
-      <div className={styles.passwordRow}>
-        <div className={styles.passwordCopy}>
-          <h3 className={styles.itemTitle}>{t('accountPage.passwordTitle')}</h3>
-        </div>
-        {!isFormOpen && (
+      {!isFormOpen ? (
+        <div className={styles.passwordRow}>
+          <div className={styles.passwordCopy}>
+            <h3 className={styles.itemTitle}>{t('accountPage.passwordTitle')}</h3>
+          </div>
           <button
             className={styles.secondaryButton}
             type="button"
@@ -52,14 +52,14 @@ export default function AccountPasswordSection({ username, email }: AccountPassw
           >
             {t('accountPage.editPasswordButton')}
           </button>
-        )}
-      </div>
-      {isFormOpen && (
+        </div>
+      ) : (
         <div className={styles.passwordForm} id="account-password-form">
           <ChangePasswordForm
             username={username}
             email={email}
             isSubmitting={mutation.isPending}
+            isAccountForm
             onCancel={() => {
               mutation.reset()
               setIsFormOpen(false)

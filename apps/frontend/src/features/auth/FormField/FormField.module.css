@@ -4,6 +4,16 @@
   gap: var(--space-1);
 }
 
+.accountField {
+  width: 100%;
+}
+
+.accountField .label,
+.accountField .hint,
+.accountField .input {
+  font-family: var(--font-ui);
+}
+
 .label {
   font-size: var(--text-sm);
   font-family: var(--font-reading);

@@ -11,7 +11,7 @@ const { newPassword: newPasswordConstraints } = validationConstraints.PasswordCh
 // Computed once at module scope — see RegisterForm.tsx for why this is safe at module load.
 const passwordHint = passwordLengthHint(newPasswordConstraints)
 
-export default function ChangePasswordForm({ username, email, isSubmitting, onCancel, onSubmit }: ChangePasswordFormProps) {
+export default function ChangePasswordForm({ username, email, isSubmitting, isAccountForm = false, onCancel, onSubmit }: ChangePasswordFormProps) {
   const { t } = useTranslation()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -38,7 +38,7 @@ export default function ChangePasswordForm({ username, email, isSubmitting, onCa
   }
 
   return (
-    <form className={styles.root} onSubmit={handleSubmit} noValidate>
+    <form className={`${styles.root}${isAccountForm ? ` ${styles.accountRoot}` : ''}`} onSubmit={handleSubmit} noValidate>
       {/* No maxLength here, deliberately: PasswordChangeRequest.currentPassword has no @Size
           server-side (only @NotBlank) — it's a credential re-verified against a stored hash, not
           new data whose length policy the app is choosing, so there's no backend bound to mirror.
@@ -46,6 +46,7 @@ export default function ChangePasswordForm({ username, email, isSubmitting, onCa
           request-size limits are the backend's job if that's ever a concern. */}
       <FormField
         label={t('changePasswordForm.currentPasswordLabel')}
+        isAccountField={isAccountForm}
         type="password"
         value={currentPassword}
         onChange={e => setCurrentPassword(e.target.value)}
@@ -53,6 +54,7 @@ export default function ChangePasswordForm({ username, email, isSubmitting, onCa
       />
       <FormField
         label={t('changePasswordForm.newPasswordLabel')}
+        isAccountField={isAccountForm}
         type="password"
         value={newPassword}
         onChange={e => setNewPassword(e.target.value)}
@@ -60,7 +62,7 @@ export default function ChangePasswordForm({ username, email, isSubmitting, onCa
         maxLength={newPasswordConstraints.maxLength}
         hint={passwordHint}
       />
-      <div className={styles.formActions}>
+      <div className={`${styles.formActions}${isAccountForm ? ` ${styles.formActionsInline}` : ''}`}>
         <button className={styles.button} type="submit" disabled={isSubmitting}>
           {t('changePasswordForm.submitButton')}
         </button>

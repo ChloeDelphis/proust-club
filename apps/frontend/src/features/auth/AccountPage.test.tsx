@@ -37,6 +37,7 @@ const connectedUser: authApi.UserResponse = {
 
 async function openPasswordForm() {
   await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
+  expect(screen.queryByRole('heading', { name: 'Mot de passe' })).not.toBeInTheDocument()
 }
 
 beforeEach(() => {
