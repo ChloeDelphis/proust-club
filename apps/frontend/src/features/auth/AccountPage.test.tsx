@@ -17,6 +17,7 @@ function wrapper({ children }: { children: ReactNode }) {
       <ToastProvider>
         <MemoryRouter initialEntries={['/account']}>
           <Routes>
+            <Route path="/" element={<div>Accueil</div>} />
             <Route path="/account" element={children} />
             <Route path="/login" element={<div>Page de connexion</div>} />
           </Routes>
@@ -32,6 +33,10 @@ const connectedUser: authApi.UserResponse = {
   email: 'marcel@example.com',
   role: 'USER',
   emailVerified: true,
+}
+
+async function openPasswordForm() {
+  await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
 }
 
 beforeEach(() => {
@@ -53,10 +58,11 @@ describe('connected', () => {
 
   it('validates the new password client-side and does not call the API', async () => {
     render(<AccountPage />, { wrapper })
+    await openPasswordForm()
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'court')
-    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(screen.getByRole('alert')).toBeInTheDocument()
     expect(authApi.changePassword).not.toHaveBeenCalled()
@@ -64,10 +70,11 @@ describe('connected', () => {
 
   it('rejects a new password matching the username before calling the API', async () => {
     render(<AccountPage />, { wrapper })
+    await openPasswordForm()
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'MARCEL-LONG-USERNAME')
-    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(screen.getByText('Le mot de passe doit être différent des identifiants du compte.')).toBeInTheDocument()
     expect(authApi.changePassword).not.toHaveBeenCalled()
@@ -77,10 +84,11 @@ describe('connected', () => {
     vi.mocked(authApi.changePassword).mockResolvedValue(undefined)
 
     render(<AccountPage />, { wrapper })
+    await openPasswordForm()
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(authApi.changePassword).toHaveBeenCalledWith({
       currentPassword: 'ancien-mot-de-passe-long',
@@ -93,10 +101,11 @@ describe('connected', () => {
     vi.mocked(authApi.changePassword).mockRejectedValue(new ApiError(401))
 
     render(<AccountPage />, { wrapper })
+    await openPasswordForm()
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mauvais-mot-de-passe')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Mot de passe actuel incorrect.')).toBeInTheDocument()
   })
@@ -105,10 +114,11 @@ describe('connected', () => {
     vi.mocked(authApi.changePassword).mockRejectedValue(new ApiError(422))
 
     render(<AccountPage />, { wrapper })
+    await openPasswordForm()
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
   })
@@ -117,10 +127,11 @@ describe('connected', () => {
     vi.mocked(authApi.changePassword).mockRejectedValue(new ApiError(400, 'password_matches_identifier'))
 
     render(<AccountPage />, { wrapper })
+    await openPasswordForm()
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'mot-de-passe-different')
-    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Le mot de passe doit être différent des identifiants du compte.')).toBeInTheDocument()
   })
@@ -129,11 +140,39 @@ describe('connected', () => {
     vi.mocked(authApi.changePassword).mockRejectedValue(new ApiError(500))
 
     render(<AccountPage />, { wrapper })
+    await openPasswordForm()
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Changer le mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
     expect(await screen.findByText('Le changement de mot de passe a échoué. Réessayez.')).toBeInTheDocument()
+  })
+
+  it('re-authenticates, deletes the account and returns to the home page', async () => {
+    vi.mocked(authApi.deleteAccount).mockResolvedValue(undefined)
+
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mot-de-passe-actuel')
+    await userEvent.click(screen.getByRole('button', { name: 'Supprimer définitivement mon compte' }))
+
+    expect(authApi.deleteAccount).toHaveBeenCalledWith({ currentPassword: 'mot-de-passe-actuel' })
+    expect(await screen.findByText('Accueil')).toBeInTheDocument()
+    expect(await screen.findByText('Votre compte et vos données personnelles ont été supprimés.')).toBeInTheDocument()
+  })
+
+  it('keeps the deletion dialog open when the current password is incorrect', async () => {
+    vi.mocked(authApi.deleteAccount).mockRejectedValue(new ApiError(401))
+
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mauvais-mot-de-passe')
+    await userEvent.click(screen.getByRole('button', { name: 'Supprimer définitivement mon compte' }))
+
+    expect(await screen.findByText('Mot de passe actuel incorrect.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Supprimer définitivement mon compte' })).toBeInTheDocument()
   })
 })

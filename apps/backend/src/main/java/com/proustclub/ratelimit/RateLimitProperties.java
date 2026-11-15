@@ -8,7 +8,8 @@ import java.time.Duration;
 record RateLimitProperties(
         IpAndAccountLimit login, IpLimit register, IpLimit search,
         IpAndAccountLimit passwordReset, IpLimit passwordResetConfirm,
-        AccountLimit passwordChange, AccountLimit emailVerificationResend
+        AccountLimit passwordChange, AccountLimit emailVerificationResend,
+        AccountLimit accountDeletion
 ) {
 
     record IpAndAccountLimit(Limit perIp, Limit perAccount) {}

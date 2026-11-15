@@ -11,7 +11,7 @@ const { newPassword: newPasswordConstraints } = validationConstraints.PasswordCh
 // Computed once at module scope — see RegisterForm.tsx for why this is safe at module load.
 const passwordHint = passwordLengthHint(newPasswordConstraints)
 
-export default function ChangePasswordForm({ username, email, onSubmit }: ChangePasswordFormProps) {
+export default function ChangePasswordForm({ username, email, isSubmitting, onCancel, onSubmit }: ChangePasswordFormProps) {
   const { t } = useTranslation()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -60,9 +60,14 @@ export default function ChangePasswordForm({ username, email, onSubmit }: Change
         maxLength={newPasswordConstraints.maxLength}
         hint={passwordHint}
       />
-      <button className={styles.button} type="submit">
-        {t('changePasswordForm.submitButton')}
-      </button>
+      <div className={styles.formActions}>
+        <button className={styles.button} type="submit" disabled={isSubmitting}>
+          {t('changePasswordForm.submitButton')}
+        </button>
+        <button className={styles.cancelButton} type="button" onClick={onCancel} disabled={isSubmitting}>
+          {t('changePasswordForm.cancelButton')}
+        </button>
+      </div>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </form>
   )

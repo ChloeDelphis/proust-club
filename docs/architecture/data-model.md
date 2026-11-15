@@ -132,6 +132,8 @@ erDiagram
 
 **`users.uuid`** is a UUID (not a serial integer) — avoids enumerable user IDs in URLs and API responses. Generated in Postgres via `gen_random_uuid()` (built into Postgres 13+, no `pgcrypto` extension needed).
 
+**Account deletion is physical and cascading for private user data.** Deleting a `users` row cascades to its saved quote selections (including personal comments), tags, quote-tag associations, password-reset tokens, and email-verification tokens. The corpus tables are independent and remain intact. The account-deletion endpoint re-verifies the current password and expires all active sessions before clearing the current session. See [ADR-018](ADR-018-permanent-account-deletion.md) and [password-management.md](../features/password-management.md#account-deletion).
+
 **`quote_selections.id` and `tags.id` are UUID** (`DEFAULT gen_random_uuid()`), like `users.uuid` — not the original decision (see history below). Ownership is still enforced the same way it always was: every read, update and delete filters on `user_id` in the query itself (see [Feature doc](../features/quote-save-tags.md)) — the UUID doesn't replace that check, it's defense in depth on top of it. See [ADR-015](ADR-015-opaque-identifiers-for-user-owned-resources.md) for the general rule this follows and why it changed.
 
 *History*: these two columns were originally `SERIAL`; migrated to UUID once the project had no production data left to migrate and changing a PK was still cheap. See ADR-015 for the full reasoning.

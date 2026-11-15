@@ -1,0 +1,117 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-modal);
+  background: color-mix(in srgb, var(--color-surface-inverse) 35%, transparent);
+  animation: backdrop-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: calc(var(--z-index-modal) + 1);
+  box-sizing: border-box;
+  width: min(32rem, calc(100% - var(--space-8)));
+  max-height: min(90dvh, 42rem);
+  overflow-y: auto;
+  padding: var(--space-8);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-result-card);
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, -50%);
+  animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.title {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text);
+  font-family: var(--font-brand);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: var(--line-height-snug);
+}
+
+.description {
+  margin: 0 0 var(--space-6);
+  color: var(--color-text-muted);
+  font-family: var(--font-reading);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.cancelButton,
+.deleteButton {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  font: 600 var(--text-xs) / var(--line-height-normal) var(--font-ui);
+  cursor: pointer;
+}
+
+.cancelButton {
+  border-color: var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.cancelButton:hover {
+  background: var(--color-selection-bg);
+  color: var(--color-accent);
+}
+
+.deleteButton {
+  background: var(--color-danger-text);
+  color: var(--color-text-on-accent);
+}
+
+.deleteButton:hover {
+  background: var(--color-danger-accent);
+}
+
+.cancelButton:focus-visible,
+.deleteButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent);
+  outline-offset: var(--space-1);
+}
+
+.cancelButton:disabled,
+.deleteButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+@media (width < 32rem) {
+  .popup {
+    padding: var(--space-6);
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .deleteButton {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .popup {
+    animation: none;
+  }
+}

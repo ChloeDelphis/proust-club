@@ -146,11 +146,23 @@ ChangePasswordForm (current password + new password fields)
 
 Route: `/account`. Connected users reach it from the account menu in `Header`; `AccountPage` redirects unauthenticated users to `/login` after the current-user query resolves.
 
+The account page groups the signed-in email, password controls, and account-deletion information into a narrow, left-aligned panel. The password form starts collapsed and opens inline from “Modifier”; it keeps the current-password and new-password fields, then offers “Enregistrer le nouveau mot de passe” and “Annuler”. Success closes the form and shows a confirmation toast; a failed request leaves it open with its localized error.
+
+### Account deletion
+
+The user starts deletion from `/account`, reviews the irreversible warning in a modal, and re-enters the current password. The frontend sends only the password; the account UUID always comes from the authenticated session. The backend rate-limits attempts per account, re-authenticates the password, and deletes the `users` row inside a transaction. Cascading foreign keys remove that account's saved citations, private comments, tags, quote-tag associations, and authentication tokens; the shared Proust corpus is unaffected. After the transaction commits, every active session is expired and the current session and cookies are cleared. The endpoint responds with `204` and the frontend clears its private query cache, returns to the home page, and shows a confirmation toast.
+
+The deletion event is logged with the account UUID for audit traceability, without email, credentials, tokens, or personal content. Deletion does not modify historical log entries; the hosting environment applies its automatic log-retention and purge policy.
+
 ## Manual verification
 
 ### Happy path
 
 - Change password with the correct current password and a new password distinct from both account identifiers: `POST /api/auth/password` returns `204`; the current session remains open and other sessions are invalidated.
+- On `/account`, verify the email and section hierarchy are readable at desktop and mobile widths; open the password form with “Modifier”, cancel it, then submit a valid change and confirm the form closes with a toast.
+- On `/account`, submit an incorrect current password and confirm the password form remains open with the localized error.
+- Delete an account with saved citations, comments, and tags: confirm the modal requires the current password, the endpoint returns `204`, all personal rows and sessions disappear, the browser returns home, and the success toast appears. Confirm the corpus remains available.
+- Attempt deletion with an incorrect password: confirm `401`, the dialog stays open with an error, and the account and data remain. Attempt without a session (`401`) and with a blank password (`400`).
 - Confirm a reset with a live token and a new password distinct from both identifiers: `POST /api/auth/password-reset/confirm` returns `200` and opens a session.
 - On `/forgot-password`, confirm the explanatory prompt, generic confirmation after submission, and resend button disabled for five minutes then enabled; the form is replaced by confirmation after a successful request.
 - On `/reset-password?token=...`, confirm the heading is “Choisir un nouveau mot de passe”, the visibility toggle and length guidance are present, and the submit action is “Enregistrer le nouveau mot de passe”.

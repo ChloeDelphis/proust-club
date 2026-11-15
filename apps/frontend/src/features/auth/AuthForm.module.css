@@ -50,6 +50,36 @@
   outline-offset: var(--space-1);
 }
 
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.cancelButton {
+  padding: var(--space-3) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cancelButton:hover {
+  color: var(--color-accent);
+}
+
+.cancelButton:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: var(--border-width) solid var(--color-accent);
+  outline-offset: var(--space-1);
+}
+
+.cancelButton:disabled {
+  cursor: not-allowed;
+}
+
 .error {
   margin: 0;
   font-size: var(--text-sm);

@@ -1,0 +1,168 @@
+.root {
+  box-sizing: border-box;
+  width: min(100% - var(--space-8), 32rem);
+  margin: var(--space-8) auto var(--space-12);
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+.title {
+  margin: 0 0 var(--space-6);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-style: italic;
+  font-weight: 500;
+  line-height: var(--line-height-tight);
+  text-align: center;
+}
+
+.title::after {
+  display: block;
+  width: 4rem;
+  height: var(--border-width);
+  margin: var(--space-4) auto 0;
+  background: var(--color-frieze);
+  content: '';
+}
+
+.section + .section {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text);
+  font-family: var(--font-brand);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: var(--line-height-snug);
+}
+
+.informationList {
+  margin: 0;
+}
+
+.informationItem {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.informationLabel,
+.itemDescription,
+.email {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-height-normal);
+}
+
+.informationLabel,
+.itemDescription {
+  color: var(--color-text-muted);
+}
+
+.email {
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+.passwordRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.passwordCopy {
+  min-width: 0;
+}
+
+.itemTitle {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: var(--line-height-normal);
+}
+
+.itemDescription {
+  font-family: var(--font-reading);
+}
+
+.secondaryButton {
+  flex: 0 0 auto;
+  padding: var(--space-2) var(--space-5);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 600 var(--text-sm) / var(--line-height-normal) var(--font-ui);
+  cursor: pointer;
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.secondaryButton:hover {
+  border-color: var(--color-accent);
+  background: var(--color-selection-bg);
+  color: var(--color-accent);
+}
+
+.secondaryButton:focus-visible,
+.deleteButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent);
+  outline-offset: var(--space-1);
+}
+
+.passwordForm {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.passwordForm > form {
+  margin: 0;
+}
+
+.deleteSection .itemDescription {
+  margin-bottom: var(--space-3);
+}
+
+.deleteButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-danger-text);
+  font: 600 var(--text-sm) / var(--line-height-normal) var(--font-ui);
+  text-align: left;
+}
+
+.deleteButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (width < 34rem) {
+  .root {
+    width: calc(100% - var(--space-6));
+    margin-top: var(--space-5);
+    padding: var(--space-5);
+  }
+
+  .passwordRow {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondaryButton {
+    transition: none;
+  }
+}

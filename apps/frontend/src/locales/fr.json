@@ -136,13 +136,35 @@
     "currentPasswordLabel": "Mot de passe actuel",
     "newPasswordLabel": "Nouveau mot de passe",
     "newPasswordSubject": "Le nouveau mot de passe",
-    "submitButton": "Changer le mot de passe"
+    "submitButton": "Enregistrer le nouveau mot de passe",
+    "cancelButton": "Annuler"
   },
   "accountPage": {
     "passwordChangedToast": "Mot de passe changé.",
     "wrongCurrentPasswordError": "Mot de passe actuel incorrect.",
     "genericError": "Le changement de mot de passe a échoué. Réessayez.",
-    "title": "Compte"
+    "title": "Mon compte",
+    "personalInformationTitle": "Informations personnelles",
+    "emailLabel": "Adresse e-mail",
+    "securityTitle": "Sécurité",
+    "passwordTitle": "Mot de passe",
+    "passwordDescription": "Modifiez votre mot de passe de connexion.",
+    "editPasswordButton": "Modifier",
+    "deleteTitle": "Suppression du compte",
+    "deleteDescription": "La suppression de votre compte entraîne la perte définitive de vos citations enregistrées, de vos listes et de vos annotations.",
+    "deleteAccountButton": "Supprimer mon compte",
+    "accountDeletedToast": "Votre compte et vos données personnelles ont été supprimés."
+  },
+  "deleteAccountDialog": {
+    "title": "Confirmer la suppression du compte",
+    "description": "Cette action est définitive. Vos citations enregistrées, commentaires et tags seront supprimés. Saisissez votre mot de passe pour confirmer.",
+    "currentPasswordLabel": "Mot de passe actuel",
+    "cancelButton": "Annuler",
+    "confirmButton": "Supprimer définitivement mon compte",
+    "pendingButton": "Suppression en cours…",
+    "wrongCurrentPasswordError": "Mot de passe actuel incorrect.",
+    "rateLimitError": "Trop de tentatives. Réessayez plus tard.",
+    "genericError": "La suppression du compte a échoué. Réessayez."
   },
   "forgotPasswordForm": {
     "emailLabel": "Adresse e-mail",
