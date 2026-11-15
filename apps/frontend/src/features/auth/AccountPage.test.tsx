@@ -62,7 +62,7 @@ describe('connected', () => {
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'court')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(screen.getByRole('alert')).toBeInTheDocument()
     expect(authApi.changePassword).not.toHaveBeenCalled()
@@ -74,7 +74,7 @@ describe('connected', () => {
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'MARCEL-LONG-USERNAME')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(screen.getByText('Le mot de passe doit être différent des identifiants du compte.')).toBeInTheDocument()
     expect(authApi.changePassword).not.toHaveBeenCalled()
@@ -88,7 +88,7 @@ describe('connected', () => {
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(authApi.changePassword).toHaveBeenCalledWith({
       currentPassword: 'ancien-mot-de-passe-long',
@@ -105,7 +105,7 @@ describe('connected', () => {
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mauvais-mot-de-passe')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(await screen.findByText('Mot de passe actuel incorrect.')).toBeInTheDocument()
   })
@@ -118,7 +118,7 @@ describe('connected', () => {
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
   })
@@ -131,7 +131,7 @@ describe('connected', () => {
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'mot-de-passe-different')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(await screen.findByText('Le mot de passe doit être différent des identifiants du compte.')).toBeInTheDocument()
   })
@@ -144,7 +144,7 @@ describe('connected', () => {
 
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'ancien-mot-de-passe-long')
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(await screen.findByText('Le changement de mot de passe a échoué. Réessayez.')).toBeInTheDocument()
   })

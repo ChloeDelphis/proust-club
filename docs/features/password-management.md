@@ -146,7 +146,7 @@ ChangePasswordForm (current password + new password fields)
 
 Route: `/account`. Connected users reach it from the account menu in `Header`; `AccountPage` redirects unauthenticated users to `/login` after the current-user query resolves.
 
-The account page presents the signed-in email, password controls, and account-deletion information as a standalone, unframed page. Its centered italic title sits above left-aligned sections separated by muted rose rules; functional text and controls use the interface sans serif, while section headings remain serif. The password form starts collapsed and opens inline from “Modifier”; it keeps the current-password and new-password fields, then offers “Enregistrer le nouveau mot de passe” and “Annuler”. Success closes the form and shows a confirmation toast; a failed request leaves it open with its localized error.
+The account page presents the signed-in email, password controls, and account-deletion information as a standalone, unframed page. Its centered italic title sits above left-aligned sections separated by muted rose rules; functional text and controls use the interface sans serif, while section headings remain serif. The password form starts collapsed and opens inline from “Modifier” as a slightly inset subsection. It keeps the current-password and new-password fields, then offers a compact “Enregistrer” button with a discreet “Annuler” action directly underneath. Success closes the form and shows a confirmation toast; a failed request leaves it open with its localized error.
 
 ### Account deletion
 

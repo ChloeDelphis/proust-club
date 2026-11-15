@@ -136,7 +136,7 @@
     "currentPasswordLabel": "Mot de passe actuel",
     "newPasswordLabel": "Nouveau mot de passe",
     "newPasswordSubject": "Le nouveau mot de passe",
-    "submitButton": "Enregistrer le nouveau mot de passe",
+    "submitButton": "Enregistrer",
     "cancelButton": "Annuler"
   },
   "accountPage": {

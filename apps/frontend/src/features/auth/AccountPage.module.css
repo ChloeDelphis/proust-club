@@ -117,6 +117,8 @@
 .passwordForm {
   display: grid;
   gap: var(--space-4);
+  width: calc(100% - var(--space-6));
+  margin-inline-start: var(--space-6);
   margin-top: var(--space-5);
   padding-top: var(--space-5);
   border-top: var(--border-width) solid var(--color-border-soft);
@@ -124,11 +126,17 @@
 
 .passwordForm > form {
   margin: 0;
+  gap: var(--space-5);
 }
 
 .passwordForm form button[type='submit'] {
+  align-self: flex-start;
+  padding: var(--space-3) var(--space-5);
   background: var(--color-accent-quiet);
+  font-size: var(--text-sm);
   font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .passwordForm form button[type='submit']:hover {
