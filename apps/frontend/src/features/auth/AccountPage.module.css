@@ -151,6 +151,7 @@
   color: var(--color-danger-muted);
   font: 500 var(--text-sm) / var(--line-height-normal) var(--font-ui);
   text-align: left;
+  cursor: pointer;
 }
 
 .deleteButton:disabled {
