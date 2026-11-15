@@ -159,7 +159,7 @@
   "deleteAccountDialog": {
     "title": "Supprimer mon compte ?",
     "description": "Vos citations enregistrées, vos listes et vos annotations seront définitivement supprimées.",
-    "confirmationInstruction": "Pour confirmer la suppression, saisissez votre mot de passe.",
+    "confirmationInstruction": "Pour confirmer, saisissez votre mot de passe.",
     "currentPasswordLabel": "Mot de passe actuel",
     "cancelButton": "Annuler",
     "confirmButton": "Supprimer mon compte",

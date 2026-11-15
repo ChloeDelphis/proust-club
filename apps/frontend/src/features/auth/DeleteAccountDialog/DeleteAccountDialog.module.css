@@ -24,8 +24,39 @@
   animation: modal-in var(--motion-duration-fast) var(--motion-ease-out);
 }
 
+.closeButton {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: grid;
+  width: var(--space-8);
+  height: var(--space-8);
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 400 var(--text-xl) / var(--line-height-tight) var(--font-ui);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  color: var(--color-accent-quiet);
+}
+
+.closeButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent-quiet);
+  outline-offset: var(--space-1);
+}
+
+.closeButton:disabled {
+  cursor: not-allowed;
+}
+
 .title {
   margin: 0 0 var(--space-3);
+  padding-right: var(--space-8);
   color: var(--color-text);
   font-family: var(--font-brand);
   font-size: var(--text-xl);
@@ -84,6 +115,10 @@
 }
 
 .deleteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   background: var(--color-danger-modal);
   color: var(--color-text-on-accent);
 }
@@ -110,6 +145,20 @@
   cursor: not-allowed;
 }
 
+.spinner {
+  width: var(--text-xs);
+  height: var(--text-xs);
+  flex: 0 0 auto;
+  border: var(--border-width) solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-full);
+  animation: delete-spinner var(--motion-duration-spin) linear infinite;
+}
+
+@keyframes delete-spinner {
+  to { transform: rotate(1turn); }
+}
+
 @media (width < 32rem) {
   .actions {
     flex-direction: column-reverse;
@@ -124,6 +173,10 @@
 @media (prefers-reduced-motion: reduce) {
   .backdrop,
   .popup {
+    animation: none;
+  }
+
+  .spinner {
     animation: none;
   }
 }

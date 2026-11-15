@@ -176,7 +176,7 @@ describe('connected', () => {
     const dialog = screen.getByRole('dialog')
     expect(within(dialog).getByRole('heading', { name: 'Supprimer mon compte ?' })).toBeInTheDocument()
     expect(within(dialog).getByText('Vos citations enregistrées, vos listes et vos annotations seront définitivement supprimées.')).toBeInTheDocument()
-    expect(within(dialog).getByText('Pour confirmer la suppression, saisissez votre mot de passe.')).toBeInTheDocument()
+    expect(within(dialog).getByText('Pour confirmer, saisissez votre mot de passe.')).toBeInTheDocument()
     expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeDisabled()
     await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mot-de-passe-actuel')
     expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeEnabled()
@@ -199,5 +199,36 @@ describe('connected', () => {
 
     expect(await screen.findByText('Mot de passe actuel incorrect.')).toBeInTheDocument()
     expect(within(dialog).getByRole('button', { name: 'Supprimer mon compte' })).toBeInTheDocument()
+  })
+
+  it('shows a loading state while the account deletion request is pending', async () => {
+    let resolveDeletion = () => {}
+    vi.mocked(authApi.deleteAccount).mockReturnValue(new Promise<void>(resolve => {
+      resolveDeletion = resolve
+    }))
+
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.type(await screen.findByLabelText('Mot de passe actuel'), 'mot-de-passe-actuel')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Supprimer mon compte' }))
+
+    const pendingButton = within(dialog).getByRole('button', { name: 'Suppression en cours…' })
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true')
+    expect(pendingButton.querySelector('[aria-hidden="true"]')).toBeInTheDocument()
+
+    resolveDeletion()
+    expect(await screen.findByText('Accueil')).toBeInTheDocument()
+  })
+
+  it('closes the deletion dialog from its close button', async () => {
+    render(<AccountPage />, { wrapper })
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Supprimer mon compte' }))
+    const dialog = screen.getByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Fermer' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

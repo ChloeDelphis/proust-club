@@ -43,6 +43,13 @@ export default function DeleteAccountDialog({
       <Dialog.Portal>
         <Dialog.Backdrop className={styles.backdrop} />
         <Dialog.Popup className={styles.popup} aria-labelledby={titleId} aria-describedby={descriptionId}>
+          <Dialog.Close
+            className={styles.closeButton}
+            aria-label={t('tagPicker.close')}
+            disabled={isDeleting}
+          >
+            ×
+          </Dialog.Close>
           <Dialog.Title className={styles.title} id={titleId}>
             {t('deleteAccountDialog.title')}
           </Dialog.Title>
@@ -73,8 +80,10 @@ export default function DeleteAccountDialog({
                 className={styles.deleteButton}
                 type="submit"
                 disabled={isDeleting || currentPassword.trim().length === 0}
+                aria-busy={isDeleting}
               >
-                {t(isDeleting ? 'deleteAccountDialog.pendingButton' : 'deleteAccountDialog.confirmButton')}
+                {isDeleting && <span className={styles.spinner} aria-hidden="true" />}
+                <span>{t(isDeleting ? 'deleteAccountDialog.pendingButton' : 'deleteAccountDialog.confirmButton')}</span>
               </button>
             </div>
           </form>
