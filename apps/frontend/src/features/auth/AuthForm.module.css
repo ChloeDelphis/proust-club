@@ -10,7 +10,11 @@
 .accountRoot {
   width: 100%;
   max-width: none;
-  gap: var(--space-5);
+  gap: var(--space-4);
+}
+
+.accountRoot .cancelButton {
+  text-decoration: none;
 }
 
 .passwordFieldGroup {
