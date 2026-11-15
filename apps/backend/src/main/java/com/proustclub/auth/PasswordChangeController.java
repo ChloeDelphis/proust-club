@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Auth", description = "Account creation and session-based authentication.")
 @RestController
 class PasswordChangeController {
+
+    private static final Logger log = LoggerFactory.getLogger(PasswordChangeController.class);
 
     private final PasswordChangeService service;
     private final RateLimiter rateLimiter;
@@ -52,7 +56,12 @@ class PasswordChangeController {
         var currentSessionId = httpRequest.getSession(false).getId();
         // authentication.getName() is the email — exactly what AuthService.reauthenticate() needs
         // to feed back into AuthenticationManager (see ADR-013).
-        service.verifyCurrentPassword(authentication.getName(), request.currentPassword());
+        try {
+            service.verifyCurrentPassword(authentication.getName(), request.currentPassword());
+        } catch (ApiException e) {
+            log.warn("reauthentication_attempt outcome=failure action=password_change");
+            throw e;
+        }
         service.checkNewPasswordDistinctFromIdentifiers(request.newPassword(), principal);
         service.checkNewPasswordNotCompromised(request.newPassword());
         service.changePassword(principal, request.newPassword(), currentSessionId);

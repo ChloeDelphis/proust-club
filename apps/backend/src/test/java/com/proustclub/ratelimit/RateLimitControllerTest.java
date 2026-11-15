@@ -9,8 +9,11 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -18,6 +21,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({TestcontainersConfiguration.class, PasswordBreachCheckerTestConfig.class})
 @SpringBootTest
 @AutoConfigureMockMvc
+@ExtendWith(OutputCaptureExtension.class)
 @TestPropertySource(properties = {
         "rate-limit.login.per-ip.capacity=2",
         "rate-limit.login.per-ip.refill-period=1h",
@@ -100,7 +105,7 @@ class RateLimitControllerTest {
     }
 
     @Test
-    void loginExceedingIpLimitReturns429() throws Exception {
+    void loginExceedingIpLimitReturns429(CapturedOutput output) throws Exception {
         mockMvc.perform(registerFrom("9.9.4.1", "ratelimit5", "ratelimit5@example.com"))
                 .andExpect(status().isCreated());
 
@@ -112,6 +117,9 @@ class RateLimitControllerTest {
         mockMvc.perform(loginFrom("9.9.4.2", "ratelimit5@example.com", "wrong-password-c"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"));
+
+        assertThat(output).contains("rate_limit_exceeded endpoint=login keyType=ip");
+        assertThat(output).contains("login_attempt outcome=rate_limited");
     }
 
     @Test

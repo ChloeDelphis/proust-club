@@ -8,8 +8,6 @@ import com.proustclub.quote.dto.TagResponse;
 import com.proustclub.quote.dto.TimelineQuote;
 import com.proustclub.quote.dto.TimelineResponse;
 import com.proustclub.volume.VolumeService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +16,6 @@ import java.util.UUID;
 
 @Service
 class QuoteService {
-
-    private static final Logger log = LoggerFactory.getLogger(QuoteService.class);
 
     private final QuoteRepository quoteRepository;
     private final QuoteTimelineRepository timelineRepository;
@@ -58,8 +54,6 @@ class QuoteService {
                 userId, request.paragraphId(), request.startOffset(), request.endOffset(), request.selectedText());
 
         attachTags(userId, quote, request);
-
-        log.info("Quote saved: user={} paragraphId={}", userId, request.paragraphId());
 
         return toResponse(quote, tagsFor(quote.id()));
     }
