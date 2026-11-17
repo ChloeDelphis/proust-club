@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { useCreateQuoteMutation } from '../useCreateQuoteMutation'
@@ -15,8 +15,46 @@ import type { SearchResultDetailModalProps } from './SearchResultDetailModal.typ
 import styles from './SearchResultDetailModal.module.css'
 
 type Selection = { paragraphId: number; start: number; end: number }
-type ActionPhase = 'idle' | 'selected' | 'tagPanel' | 'authPrompt'
-type PhaseState = { paragraphId: number; phase: ActionPhase }
+type SelectionFlowState =
+  | { kind: 'idle'; paragraphId: number | null }
+  | ({ kind: 'selected' | 'tagPanel' | 'authPrompt' } & Selection)
+
+type SelectionFlowAction =
+  | { type: 'selectionChanged'; paragraphId: number; selection: Selection | null }
+  | { type: 'openAction'; paragraphId: number; kind: 'tagPanel' | 'authPrompt' }
+  | { type: 'restoreSelection'; selection: Selection }
+  | { type: 'close'; paragraphId: number | null }
+
+function selectionFlowReducer(state: SelectionFlowState, action: SelectionFlowAction): SelectionFlowState {
+  switch (action.type) {
+    case 'selectionChanged':
+      if (state.paragraphId === action.paragraphId && (state.kind === 'tagPanel' || state.kind === 'authPrompt')) {
+        return state
+      }
+      if (action.selection && state.kind === 'selected'
+        && state.paragraphId === action.selection.paragraphId
+        && state.start === action.selection.start
+        && state.end === action.selection.end) {
+        return state
+      }
+      if (!action.selection && state.kind === 'idle' && state.paragraphId === action.paragraphId) return state
+      return action.selection
+        ? { kind: 'selected', ...action.selection }
+        : { kind: 'idle', paragraphId: action.paragraphId }
+    case 'openAction':
+      if (state.kind !== 'selected' || state.paragraphId !== action.paragraphId) return state
+      return { ...state, kind: action.kind }
+    case 'restoreSelection':
+      return { kind: 'selected', ...action.selection }
+    case 'close':
+      if (state.kind === 'idle' && state.paragraphId === action.paragraphId) return state
+      return { kind: 'idle', paragraphId: action.paragraphId }
+    default: {
+      const exhaustiveAction: never = action
+      return exhaustiveAction
+    }
+  }
+}
 
 export default function SearchResultDetailModal({
   hit,
@@ -32,57 +70,57 @@ export default function SearchResultDetailModal({
   const createQuoteMutation = useCreateQuoteMutation()
   const { setDraft, clearDraft } = useGuestQuoteSave()
   const textRef = useRef<HTMLParagraphElement>(null)
-  const [selection, setSelection] = useState<Selection | null>(null)
-  const [phaseState, setPhaseState] = useState<PhaseState | null>(null)
-  const phaseRef = useRef<PhaseState | null>(null)
-  const phase = phaseState && phaseState.paragraphId === hit?.paragraphId ? phaseState.phase : 'idle'
-
-  const updatePhase = useCallback((next: ActionPhase, paragraphId: number) => {
-    const nextState = { paragraphId, phase: next }
-    phaseRef.current = nextState
-    setPhaseState(nextState)
+  const [flowState, dispatchFlow] = useReducer(selectionFlowReducer, { kind: 'idle', paragraphId: null })
+  const flowRef = useRef<SelectionFlowState>(flowState)
+  const transitionFlow = useCallback((action: SelectionFlowAction) => {
+    // Keep the document-level selection listener's guard current immediately, before React
+    // commits the reducer update and re-renders this component.
+    flowRef.current = selectionFlowReducer(flowRef.current, action)
+    dispatchFlow(action)
   }, [])
-
-  const activeSelection = selection?.paragraphId === hit?.paragraphId ? selection : null
+  const currentFlow = flowState.paragraphId === hit?.paragraphId
+    ? flowState
+    : { kind: 'idle' as const, paragraphId: hit?.paragraphId ?? null }
+  const phase = currentFlow.kind
+  const activeSelection = currentFlow.kind === 'idle' ? null : currentFlow
 
   useEffect(() => {
     function handleSelectionChange() {
-      const currentPhase = phaseRef.current && phaseRef.current.paragraphId === hit?.paragraphId
-        ? phaseRef.current.phase
-        : 'idle'
+      const latestFlow = flowRef.current
+      const currentPhase = latestFlow.paragraphId === hit?.paragraphId ? latestFlow.kind : 'idle'
       if (currentPhase === 'tagPanel' || currentPhase === 'authPrompt') return
       const container = textRef.current
       const nativeSelection = window.getSelection()
       if (!container || !hit || !nativeSelection || nativeSelection.isCollapsed || nativeSelection.rangeCount === 0) {
-        setSelection(null)
-        if (hit) updatePhase('idle', hit.paragraphId)
+        transitionFlow({ type: 'close', paragraphId: hit?.paragraphId ?? null })
         return
       }
 
       const offsets = getSelectionOffsets(container, nativeSelection.getRangeAt(0))
       if (!offsets) {
-        setSelection(null)
-        updatePhase('idle', hit.paragraphId)
+        transitionFlow({ type: 'selectionChanged', paragraphId: hit.paragraphId, selection: null })
         return
       }
 
       const extended = snapSelectionOutward(hit.text, offsets.start, offsets.end)
       const trimmed = trimSelection(hit.text, extended.start, extended.end)
       if (trimmed.start >= trimmed.end) {
-        setSelection(null)
-        updatePhase('idle', hit.paragraphId)
+        transitionFlow({ type: 'selectionChanged', paragraphId: hit.paragraphId, selection: null })
         return
       }
 
-      setSelection({ paragraphId: hit.paragraphId, ...trimmed })
-      updatePhase('selected', hit.paragraphId)
+      transitionFlow({
+        type: 'selectionChanged',
+        paragraphId: hit.paragraphId,
+        selection: { paragraphId: hit.paragraphId, ...trimmed },
+      })
       if (resumeDraft?.resumeInDetail
         && (trimmed.start !== resumeDraft.start || trimmed.end !== resumeDraft.end)) clearDraft()
     }
 
     document.addEventListener('selectionchange', handleSelectionChange)
     return () => document.removeEventListener('selectionchange', handleSelectionChange)
-  }, [hit, resumeDraft, clearDraft, updatePhase])
+  }, [hit, resumeDraft, clearDraft, transitionFlow])
 
   useEffect(() => {
     if (!hit || !resumeDraft?.resumeInDetail || resumeDraft.paragraphId !== hit.paragraphId) return
@@ -95,16 +133,18 @@ export default function SearchResultDetailModal({
       if (!nativeSelection) return
       nativeSelection.removeAllRanges()
       nativeSelection.addRange(range)
-      setSelection({ paragraphId: hit.paragraphId, start: resumeDraft.start, end: resumeDraft.end })
-      updatePhase('selected', hit.paragraphId)
+      transitionFlow({
+        type: 'restoreSelection',
+        selection: { paragraphId: hit.paragraphId, start: resumeDraft.start, end: resumeDraft.end },
+      })
       document.dispatchEvent(new Event('selectionchange'))
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [hit, resumeDraft, updatePhase])
+  }, [hit, resumeDraft, transitionFlow])
 
   function handleActionClick() {
     if (!activeSelection || !hit) return
-    updatePhase(isConnected ? 'tagPanel' : 'authPrompt', hit.paragraphId)
+    transitionFlow({ type: 'openAction', paragraphId: hit.paragraphId, kind: isConnected ? 'tagPanel' : 'authPrompt' })
   }
 
   function continueToAuthentication(path: '/login' | '/register') {
@@ -140,7 +180,7 @@ export default function SearchResultDetailModal({
         },
         onError: () => {
           showToast(t('quoteSelection.saveErrorToast'))
-          updatePhase('selected', hit.paragraphId)
+          transitionFlow({ type: 'restoreSelection', selection: activeSelection })
         },
       },
     )
@@ -148,8 +188,7 @@ export default function SearchResultDetailModal({
 
   function handleClose() {
     if (resumeDraft?.resumeInDetail) clearDraft()
-    setSelection(null)
-    if (hit) updatePhase('idle', hit.paragraphId)
+    transitionFlow({ type: 'close', paragraphId: hit?.paragraphId ?? null })
     window.getSelection()?.removeAllRanges()
     onClose()
   }
@@ -163,7 +202,7 @@ export default function SearchResultDetailModal({
       nativeSelection?.removeAllRanges()
       nativeSelection?.addRange(range)
     }
-    updatePhase('selected', hit.paragraphId)
+    transitionFlow({ type: 'restoreSelection', selection: activeSelection })
   }
 
   const segments = hit ? buildHighlightSegments(hit.text, { start: hit.startOffset, end: hit.endOffset }) : []
