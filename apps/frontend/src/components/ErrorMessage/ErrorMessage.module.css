@@ -1,13 +1,11 @@
 .root {
   display: grid;
   gap: var(--space-1);
-  margin: 0;
-  padding: var(--space-3);
-  background: var(--color-danger-bg);
-  border: 1px solid var(--color-danger-border);
-  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
   color: var(--color-danger-text);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   line-height: var(--line-height-normal);
 }
 
@@ -19,11 +17,4 @@
 
 .title {
   font-weight: 500;
-}
-
-.plain {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
 }

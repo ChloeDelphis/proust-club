@@ -4,6 +4,10 @@
   padding: clamp(var(--space-8), 7vh, var(--space-16)) var(--space-6) var(--space-8);
 }
 
+.root > form + [role='alert'] {
+  margin-top: var(--space-4);
+}
+
 .title {
   font-family: var(--font-display);
   font-style: italic;
