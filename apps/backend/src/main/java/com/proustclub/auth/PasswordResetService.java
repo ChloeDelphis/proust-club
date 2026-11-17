@@ -1,5 +1,6 @@
 package com.proustclub.auth;
 
+import com.proustclub.mail.MailFailureLogger;
 import com.proustclub.mail.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +35,9 @@ class PasswordResetService {
         this.authService = authService;
     }
 
-    // Never throws and never reveals whether the email matched an account — the controller
-    // always returns the same generic response regardless of what happens in here. Mail send
-    // failures are swallowed rather than left to propagate: an uncaught MailException here would
-    // roll back the transaction and surface as a 500 only for a *known* email (an unknown email
-    // never reaches mailService at all), which would let a caller distinguish "account exists" from
-    // "no such account" during any SMTP outage — defeating the anti-enumeration guarantee this
-    // method exists to provide. Same best-effort posture as EmailVerificationService.sendVerification().
+    // Never reveals whether the email matched an account — the controller always returns the same
+    // generic response. MailService publishes a rendered message for after-commit delivery; its
+    // listener absorbs SMTP failures, preserving both anti-enumeration and best-effort behavior.
     @Transactional
     void requestReset(String email) {
         var normalizedEmail = EmailNormalizer.normalize(email);
@@ -52,7 +49,8 @@ class PasswordResetService {
             // OneTimeTokenRepository for why this can't be a separate invalidate-then-insert.
             var rawToken = SecureToken.generate();
             tokenRepository.insert(TOKEN_TABLE, user.uuid(), SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
-            MailFailureLogger.sendBestEffort(log, "password reset email", () -> mailService.sendPasswordResetEmail(user.email(), rawToken));
+            MailFailureLogger.sendBestEffort(
+                    log, "password reset email", () -> mailService.sendPasswordResetEmail(user.email(), rawToken));
             log.info("Password reset requested");
         });
     }

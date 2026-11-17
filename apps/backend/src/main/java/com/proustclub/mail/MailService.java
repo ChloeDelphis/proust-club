@@ -1,50 +1,39 @@
 package com.proustclub.mail;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MailService {
 
-    private static final Logger log = LoggerFactory.getLogger(MailService.class);
-
-    private final JavaMailSender mailSender;
+    private final ApplicationEventPublisher eventPublisher;
     private final String frontendBaseUrl;
 
-    MailService(JavaMailSender mailSender, @Value("${app.frontend-base-url}") String frontendBaseUrl) {
-        this.mailSender = mailSender;
+    MailService(ApplicationEventPublisher eventPublisher, @Value("${app.frontend-base-url}") String frontendBaseUrl) {
+        this.eventPublisher = eventPublisher;
         this.frontendBaseUrl = frontendBaseUrl;
     }
 
     public void sendPasswordResetEmail(String to, String token) {
-        var message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("Réinitialisation de votre mot de passe — Proust Club");
-        message.setText(
+        publish("password reset email", to,
+                "Réinitialisation de votre mot de passe — Proust Club",
                 "Vous avez demandé la réinitialisation de votre mot de passe.\n\n"
                         + "Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 30 minutes) :\n"
                         + frontendBaseUrl + "/reset-password?token=" + token + "\n\n"
-                        + "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email."
-        );
-        mailSender.send(message);
-        log.info("Password reset email sent");
+                        + "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.");
     }
 
     public void sendEmailConfirmation(String to, String token) {
-        var message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("Confirmez votre adresse email — Proust Club");
-        message.setText(
+        publish("email confirmation", to,
+                "Confirmez votre adresse email — Proust Club",
                 "Bienvenue sur Proust Club !\n\n"
                         + "Cliquez sur ce lien pour confirmer votre adresse email (valable 24h) :\n"
                         + frontendBaseUrl + "/confirm-email?token=" + token + "\n\n"
-                        + "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email."
-        );
-        mailSender.send(message);
-        log.info("Email confirmation sent");
+                        + "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.");
+    }
+
+    private void publish(String action, String to, String subject, String body) {
+        eventPublisher.publishEvent(new MailDeliveryRequested(action, to, subject, body));
     }
 }

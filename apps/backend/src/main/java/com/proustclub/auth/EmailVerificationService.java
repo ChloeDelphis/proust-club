@@ -1,5 +1,6 @@
 package com.proustclub.auth;
 
+import com.proustclub.mail.MailFailureLogger;
 import com.proustclub.mail.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,17 +30,16 @@ class EmailVerificationService {
         this.mailService = mailService;
     }
 
-    // Best-effort on purpose: a transient mail failure must never roll back account creation
-    // (AuthService.register() calls this from within its own transaction) — an unconfirmed
-    // account is already fully usable, see the ticket's "no blocking" decision. Same posture as
-    // PasswordResetService.requestReset(), which swallows mail failures for a different but
-    // related reason: there, propagating would let a caller distinguish "account exists" from
-    // "no such account" during an SMTP outage, breaking anti-enumeration.
+    // Creates the token inside the current transaction and publishes a mail event. MailService's
+    // listener sends it only after commit, so SMTP never holds this transaction open and cannot
+    // send a link for a token whose transaction later rolls back. Delivery remains best-effort:
+    // account creation is not blocked by an SMTP failure.
     @Transactional
     void sendVerification(UUID userId, String email) {
         var rawToken = SecureToken.generate();
         tokenRepository.insert(TOKEN_TABLE, userId, SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
-        MailFailureLogger.sendBestEffort(log, "email confirmation", () -> mailService.sendEmailConfirmation(email, rawToken));
+        MailFailureLogger.sendBestEffort(
+                log, "email confirmation", () -> mailService.sendEmailConfirmation(email, rawToken));
     }
 
     // Guards on the user's current state rather than silently no-op'ing on an already-verified
