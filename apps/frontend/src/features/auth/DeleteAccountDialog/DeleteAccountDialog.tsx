@@ -73,7 +73,6 @@ export default function DeleteAccountDialog({
                   title={globalError.title}
                   message={globalError.message}
                   detail={globalError.detail}
-                  plain
                 />
               ) : undefined}
               reserveErrorSpace

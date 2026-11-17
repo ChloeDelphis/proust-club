@@ -170,7 +170,7 @@ The personal comment field lives directly in `QuoteDetailModal` (no dedicated su
 
 `DetailModal` (`src/components/DetailModal/`) is the layout both `QuoteDetailModal` and `SearchResultDetailModal` (above) delegate to — a two-column Base UI `Dialog`: main column (context paragraphs + the center text the caller provides via `centerContent`) and a side column (`sideContent`, fully owned by the caller — comment/tags/delete for an existing quote, or the tag picker + "Enregistrer" for an unsaved search result). Lives directly in `src/components/` rather than a single feature's folder, since both consumers are real from the start.
 
-The dialog uses the search result cards' white surface and frieze border, with a wider and taller reading area on desktop. Its top padding reserves a separate area for the close button so it cannot cover the paragraph or side-panel content. Neighboring context uses the same reading typography and text color as the center paragraph. Below tablet width, the reading column and actions stack vertically and the dialog remains scrollable within the viewport.
+The dialog uses the search result cards' white surface and frieze border, with a wider and taller reading area on desktop. Its top padding reserves a separate area for the close button so it cannot cover the paragraph or side-panel content. Neighboring context uses the same reading typography and text color as the center paragraph. The reading column scrolls independently inside the viewport-bounded dialog; the close button and side column remain visible while reading. Below tablet width, the side column moves below the reading column and stays visible while the text area scrolls.
 
 **Progressive context**: two arrow buttons (▲ above, ▼ below the center text) each request one more paragraph of context in that direction, backed by `GET /api/paragraphs/{id}/context?before=N&after=M` — see `docs/features/paragraph-context.md` for the endpoint. `before`/`after` are local component state that only grows (never shrinks) on each click; `useParagraphContext` (`src/hooks/useParagraphContext.ts`) re-fetches the whole window each time rather than appending client-side. An arrow is disabled while a request is in flight, at the volume boundary, or when its direction reaches the 20-paragraph request limit; `hasMoreBefore`/`hasMoreAfter` can remain true at that limit if the volume contains further rows.
 
@@ -182,7 +182,7 @@ The context window resets to `before: 0, after: 0` whenever `paragraphId` change
 
 ## Manual verification
 
-- Open a search result at desktop and mobile widths. Confirm the full paragraph is available in the wider dialog, the close button has clear space above the content, and the action panel stacks below the text on a narrow viewport.
+- Open a search result at desktop and mobile widths. Confirm the full paragraph is available in the wider dialog, the close button has clear space above the content and remains visible while scrolling, and the tome/part and action panel remain visible as the reading text scrolls. On a narrow viewport, confirm the action panel sits below the reading area and stays visible while that area scrolls.
 
 ### Happy path
 

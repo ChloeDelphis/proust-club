@@ -115,6 +115,8 @@ Password fields share a visibility toggle in `FormField`. It switches the curren
 
 Registration and account password-change fields show the password length guidance beside a reserved status icon. The icon is hidden before typing, becomes a cross while the password is below the backend-provided minimum, and becomes a green check when the minimum is met. The guidance text stays in place as the status changes to avoid shifting the form below it.
 
+Form and server-side errors use the same unboxed text treatment as field validation errors: a restrained danger color, no red background or border, and a message width aligned with the form. Server-side errors below a form use the same vertical gap as the form's own field and button stack.
+
 On `/login`, the password-recovery link sits directly below the password field and aligns to its right edge, keeping it visually associated with the field rather than the submit action.
 
 Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/confirm-email`, `/account`, `/mes-citations` — see `App.tsx`'s route declarations for the canonical list.
@@ -126,6 +128,7 @@ Routing (`react-router`): `/`, `/login`, `/register`, `/forgot-password`, `/rese
 - On `/register`, confirm the description sits below the decorative rule, stays visually secondary to the heading, and wraps to no more than two lines at common viewport widths.
 - For every password field, enter a long passphrase, toggle visibility on and off, and confirm the value is preserved and the control remains keyboard-operable.
 - On `/register` and `/account`, confirm the status icon appears after typing, changes from a cross to a green check at the minimum length, and leaves the guidance text and form layout in place.
+- Trigger a client-side validation error and a server-side error on `/register`, `/login`, `/forgot-password`, and `/account`; confirm messages use the same unboxed text style and align with the form width.
 - On `/login`, confirm “Mot de passe oublié ?” appears beneath the password field, aligned right, while the registration link remains below the form.
 
 ### Happy path
