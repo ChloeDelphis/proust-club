@@ -59,9 +59,18 @@ export function removeTagFromQuote(id: string, tagId: string, signal?: AbortSign
 
 export type QuoteListParams = NonNullable<operations['list_1']['parameters']['query']>
 
+export type QuoteSelectionListItemResponse = QuoteSelectionResponse & {
+  location: {
+    volumeId: number
+    pageNumber: number
+    volume: string
+    part: string
+  }
+}
+
 // Same reasoning as QuoteSelectionResponse above: fields written by hand as non-optional.
 export type QuoteSelectionListResponse = {
-  results: QuoteSelectionResponse[]
+  results: QuoteSelectionListItemResponse[]
   total: number
   page: number
   size: number

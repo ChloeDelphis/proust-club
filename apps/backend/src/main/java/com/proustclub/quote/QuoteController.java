@@ -63,7 +63,7 @@ class QuoteController {
         return service.create(currentUser.resolveUuid(authentication), request);
     }
 
-    @Operation(summary = "List my quote selections", description = "Returns the authenticated user's quotes, most recent first. Filterable by volumeId, partId, tagId, and/or a free-text search within the saved selection's own text.")
+    @Operation(summary = "List my quote selections", description = "Returns the authenticated user's quotes, most recent first, with each quote's volume, part, and page location. Filterable by volumeId, partId, tagId, and/or a free-text search within the saved selection's own text.")
     @ApiResponse(responseCode = "200", description = "Quote selections (empty list if none match)", content = @Content(schema = @Schema(implementation = QuoteSelectionListResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @GetMapping(value = "/api/quotes", produces = MediaType.APPLICATION_JSON_VALUE)

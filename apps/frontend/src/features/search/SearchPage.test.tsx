@@ -333,6 +333,7 @@ function makeQuote(n: number): quoteApi.QuoteSelectionListResponse['results'][nu
     comment: null,
     tags: [],
     createdAt: '2026-08-05T00:00:00Z',
+    location: { volumeId: 1, pageNumber: 1, volume: 'Du côté de chez Swann', part: 'Combray' },
   }
 }
 
@@ -361,6 +362,7 @@ describe('connected', () => {
 
     expect(await screen.findByText('citation 1')).toBeInTheDocument()
     expect(screen.getByText('citation 2')).toBeInTheDocument()
+    expect(screen.getAllByText('Du côté de chez Swann · Combray')).toHaveLength(2)
     expect(quoteApi.listQuotes).toHaveBeenCalledWith({ tagId: undefined, q: undefined, page: 0, size: 10 }, expect.anything())
   })
 

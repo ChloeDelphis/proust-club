@@ -1,6 +1,6 @@
-import type { QuoteSelectionResponse } from '../../../api/quote'
+import type { QuoteSelectionListItemResponse, QuoteSelectionResponse } from '../../../api/quote'
 
 export interface QuoteCardProps {
-  quote: QuoteSelectionResponse
+  quote: QuoteSelectionListItemResponse
   onOpenDetail: (quote: QuoteSelectionResponse) => void
 }
