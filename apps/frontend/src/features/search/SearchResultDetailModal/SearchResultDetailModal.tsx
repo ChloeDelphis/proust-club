@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { useCreateQuoteMutation } from '../useCreateQuoteMutation'
@@ -8,7 +8,7 @@ import { useToast } from '../../../components/Toast/useToast'
 import DetailModal from '../../../components/DetailModal/DetailModal'
 import TagPickerContent from '../TagPickerPopup/TagPickerContent'
 import AuthenticationPrompt from '../TagPickerPopup/AuthenticationPrompt'
-import { buildHighlightSegments } from '../paragraphSegments'
+import { buildSelectionSegments } from '../selectionSegments'
 import { getSelectionOffsets, createRangeForOffsets } from '../selectionRangeOffset'
 import { snapSelectionOutward, trimSelection } from '../selectionOffsets'
 import type { SearchResultDetailModalProps } from './SearchResultDetailModal.types'
@@ -70,7 +70,9 @@ export default function SearchResultDetailModal({
   const createQuoteMutation = useCreateQuoteMutation()
   const { setDraft, clearDraft } = useGuestQuoteSave()
   const textRef = useRef<HTMLParagraphElement>(null)
+  const retainSelectionAfterCancelRef = useRef(false)
   const [flowState, dispatchFlow] = useReducer(selectionFlowReducer, { kind: 'idle', paragraphId: null })
+  const [preserveSelectionHighlight, setPreserveSelectionHighlight] = useState(false)
   const flowRef = useRef<SelectionFlowState>(flowState)
   const transitionFlow = useCallback((action: SelectionFlowAction) => {
     // Keep the document-level selection listener's guard current immediately, before React
@@ -91,6 +93,8 @@ export default function SearchResultDetailModal({
       if (currentPhase === 'tagPanel' || currentPhase === 'authPrompt') return
       const container = textRef.current
       const nativeSelection = window.getSelection()
+      if (currentPhase === 'selected' && (!nativeSelection || nativeSelection.isCollapsed)) return
+      if (retainSelectionAfterCancelRef.current && nativeSelection?.isCollapsed) return
       if (!container || !hit || !nativeSelection || nativeSelection.isCollapsed || nativeSelection.rangeCount === 0) {
         transitionFlow({ type: 'close', paragraphId: hit?.paragraphId ?? null })
         return
@@ -118,8 +122,20 @@ export default function SearchResultDetailModal({
         && (trimmed.start !== resumeDraft.start || trimmed.end !== resumeDraft.end)) clearDraft()
     }
 
+    function handlePointerDown(event: PointerEvent) {
+      const latestFlow = flowRef.current
+      const currentPhase = latestFlow.paragraphId === hit?.paragraphId ? latestFlow.kind : 'idle'
+      if (currentPhase !== 'selected') return
+      if (event.target instanceof Element && event.target.closest('[data-selection-save-action]')) return
+      transitionFlow({ type: 'close', paragraphId: hit?.paragraphId ?? null })
+    }
+
     document.addEventListener('selectionchange', handleSelectionChange)
-    return () => document.removeEventListener('selectionchange', handleSelectionChange)
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange)
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
   }, [hit, resumeDraft, clearDraft, transitionFlow])
 
   useEffect(() => {
@@ -187,6 +203,8 @@ export default function SearchResultDetailModal({
   }
 
   function handleClose() {
+    retainSelectionAfterCancelRef.current = false
+    setPreserveSelectionHighlight(false)
     if (resumeDraft?.resumeInDetail) clearDraft()
     transitionFlow({ type: 'close', paragraphId: hit?.paragraphId ?? null })
     window.getSelection()?.removeAllRanges()
@@ -195,6 +213,8 @@ export default function SearchResultDetailModal({
 
   function returnToTextSelection() {
     if (!hit || !activeSelection) return
+    retainSelectionAfterCancelRef.current = true
+    setPreserveSelectionHighlight(true)
     const container = textRef.current
     const range = container && createRangeForOffsets(container, activeSelection.start, activeSelection.end)
     if (range) {
@@ -202,10 +222,25 @@ export default function SearchResultDetailModal({
       nativeSelection?.removeAllRanges()
       nativeSelection?.addRange(range)
     }
-    transitionFlow({ type: 'restoreSelection', selection: activeSelection })
+    transitionFlow({
+      type: 'restoreSelection',
+      selection: {
+        paragraphId: activeSelection.paragraphId,
+        start: activeSelection.start,
+        end: activeSelection.end,
+      },
+    })
   }
 
-  const segments = hit ? buildHighlightSegments(hit.text, { start: hit.startOffset, end: hit.endOffset }) : []
+  const segments = hit
+    ? buildSelectionSegments(
+      hit.text,
+      { start: hit.startOffset, end: hit.endOffset },
+      activeSelection && (phase === 'tagPanel' || phase === 'authPrompt' || preserveSelectionHighlight)
+        ? { start: activeSelection.start, end: activeSelection.end }
+        : null,
+    )
+    : []
 
   return (
     <DetailModal
@@ -224,13 +259,13 @@ export default function SearchResultDetailModal({
       }}
       centerContent={hit && (
         <p ref={textRef} className={styles.text}>
-          {segments.map((segment, index) =>
-            segment.highlighted ? (
-              <mark key={index} className={styles.mark}>{segment.text}</mark>
-            ) : (
-              <span key={index}>{segment.text}</span>
-            ),
-          )}
+          {segments.map((segment, index) => {
+            const className = segment.selected ? styles.selectedText : undefined
+            if (segment.highlighted) {
+              return <mark key={index} className={className ? `${styles.mark} ${className}` : styles.mark}>{segment.text}</mark>
+            }
+            return <span key={index} className={className}>{segment.text}</span>
+          })}
         </p>
       )}
       sideContent={hit && (
@@ -240,7 +275,7 @@ export default function SearchResultDetailModal({
             <span>{hit.part}</span>
           </p>
           {phase === 'tagPanel' ? (
-            <TagPickerContent onSave={handleSave} isSaving={createQuoteMutation.isPending} />
+            <TagPickerContent onSave={handleSave} onCancel={returnToTextSelection} isSaving={createQuoteMutation.isPending} />
           ) : phase === 'idle' || phase === 'selected' ? (
             <div className={styles.selectionAction}>
               <span className={styles.selectionDivider} aria-hidden="true" />
@@ -250,6 +285,8 @@ export default function SearchResultDetailModal({
                 <button
                   type="button"
                   className={styles.saveButton}
+                  data-selection-save-action
+                  onPointerDown={handleActionClick}
                   onMouseDown={event => event.preventDefault()}
                   onClick={handleActionClick}
                 >

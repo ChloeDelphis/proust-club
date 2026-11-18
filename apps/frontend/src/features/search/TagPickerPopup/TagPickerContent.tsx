@@ -12,7 +12,7 @@ import styles from './TagPickerContent.module.css'
 // The tag search/select/create UI, with no opinion on how it's framed (own Dialog vs. embedded
 // inline in another layout) — TagPickerPopup wraps this in its own Dialog for the QuoteSelection
 // flow; a two-column detail modal's side panel embeds it directly instead.
-export default function TagPickerContent({ onSave, isSaving, initialNewListName, errorMessage }: TagPickerContentProps) {
+export default function TagPickerContent({ onSave, onCancel, isSaving, initialNewListName, errorMessage }: TagPickerContentProps) {
   const { t } = useTranslation()
   const { data: tags, isPending, isError } = useTags(initialNewListName === undefined)
   const [search, setSearch] = useState('')
@@ -63,6 +63,9 @@ export default function TagPickerContent({ onSave, isSaving, initialNewListName,
           >
             {t('tagPicker.saveButton')}
           </button>
+          <button type="button" className={styles.cancelButton} disabled={isSaving} onClick={onCancel}>
+            {t('tagPicker.cancelButton')}
+          </button>
         </>
       ) : (
         <>
@@ -95,6 +98,10 @@ export default function TagPickerContent({ onSave, isSaving, initialNewListName,
         maxLength={MAX_TAG_NAME_LENGTH}
       />
 
+      {!isPending && !isError && tags?.length === 0 && search.trim().length === 0 && (
+        <p className={styles.emptyState} role="status">{t('tagPicker.emptyState')}</p>
+      )}
+
       {isPending ? (
         <Spinner />
       ) : (
@@ -104,13 +111,13 @@ export default function TagPickerContent({ onSave, isSaving, initialNewListName,
             {filteredTags.map(tag => (
               <li key={tag.id}>
                 <label className={styles.tagOption}>
+                  <span>{tag.name}</span>
                   <input
                     type="checkbox"
                     checked={selectedNames.has(tag.name)}
                     disabled={!selectedNames.has(tag.name) && tagLimitReached}
                     onChange={() => toggleTag(tag.name)}
                   />
-                  {tag.name}
                 </label>
               </li>
             ))}
@@ -130,7 +137,10 @@ export default function TagPickerContent({ onSave, isSaving, initialNewListName,
         disabled={isSaving}
         onClick={() => onSave(Array.from(selectedNames))}
       >
-        {t('tagPicker.saveButton')}
+        {selectedNames.size === 0 ? t('tagPicker.saveWithoutTagButton') : t('tagPicker.saveButton')}
+      </button>
+      <button type="button" className={styles.cancelButton} disabled={isSaving} onClick={onCancel}>
+        {t('tagPicker.cancelButton')}
       </button>
         </>
       )}

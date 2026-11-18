@@ -31,6 +31,13 @@ describe('TagPickerPopup', () => {
     expect(screen.getByText('Jalousie')).toBeInTheDocument()
   })
 
+  it('explains how to create the first tag when the user has none', async () => {
+    vi.mocked(tagApi.listTags).mockResolvedValue([])
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
+
+    expect(await screen.findByText('Aucun tag pour le moment. Saisissez un nom pour en créer un.')).toBeInTheDocument()
+  })
+
   it('filters the list as the user types', async () => {
     render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
@@ -57,7 +64,7 @@ describe('TagPickerPopup', () => {
     render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(onSave).toHaveBeenCalledWith([])
   })
@@ -134,7 +141,7 @@ describe('TagPickerPopup', () => {
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Combray' }))
     await userEvent.click(screen.getByRole('button', { name: 'Retirer Combray' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(onSave).toHaveBeenCalledWith([])
   })
@@ -148,6 +155,18 @@ describe('TagPickerPopup', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Fermer' }))
 
     expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('offers an explicit cancel action in the tag picker', async () => {
+    const onSave = vi.fn()
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={onCancel} isSaving={false} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+
+    expect(onCancel).toHaveBeenCalledOnce()
     expect(onSave).not.toHaveBeenCalled()
   })
 
@@ -179,7 +198,7 @@ describe('TagPickerPopup', () => {
     render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={true} />, { wrapper })
     await screen.findByText('Combray')
 
-    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Enregistrer sans tag' })).toBeDisabled()
   })
 
   it('ignores Escape while a save is already in flight, instead of cancelling a request that cannot be aborted', async () => {

@@ -103,11 +103,20 @@ describe('SearchResultDetailModal selection flow', () => {
     setSelection({ start: 8, end: 9 })
     await user.click(await screen.findByRole('button', { name: 'Enregistrer ce passage' }))
     expect(await screen.findByRole('textbox', { name: 'Chercher un tag' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
 
     setSelection(null)
-    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enregistrer sans tag' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
 
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await user.click(screen.getByRole('button', { name: 'Annuler' }))
+    expect(screen.getByRole('button', { name: 'Enregistrer ce passage' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
+
+    await user.click(screen.getByRole('button', { name: 'Enregistrer ce passage' }))
+    expect(await screen.findByRole('textbox', { name: 'Chercher un tag' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(quoteApi.createQuote).toHaveBeenCalledWith(expect.objectContaining({
       paragraphId: firstHit.paragraphId,
@@ -126,6 +135,17 @@ describe('SearchResultDetailModal selection flow', () => {
     rerender(<SearchResultDetailModal hit={secondHit} onClose={vi.fn()} />)
 
     expect(screen.queryByRole('button', { name: 'Enregistrer ce passage' })).not.toBeInTheDocument()
+  })
+
+  it('clears the selection action when the user clicks elsewhere', async () => {
+    render(<SearchResultDetailModal hit={firstHit} onClose={vi.fn()} />, { wrapper })
+    setSelection({ start: 8, end: 9 })
+    expect(await screen.findByRole('button', { name: 'Enregistrer ce passage' })).toBeInTheDocument()
+
+    act(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })))
+
+    expect(screen.queryByRole('button', { name: 'Enregistrer ce passage' })).not.toBeInTheDocument()
+    expect(screen.getByText('Sélectionnez un passage dans le texte pour le conserver.')).toBeInTheDocument()
   })
 
   it('clears the selection when the modal closes', async () => {

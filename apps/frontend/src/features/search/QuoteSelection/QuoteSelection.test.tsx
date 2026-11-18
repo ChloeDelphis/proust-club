@@ -284,7 +284,7 @@ describe('QuoteSelection — connected', () => {
     // backward across the gap into "hello", which the user's selection never touched at all.
     setSelection({ start: 5, end: 9 })
     await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(quoteApi.createQuote).toHaveBeenCalledWith(
       expect.objectContaining({ startOffset: 6, endOffset: 11, selectedText: 'world' }),
@@ -313,6 +313,7 @@ describe('QuoteSelection — connected', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Combray' }))
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
@@ -340,7 +341,8 @@ describe('QuoteSelection — connected', () => {
 
     expect(quoteApi.createQuote).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
   })
 
   it('closing the tag panel via the × saves nothing', async () => {
@@ -355,6 +357,8 @@ describe('QuoteSelection — connected', () => {
 
     expect(quoteApi.createQuote).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
   })
 
   it('shows an error toast and returns to the contextual menu if saving fails', async () => {
@@ -365,7 +369,7 @@ describe('QuoteSelection — connected', () => {
     setSelection({ start: 8, end: 9 })
     await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
     await screen.findByRole('dialog')
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(await screen.findByText("La citation n'a pas pu être enregistrée.")).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -385,7 +389,7 @@ describe('QuoteSelection — connected', () => {
 
     setSelection({ start: 8, end: 9 })
     await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     // e.g. the search query or page changed while this paragraph's save was still in flight —
     // its QuoteSelection instance unmounts before the request resolves.

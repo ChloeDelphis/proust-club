@@ -29,6 +29,12 @@
   border-radius: var(--radius-sm);
 }
 
+.selectedText {
+  background: var(--color-text-selection-bg);
+  color: inherit;
+  border-radius: var(--radius-sm);
+}
+
 .contextualMenu {
   position: fixed;
   right: var(--space-6);
