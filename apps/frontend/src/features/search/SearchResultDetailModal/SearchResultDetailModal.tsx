@@ -125,8 +125,8 @@ export default function SearchResultDetailModal({
     function handlePointerDown(event: PointerEvent) {
       const latestFlow = flowRef.current
       const currentPhase = latestFlow.paragraphId === hit?.paragraphId ? latestFlow.kind : 'idle'
-      if (currentPhase !== 'selected') return
-      if (event.target instanceof Element && event.target.closest('[data-selection-save-action]')) return
+      const target = event.target instanceof Element ? event.target : null
+      if (currentPhase !== 'selected' || target?.closest('[data-selection-save-action]')) return
       transitionFlow({ type: 'close', paragraphId: hit?.paragraphId ?? null })
     }
 
@@ -211,6 +211,14 @@ export default function SearchResultDetailModal({
     onClose()
   }
 
+  function cancelSelection() {
+    if (!hit) return
+    retainSelectionAfterCancelRef.current = false
+    setPreserveSelectionHighlight(false)
+    window.getSelection()?.removeAllRanges()
+    transitionFlow({ type: 'close', paragraphId: hit.paragraphId })
+  }
+
   function returnToTextSelection() {
     if (!hit || !activeSelection) return
     retainSelectionAfterCancelRef.current = true
@@ -262,23 +270,25 @@ export default function SearchResultDetailModal({
           {segments.map((segment, index) => {
             const className = segment.selected ? styles.selectedText : undefined
             if (segment.highlighted) {
-              return <mark key={index} className={className ? `${styles.mark} ${className}` : styles.mark}>{segment.text}</mark>
+              return <mark key={index} className={className ? `${styles.mark} ${className}` : styles.mark} data-selected-passage={segment.selected ? 'true' : undefined}>{segment.text}</mark>
             }
-            return <span key={index} className={className}>{segment.text}</span>
+            return <span key={index} className={className} data-selected-passage={segment.selected ? 'true' : undefined}>{segment.text}</span>
           })}
         </p>
       )}
       sideContent={hit && (
         <>
-          <p className={styles.meta}>
-            <span>{hit.volume}</span>
-            <span>{hit.part}</span>
-          </p>
+          <div className={styles.locationBlock}>
+            <p className={styles.meta}>
+              <span>{hit.volume}</span>
+              <span>{hit.part}</span>
+            </p>
+            <span className={styles.selectionDivider} aria-hidden="true" />
+          </div>
           {phase === 'tagPanel' ? (
-            <TagPickerContent onSave={handleSave} onCancel={returnToTextSelection} isSaving={createQuoteMutation.isPending} />
+            <TagPickerContent onSave={handleSave} onCancel={cancelSelection} isSaving={createQuoteMutation.isPending} />
           ) : phase === 'idle' || phase === 'selected' ? (
             <div className={styles.selectionAction}>
-              <span className={styles.selectionDivider} aria-hidden="true" />
               {phase === 'idle' ? (
                 <p className={styles.selectionHint}>{t('searchResultDetailModal.selectionHint')}</p>
               ) : (

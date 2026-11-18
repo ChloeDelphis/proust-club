@@ -101,6 +101,19 @@ describe('TagPickerPopup', () => {
     expect(onSave).toHaveBeenCalledWith(['Guermantes'])
   })
 
+  it('creates the searched tag with Enter without saving the quote', async () => {
+    const onSave = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
+    await screen.findByText('Combray')
+
+    const search = screen.getByRole('textbox', { name: 'Chercher un tag' })
+    await userEvent.type(search, 'Guermantes{Enter}')
+
+    expect(screen.getByText('Guermantes')).toBeInTheDocument()
+    expect(onSave).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeEnabled()
+  })
+
   it('prevents selecting or creating more than the maximum number of tags', async () => {
     const onSave = vi.fn()
     const tags = Array.from({ length: MAX_TAGS_PER_QUOTE + 1 }, (_, index) => ({
@@ -126,6 +139,8 @@ describe('TagPickerPopup', () => {
     await userEvent.type(screen.getByRole('textbox', { name: 'Chercher un tag' }), 'Nouveau')
     expect(screen.getByRole('status')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Créer « Nouveau »' })).toBeDisabled()
+    await userEvent.keyboard('{Enter}')
+    expect(screen.queryByText('Nouveau')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(onSave).toHaveBeenCalledWith([

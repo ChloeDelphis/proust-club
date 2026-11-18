@@ -92,6 +92,12 @@ export default function TagPickerContent({ onSave, onCancel, isSaving, initialNe
         type="text"
         value={search}
         onChange={event => setSearch(event.target.value)}
+        onKeyDown={event => {
+          if (event.key === 'Enter' && canCreate && !tagLimitReached) {
+            event.preventDefault()
+            createFromSearch()
+          }
+        }}
         placeholder={t('tagPicker.searchPlaceholder')}
         className={styles.searchInput}
         aria-label={t('tagPicker.searchAriaLabel')}

@@ -329,6 +329,31 @@ describe('QuoteSelection — connected', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('allows saving a passage that does not include the search match', async () => {
+    vi.mocked(quoteApi.createQuote).mockResolvedValue({
+      id: QUOTE_ID,
+      paragraphId: PARAGRAPH_ID,
+      startOffset: 0,
+      endOffset: 5,
+      selectedText: 'hello',
+      comment: null,
+      tags: [],
+      createdAt: '2026-08-16T00:00:00Z',
+    })
+    render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
+    await screen.findByText('world')
+
+    setSelection({ start: 0, end: 5 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Sauvegarder' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
+
+    expect(quoteApi.createQuote).toHaveBeenCalledWith(expect.objectContaining({
+      startOffset: 0,
+      endOffset: 5,
+      selectedText: 'hello',
+    }))
+  })
+
   it('cancelling the tag panel (Escape) saves nothing', async () => {
     render(<QuoteSelection paragraphId={PARAGRAPH_ID} text={TEXT} highlightRange={HIGHLIGHT} />, { wrapper })
     await screen.findByText('world')
@@ -341,8 +366,8 @@ describe('QuoteSelection — connected', () => {
 
     expect(quoteApi.createQuote).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
-    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).not.toContain('selectedText')
   })
 
   it('closing the tag panel via the × saves nothing', async () => {
@@ -357,8 +382,8 @@ describe('QuoteSelection — connected', () => {
 
     expect(quoteApi.createQuote).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sauvegarder' })).toBeInTheDocument()
-    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
+    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).not.toContain('selectedText')
   })
 
   it('shows an error toast and returns to the contextual menu if saving fails', async () => {

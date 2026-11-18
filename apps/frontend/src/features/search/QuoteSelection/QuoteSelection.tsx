@@ -35,11 +35,9 @@ export default function QuoteSelection({
   const showToast = useToast()
   const containerRef = useRef<HTMLSpanElement>(null)
   const saveInFlightRef = useRef(false)
-  const retainSelectionAfterCancelRef = useRef(false)
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' })
   const phaseRef = useRef(phase)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [preserveSelectionHighlight, setPreserveSelectionHighlight] = useState(false)
 
   function updatePhase(next: Phase) {
     phaseRef.current = next
@@ -63,12 +61,12 @@ export default function QuoteSelection({
   }, [])
 
   const segments = useMemo(() => {
-    const keepsHighlight = phase.kind === 'tagPanel' || phase.kind === 'authPrompt' || preserveSelectionHighlight
-    const selectionRange = keepsHighlight && phase.kind !== 'idle'
+    const keepsHighlight = phase.kind === 'tagPanel' || phase.kind === 'authPrompt'
+    const selectionRange = keepsHighlight
       ? { start: phase.start, end: phase.end }
       : null
     return buildSelectionSegments(text, highlightRange, selectionRange)
-  }, [text, highlightRange, phase, preserveSelectionHighlight])
+  }, [text, highlightRange, phase])
 
   const createQuoteMutation = useCreateQuoteMutation()
 
@@ -83,7 +81,6 @@ export default function QuoteSelection({
     function handleSelectionChange() {
       const container = containerRef.current
       const selection = window.getSelection()
-      if (retainSelectionAfterCancelRef.current && selection?.isCollapsed) return
       const nextPhase = computeSelectionPhase(phaseRef.current, container, selection, text)
       updatePhase(nextPhase)
       if (resumeDraft && nextPhase.kind === 'selected'
@@ -132,8 +129,6 @@ export default function QuoteSelection({
   // "Sauvegarder" button's onMouseDown below) — leaving idle without clearing it would strand a
   // visible highlight with no menu to act on it.
   function resetToIdle() {
-    retainSelectionAfterCancelRef.current = false
-    setPreserveSelectionHighlight(false)
     if (isMountedRef.current) window.getSelection()?.removeAllRanges()
     updatePhase({ kind: 'idle' })
     setSaveError(null)
@@ -191,10 +186,7 @@ export default function QuoteSelection({
   function handleCancelPanel() {
     if (phase.kind !== 'tagPanel') return
     clearDraft()
-    retainSelectionAfterCancelRef.current = true
-    setPreserveSelectionHighlight(true)
-    setSaveError(null)
-    updatePhase({ kind: 'selected', start: phase.start, end: phase.end })
+    resetToIdle()
   }
 
   function handleCancelAuthPrompt() {
@@ -221,9 +213,9 @@ export default function QuoteSelection({
           {segments.map((segment, index) => {
             const className = segment.selected ? styles.selectedText : undefined
             if (segment.highlighted) {
-              return <mark key={index} className={className ? `${styles.mark} ${className}` : styles.mark}>{segment.text}</mark>
+              return <mark key={index} className={className ? `${styles.mark} ${className}` : styles.mark} data-selected-passage={segment.selected ? 'true' : undefined}>{segment.text}</mark>
             }
-            return <span key={index} className={className}>{segment.text}</span>
+            return <span key={index} className={className} data-selected-passage={segment.selected ? 'true' : undefined}>{segment.text}</span>
           })}
         </span>
         {hasTrailingEllipsis && <span className={styles.ellipsis} aria-hidden="true"> …</span>}
