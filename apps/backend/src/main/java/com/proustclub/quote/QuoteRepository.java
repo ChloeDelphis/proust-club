@@ -8,7 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.proustclub.jooq.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.Tables.PARTS;
 import static com.proustclub.jooq.Tables.QUOTE_SELECTIONS;
+import static com.proustclub.jooq.Tables.VOLUMES;
 
 @Repository
 class QuoteRepository {
@@ -60,22 +62,34 @@ class QuoteRepository {
                 ));
     }
 
-    List<QuoteSelection> findByUserId(UUID userId, UUID tagId, String q, Integer volumeId, Integer partId, int page, int size) {
+    List<QuoteListEntry> findByUserId(UUID userId, UUID tagId, String q, Integer volumeId, Integer partId, int page, int size) {
+        var quoteSelections = QUOTE_SELECTIONS.as("qs");
+        var paragraphs = PARAGRAPHS.as("p");
+        var parts = PARTS.as("pt");
+        var volumes = VOLUMES.as("v");
         // id DESC is a tiebreak for equal created_at values, which PostgreSQL can give to inserts
         // in the same transaction. It gives a stable total order; ties have no business ordering.
-        return dsl.select(QUOTE_SELECTIONS.ID, QUOTE_SELECTIONS.PARAGRAPH_ID,
-                        QUOTE_SELECTIONS.START_OFFSET, QUOTE_SELECTIONS.END_OFFSET,
-                        QUOTE_SELECTIONS.SELECTED_TEXT, QUOTE_SELECTIONS.COMMENT, QUOTE_SELECTIONS.CREATED_AT)
-                .from(QUOTE_SELECTIONS)
-                .where(QuoteQueryConditions.forUser(QUOTE_SELECTIONS, userId, tagId, q, volumeId, partId))
-                .orderBy(QUOTE_SELECTIONS.CREATED_AT.desc(), QUOTE_SELECTIONS.ID.desc())
+        return dsl.select(quoteSelections.ID, quoteSelections.PARAGRAPH_ID,
+                        quoteSelections.START_OFFSET, quoteSelections.END_OFFSET,
+                        quoteSelections.SELECTED_TEXT, quoteSelections.COMMENT, quoteSelections.CREATED_AT,
+                        paragraphs.PAGE_NUMBER, paragraphs.VOLUME_ID, volumes.TITLE, parts.TITLE)
+                .from(quoteSelections)
+                .join(paragraphs).on(quoteSelections.PARAGRAPH_ID.eq(paragraphs.ID))
+                .join(parts).on(paragraphs.PART_ID.eq(parts.ID))
+                .join(volumes).on(paragraphs.VOLUME_ID.eq(volumes.ID))
+                .where(QuoteQueryConditions.forUser(quoteSelections, userId, tagId, q, volumeId, partId))
+                .orderBy(quoteSelections.CREATED_AT.desc(), quoteSelections.ID.desc())
                 .limit(size)
                 .offset((long) page * size)
-                .fetch(r -> new QuoteSelection(
-                        r.get(QUOTE_SELECTIONS.ID), r.get(QUOTE_SELECTIONS.PARAGRAPH_ID),
-                        r.get(QUOTE_SELECTIONS.START_OFFSET), r.get(QUOTE_SELECTIONS.END_OFFSET),
-                        r.get(QUOTE_SELECTIONS.SELECTED_TEXT), r.get(QUOTE_SELECTIONS.COMMENT),
-                        r.get(QUOTE_SELECTIONS.CREATED_AT).toInstant()
+                .fetch(r -> new QuoteListEntry(
+                        new QuoteSelection(
+                                r.get(quoteSelections.ID), r.get(quoteSelections.PARAGRAPH_ID),
+                                r.get(quoteSelections.START_OFFSET), r.get(quoteSelections.END_OFFSET),
+                                r.get(quoteSelections.SELECTED_TEXT), r.get(quoteSelections.COMMENT),
+                                r.get(quoteSelections.CREATED_AT).toInstant()
+                        ),
+                        r.get(paragraphs.VOLUME_ID), r.get(paragraphs.PAGE_NUMBER),
+                        r.get(volumes.TITLE), r.get(parts.TITLE)
                 ));
     }
 

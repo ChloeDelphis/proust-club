@@ -2,6 +2,8 @@ package com.proustclub.quote;
 
 import com.proustclub.common.ParagraphExceptions;
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
+import com.proustclub.quote.dto.QuoteLocationResponse;
+import com.proustclub.quote.dto.QuoteSelectionListItemResponse;
 import com.proustclub.quote.dto.QuoteSelectionListResponse;
 import com.proustclub.quote.dto.QuoteSelectionResponse;
 import com.proustclub.quote.dto.TagResponse;
@@ -80,12 +82,12 @@ class QuoteService {
         var quotes = quoteRepository.findByUserId(userId, tagId, normalizedQ, volumeId, partId, page, size);
         long total = quoteRepository.countByUserId(userId, tagId, normalizedQ, volumeId, partId);
 
-        var quoteIds = quotes.stream().map(QuoteSelection::id).toList();
+        var quoteIds = quotes.stream().map(entry -> entry.quote().id()).toList();
         var tagsByQuoteId = quoteTagRepository.findByQuoteIds(quoteIds);
 
         var results = quotes.stream()
-                .map(quote -> toResponse(
-                        quote, toTagResponses(tagsByQuoteId.getOrDefault(quote.id(), List.of()))))
+                .map(entry -> toListItemResponse(
+                        entry, toTagResponses(tagsByQuoteId.getOrDefault(entry.quote().id(), List.of()))))
                 .toList();
 
         return new QuoteSelectionListResponse(results, total, page, size);
@@ -180,6 +182,15 @@ class QuoteService {
         return new QuoteSelectionResponse(
                 quote.id(), quote.paragraphId(), quote.startOffset(), quote.endOffset(),
                 quote.selectedText(), quote.comment(), tags, quote.createdAt()
+        );
+    }
+
+    private static QuoteSelectionListItemResponse toListItemResponse(QuoteListEntry entry, List<TagResponse> tags) {
+        QuoteSelection quote = entry.quote();
+        return new QuoteSelectionListItemResponse(
+                quote.id(), quote.paragraphId(), quote.startOffset(), quote.endOffset(),
+                quote.selectedText(), quote.comment(), tags, quote.createdAt(),
+                new QuoteLocationResponse(entry.volumeId(), entry.pageNumber(), entry.volume(), entry.part())
         );
     }
 }

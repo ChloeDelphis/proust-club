@@ -266,7 +266,11 @@ class QuoteControllerTest {
 
         mockMvc.perform(get("/api/quotes").session(alice))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.total").value(1));
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.results[0].location.volumeId").value(1))
+                .andExpect(jsonPath("$.results[0].location.pageNumber").value(1))
+                .andExpect(jsonPath("$.results[0].location.volume").value("Du côté de chez Swann"))
+                .andExpect(jsonPath("$.results[0].location.part").value("Combray"));
     }
 
     @Test

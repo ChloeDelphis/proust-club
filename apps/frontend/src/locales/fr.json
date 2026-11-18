@@ -86,6 +86,9 @@
     "createButton": "Créer « {{name}} »",
     "maxTagsReached": "Maximum : {{max}} tags par citation.",
     "saveButton": "Enregistrer",
+    "saveWithoutTagButton": "Enregistrer sans tag",
+    "cancelButton": "Annuler",
+    "emptyState": "Aucun tag pour le moment. Saisissez un nom pour en créer un.",
     "newListLabel": "Nom de la liste"
   },
   "auth": {

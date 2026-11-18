@@ -5,12 +5,11 @@ import { useToast } from '../../../components/Toast/useToast'
 import type { QuoteCardProps } from './QuoteCard.types'
 import styles from './QuoteCard.module.css'
 
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-
 export default function QuoteCard({ quote, onOpenDetail }: QuoteCardProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const showToast = useToast()
+  const locationLabel = t('searchPage.resultLocation', { volume: quote.location.volume, part: quote.location.part })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteQuote(id),
@@ -29,6 +28,9 @@ export default function QuoteCard({ quote, onOpenDetail }: QuoteCardProps) {
 
   return (
     <article className={styles.root}>
+      <header className={styles.header}>
+        <span className={styles.location}>{locationLabel}</span>
+      </header>
       <button type="button" className={styles.text} onClick={() => onOpenDetail(quote)}>{quote.selectedText}</button>
       <footer className={styles.footer}>
         {quote.tags.length > 0 && (
@@ -38,7 +40,6 @@ export default function QuoteCard({ quote, onOpenDetail }: QuoteCardProps) {
             ))}
           </ul>
         )}
-        <span className={styles.date}>{dateFormatter.format(new Date(quote.createdAt))}</span>
         <button
           type="button"
           className={styles.deleteButton}

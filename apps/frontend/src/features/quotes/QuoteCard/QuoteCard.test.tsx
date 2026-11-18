@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import QuoteCard from './QuoteCard'
 import * as quoteApi from '../../../api/quote'
 import ToastProvider from '../../../components/Toast/ToastProvider'
-import type { QuoteSelectionResponse } from '../../../api/quote'
+import type { QuoteSelectionListItemResponse } from '../../../api/quote'
 import { quoteId } from '../TimelineBar/timelineTestFixtures'
 
 vi.mock('../../../api/quote')
@@ -21,7 +21,7 @@ function wrapper({ children }: { children: ReactNode }) {
 
 const QUOTE_ID = quoteId(7)
 
-const quote: QuoteSelectionResponse = {
+const quote: QuoteSelectionListItemResponse = {
   id: QUOTE_ID,
   paragraphId: 42,
   startOffset: 0,
@@ -30,18 +30,20 @@ const quote: QuoteSelectionResponse = {
   comment: null,
   tags: [{ id: '00000000-0000-4000-8000-000000000101', name: 'Combray', colorIndex: 0 }],
   createdAt: '2026-08-05T00:00:00Z',
+  location: { volumeId: 1, pageNumber: 1, volume: 'Du côté de chez Swann', part: 'Combray' },
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-it('shows the selected text, tags and formatted date', () => {
+it('shows the tome and part, selected text and tags without the save date', () => {
   render(<QuoteCard quote={quote} onOpenDetail={vi.fn()} />, { wrapper })
 
+  expect(screen.getByText('Du côté de chez Swann · Combray')).toBeInTheDocument()
   expect(screen.getByText('hello world')).toBeInTheDocument()
   expect(screen.getByText('Combray')).toBeInTheDocument()
-  expect(screen.getByText('5 août 2026')).toBeInTheDocument()
+  expect(screen.queryByText('5 août 2026')).not.toBeInTheDocument()
 })
 
 it('does nothing if the delete confirmation is declined', async () => {

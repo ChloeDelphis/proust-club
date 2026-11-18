@@ -19,7 +19,7 @@ export default function TagPickerPopup({ onSave, onCancel, isSaving, initialNewL
         <Dialog.Backdrop className={styles.backdrop} data-testid="tag-picker-backdrop" />
         <Dialog.Popup className={styles.popup} aria-label={t('tagPicker.ariaLabel')}>
           <Dialog.Close className={styles.closeButton} aria-label={t('tagPicker.close')} disabled={isSaving}>×</Dialog.Close>
-          <TagPickerContent onSave={onSave} isSaving={isSaving} initialNewListName={initialNewListName} errorMessage={errorMessage} />
+          <TagPickerContent onSave={onSave} onCancel={onCancel} isSaving={isSaving} initialNewListName={initialNewListName} errorMessage={errorMessage} />
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

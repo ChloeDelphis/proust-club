@@ -1,7 +1,25 @@
 .root {
-  border: 1px solid var(--color-border);
+  padding: var(--space-5) clamp(var(--space-4), 2vw, var(--space-8));
+  border: var(--border-width) solid var(--color-result-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-5);
+  background: var(--color-result-card);
+  transition: border-color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.root:hover {
+  border-color: var(--color-accent);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: var(--space-3);
+}
+
+.location {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: var(--font-tracking-wide);
 }
 
 .text {
@@ -14,8 +32,8 @@
   text-align: left;
   color: inherit;
   font-family: var(--font-reading);
-  font-size: var(--text-xl);
-  font-style: italic;
+  font-size: var(--text-md);
+  line-height: var(--line-height-loose);
   cursor: pointer;
 }
 
@@ -37,6 +55,7 @@
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+  margin-right: auto;
 }
 
 .tag {
@@ -47,13 +66,8 @@
   color: var(--color-text-subtle);
 }
 
-.date {
-  font-size: var(--text-2xs);
-  color: var(--color-text-muted);
-  margin-left: auto;
-}
-
 .deleteButton {
+  margin-left: auto;
   padding: var(--space-1-5) var(--space-3);
   font-size: var(--text-xs);
   font-family: inherit;

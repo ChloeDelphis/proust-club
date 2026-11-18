@@ -31,6 +31,13 @@ describe('TagPickerPopup', () => {
     expect(screen.getByText('Jalousie')).toBeInTheDocument()
   })
 
+  it('explains how to create the first tag when the user has none', async () => {
+    vi.mocked(tagApi.listTags).mockResolvedValue([])
+    render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
+
+    expect(await screen.findByText('Aucun tag pour le moment. Saisissez un nom pour en créer un.')).toBeInTheDocument()
+  })
+
   it('filters the list as the user types', async () => {
     render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
@@ -57,7 +64,7 @@ describe('TagPickerPopup', () => {
     render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
     await screen.findByText('Combray')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(onSave).toHaveBeenCalledWith([])
   })
@@ -94,6 +101,19 @@ describe('TagPickerPopup', () => {
     expect(onSave).toHaveBeenCalledWith(['Guermantes'])
   })
 
+  it('creates the searched tag with Enter without saving the quote', async () => {
+    const onSave = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={vi.fn()} isSaving={false} />, { wrapper })
+    await screen.findByText('Combray')
+
+    const search = screen.getByRole('textbox', { name: 'Chercher un tag' })
+    await userEvent.type(search, 'Guermantes{Enter}')
+
+    expect(screen.getByText('Guermantes')).toBeInTheDocument()
+    expect(onSave).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeEnabled()
+  })
+
   it('prevents selecting or creating more than the maximum number of tags', async () => {
     const onSave = vi.fn()
     const tags = Array.from({ length: MAX_TAGS_PER_QUOTE + 1 }, (_, index) => ({
@@ -119,6 +139,8 @@ describe('TagPickerPopup', () => {
     await userEvent.type(screen.getByRole('textbox', { name: 'Chercher un tag' }), 'Nouveau')
     expect(screen.getByRole('status')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Créer « Nouveau »' })).toBeDisabled()
+    await userEvent.keyboard('{Enter}')
+    expect(screen.queryByText('Nouveau')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
     expect(onSave).toHaveBeenCalledWith([
@@ -134,7 +156,7 @@ describe('TagPickerPopup', () => {
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Combray' }))
     await userEvent.click(screen.getByRole('button', { name: 'Retirer Combray' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(onSave).toHaveBeenCalledWith([])
   })
@@ -148,6 +170,18 @@ describe('TagPickerPopup', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Fermer' }))
 
     expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('offers an explicit cancel action in the tag picker', async () => {
+    const onSave = vi.fn()
+    const onCancel = vi.fn()
+    render(<TagPickerPopup onSave={onSave} onCancel={onCancel} isSaving={false} />, { wrapper })
+    await screen.findByText('Combray')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+
+    expect(onCancel).toHaveBeenCalledOnce()
     expect(onSave).not.toHaveBeenCalled()
   })
 
@@ -179,7 +213,7 @@ describe('TagPickerPopup', () => {
     render(<TagPickerPopup onSave={vi.fn()} onCancel={vi.fn()} isSaving={true} />, { wrapper })
     await screen.findByText('Combray')
 
-    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Enregistrer sans tag' })).toBeDisabled()
   })
 
   it('ignores Escape while a save is already in flight, instead of cancelling a request that cannot be aborted', async () => {

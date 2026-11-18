@@ -6,7 +6,7 @@ import { useCurrentUser } from '../../auth/useCurrentUser'
 import { ApiError } from '../../../api/client'
 import { useToast } from '../../../components/Toast/useToast'
 import { computeSelectionPhase } from '../computeSelectionPhase'
-import { buildHighlightSegments } from '../paragraphSegments'
+import { buildSelectionSegments } from '../selectionSegments'
 import { useCreateQuoteMutation } from '../useCreateQuoteMutation'
 import TagPickerPopup from '../TagPickerPopup/TagPickerPopup'
 import AuthenticationPrompt from '../TagPickerPopup/AuthenticationPrompt'
@@ -60,7 +60,13 @@ export default function QuoteSelection({
     return () => { isMountedRef.current = false }
   }, [])
 
-  const segments = useMemo(() => buildHighlightSegments(text, highlightRange), [text, highlightRange])
+  const segments = useMemo(() => {
+    const keepsHighlight = phase.kind === 'tagPanel' || phase.kind === 'authPrompt'
+    const selectionRange = keepsHighlight
+      ? { start: phase.start, end: phase.end }
+      : null
+    return buildSelectionSegments(text, highlightRange, selectionRange)
+  }, [text, highlightRange, phase])
 
   const createQuoteMutation = useCreateQuoteMutation()
 
@@ -204,13 +210,13 @@ export default function QuoteSelection({
       >
         {hasLeadingEllipsis && <span className={styles.ellipsis} aria-hidden="true">… </span>}
         <span ref={containerRef}>
-          {segments.map((segment, index) =>
-            segment.highlighted ? (
-              <mark key={index} className={styles.mark}>{segment.text}</mark>
-            ) : (
-              <span key={index}>{segment.text}</span>
-            ),
-          )}
+          {segments.map((segment, index) => {
+            const className = segment.selected ? styles.selectedText : undefined
+            if (segment.highlighted) {
+              return <mark key={index} className={className ? `${styles.mark} ${className}` : styles.mark} data-selected-passage={segment.selected ? 'true' : undefined}>{segment.text}</mark>
+            }
+            return <span key={index} className={className} data-selected-passage={segment.selected ? 'true' : undefined}>{segment.text}</span>
+          })}
         </span>
         {hasTrailingEllipsis && <span className={styles.ellipsis} aria-hidden="true"> …</span>}
       </p>
@@ -223,6 +229,7 @@ export default function QuoteSelection({
             // click fires (default browser behavior for a mousedown outside the selected text) —
             // that would both hide the highlight and flip `phase` back to idle via the
             // selectionchange handler above, before handleSaveClick ever runs.
+            onPointerDown={handleSaveClick}
             onMouseDown={event => event.preventDefault()}
             onClick={handleSaveClick}
           >

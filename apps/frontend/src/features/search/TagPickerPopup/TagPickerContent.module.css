@@ -31,6 +31,13 @@
   font-size: var(--text-sm);
 }
 
+.emptyState {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
 .searchInput {
   width: 100%;
   padding: var(--space-2) var(--space-3);
@@ -57,10 +64,21 @@
 .tagOption {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1-5) 0;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: var(--text-md);
   cursor: pointer;
+}
+
+.tagOption:hover {
+  background: var(--color-selection-bg);
+}
+
+.tagOption input {
+  flex: 0 0 auto;
+  accent-color: var(--color-accent);
 }
 
 .createButton {
@@ -90,4 +108,31 @@
   color: var(--color-text-on-accent);
   cursor: pointer;
   font-size: var(--text-md);
+}
+
+.cancelButton {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.cancelButton:hover:not(:disabled) {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.cancelButton:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring);
+}
+
+.cancelButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

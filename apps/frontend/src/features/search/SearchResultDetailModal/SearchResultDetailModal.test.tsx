@@ -96,6 +96,21 @@ beforeEach(() => {
 })
 
 describe('SearchResultDetailModal selection flow', () => {
+  it('saves a selection that excludes the original search match', async () => {
+    render(<SearchResultDetailModal hit={firstHit} onClose={vi.fn()} />, { wrapper })
+
+    setSelection({ start: 0, end: 5 })
+    await userEvent.click(await screen.findByRole('button', { name: 'Enregistrer ce passage' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Enregistrer sans tag' }))
+
+    expect(quoteApi.createQuote).toHaveBeenCalledWith(expect.objectContaining({
+      paragraphId: firstHit.paragraphId,
+      startOffset: 0,
+      endOffset: 5,
+      selectedText: 'hello',
+    }))
+  })
+
   it('keeps the selected passage while the tag panel is open and saves its offsets', async () => {
     const user = userEvent.setup()
     render(<SearchResultDetailModal hit={firstHit} onClose={vi.fn()} />, { wrapper })
@@ -103,11 +118,33 @@ describe('SearchResultDetailModal selection flow', () => {
     setSelection({ start: 8, end: 9 })
     await user.click(await screen.findByRole('button', { name: 'Enregistrer ce passage' }))
     expect(await screen.findByRole('textbox', { name: 'Chercher un tag' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
+    expect(screen.getByText('Du côté de chez Swann')).toBeInTheDocument()
+    expect(screen.getByText('Combray')).toBeInTheDocument()
 
     setSelection(null)
-    expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enregistrer sans tag' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
 
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    const tagSearch = screen.getByRole('textbox', { name: 'Chercher un tag' })
+    await user.type(tagSearch, 'Jojo{Enter}')
+    expect(screen.getByText('Jojo')).toBeInTheDocument()
+    expect(quoteApi.createQuote).not.toHaveBeenCalled()
+
+    await user.click(screen.getByText('hello'))
+    expect(screen.getByRole('textbox', { name: 'Chercher un tag' })).toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).toContain('selectedText')
+    expect(screen.getByText('Jojo')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Annuler' }))
+    expect(screen.queryByRole('button', { name: 'Enregistrer ce passage' })).not.toBeInTheDocument()
+    expect(screen.getByText('world').getAttribute('class')).not.toContain('selectedText')
+    expect(screen.queryByRole('textbox', { name: 'Chercher un tag' })).not.toBeInTheDocument()
+    expect(quoteApi.createQuote).not.toHaveBeenCalled()
+
+    setSelection({ start: 8, end: 9 })
+    await user.click(await screen.findByRole('button', { name: 'Enregistrer ce passage' }))
+    await user.click(await screen.findByRole('button', { name: 'Enregistrer sans tag' }))
 
     expect(quoteApi.createQuote).toHaveBeenCalledWith(expect.objectContaining({
       paragraphId: firstHit.paragraphId,
@@ -126,6 +163,17 @@ describe('SearchResultDetailModal selection flow', () => {
     rerender(<SearchResultDetailModal hit={secondHit} onClose={vi.fn()} />)
 
     expect(screen.queryByRole('button', { name: 'Enregistrer ce passage' })).not.toBeInTheDocument()
+  })
+
+  it('clears the selection action when the user clicks elsewhere', async () => {
+    render(<SearchResultDetailModal hit={firstHit} onClose={vi.fn()} />, { wrapper })
+    setSelection({ start: 8, end: 9 })
+    expect(await screen.findByRole('button', { name: 'Enregistrer ce passage' })).toBeInTheDocument()
+
+    act(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })))
+
+    expect(screen.queryByRole('button', { name: 'Enregistrer ce passage' })).not.toBeInTheDocument()
+    expect(screen.getByText('Sélectionnez un passage dans le texte pour le conserver.')).toBeInTheDocument()
   })
 
   it('clears the selection when the modal closes', async () => {
