@@ -4,9 +4,7 @@
     "tooManyAttemptsError": "Trop de tentatives. Réessayez plus tard."
   },
   "adminLogin": {
-    "eyebrow": "Administration · Proust Club",
     "title": "Accès réservé",
-    "intro": "Connectez-vous avec votre compte administrateur et votre second facteur.",
     "emailLabel": "Adresse email",
     "passwordLabel": "Mot de passe",
     "codeLabel": "Code d’authentification ou code de secours",

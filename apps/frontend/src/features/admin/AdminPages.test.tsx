@@ -60,7 +60,11 @@ describe('AdminLoginPage', () => {
 
     render(<AdminLoginPage />, { wrapper: Wrapper })
     await userEvent.type(screen.getByLabelText('Adresse email'), 'admin@example.com')
-    await userEvent.type(screen.getByLabelText('Mot de passe'), 'secret')
+    const passwordInput = screen.getByLabelText('Mot de passe')
+    await userEvent.type(passwordInput, 'secret')
+    expect(passwordInput).toHaveAttribute('type', 'password')
+    await userEvent.click(screen.getByRole('button', { name: 'Afficher le mot de passe' }))
+    expect(passwordInput).toHaveAttribute('type', 'text')
     await userEvent.type(screen.getByLabelText(/code d’authentification/i), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la session' }))
 
