@@ -88,6 +88,9 @@ class AuthController {
             rateLimiter.checkLoginByIp(httpRequest);
             rateLimiter.checkLoginByAccount(request.email());
             authentication = service.authenticate(request.email(), request.password());
+            if (authentication.getAuthorities().stream().anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
+                throw ApiException.invalidCredentials();
+            }
             credentialsAccepted = true;
             sessionPersister.persist(authentication, httpRequest, httpResponse);
             user = service.currentUser(currentUser.resolveUuid(authentication));

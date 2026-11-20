@@ -2,6 +2,7 @@ package com.proustclub.auth;
 
 import com.proustclub.auth.dto.RegisterRequest;
 import com.proustclub.auth.dto.UserResponse;
+import com.proustclub.admin.AdminDataRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,17 +25,19 @@ class AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailVerificationService emailVerificationService;
     private final PasswordBreachChecker passwordBreachChecker;
+    private final AdminDataRepository adminDataRepository;
 
     AuthService(
             UserRepository repository, PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager, EmailVerificationService emailVerificationService,
-            PasswordBreachChecker passwordBreachChecker
+            PasswordBreachChecker passwordBreachChecker, AdminDataRepository adminDataRepository
     ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.emailVerificationService = emailVerificationService;
         this.passwordBreachChecker = passwordBreachChecker;
+        this.adminDataRepository = adminDataRepository;
     }
 
     // Not @Transactional, and deliberately called from the controller before register() rather
@@ -96,6 +99,7 @@ class AuthService {
             throw new IllegalStateException("User insert conflicted without a matching email.");
         }
         var uuid = insertedUuid.get();
+        adminDataRepository.recordRegistration();
         log.info("User registered: {}", uuid);
 
         emailVerificationService.sendVerification(uuid, normalizedEmail);

@@ -61,7 +61,7 @@ erDiagram
 
 ## User data
 
-`users` (auth, MVP step 4), `quote_selections` / `tags` / `quote_selection_tags` (quote saving, MVP step 5), and `password_reset_tokens` / `email_verification_tokens` (auth token flows) are implemented.
+`users` (auth, MVP step 4), `quote_selections` / `tags` / `quote_selection_tags` (quote saving, MVP step 5), and `password_reset_tokens` / `email_verification_tokens` (auth token flows) are implemented. The pre-launch admin adds MFA credentials, aggregate daily registration/deletion metrics, notification settings and a minimal delivery outbox.
 
 ```mermaid
 erDiagram
@@ -104,8 +104,48 @@ erDiagram
         timestamptz created_at
     }
 
+    admin_mfa_credentials {
+        uuid user_id PK_FK
+        bytea secret_ciphertext
+        bigint last_totp_counter
+        timestamptz created_at
+    }
+
+    admin_mfa_recovery_codes {
+        uuid user_id PK_FK
+        char code_hash PK
+        timestamptz created_at
+        timestamptz used_at
+    }
+
+    admin_daily_metrics {
+        date metric_date PK
+        integer registrations
+        integer account_deletions
+    }
+
+    admin_notification_settings {
+        smallint id PK
+        boolean registrations_enabled
+        boolean deletions_enabled
+        timestamptz updated_at
+    }
+
+    admin_notification_outbox {
+        uuid id PK
+        varchar event_type
+        timestamptz created_at
+        integer attempts
+        timestamptz next_attempt_at
+        timestamptz claimed_until
+        timestamptz sent_at
+        varchar last_error_type
+    }
+
     users ||--o{ password_reset_tokens     : requests
     users ||--o{ email_verification_tokens : requests
+    users ||--o| admin_mfa_credentials    : protects
+    users ||--o{ admin_mfa_recovery_codes : recovers
 
     tags {
         uuid     id PK
@@ -143,6 +183,12 @@ erDiagram
 **`quote_selections.comment`** (`TEXT NULL`) is an optional personal comment, editable only after creation — never set at creation time. Empty/whitespace-only input is normalized to `NULL` in the service layer, never stored as an empty string. See [quote-save-tags.md](../features/quote-save-tags.md).
 
 **`users.email_verified`** defaults to `FALSE` for new accounts; existing accounts were backfilled to `TRUE` by the migration that introduced the column. See [auth.md](../features/auth.md#email-confirmation-at-registration).
+
+**Admin MFA secrets are reversible secrets, not password hashes.** `admin_mfa_credentials.secret_ciphertext` stores AES-GCM ciphertext; the encryption key is supplied outside the database through `ADMIN_MFA_ENCRYPTION_KEY`. Recovery codes are high-entropy and stored only as SHA-256 hashes, consumed atomically once. The accepted TOTP time counter is recorded atomically to prevent replay across the accepted clock-skew window. Credentials cascade with account deletion.
+
+**Admin usage metrics are daily aggregates.** Registration and deletion totals are incremented transactionally in `admin_daily_metrics`, without retaining a user identifier or content. This preserves deletion counts after the account row and its private data are removed. Current quote and tag counts are calculated from live rows and exclude admin accounts.
+
+**Admin notification outbox contains no user identity.** It records only the event type and delivery state, so failed mail can be retried without retaining an email, quote, user ID or request payload. The recipient is resolved from the current admin account at delivery time. Notification toggles default to enabled when the first admin is provisioned.
 
 **`password_reset_tokens`/`email_verification_tokens`** each hold one-time tokens for their respective flow: `SecureRandom`-generated, stored hashed (`token_hash`, SHA-256, never the raw token), single-use (`used_at`), time-limited (`expires_at`). Kept as two separate physical tables (rather than one shared table with a `kind` column) so a bug in one flow's queries can't touch the other flow's data, even though the query logic itself is generalized. A partial unique index guarantees at most one active (unused, unexpired) token per user per table. See [auth.md](../features/auth.md#email-confirmation-at-registration) and [password-management.md](../features/password-management.md#token-lifecycle).
 

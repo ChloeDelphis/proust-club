@@ -1,6 +1,7 @@
 package com.proustclub.auth;
 
 import com.proustclub.auth.dto.RegisterRequest;
+import com.proustclub.admin.AdminDataRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,6 +45,9 @@ class AuthServiceTest {
 
     @Mock
     PasswordBreachChecker passwordBreachChecker;
+
+    @Mock
+    AdminDataRepository adminDataRepository;
 
     @InjectMocks
     AuthService service;

@@ -106,6 +106,16 @@ class AuthControllerTest {
     }
 
     @Test
+    void ordinaryUserSessionCannotAccessAdminApi() throws Exception {
+        var result = mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson("standard", "standard-admin-test@example.com", "hunter2222password")))
+                .andExpect(status().isCreated()).andReturn();
+
+        mockMvc.perform(get("/api/admin/dashboard").session((MockHttpSession) result.getRequest().getSession(false)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void registerSendsEmailConfirmation() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("emailconfirm", "emailconfirm@example.com", "hunter2222password")))

@@ -3,6 +3,38 @@
     "genericError": "Une erreur est survenue. Veuillez réessayer.",
     "tooManyAttemptsError": "Trop de tentatives. Réessayez plus tard."
   },
+  "adminLogin": {
+    "title": "Accès réservé",
+    "emailLabel": "Adresse email",
+    "passwordLabel": "Mot de passe",
+    "codeLabel": "Code TOTP",
+    "submit": "Ouvrir la session",
+    "submitting": "Connexion…",
+    "invalidCredentials": "Connexion impossible. Vérifiez vos identifiants et votre code, puis réessayez.",
+    "tooManyAttempts": "Trop de tentatives. Réessayez dans quelques minutes."
+  },
+  "adminDashboard": {
+    "eyebrow": "Espace privé",
+    "title": "Vue d’ensemble",
+    "loading": "Chargement de l’administration…",
+    "loadError": "Les données de l’administration n’ont pas pu être chargées.",
+    "saveError": "Le réglage n’a pas pu être enregistré. Réessayez.",
+    "logout": "Se déconnecter",
+    "statsLabel": "Statistiques générales",
+    "registeredUsers": "Comptes créés",
+    "savedQuotes": "Citations enregistrées",
+    "tags": "Tags",
+    "activityTitle": "Inscriptions et désinscriptions",
+    "activityRange": "Du {{start}} au {{end}}",
+    "noActivity": "Aucun événement sur cette période.",
+    "dateColumn": "Date",
+    "registrationsColumn": "Inscriptions",
+    "deletionsColumn": "Désinscriptions",
+    "notificationsTitle": "Notifications par email",
+    "notificationsDescription": "Choisissez les événements pour lesquels recevoir un message.",
+    "registrationNotifications": "M’avertir à chaque nouvelle inscription",
+    "deletionNotifications": "M’avertir à chaque suppression de compte"
+  },
   "components": {
     "spinner": {
       "loadingLabel": "Chargement"
