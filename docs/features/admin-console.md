@@ -1,6 +1,8 @@
 # Admin console
 
-The private admin console gives the operator a compact view of account and saved-content totals, a 30-day registration/deletion history, and controls for email alerts. It is served by the existing React app at `/admin`; the login page is `/admin/login`. The interface reuses Proust Club's page/surface and prune accent tokens, Fraunces display titles and DM Sans controls. It omits the reader navigation while in the admin route.
+The private admin console gives the operator a compact view of account and saved-content totals, a 30-day registration/deletion history, and controls for email alerts. It is served by the existing React app at `/admin`; the login page is `/admin/login`. The interface reuses Proust Club's page/surface and plum accent tokens, Fraunces display titles and DM Sans controls. It omits the reader navigation while in the admin route.
+
+The dashboard uses the same white card surface as saved-quote cards, fine borders and a soft plum-tinted shadow, with a short frieze rule beneath its main title. Headings use the existing upright brand serif; summary values use the same interface typeface as their labels and controls.
 
 ## Access and authentication
 
