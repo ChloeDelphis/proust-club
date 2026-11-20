@@ -194,7 +194,8 @@ public class AdminDataRepository {
                 .set(ADMIN_NOTIFICATION_OUTBOX.CLAIMED_UNTIL, now.plusMinutes(3))
                 .set(ADMIN_NOTIFICATION_OUTBOX.ATTEMPTS, ADMIN_NOTIFICATION_OUTBOX.ATTEMPTS.plus(1))
                 .where(ADMIN_NOTIFICATION_OUTBOX.ID.eq(row.getId())).execute();
-        return java.util.Optional.of(new AdminNotificationClaim(row.getId(), row.getEventType(), row.getAttempts() + 1));
+        return java.util.Optional.of(new AdminNotificationClaim(
+                row.getId(), row.getEventType(), row.getCreatedAt(), row.getAttempts() + 1));
     }
 
     void markNotificationSent(UUID id) {
@@ -215,4 +216,4 @@ public class AdminDataRepository {
     }
 }
 
-record AdminNotificationClaim(UUID id, String eventType, int attempts) {}
+record AdminNotificationClaim(UUID id, String eventType, OffsetDateTime createdAt, int attempts) {}

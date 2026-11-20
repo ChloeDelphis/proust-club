@@ -49,9 +49,10 @@ class AdminNotificationWorker {
             message.setTo(recipient.get());
             message.setSubject(claim.eventType().equals("REGISTRATION")
                     ? "Nouvelle inscription — Proust Club" : "Suppression de compte — Proust Club");
-            message.setText(claim.eventType().equals("REGISTRATION")
+            var eventDescription = claim.eventType().equals("REGISTRATION")
                     ? "Une nouvelle personne s’est inscrite sur Proust Club."
-                    : "Une personne a supprimé son compte Proust Club.");
+                    : "Une personne a supprimé son compte Proust Club.";
+            message.setText(eventDescription + "\nDate et heure (UTC) : " + claim.createdAt());
             mailSender.send(message);
             repository.markNotificationSent(claim.id());
         } catch (RuntimeException e) {

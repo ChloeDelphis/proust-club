@@ -5,6 +5,7 @@ import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,7 +23,8 @@ class AdminNotificationWorkerTest {
     void sendsEnabledEventWithoutUserDetailsAndMarksItSent() {
         var repository = mock(AdminDataRepository.class);
         var mailSender = mock(JavaMailSender.class);
-        var claim = new AdminNotificationClaim(UUID.randomUUID(), "REGISTRATION", 1);
+        var claim = new AdminNotificationClaim(
+                UUID.randomUUID(), "REGISTRATION", OffsetDateTime.parse("2026-11-20T10:15:30Z"), 1);
         when(repository.claimNotification()).thenReturn(Optional.of(claim), Optional.empty());
         when(repository.notificationPreferences()).thenReturn(new AdminNotificationPreferences(true, true));
         when(repository.adminEmail()).thenReturn(Optional.of("admin@example.com"));
@@ -32,6 +34,7 @@ class AdminNotificationWorkerTest {
         var sentMessage = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(mailSender).send(sentMessage.capture());
         assertThat(sentMessage.getValue().getText()).doesNotContain("admin@example.com", "user@example.com");
+        assertThat(sentMessage.getValue().getText()).contains("Date et heure (UTC) : 2026-11-20T10:15:30Z");
         verify(repository).markNotificationSent(claim.id());
     }
 
@@ -39,8 +42,10 @@ class AdminNotificationWorkerTest {
     void skipsDisabledEventAndRetriesWhenThereIsNoAdminRecipient() {
         var repository = mock(AdminDataRepository.class);
         var mailSender = mock(JavaMailSender.class);
-        var disabled = new AdminNotificationClaim(UUID.randomUUID(), "REGISTRATION", 1);
-        var withoutRecipient = new AdminNotificationClaim(UUID.randomUUID(), "ACCOUNT_DELETION", 2);
+        var disabled = new AdminNotificationClaim(
+                UUID.randomUUID(), "REGISTRATION", OffsetDateTime.now(), 1);
+        var withoutRecipient = new AdminNotificationClaim(
+                UUID.randomUUID(), "ACCOUNT_DELETION", OffsetDateTime.now(), 2);
         when(repository.claimNotification()).thenReturn(Optional.of(disabled), Optional.of(withoutRecipient), Optional.empty());
         when(repository.notificationPreferences()).thenReturn(
                 new AdminNotificationPreferences(false, true), new AdminNotificationPreferences(true, true));
@@ -57,7 +62,7 @@ class AdminNotificationWorkerTest {
     void retriesMailFailureWithoutLoggingMessageContents() {
         var repository = mock(AdminDataRepository.class);
         var mailSender = mock(JavaMailSender.class);
-        var claim = new AdminNotificationClaim(UUID.randomUUID(), "ACCOUNT_DELETION", 3);
+        var claim = new AdminNotificationClaim(UUID.randomUUID(), "ACCOUNT_DELETION", OffsetDateTime.now(), 3);
         when(repository.claimNotification()).thenReturn(Optional.of(claim), Optional.empty());
         when(repository.notificationPreferences()).thenReturn(new AdminNotificationPreferences(true, true));
         when(repository.adminEmail()).thenReturn(Optional.of("admin@example.com"));
