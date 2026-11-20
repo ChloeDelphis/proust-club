@@ -44,6 +44,7 @@ dependencies {
 	// cache for the bucket-per-key storage) — no distributed backend, no Spring Boot starter
 	implementation("com.bucket4j:bucket4j_jdk17-core:8.19.0")
 	implementation("com.github.ben-manes.caffeine:caffeine:3.2.4")
+	implementation("dev.samstevens.totp:totp:1.7.1")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-jooq-test")
@@ -168,6 +169,22 @@ tasks.register<JavaExec>("importProust") {
 	classpath = sourceSets.main.get().runtimeClasspath
 	mainClass.set("com.proustclub.ProustClubApplication")
 	args = listOf("import-proust")
+}
+
+tasks.register<JavaExec>("provisionAdmin") {
+	group = "application"
+	description = "Promotes one verified local or production account to the first admin and enables MFA"
+	classpath = sourceSets.main.get().runtimeClasspath
+	mainClass.set("com.proustclub.ProustClubApplication")
+	args = listOf("provision-admin")
+}
+
+tasks.register<JavaExec>("resetAdminMfa") {
+	group = "application"
+	description = "Resets MFA for a verified admin account using a private one-off CLI operation"
+	classpath = sourceSets.main.get().runtimeClasspath
+	mainClass.set("com.proustclub.ProustClubApplication")
+	args = listOf("reset-admin-mfa")
 }
 
 // ---------------------------------------------------------------------------

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 // replay of what that flow normally does for free (session id rotation, CSRF rotation, session
 // registration; see SecurityConfig.sessionAuthenticationStrategy()).
 @Component
-class SessionPersister {
+public class SessionPersister {
 
     private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
     private final SecurityContextRepository securityContextRepository;
@@ -24,7 +24,7 @@ class SessionPersister {
         this.securityContextRepository = securityContextRepository;
     }
 
-    void persist(Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
+    public void persist(Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
         sessionAuthenticationStrategy.onAuthentication(authentication, request, response);
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);

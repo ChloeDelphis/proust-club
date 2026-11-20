@@ -55,6 +55,8 @@ public class SecurityConfig {
                                 "/api/auth/password-reset/request", "/api/auth/password-reset/confirm",
                                 "/api/auth/email/confirm"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // The servlet container's internal forward for an unhandled exception on
