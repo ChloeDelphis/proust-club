@@ -50,7 +50,6 @@ export default function AdminLoginPage() {
         />
         <FormField
           label={t('adminLogin.codeLabel')}
-          hint={t('adminLogin.codeHelp')}
           type="text"
           autoComplete="one-time-code"
           inputMode="numeric"

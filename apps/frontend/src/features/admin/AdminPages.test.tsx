@@ -65,7 +65,7 @@ describe('AdminLoginPage', () => {
     expect(passwordInput).toHaveAttribute('type', 'password')
     await userEvent.click(screen.getByRole('button', { name: 'Afficher le mot de passe' }))
     expect(passwordInput).toHaveAttribute('type', 'text')
-    await userEvent.type(screen.getByLabelText(/code d’authentification/i), '123456')
+    await userEvent.type(screen.getByLabelText('Code TOTP'), '123456')
     await userEvent.click(screen.getByRole('button', { name: 'Ouvrir la session' }))
 
     expect(adminApi.adminLogin).toHaveBeenCalledWith({ email: 'admin@example.com', password: 'secret', code: '123456' })
