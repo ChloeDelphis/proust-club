@@ -17,7 +17,7 @@ If the authenticator and all recovery codes are lost, `./gradlew resetAdminMfa` 
 - The registered-user total counts existing `USER` rows. Quote and tag totals are live counts owned by `USER` accounts; admin accounts are excluded.
 - The 30-day activity view reads UTC daily totals. Registration and account deletion counters are incremented in the business transaction. A deletion remains countable after the user's row and personal data are removed.
 - The metrics store no user identifier. The admin notification outbox stores only event type, time and retry state. It contains neither an email nor quote content; the recipient is resolved from the current admin row when sent.
-- Email notifications default to enabled when the first admin is provisioned. Their switches persist in the admin console. Delivery is retried independently of registration/deletion, with bounded batches and backoff; messages contain only the event type.
+- Email notifications default to enabled when the first admin is provisioned. Their switches persist in the admin console. Delivery is retried independently of registration/deletion, with bounded batches and backoff; messages contain only the event type and its UTC timestamp.
 - The console does not show per-user citations, comments, tags or reading history, and does not measure login/session duration.
 
 ## Operations and network boundary
