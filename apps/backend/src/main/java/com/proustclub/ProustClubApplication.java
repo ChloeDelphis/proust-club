@@ -23,7 +23,13 @@ public class ProustClubApplication {
         var mode = modeFor(args);
         var application = new SpringApplicationBuilder(ProustClubApplication.class).web(mode.webType());
         if (mode.profile() != null) application.profiles(mode.profile());
-        application.run(args);
+        var context = application.run(args);
+        closeContextAfterOneOffCommand(context, mode);
+    }
+
+    static void closeContextAfterOneOffCommand(
+            org.springframework.context.ConfigurableApplicationContext context, ApplicationMode mode) {
+        if (mode.webType() == org.springframework.boot.WebApplicationType.NONE) context.close();
     }
 
     static ApplicationMode modeFor(String... args) {

@@ -10,6 +10,8 @@ Admin accounts cannot use `POST /api/auth/login`, which rejects them with the sa
 
 The first admin is provisioned with the private CLI command described in the workspace's `private/notes-techniques/admin-bootstrap.md` operator runbook. It promotes one already-verified `USER`; there is no public or HTTP role-promotion operation. This supports both local and production databases through the configured DB connection.
 
+The provisioning and MFA reset CLI processes close their Spring context after printing their one-time output; they do not leave the scheduler running in the background.
+
 If the authenticator and all recovery codes are lost, `./gradlew resetAdminMfa` replaces the stored TOTP credential and recovery codes for the verified admin account. This is a privileged offline operation, requires `ADMIN_CONFIRM_MFA_RESET=RESET`, and prints the new setup details once. Stop every backend instance before running it and restart afterward; the app's current session registry is in memory, and restart invalidates those sessions.
 
 ## Data and privacy
