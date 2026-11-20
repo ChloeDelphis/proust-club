@@ -94,6 +94,7 @@ describe('AdminDashboardPage', () => {
     render(<AdminDashboardPage />, { wrapper: Wrapper })
     expect(await screen.findByText('14')).toBeInTheDocument()
     expect(screen.getByText('63')).toBeInTheDocument()
+    expect(screen.getByText('Tags')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('checkbox', { name: 'M’avertir à chaque nouvelle inscription' }))
 
     expect(adminApi.updateAdminNotifications).toHaveBeenCalledWith({
