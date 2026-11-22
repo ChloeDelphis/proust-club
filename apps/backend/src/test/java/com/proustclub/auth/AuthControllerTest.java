@@ -90,7 +90,7 @@ class AuthControllerTest {
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("users")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("identity", "users"))).execute();
     }
 
     @Test
@@ -184,7 +184,7 @@ class AuthControllerTest {
                     second.get(20, TimeUnit.SECONDS).getResponse().getStatus());
             assertThat(statuses).containsExactlyInAnyOrder(201, 409);
 
-            Integer userCount = dsl.selectCount().from(DSL.table("users")).fetchOne(0, Integer.class);
+            Integer userCount = dsl.selectCount().from(DSL.table(DSL.name("identity", "users"))).fetchOne(0, Integer.class);
             assertThat(userCount).isEqualTo(1);
             verify(mailService, times(1)).sendEmailConfirmation(anyString(), anyString());
         } finally {
@@ -278,7 +278,7 @@ class AuthControllerTest {
                         .content(registerJson("marcel", "marcel@example.com", "hunter2222password")))
                 .andExpect(status().isUnprocessableEntity());
 
-        Integer userCount = dsl.selectCount().from(DSL.table("users")).fetchOne(0, Integer.class);
+        Integer userCount = dsl.selectCount().from(DSL.table(DSL.name("identity", "users"))).fetchOne(0, Integer.class);
         assertThat(userCount).isZero();
     }
 

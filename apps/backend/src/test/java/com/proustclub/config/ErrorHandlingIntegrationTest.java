@@ -44,7 +44,7 @@ class ErrorHandlingIntegrationTest {
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("users")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("identity", "users"))).execute();
     }
 
     @Test

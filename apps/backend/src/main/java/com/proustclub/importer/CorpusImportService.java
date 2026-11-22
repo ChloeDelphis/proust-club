@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.proustclub.jooq.Tables.PARAGRAPHS;
-import static com.proustclub.jooq.Tables.PARTS;
-import static com.proustclub.jooq.Tables.VOLUMES;
+import static com.proustclub.jooq.corpus.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.corpus.Tables.PARTS;
+import static com.proustclub.jooq.corpus.Tables.VOLUMES;
 
 @Service
 public class CorpusImportService {

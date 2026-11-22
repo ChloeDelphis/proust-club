@@ -24,7 +24,9 @@ import java.util.UUID;
 
 import dev.samstevens.totp.code.DefaultCodeGenerator;
 
-import static com.proustclub.jooq.Tables.*;
+import static com.proustclub.jooq.admin.Tables.*;
+import static com.proustclub.jooq.identity.Tables.*;
+import static com.proustclub.jooq.library.Tables.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;

@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.PARAGRAPHS;
-import static com.proustclub.jooq.Tables.PARTS;
-import static com.proustclub.jooq.Tables.QUOTE_SELECTIONS;
-import static com.proustclub.jooq.Tables.VOLUMES;
+import static com.proustclub.jooq.corpus.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.corpus.Tables.PARTS;
+import static com.proustclub.jooq.library.Tables.QUOTE_SELECTIONS;
+import static com.proustclub.jooq.corpus.Tables.VOLUMES;
 
 @Repository
 public class QuoteRepository {

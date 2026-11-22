@@ -2,13 +2,13 @@ package com.proustclub.quote.model;
 
 import com.proustclub.common.LikePatterns;
 import org.jooq.Condition;
-import com.proustclub.jooq.tables.QuoteSelections;
+import com.proustclub.jooq.library.tables.QuoteSelections;
 import org.jooq.impl.DSL;
 
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.PARAGRAPHS;
-import static com.proustclub.jooq.Tables.QUOTE_SELECTION_TAGS;
+import static com.proustclub.jooq.corpus.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.library.Tables.QUOTE_SELECTION_TAGS;
 
 public final class QuoteQueryConditions {
 

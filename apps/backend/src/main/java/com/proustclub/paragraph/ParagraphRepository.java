@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-import static com.proustclub.jooq.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.corpus.Tables.PARAGRAPHS;
 
 @Repository
 class ParagraphRepository {

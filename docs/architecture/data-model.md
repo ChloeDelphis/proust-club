@@ -1,5 +1,18 @@
 # Data Model
 
+## PostgreSQL schemas
+
+Application tables are grouped by domain. The table names in the diagrams below omit their schema prefix for readability.
+
+| Schema | Tables |
+| --- | --- |
+| `corpus` | `volumes`, `parts`, `paragraphs` |
+| `identity` | `users`, `password_reset_tokens`, `email_verification_tokens` |
+| `library` | `quote_selections`, `tags`, `quote_selection_tags` |
+| `admin` | `admin_mfa_credentials`, `admin_mfa_recovery_codes`, `admin_daily_metrics`, `admin_notification_settings`, `admin_notification_outbox` |
+
+Flyway keeps `flyway_schema_history` in `public`; the `pg_trgm` extension and its operator classes also remain in `public`. The application uses Spring Security's in-memory HTTP sessions, so there are no Spring Session tables. `paragraphs.id` and the two token-table ID columns use owned sequences; PostgreSQL moves those sequences with their tables.
+
 ## Corpus
 
 The corpus models the structure of _À la recherche du temps perdu_.
@@ -197,6 +210,8 @@ erDiagram
 **`tags`** are per-user and private — there is no shared tag taxonomy. Uniqueness is `(user_id, name)`, compared case-insensitively after trimming (a `CHECK` constraint guarantees `name` is always already trimmed and non-empty; a unique index on `(user_id, LOWER(name))` enforces the case-insensitive part) — so "Combray" and "combray" cannot both exist for the same user, while the casing a user actually typed is preserved for display.
 
 **`tags.color_index`** (`SMALLINT NOT NULL DEFAULT 0`, `CHECK (color_index BETWEEN 0 AND 9)`) is a position in a fixed, predefined 10-color palette, not a stored color value — the palette itself lives in the frontend and can change without a migration touching every row. Chosen by the user at creation time (optional on the create request; defaults to slot 0 when omitted), immutable afterward — no endpoint changes a tag's color after creation yet.
+
+**Domain schemas organize objects; they do not by themselves restrict access.** `DB_MIGRATION_USERNAME` / `DB_MIGRATION_PASSWORD` can configure Flyway separately from the runtime connection; local defaults use the same credentials. PostgreSQL grants are provisioned separately, while `USER` / `ADMIN` authorization remains in Spring Security and application logic. See [database-schemas.md](../features/database-schemas.md) for required role privileges.
 
 ## Offset convention
 

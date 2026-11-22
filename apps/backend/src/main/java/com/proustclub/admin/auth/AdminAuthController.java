@@ -72,11 +72,11 @@ public class AdminAuthController {
         }
         sessionPersister.persist(authentication, httpRequest, httpResponse);
         log.info("admin_login outcome=success");
-        return dsl.select(com.proustclub.jooq.Tables.USERS.UUID, com.proustclub.jooq.Tables.USERS.USERNAME,
-                        com.proustclub.jooq.Tables.USERS.EMAIL, com.proustclub.jooq.Tables.USERS.ROLE,
-                        com.proustclub.jooq.Tables.USERS.EMAIL_VERIFIED)
-                .from(com.proustclub.jooq.Tables.USERS)
-                .where(com.proustclub.jooq.Tables.USERS.UUID.eq(userId))
+        return dsl.select(com.proustclub.jooq.identity.Tables.USERS.UUID, com.proustclub.jooq.identity.Tables.USERS.USERNAME,
+                        com.proustclub.jooq.identity.Tables.USERS.EMAIL, com.proustclub.jooq.identity.Tables.USERS.ROLE,
+                        com.proustclub.jooq.identity.Tables.USERS.EMAIL_VERIFIED)
+                .from(com.proustclub.jooq.identity.Tables.USERS)
+                .where(com.proustclub.jooq.identity.Tables.USERS.UUID.eq(userId))
                 .fetchOne(r -> new UserResponse(r.value1(), r.value2(), r.value3(), r.value4(), r.value5()));
     }
 

@@ -8,8 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.PARAGRAPHS;
-import static com.proustclub.jooq.Tables.QUOTE_SELECTIONS;
+import static com.proustclub.jooq.corpus.Tables.PARAGRAPHS;
+import static com.proustclub.jooq.library.Tables.QUOTE_SELECTIONS;
 
 @Repository
 public class QuoteTimelineRepository {

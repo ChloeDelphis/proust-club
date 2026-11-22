@@ -36,7 +36,7 @@ class SearchControllerTest {
         // Paragraphe 2 : "madeleine" à startOffset=12, endOffset=21
         //   strpos(lower("Il revit la madeleine..."), "madeleine") = 13 (1-based) → 12 (0-based)
         // Paragraphe 3 : pas de "madeleine"
-        dsl.insertInto(DSL.table("paragraphs"),
+        dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(1, 1, 1, 1, "La madeleine est un symbole fort chez Proust.")
@@ -47,7 +47,7 @@ class SearchControllerTest {
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("paragraphs")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("corpus", "paragraphs"))).execute();
     }
 
     @Test
@@ -72,7 +72,7 @@ class SearchControllerTest {
     @Test
     void searchOffsetsUseUtf16IndexesAfterSupplementaryCharacters() throws Exception {
         String text = "😀xneedle";
-        dsl.insertInto(DSL.table("paragraphs"),
+        dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(1, 1, 4, 2, text)
@@ -228,13 +228,13 @@ class SearchControllerTest {
     }
 
     private int insertParagraphInPart(int volumeId, int partId, int position, int pageNumber, String text) {
-        dsl.insertInto(DSL.table("paragraphs"),
+        dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(volumeId, partId, position, pageNumber, text)
                 .execute();
         return dsl.select(DSL.field("id", Integer.class))
-                .from(DSL.table("paragraphs"))
+                .from(DSL.table(DSL.name("corpus", "paragraphs")))
                 .where(DSL.field("position", Integer.class).eq(position))
                 .fetchOne(0, int.class);
     }

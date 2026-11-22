@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.USERS;
+import static com.proustclub.jooq.identity.Tables.USERS;
 
 @Repository
 public class UserRepository {
