@@ -21,7 +21,7 @@ If the authenticator and all recovery codes are lost, `./gradlew resetAdminMfa` 
 - The dashboard labels the registered-user total “Comptes utilisateurs”. It counts existing `USER` rows, including accounts with unconfirmed email addresses; admin accounts are excluded. Quote and tag totals are live counts owned by `USER` accounts; admin accounts are excluded.
 - The 30-day activity view reads UTC daily totals. Registration and account deletion counters are incremented in the business transaction. A deletion remains countable after the user's row and personal data are removed.
 - The metrics store no user identifier. The admin notification outbox stores only event type, time and retry state. It contains neither an email nor quote content; the recipient is resolved from the current admin row when sent.
-- Email notifications default to enabled when the first admin is provisioned. Their switches persist in the admin console. Delivery is retried independently of registration/deletion, with bounded batches and backoff; messages contain only the event type and its UTC timestamp.
+- Email notifications default to enabled when the first admin is provisioned. Their switches persist in the admin console. A short transaction reserves each outbox event before SMTP runs; the three-minute lease can be reclaimed after expiry. SMTP connection, read and write timeouts are 20 seconds. Delivery uses bounded batches and backoff and is at least once: a crash after SMTP accepts a message but before success is stored can produce a duplicate. Messages contain only the event type and its UTC timestamp.
 - The console does not show per-user citations, comments, tags or reading history, and does not measure login/session duration.
 
 ## Operations and network boundary

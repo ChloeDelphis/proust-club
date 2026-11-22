@@ -8,6 +8,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class AdminNotificationWorker {
@@ -22,6 +24,7 @@ public class AdminNotificationWorker {
     }
 
     @Scheduled(fixedDelay = 30_000)
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void deliverPending() {
         for (int index = 0; index < 10; index++) {
             var claim = repository.claimNotification();
