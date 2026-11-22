@@ -1,12 +1,21 @@
 package com.proustclub.quote;
 
+import com.proustclub.quote.model.QuoteListEntry;
+import com.proustclub.quote.model.QuoteSelection;
+import com.proustclub.quote.model.QuoteTag;
+import com.proustclub.quote.model.TimelineEntry;
+import com.proustclub.quote.repository.QuoteRepository;
+import com.proustclub.quote.repository.QuoteTagRepository;
+import com.proustclub.quote.repository.QuoteTimelineRepository;
+import com.proustclub.tag.model.TagData;
+import com.proustclub.tag.TagRepository;
 import com.proustclub.common.ParagraphExceptions;
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
 import com.proustclub.quote.dto.QuoteLocationResponse;
 import com.proustclub.quote.dto.QuoteSelectionListItemResponse;
 import com.proustclub.quote.dto.QuoteSelectionListResponse;
 import com.proustclub.quote.dto.QuoteSelectionResponse;
-import com.proustclub.quote.dto.TagResponse;
+import com.proustclub.tag.dto.TagResponse;
 import com.proustclub.quote.dto.TimelineQuote;
 import com.proustclub.quote.dto.TimelineResponse;
 import com.proustclub.volume.VolumeService;
@@ -17,7 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-class QuoteService {
+public class QuoteService {
 
     private final QuoteRepository quoteRepository;
     private final QuoteTimelineRepository timelineRepository;
@@ -25,7 +34,7 @@ class QuoteService {
     private final QuoteTagRepository quoteTagRepository;
     private final TagRepository tagRepository;
 
-    QuoteService(
+    public QuoteService(
             QuoteRepository quoteRepository,
             QuoteTimelineRepository timelineRepository,
             VolumeService volumeService,
@@ -40,7 +49,7 @@ class QuoteService {
     }
 
     @Transactional
-    QuoteSelectionResponse create(UUID userId, CreateQuoteSelectionRequest request) {
+    public QuoteSelectionResponse create(UUID userId, CreateQuoteSelectionRequest request) {
         int requestedTagCount = (request.tagNames() == null ? 0 : request.tagNames().size())
                 + (request.newTagName() == null ? 0 : 1);
         if (requestedTagCount > CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE) {
@@ -77,7 +86,7 @@ class QuoteService {
     }
 
     @Transactional(readOnly = true)
-    QuoteSelectionListResponse list(UUID userId, UUID tagId, String q, Integer volumeId, Integer partId, int page, int size) {
+    public QuoteSelectionListResponse list(UUID userId, UUID tagId, String q, Integer volumeId, Integer partId, int page, int size) {
         String normalizedQ = blankToNull(q);
         var quotes = quoteRepository.findByUserId(userId, tagId, normalizedQ, volumeId, partId, page, size);
         long total = quoteRepository.countByUserId(userId, tagId, normalizedQ, volumeId, partId);
@@ -94,7 +103,7 @@ class QuoteService {
     }
 
     @Transactional(readOnly = true)
-    TimelineResponse getTimeline(UUID userId, UUID tagId, String q) {
+    public TimelineResponse getTimeline(UUID userId, UUID tagId, String q) {
         var entries = timelineRepository.findByUserId(userId, tagId, blankToNull(q));
         var quoteIds = entries.stream().map(TimelineEntry::id).toList();
         var tagsByQuoteId = quoteTagRepository.findByQuoteIds(quoteIds);
@@ -111,7 +120,7 @@ class QuoteService {
     }
 
     @Transactional
-    QuoteSelectionResponse updateComment(UUID userId, UUID quoteId, String rawComment) {
+    public QuoteSelectionResponse updateComment(UUID userId, UUID quoteId, String rawComment) {
         String comment = blankToNull(rawComment);
         var quote = quoteRepository.updateCommentForOwner(userId, quoteId, comment)
                 .orElseThrow(ApiException::quoteNotFound);
@@ -120,14 +129,14 @@ class QuoteService {
     }
 
     @Transactional
-    void delete(UUID userId, UUID quoteId) {
+    public void delete(UUID userId, UUID quoteId) {
         if (!quoteRepository.deleteByIdAndUserId(quoteId, userId)) {
             throw ApiException.quoteNotFound();
         }
     }
 
     @Transactional
-    QuoteSelectionResponse addTag(UUID userId, UUID quoteId, String tagName) {
+    public QuoteSelectionResponse addTag(UUID userId, UUID quoteId, String tagName) {
         var quote = quoteRepository.findByIdAndUserId(quoteId, userId).orElseThrow(ApiException::quoteNotFound);
 
         if (quoteTagRepository.countForQuote(quoteId) >= CreateQuoteSelectionRequest.MAX_TAGS_PER_QUOTE) {
@@ -145,7 +154,7 @@ class QuoteService {
     }
 
     @Transactional
-    void removeTag(UUID userId, UUID quoteId, UUID tagId) {
+    public void removeTag(UUID userId, UUID quoteId, UUID tagId) {
         if (quoteTagRepository.removeForOwner(userId, quoteId, tagId) == 0) {
             throw ApiException.tagNotFound();
         }

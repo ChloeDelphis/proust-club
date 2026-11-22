@@ -1,5 +1,7 @@
 package com.proustclub.admin;
 
+import com.proustclub.admin.dashboard.AdminDailyMetric;
+import com.proustclub.admin.notifications.AdminNotificationPreferences;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
 
@@ -14,29 +16,31 @@ import static org.jooq.impl.DSL.currentOffsetDateTime;
 @Repository
 public class AdminDataRepository {
 
+    public record AdminNotificationClaim(UUID id, String eventType, OffsetDateTime createdAt, int attempts) {}
+
     private final DSLContext dsl;
 
-    AdminDataRepository(DSLContext dsl) {
+    public AdminDataRepository(DSLContext dsl) {
         this.dsl = dsl;
     }
 
-    long registeredUserCount() {
+    public long registeredUserCount() {
         return dsl.fetchCount(USERS, USERS.ROLE.eq("USER"));
     }
 
-    long quoteCount() {
+    public long quoteCount() {
         return dsl.selectCount().from(QUOTE_SELECTIONS)
                 .join(USERS).on(USERS.UUID.eq(QUOTE_SELECTIONS.USER_ID))
                 .where(USERS.ROLE.eq("USER")).fetchOne(0, long.class);
     }
 
-    long tagCount() {
+    public long tagCount() {
         return dsl.selectCount().from(TAGS)
                 .join(USERS).on(USERS.UUID.eq(TAGS.USER_ID))
                 .where(USERS.ROLE.eq("USER")).fetchOne(0, long.class);
     }
 
-    java.util.List<AdminDailyMetric> recentMetrics(LocalDate since) {
+    public java.util.List<AdminDailyMetric> recentMetrics(LocalDate since) {
         return dsl.select(ADMIN_DAILY_METRICS.METRIC_DATE, ADMIN_DAILY_METRICS.REGISTRATIONS,
                         ADMIN_DAILY_METRICS.ACCOUNT_DELETIONS)
                 .from(ADMIN_DAILY_METRICS)
@@ -48,14 +52,14 @@ public class AdminDataRepository {
                         r.get(ADMIN_DAILY_METRICS.ACCOUNT_DELETIONS)));
     }
 
-    AdminNotificationPreferences notificationPreferences() {
+    public AdminNotificationPreferences notificationPreferences() {
         var row = dsl.selectFrom(ADMIN_NOTIFICATION_SETTINGS)
                 .where(ADMIN_NOTIFICATION_SETTINGS.ID.eq((short) 1)).fetchOne();
         if (row == null) return new AdminNotificationPreferences(true, true);
         return new AdminNotificationPreferences(row.getRegistrationsEnabled(), row.getDeletionsEnabled());
     }
 
-    void updateNotificationPreferences(boolean registrations, boolean deletions) {
+    public void updateNotificationPreferences(boolean registrations, boolean deletions) {
         dsl.insertInto(ADMIN_NOTIFICATION_SETTINGS)
                 .set(ADMIN_NOTIFICATION_SETTINGS.ID, (short) 1)
                 .set(ADMIN_NOTIFICATION_SETTINGS.REGISTRATIONS_ENABLED, registrations)
@@ -107,17 +111,17 @@ public class AdminDataRepository {
                 .execute();
     }
 
-    java.util.Optional<UUID> userToProvision(String email) {
+    public java.util.Optional<UUID> userToProvision(String email) {
         return dsl.select(USERS.UUID).from(USERS)
                 .where(USERS.EMAIL.eq(email).and(USERS.EMAIL_VERIFIED).and(USERS.ROLE.eq("USER")))
                 .fetchOptional(USERS.UUID);
     }
 
-    boolean hasAdmin() {
+    public boolean hasAdmin() {
         return dsl.fetchExists(USERS, USERS.ROLE.eq("ADMIN"));
     }
 
-    void promoteAndProvision(UUID userId, byte[] encryptedSecret, java.util.List<String> recoveryHashes) {
+    public void promoteAndProvision(UUID userId, byte[] encryptedSecret, java.util.List<String> recoveryHashes) {
         dsl.update(USERS).set(USERS.ROLE, "ADMIN")
                 .where(USERS.UUID.eq(userId).and(USERS.ROLE.eq("USER")).and(USERS.EMAIL_VERIFIED))
                 .execute();
@@ -132,13 +136,13 @@ public class AdminDataRepository {
         updateNotificationPreferences(true, true);
     }
 
-    java.util.Optional<UUID> adminToReset(String email) {
+    public java.util.Optional<UUID> adminToReset(String email) {
         return dsl.select(USERS.UUID).from(USERS)
                 .where(USERS.EMAIL.eq(email).and(USERS.EMAIL_VERIFIED).and(USERS.ROLE.eq("ADMIN")))
                 .fetchOptional(USERS.UUID);
     }
 
-    void replaceMfa(UUID userId, byte[] encryptedSecret, java.util.List<String> recoveryHashes) {
+    public void replaceMfa(UUID userId, byte[] encryptedSecret, java.util.List<String> recoveryHashes) {
         int updated = dsl.update(ADMIN_MFA_CREDENTIALS)
                 .set(ADMIN_MFA_CREDENTIALS.SECRET_CIPHERTEXT, encryptedSecret)
                 .setNull(ADMIN_MFA_CREDENTIALS.LAST_TOTP_COUNTER)
@@ -150,14 +154,14 @@ public class AdminDataRepository {
                 .set(ADMIN_MFA_RECOVERY_CODES.CODE_HASH, hash).execute());
     }
 
-    java.util.Optional<byte[]> encryptedSecret(UUID userId) {
+    public java.util.Optional<byte[]> encryptedSecret(UUID userId) {
         return dsl.select(ADMIN_MFA_CREDENTIALS.SECRET_CIPHERTEXT)
                 .from(ADMIN_MFA_CREDENTIALS)
                 .where(ADMIN_MFA_CREDENTIALS.USER_ID.eq(userId))
                 .fetchOptional(ADMIN_MFA_CREDENTIALS.SECRET_CIPHERTEXT);
     }
 
-    boolean consumeRecoveryCode(UUID userId, String hash) {
+    public boolean consumeRecoveryCode(UUID userId, String hash) {
         return dsl.update(ADMIN_MFA_RECOVERY_CODES)
                 .set(ADMIN_MFA_RECOVERY_CODES.USED_AT, currentOffsetDateTime())
                 .where(ADMIN_MFA_RECOVERY_CODES.USER_ID.eq(userId)
@@ -166,7 +170,7 @@ public class AdminDataRepository {
                 .execute() == 1;
     }
 
-    boolean claimTotpCounter(UUID userId, long counter) {
+    public boolean claimTotpCounter(UUID userId, long counter) {
         return dsl.update(ADMIN_MFA_CREDENTIALS)
                 .set(ADMIN_MFA_CREDENTIALS.LAST_TOTP_COUNTER, counter)
                 .where(ADMIN_MFA_CREDENTIALS.USER_ID.eq(userId)
@@ -175,12 +179,12 @@ public class AdminDataRepository {
                 .execute() == 1;
     }
 
-    java.util.Optional<String> adminEmail() {
+    public java.util.Optional<String> adminEmail() {
         return dsl.select(USERS.EMAIL).from(USERS).where(USERS.ROLE.eq("ADMIN")).orderBy(USERS.CREATED_AT.asc())
                 .limit(1).fetchOptional(USERS.EMAIL);
     }
 
-    java.util.Optional<AdminNotificationClaim> claimNotification() {
+    public java.util.Optional<AdminNotificationClaim> claimNotification() {
         var now = OffsetDateTime.now();
         var row = dsl.selectFrom(ADMIN_NOTIFICATION_OUTBOX)
                 .where(ADMIN_NOTIFICATION_OUTBOX.SENT_AT.isNull()
@@ -198,7 +202,7 @@ public class AdminDataRepository {
                 row.getId(), row.getEventType(), row.getCreatedAt(), row.getAttempts() + 1));
     }
 
-    void markNotificationSent(UUID id) {
+    public void markNotificationSent(UUID id) {
         dsl.update(ADMIN_NOTIFICATION_OUTBOX)
                 .set(ADMIN_NOTIFICATION_OUTBOX.SENT_AT, OffsetDateTime.now())
                 .setNull(ADMIN_NOTIFICATION_OUTBOX.CLAIMED_UNTIL)
@@ -206,7 +210,7 @@ public class AdminDataRepository {
                 .where(ADMIN_NOTIFICATION_OUTBOX.ID.eq(id)).execute();
     }
 
-    void scheduleNotificationRetry(AdminNotificationClaim claim, String errorType) {
+    public void scheduleNotificationRetry(AdminNotificationClaim claim, String errorType) {
         long delayMinutes = Math.min(60, 1L << Math.min(6, claim.attempts()));
         dsl.update(ADMIN_NOTIFICATION_OUTBOX)
                 .set(ADMIN_NOTIFICATION_OUTBOX.NEXT_ATTEMPT_AT, OffsetDateTime.now().plusMinutes(delayMinutes))
@@ -215,5 +219,3 @@ public class AdminDataRepository {
                 .where(ADMIN_NOTIFICATION_OUTBOX.ID.eq(claim.id())).execute();
     }
 }
-
-record AdminNotificationClaim(UUID id, String eventType, OffsetDateTime createdAt, int attempts) {}

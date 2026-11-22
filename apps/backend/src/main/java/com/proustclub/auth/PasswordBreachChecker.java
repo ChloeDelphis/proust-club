@@ -17,7 +17,7 @@ import java.time.Duration;
 // bypassing the fail-open behavior below entirely. Confirmed by decompiling
 // spring-security-config 7.1.0; not documented anywhere found.
 @Component
-class PasswordBreachChecker {
+public class PasswordBreachChecker {
 
     private final HaveIBeenPwnedRestApiPasswordChecker delegate;
 
@@ -30,7 +30,7 @@ class PasswordBreachChecker {
     // every single call — the check would never actually run against the real API.
     private static final String HIBP_API_URL = "https://api.pwnedpasswords.com/range/";
 
-    PasswordBreachChecker() {
+    public PasswordBreachChecker() {
         this(HIBP_API_URL);
     }
 
@@ -39,7 +39,7 @@ class PasswordBreachChecker {
     // RestClient wiring (the thing that broke once already) without a network dependency. Spring
     // resolves the no-arg constructor above by default when a component has more than one
     // constructor and none is annotated @Autowired — no annotation needed here.
-    PasswordBreachChecker(String baseUrl) {
+    public PasswordBreachChecker(String baseUrl) {
         var httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
         var requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(Duration.ofSeconds(2));
@@ -58,7 +58,7 @@ class PasswordBreachChecker {
     // HaveIBeenPwnedRestApiPasswordChecker.getLeakedPasswordsForPrefix in spring-security-web
     // 7.1.0: its entire RestClient call is wrapped in try/catch(RestClientException), which logs
     // internally (Log.error, this class's own logger) and returns Collections.emptyList().
-    boolean isCompromised(String password) {
+    public boolean isCompromised(String password) {
         return delegate.check(password).isCompromised();
     }
 }

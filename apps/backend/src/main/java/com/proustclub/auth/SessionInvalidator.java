@@ -1,5 +1,6 @@
 package com.proustclub.auth;
 
+import com.proustclub.common.security.ProustClubPrincipal;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Component;
@@ -8,11 +9,11 @@ import org.springframework.stereotype.Component;
 // one just established or still in use (password reset confirmation, password change) — see
 // docs/architecture/ADR-010-session-invalidation.md and ADR-013 (session identity).
 @Component
-class SessionInvalidator {
+public class SessionInvalidator {
 
     private final SessionRegistry sessionRegistry;
 
-    SessionInvalidator(SessionRegistry sessionRegistry) {
+    public SessionInvalidator(SessionRegistry sessionRegistry) {
         this.sessionRegistry = sessionRegistry;
     }
 
@@ -22,13 +23,13 @@ class SessionInvalidator {
     // for the new session. SessionRegistryImpl keys its principals map by equals()/hashCode(),
     // and ProustClubPrincipal bases both on userId alone — so this single O(1) lookup returns
     // every session for this user, not just the one the passed-in principal came from.
-    void invalidateOtherSessions(ProustClubPrincipal principal, String currentSessionId) {
+    public void invalidateOtherSessions(ProustClubPrincipal principal, String currentSessionId) {
         sessionRegistry.getAllSessions(principal, false).stream()
                 .filter(session -> !session.getSessionId().equals(currentSessionId))
                 .forEach(SessionInformation::expireNow);
     }
 
-    void invalidateAllSessions(ProustClubPrincipal principal) {
+    public void invalidateAllSessions(ProustClubPrincipal principal) {
         sessionRegistry.getAllSessions(principal, false)
                 .forEach(SessionInformation::expireNow);
     }

@@ -1,6 +1,6 @@
 package com.proustclub.ratelimit;
 
-import com.proustclub.auth.EmailNormalizer;
+import com.proustclub.common.EmailNormalizer;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.github.bucket4j.Bucket;

@@ -1,0 +1,179 @@
+package com.proustclub.auth.password;
+
+
+import com.proustclub.auth.model.OneTimeToken;
+import com.proustclub.auth.repository.OneTimeTokenRepository;
+import com.proustclub.auth.repository.OneTimeTokenTable;
+import com.proustclub.auth.AuthService;
+import com.proustclub.auth.ApiException;
+import com.proustclub.auth.model.AuthUser;
+import com.proustclub.auth.repository.UserRepository;
+import com.proustclub.mail.MailService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mail.MailSendException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class PasswordResetServiceTest {
+
+    @Mock
+    OneTimeTokenRepository tokenRepository;
+
+    @Mock
+    UserRepository userRepository;
+
+    @Mock
+    PasswordEncoder passwordEncoder;
+
+    @Mock
+    MailService mailService;
+
+    @Mock
+    AuthService authService;
+
+    @InjectMocks
+    PasswordResetService service;
+
+    @Test
+    void requestResetInsertsTokenAndSendsEmailForKnownAccount() {
+        var uuid = UUID.randomUUID();
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER", true);
+        when(userRepository.findByEmail("marcel@example.com")).thenReturn(Optional.of(user));
+
+        service.requestReset("marcel@example.com");
+
+        verify(tokenRepository).insert(eq(OneTimeTokenTable.PASSWORD_RESET), eq(uuid), anyString(), any(Instant.class));
+        verify(mailService).sendPasswordResetEmail(eq("marcel@example.com"), anyString());
+    }
+
+    // Best-effort by design: a transient mail failure must not let a caller distinguish a known
+    // email (would otherwise surface as 500) from an unknown one (always 202) — see the comment
+    // on PasswordResetService.requestReset().
+    @Test
+    void requestResetSwallowsMailFailure() {
+        var uuid = UUID.randomUUID();
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "hashed", "USER", true);
+        when(userRepository.findByEmail("marcel@example.com")).thenReturn(Optional.of(user));
+        doThrow(new MailSendException("smtp unreachable")).when(mailService).sendPasswordResetEmail(anyString(), anyString());
+
+        assertThatCode(() -> service.requestReset("marcel@example.com")).doesNotThrowAnyException();
+
+        verify(tokenRepository).insert(eq(OneTimeTokenTable.PASSWORD_RESET), eq(uuid), anyString(), any(Instant.class));
+    }
+
+    @Test
+    void requestResetNormalizesEmailBeforeLookup() {
+        when(userRepository.findByEmail("marcel@example.com")).thenReturn(Optional.empty());
+
+        service.requestReset("  Marcel@Example.com ");
+
+        verify(userRepository).findByEmail("marcel@example.com");
+    }
+
+    @Test
+    void requestResetDoesNothingForUnknownEmail() {
+        when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
+
+        service.requestReset("ghost@example.com");
+
+        verify(tokenRepository, never()).insert(any(), any(), any(), any());
+        verifyNoInteractions(mailService);
+    }
+
+    @Test
+    void confirmResetBurnsTokenAndUpdatesPassword() {
+        var uuid = UUID.randomUUID();
+        var token = new OneTimeToken(42L, uuid);
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER", true);
+
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.of(token));
+        when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("new-password-long-enough")).thenReturn("new-hash");
+
+        var updatedUser = service.confirmReset("raw-token", "new-password-long-enough");
+
+        assertThat(updatedUser.username()).isEqualTo("marcel");
+        assertThat(updatedUser.passwordHash()).isEqualTo("new-hash");
+        verify(userRepository).updatePasswordHash(uuid, "new-hash");
+    }
+
+    @Test
+    void confirmResetRechecksIdentifierPolicyBeforeUpdatingHash() {
+        var uuid = UUID.randomUUID();
+        var token = new OneTimeToken(42L, uuid);
+        var user = new AuthUser(uuid, "marcel", "marcel@example.com", "old-hash", "USER", true);
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.of(token));
+        when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.confirmReset("raw-token", "MARCEL@EXAMPLE.COM"))
+                .isInstanceOf(ApiException.class);
+
+        verify(userRepository, never()).updatePasswordHash(any(UUID.class), any());
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    void confirmResetRejectsUnknownToken() {
+        when(tokenRepository.consumeValidToken(any(OneTimeTokenTable.class), anyString())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.confirmReset("garbage-token", "new-password-long-enough"))
+                .isInstanceOf(ApiException.class);
+
+        verify(userRepository, never()).updatePasswordHash(any(UUID.class), any());
+    }
+
+    @Test
+    void checkNewPasswordPolicyIfTokenLooksValidSkipsChecksOnDeadToken() {
+        when(tokenRepository.findValidTokenUserId(eq(OneTimeTokenTable.PASSWORD_RESET), anyString())).thenReturn(Optional.empty());
+
+        service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "new-password-long-enough");
+
+        verify(authService, never()).checkPasswordNotCompromised(any());
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void checkNewPasswordPolicyIfTokenLooksValidRejectsIdentifierBeforeBreachCheck() {
+        var userId = UUID.randomUUID();
+        var user = new AuthUser(userId, "marcel", "marcel@example.com", "hashed", "USER", true);
+        when(tokenRepository.findValidTokenUserId(eq(OneTimeTokenTable.PASSWORD_RESET), anyString())).thenReturn(Optional.of(userId));
+        when(userRepository.findByUuid(userId)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "MARCEL@EXAMPLE.COM"))
+                .isInstanceOf(ApiException.class);
+
+        verify(authService, never()).checkPasswordNotCompromised(any());
+    }
+
+    @Test
+    void checkNewPasswordPolicyIfTokenLooksValidPropagatesCompromisedPasswordException() {
+        var userId = UUID.randomUUID();
+        var user = new AuthUser(userId, "marcel", "marcel@example.com", "hashed", "USER", true);
+        when(tokenRepository.findValidTokenUserId(eq(OneTimeTokenTable.PASSWORD_RESET), anyString())).thenReturn(Optional.of(userId));
+        when(userRepository.findByUuid(userId)).thenReturn(Optional.of(user));
+        doThrow(ApiException.passwordCompromised()).when(authService).checkPasswordNotCompromised("compromised-password");
+
+        assertThatThrownBy(() -> service.checkNewPasswordPolicyIfTokenLooksValid("raw-token", "compromised-password"))
+                .isInstanceOf(ApiException.class);
+    }
+}

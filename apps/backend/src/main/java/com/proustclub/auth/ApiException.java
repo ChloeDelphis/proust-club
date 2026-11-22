@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.ErrorResponseException;
 
-class ApiException extends ErrorResponseException {
+public class ApiException extends ErrorResponseException {
 
     private ApiException(HttpStatus status, String detail) {
         this(status, detail, null);
@@ -22,15 +22,15 @@ class ApiException extends ErrorResponseException {
         return problem;
     }
 
-    static ApiException usernameAlreadyExists() {
+    public static ApiException usernameAlreadyExists() {
         return new ApiException(HttpStatus.CONFLICT, "Username already exists.");
     }
 
-    static ApiException emailAlreadyExists() {
+    public static ApiException emailAlreadyExists() {
         return new ApiException(HttpStatus.CONFLICT, "Email already exists.");
     }
 
-    static ApiException passwordMatchesIdentifier() {
+    public static ApiException passwordMatchesIdentifier() {
         return new ApiException(
                 HttpStatus.BAD_REQUEST,
                 "Password must not match an account identifier.",
@@ -38,29 +38,29 @@ class ApiException extends ErrorResponseException {
         );
     }
 
-    static ApiException invalidCredentials() {
+    public static ApiException invalidCredentials() {
         return new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
     }
 
     // Deliberately generic — never distinguishes "expired" from "already used" from "never
     // existed", so the endpoint can't be used to probe the state of a specific link.
-    static ApiException invalidOrExpiredResetToken() {
+    public static ApiException invalidOrExpiredResetToken() {
         return new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token.");
     }
 
     // Same anti-enumeration reasoning as invalidOrExpiredResetToken().
-    static ApiException invalidOrExpiredVerificationToken() {
+    public static ApiException invalidOrExpiredVerificationToken() {
         return new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired verification token.");
     }
 
-    static ApiException emailAlreadyVerified() {
+    public static ApiException emailAlreadyVerified() {
         return new ApiException(HttpStatus.CONFLICT, "Email already verified.");
     }
 
     // 422, not 400: this distinct status lets the frontend show an actionable breach-check message
     // without confusing it with unrelated request-validation errors. The identifier policy uses a
     // stable ProblemDetail code because it shares the 400 status with those other failures.
-    static ApiException passwordCompromised() {
+    public static ApiException passwordCompromised() {
         return new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "Password found in a known data breach.");
     }
 }

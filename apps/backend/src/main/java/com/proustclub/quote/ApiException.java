@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.ErrorResponseException;
 
-class ApiException extends ErrorResponseException {
+public class ApiException extends ErrorResponseException {
 
     private ApiException(HttpStatus status, String detail) {
         super(status, ProblemDetail.forStatusAndDetail(status, detail), null);

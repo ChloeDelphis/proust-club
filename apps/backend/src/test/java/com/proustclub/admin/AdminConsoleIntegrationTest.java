@@ -1,5 +1,9 @@
 package com.proustclub.admin;
 
+import com.proustclub.admin.auth.AdminMfaService;
+import com.proustclub.admin.notifications.AdminNotificationPreferences;
+import com.proustclub.admin.notifications.AdminNotificationWorker;
+import com.proustclub.admin.provisioning.AdminProvisioningService;
 import com.proustclub.TestcontainersConfiguration;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;

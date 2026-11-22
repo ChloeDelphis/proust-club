@@ -1,5 +1,6 @@
 package com.proustclub.auth;
 
+import com.proustclub.common.security.CurrentUser;
 import com.proustclub.auth.dto.EmailVerificationConfirmRequest;
 import com.proustclub.ratelimit.RateLimiter;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,13 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Auth", description = "Account creation and session-based authentication.")
 @RestController
-class EmailVerificationController {
+public class EmailVerificationController {
 
     private final EmailVerificationService service;
     private final RateLimiter rateLimiter;
     private final CurrentUser currentUser;
 
-    EmailVerificationController(EmailVerificationService service, RateLimiter rateLimiter, CurrentUser currentUser) {
+    public EmailVerificationController(EmailVerificationService service, RateLimiter rateLimiter, CurrentUser currentUser) {
         this.service = service;
         this.rateLimiter = rateLimiter;
         this.currentUser = currentUser;
@@ -40,7 +41,7 @@ class EmailVerificationController {
     @ApiResponse(responseCode = "400", description = "Invalid request body, or invalid/expired token", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping("/api/auth/email/confirm")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void confirm(@Valid @RequestBody EmailVerificationConfirmRequest request) {
+    public void confirm(@Valid @RequestBody EmailVerificationConfirmRequest request) {
         service.confirmVerification(request.token());
     }
 
@@ -54,7 +55,7 @@ class EmailVerificationController {
     @ApiResponse(responseCode = "409", description = "Email already verified", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping("/api/auth/email/confirm/resend")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void resend(Authentication authentication) {
+    public void resend(Authentication authentication) {
         var userId = currentUser.resolveUuid(authentication);
         rateLimiter.checkEmailVerificationResendByAccount(userId);
         service.resendVerification(userId);
