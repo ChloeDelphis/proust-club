@@ -59,7 +59,7 @@ class RateLimitControllerTest {
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("users")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("identity", "users"))).execute();
     }
 
     // Status + Retry-After header asserted, not the ProblemDetail body — see the comment on

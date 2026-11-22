@@ -10,7 +10,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.*;
+import static com.proustclub.jooq.admin.Tables.*;
+import static com.proustclub.jooq.identity.Tables.*;
+import static com.proustclub.jooq.library.Tables.*;
 import static org.jooq.impl.DSL.currentOffsetDateTime;
 
 @Repository

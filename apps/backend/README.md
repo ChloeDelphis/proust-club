@@ -15,6 +15,8 @@ Spring Boot 4.1.0 (Java 21, jOOQ, PostgreSQL 18, Flyway). Requires a running Pos
 
 Code generation and compilation require PostgreSQL to be running. Start the local database from the repository root with `docker compose up -d postgres`. Generated sources live under `build/generated-src/jooq/main` and are recreated automatically before Java compilation. Set `JOOQ_DB_URL`, `JOOQ_DB_USERNAME`, and `JOOQ_DB_PASSWORD` to override the code generation connection; these are separate from the application's `DB_*` connection settings. The codegen migration task only accepts a loopback database URL.
 
+The application connects with `DB_URL`, `DB_USERNAME` and `DB_PASSWORD`. Flyway uses those same credentials by default; set `DB_MIGRATION_USERNAME` and `DB_MIGRATION_PASSWORD` to use a separate migration role. A separate role must own (or assume the owner of) existing Flyway objects and have `CREATE` on target schemas. Provision PostgreSQL grants outside the application: schema names do not create access boundaries. jOOQ's local migration/code-generation connection uses `JOOQ_DB_*` and is independent of both roles.
+
 ## Local database data and PostgreSQL 18
 
 The local PostgreSQL 18 service uses the `pgdata-pg18` named volume mounted at `/var/lib/postgresql`, the data path used by the official PostgreSQL 18 image. PostgreSQL 16 used a different data directory and volume. Do not mount a PostgreSQL 16 data directory into PostgreSQL 18; major-version changes require a logical dump and restore or another supported upgrade method.

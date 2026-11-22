@@ -50,7 +50,7 @@ class QuoteControllerTest {
 
     @BeforeEach
     void setUp() {
-        paragraphId = dsl.insertInto(DSL.table("paragraphs"),
+        paragraphId = dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(1, 1, 1, 1, "La madeleine est un symbole fort chez Proust.")
@@ -61,7 +61,7 @@ class QuoteControllerTest {
         // endpoint assumes every volume always has a page range (see QuoteRepository.
         // findVolumesWithPageRange), which only holds once import has run. Tests insert
         // paragraphs directly, bypassing the importer, so this has to be stamped by hand.
-        dsl.update(DSL.table("volumes"))
+        dsl.update(DSL.table(DSL.name("corpus", "volumes")))
                 .set(DSL.field("min_page", Integer.class), 1)
                 .set(DSL.field("max_page", Integer.class), 999)
                 .execute();
@@ -69,11 +69,11 @@ class QuoteControllerTest {
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("quote_selection_tags")).execute();
-        dsl.deleteFrom(DSL.table("quote_selections")).execute();
-        dsl.deleteFrom(DSL.table("tags")).execute();
-        dsl.deleteFrom(DSL.table("paragraphs")).execute();
-        dsl.deleteFrom(DSL.table("users")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("library", "quote_selection_tags"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("library", "quote_selections"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("library", "tags"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("corpus", "paragraphs"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("identity", "users"))).execute();
     }
 
     // --- POST /api/quotes ---
@@ -503,7 +503,7 @@ class QuoteControllerTest {
     void timelineReturnsQuotesOrderedByPositionAcrossVolumes() throws Exception {
         var session = registerAndLogin("alice", "alice@example.com");
 
-        int laterParagraphId = dsl.insertInto(DSL.table("paragraphs"),
+        int laterParagraphId = dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(2, 4, 2, 150, "Un paragraphe plus loin dans l'oeuvre, dans un autre tome.")
@@ -860,7 +860,7 @@ class QuoteControllerTest {
     }
 
     private int insertParagraphInPart(int volumeId, int partId, int position, int pageNumber, String text) {
-        return dsl.insertInto(DSL.table("paragraphs"),
+        return dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(volumeId, partId, position, pageNumber, text)

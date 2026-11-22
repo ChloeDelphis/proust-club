@@ -70,7 +70,7 @@ class PasswordResetControllerTest {
     @AfterEach
     void tearDown() {
         // Cascades to password_reset_tokens (ON DELETE CASCADE, see V8 migration).
-        dsl.deleteFrom(DSL.table("users")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("identity", "users"))).execute();
     }
 
     @Test
@@ -181,7 +181,7 @@ class PasswordResetControllerTest {
         var secondToken = tokenCaptor.getAllValues().get(1);
 
         var liveTokenCount = dsl.selectCount()
-                .from(DSL.table("password_reset_tokens"))
+                .from(DSL.table(DSL.name("identity", "password_reset_tokens")))
                 .where(DSL.field("used_at", Instant.class).isNull())
                 .fetchOne(0, int.class);
         assertThat(liveTokenCount).isEqualTo(1);
@@ -231,7 +231,7 @@ class PasswordResetControllerTest {
         mockMvc.perform(requestReset("expiredtoken@example.com")).andExpect(status().isAccepted());
         var token = capturedToken("expiredtoken@example.com");
 
-        dsl.update(DSL.table("password_reset_tokens"))
+        dsl.update(DSL.table(DSL.name("identity", "password_reset_tokens")))
                 .set(DSL.field("expires_at", Instant.class), Instant.now().minusSeconds(60))
                 .execute();
 

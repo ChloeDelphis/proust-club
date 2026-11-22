@@ -69,7 +69,12 @@ jooq {
 			name = "org.jooq.codegen.JavaGenerator"
 			database {
 				name = "org.jooq.meta.postgres.PostgresDatabase"
-				inputSchema = "public"
+				schemata {
+					schema { inputSchema = "corpus" }
+					schema { inputSchema = "identity" }
+					schema { inputSchema = "library" }
+					schema { inputSchema = "admin" }
+				}
 				excludes = "flyway_schema_history"
 			}
 			generate {

@@ -12,7 +12,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.TAGS;
+import static com.proustclub.jooq.library.Tables.TAGS;
 
 @Repository
 public class TagRepository {

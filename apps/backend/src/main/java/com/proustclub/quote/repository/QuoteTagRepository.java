@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.QUOTE_SELECTIONS;
-import static com.proustclub.jooq.Tables.QUOTE_SELECTION_TAGS;
-import static com.proustclub.jooq.Tables.TAGS;
+import static com.proustclub.jooq.library.Tables.QUOTE_SELECTIONS;
+import static com.proustclub.jooq.library.Tables.QUOTE_SELECTION_TAGS;
+import static com.proustclub.jooq.library.Tables.TAGS;
 
 @Repository
 public class QuoteTagRepository {

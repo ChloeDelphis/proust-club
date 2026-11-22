@@ -8,8 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.proustclub.jooq.Tables.PARTS;
-import static com.proustclub.jooq.Tables.VOLUMES;
+import static com.proustclub.jooq.corpus.Tables.PARTS;
+import static com.proustclub.jooq.corpus.Tables.VOLUMES;
 
 @Repository
 class VolumeRepository {

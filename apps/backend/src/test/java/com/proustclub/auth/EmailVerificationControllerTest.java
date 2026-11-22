@@ -50,7 +50,7 @@ class EmailVerificationControllerTest {
     @AfterEach
     void tearDown() {
         // Cascades to email_verification_tokens (ON DELETE CASCADE, see V9 migration).
-        dsl.deleteFrom(DSL.table("users")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("identity", "users"))).execute();
     }
 
     @Test
@@ -61,7 +61,7 @@ class EmailVerificationControllerTest {
                 .andExpect(status().isNoContent());
 
         var verified = dsl.select(DSL.field("email_verified", Boolean.class))
-                .from(DSL.table("users"))
+                .from(DSL.table(DSL.name("identity", "users")))
                 .where(DSL.field("email", String.class).eq("confirmvalid@example.com"))
                 .fetchOne(r -> r.get("email_verified", Boolean.class));
         assertThat(verified).isTrue();
@@ -88,7 +88,7 @@ class EmailVerificationControllerTest {
         register("expiredtoken", "expiredtoken@example.com", "hunter2222password");
         var token = capturedToken("expiredtoken@example.com");
 
-        dsl.update(DSL.table("email_verification_tokens"))
+        dsl.update(DSL.table(DSL.name("identity", "email_verification_tokens")))
                 .set(DSL.field("expires_at", Instant.class), Instant.now().minusSeconds(60))
                 .execute();
 
@@ -128,7 +128,7 @@ class EmailVerificationControllerTest {
         mockMvc.perform(resend(session)).andExpect(status().isNoContent());
 
         var liveTokenCount = dsl.selectCount()
-                .from(DSL.table("email_verification_tokens"))
+                .from(DSL.table(DSL.name("identity", "email_verification_tokens")))
                 .where(DSL.field("used_at", Instant.class).isNull())
                 .fetchOne(0, int.class);
         assertThat(liveTokenCount).isEqualTo(1);

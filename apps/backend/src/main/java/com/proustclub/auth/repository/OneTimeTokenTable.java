@@ -6,8 +6,8 @@ import org.jooq.Table;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import static com.proustclub.jooq.Tables.EMAIL_VERIFICATION_TOKENS;
-import static com.proustclub.jooq.Tables.PASSWORD_RESET_TOKENS;
+import static com.proustclub.jooq.identity.Tables.EMAIL_VERIFICATION_TOKENS;
+import static com.proustclub.jooq.identity.Tables.PASSWORD_RESET_TOKENS;
 
 public enum OneTimeTokenTable {
     EMAIL_VERIFICATION(

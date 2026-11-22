@@ -29,12 +29,12 @@ class CorpusImportServiceTest {
         // The Testcontainers context (and its database) is shared across integration test
         // classes — start from a clean paragraphs table so updateVolumePageRanges() only
         // aggregates the rows this test itself inserts.
-        dsl.deleteFrom(DSL.table("paragraphs")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("corpus", "paragraphs"))).execute();
     }
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("paragraphs")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("corpus", "paragraphs"))).execute();
     }
 
     @Test
@@ -54,14 +54,14 @@ class CorpusImportServiceTest {
         var maxPageField = DSL.field("max_page", Integer.class);
 
         var volume1 = dsl.select(minPageField, maxPageField)
-                .from(DSL.table("volumes"))
+                .from(DSL.table(DSL.name("corpus", "volumes")))
                 .where(idField.eq(1))
                 .fetchOne();
         assertThat(volume1.get(minPageField)).isEqualTo(1);
         assertThat(volume1.get(maxPageField)).isEqualTo(50);
 
         var volume2 = dsl.select(minPageField, maxPageField)
-                .from(DSL.table("volumes"))
+                .from(DSL.table(DSL.name("corpus", "volumes")))
                 .where(idField.eq(2))
                 .fetchOne();
         assertThat(volume2.get(minPageField)).isEqualTo(110);

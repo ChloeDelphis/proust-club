@@ -31,7 +31,7 @@ class ParagraphControllerTest {
     // right after volume 1's last paragraph by position, used to prove the volume boundary holds.
     @BeforeEach
     void setUp() {
-        dsl.insertInto(DSL.table("paragraphs"),
+        dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(1, 1, 1, 1, "P1")
@@ -45,12 +45,12 @@ class ParagraphControllerTest {
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("paragraphs")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("corpus", "paragraphs"))).execute();
     }
 
     private int paragraphIdAtPosition(int position) {
         return dsl.select(DSL.field("id", Integer.class))
-                .from(DSL.table("paragraphs"))
+                .from(DSL.table(DSL.name("corpus", "paragraphs")))
                 .where(DSL.field("position", Integer.class).eq(position))
                 .fetchOne(0, Integer.class);
     }

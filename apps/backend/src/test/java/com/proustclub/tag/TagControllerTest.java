@@ -42,11 +42,11 @@ class TagControllerTest {
 
     @AfterEach
     void tearDown() {
-        dsl.deleteFrom(DSL.table("quote_selection_tags")).execute();
-        dsl.deleteFrom(DSL.table("quote_selections")).execute();
-        dsl.deleteFrom(DSL.table("tags")).execute();
-        dsl.deleteFrom(DSL.table("paragraphs")).execute();
-        dsl.deleteFrom(DSL.table("users")).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("library", "quote_selection_tags"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("library", "quote_selections"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("library", "tags"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("corpus", "paragraphs"))).execute();
+        dsl.deleteFrom(DSL.table(DSL.name("identity", "users"))).execute();
     }
 
     @Test
@@ -340,7 +340,7 @@ class TagControllerTest {
     }
 
     private int createParagraph() {
-        return dsl.insertInto(DSL.table("paragraphs"),
+        return dsl.insertInto(DSL.table(DSL.name("corpus", "paragraphs")),
                         DSL.field("volume_id"), DSL.field("part_id"), DSL.field("position"),
                         DSL.field("page_number"), DSL.field("text"))
                 .values(1, 1, 1, 1, "La madeleine est un symbole fort chez Proust.")
