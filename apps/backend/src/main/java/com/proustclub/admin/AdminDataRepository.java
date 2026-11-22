@@ -232,7 +232,9 @@ public class AdminDataRepository {
                 .where(ADMIN_NOTIFICATION_OUTBOX.SENT_AT.isNotNull()
                         .and(ADMIN_NOTIFICATION_OUTBOX.SENT_AT.lt(completedBefore)))
                 .orderBy(ADMIN_NOTIFICATION_OUTBOX.SENT_AT.asc())
-                .limit(batchSize);
+                .limit(batchSize)
+                .forUpdate()
+                .skipLocked();
         return dsl.deleteFrom(ADMIN_NOTIFICATION_OUTBOX)
                 .where(ADMIN_NOTIFICATION_OUTBOX.ID.in(expiredIds))
                 .execute();

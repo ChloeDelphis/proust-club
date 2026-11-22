@@ -185,6 +185,31 @@ class AdminConsoleIntegrationTest {
         assertThat(notificationExists(unresolved)).isTrue();
     }
 
+    @Test
+    void concurrentRetentionWorkersDeleteDistinctBatches() throws Exception {
+        var cutoff = OffsetDateTime.now(ZoneOffset.UTC).minusDays(30);
+        for (int index = 0; index < 100; index++) {
+            insertNotification(cutoff.minusDays(1), cutoff.minusDays(1), cutoff.minusDays(40), null, 1, null);
+        }
+        var ready = new CountDownLatch(2);
+        var start = new CountDownLatch(1);
+
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var first = workers.submit(() -> purgeWhenReleased(ready, start, cutoff));
+            var second = workers.submit(() -> purgeWhenReleased(ready, start, cutoff));
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+
+            var firstDeleted = first.get(5, TimeUnit.SECONDS);
+            var secondDeleted = second.get(5, TimeUnit.SECONDS);
+
+            assertThat(firstDeleted).isEqualTo(50);
+            assertThat(secondDeleted).isEqualTo(50);
+            assertThat(dsl.fetchCount(ADMIN_NOTIFICATION_OUTBOX,
+                    ADMIN_NOTIFICATION_OUTBOX.SENT_AT.lt(cutoff))).isZero();
+        }
+    }
+
     private java.util.Optional<AdminDataRepository.AdminNotificationClaim> claimWhenReleased(
             CountDownLatch ready, CountDownLatch start) throws InterruptedException {
         ready.countDown();
@@ -211,6 +236,13 @@ class AdminConsoleIntegrationTest {
 
     private boolean notificationExists(UUID id) {
         return dsl.fetchExists(ADMIN_NOTIFICATION_OUTBOX, ADMIN_NOTIFICATION_OUTBOX.ID.eq(id));
+    }
+
+    private int purgeWhenReleased(CountDownLatch ready, CountDownLatch start, OffsetDateTime cutoff)
+            throws InterruptedException {
+        ready.countDown();
+        if (!start.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("Concurrent purge test timed out");
+        return repository.purgeCompletedNotificationsBefore(cutoff, 50);
     }
 
     @Test
