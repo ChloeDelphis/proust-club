@@ -22,6 +22,7 @@ If the authenticator and all recovery codes are lost, `./gradlew resetAdminMfa` 
 - The 30-day activity view reads UTC daily totals. Registration and account deletion counters are incremented in the business transaction. A deletion remains countable after the user's row and personal data are removed.
 - The metrics store no user identifier. The admin notification outbox stores only event type, time and retry state. It contains neither an email nor quote content; the recipient is resolved from the current admin row when sent.
 - Email notifications default to enabled when the first admin is provisioned. Their switches persist in the admin console. A short transaction reserves each outbox event before SMTP runs; the three-minute lease can be reclaimed after expiry. SMTP connection, read and write timeouts are 20 seconds. Delivery uses bounded batches and backoff and is at least once: a crash after SMTP accepts a message but before success is stored can produce a duplicate. Messages contain only the event type and its UTC timestamp.
+- Completed outbox events are retained for 30 days after sending or explicit neutralization, then purged daily in bounded batches. Pending, retrying and unresolved events are never eligible, regardless of age. Each run reports only aggregate deletion counts; the batch cap is 10,000 rows per run, and remaining eligible rows are picked up by later daily runs.
 - The console does not show per-user citations, comments, tags or reading history, and does not measure login/session duration.
 
 ## Operations and network boundary

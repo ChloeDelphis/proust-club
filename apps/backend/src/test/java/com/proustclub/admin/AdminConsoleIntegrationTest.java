@@ -2,6 +2,7 @@ package com.proustclub.admin;
 
 import com.proustclub.admin.auth.AdminMfaService;
 import com.proustclub.admin.notifications.AdminNotificationPreferences;
+import com.proustclub.admin.notifications.AdminNotificationRetentionJob;
 import com.proustclub.admin.notifications.AdminNotificationWorker;
 import com.proustclub.admin.provisioning.AdminProvisioningService;
 import com.proustclub.TestcontainersConfiguration;
@@ -50,6 +51,7 @@ class AdminConsoleIntegrationTest {
     @Autowired DSLContext dsl;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired AdminDataRepository repository;
+    @Autowired AdminNotificationRetentionJob notificationRetentionJob;
     @Autowired AdminMfaService mfaService;
     @Autowired AdminProvisioningService provisioningService;
     @org.springframework.test.context.bean.override.mockito.MockitoBean AdminNotificationWorker notificationWorker;
@@ -156,11 +158,59 @@ class AdminConsoleIntegrationTest {
                 .fetchOne(ADMIN_NOTIFICATION_OUTBOX.CLAIMED_UNTIL)).isAfter(OffsetDateTime.now());
     }
 
+    @Test
+    void retentionPurgesOnlyCompletedNotificationsOlderThanThirtyDays() {
+        var now = OffsetDateTime.now(ZoneOffset.UTC);
+        var expiredSent = insertNotification(now.minusDays(60), now.minusDays(31), now.minusDays(40), null, 1, null);
+        var expiredSuppressed = insertNotification(now.minusDays(60), now.minusDays(32), now.minusDays(40), null, 1, "PreviousFailure");
+        var recentlyCompleted = insertNotification(now.minusDays(60), now.minusDays(29), now.minusDays(40), null, 1, null);
+        var pending = insertNotification(now.minusDays(60), null, now.minusDays(40), null, 0, null);
+        var retrying = insertNotification(now.minusDays(60), null, now.minusDays(31), null, 3, "MailSendException");
+        var unresolved = insertNotification(now.minusDays(60), null, now.minusDays(31), null, 8, "PermanentDeliveryFailure");
+
+        notificationRetentionJob.purgeExpiredNotifications();
+
+        assertThat(notificationExists(expiredSent)).isFalse();
+        assertThat(notificationExists(expiredSuppressed)).isFalse();
+        assertThat(notificationExists(recentlyCompleted)).isTrue();
+        assertThat(notificationExists(pending)).isTrue();
+        assertThat(notificationExists(retrying)).isTrue();
+        assertThat(notificationExists(unresolved)).isTrue();
+
+        notificationRetentionJob.purgeExpiredNotifications();
+
+        assertThat(notificationExists(expiredSent)).isFalse();
+        assertThat(notificationExists(pending)).isTrue();
+        assertThat(notificationExists(retrying)).isTrue();
+        assertThat(notificationExists(unresolved)).isTrue();
+    }
+
     private java.util.Optional<AdminDataRepository.AdminNotificationClaim> claimWhenReleased(
             CountDownLatch ready, CountDownLatch start) throws InterruptedException {
         ready.countDown();
         if (!start.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("Concurrent claim test timed out");
         return repository.claimNotification();
+    }
+
+    private UUID insertNotification(OffsetDateTime createdAt, OffsetDateTime sentAt,
+                                    OffsetDateTime nextAttemptAt, OffsetDateTime claimedUntil,
+                                    int attempts, String lastErrorType) {
+        var id = UUID.randomUUID();
+        var insert = dsl.insertInto(ADMIN_NOTIFICATION_OUTBOX)
+                .set(ADMIN_NOTIFICATION_OUTBOX.ID, id)
+                .set(ADMIN_NOTIFICATION_OUTBOX.EVENT_TYPE, "REGISTRATION")
+                .set(ADMIN_NOTIFICATION_OUTBOX.CREATED_AT, createdAt)
+                .set(ADMIN_NOTIFICATION_OUTBOX.NEXT_ATTEMPT_AT, nextAttemptAt)
+                .set(ADMIN_NOTIFICATION_OUTBOX.ATTEMPTS, attempts);
+        if (sentAt != null) insert.set(ADMIN_NOTIFICATION_OUTBOX.SENT_AT, sentAt);
+        if (claimedUntil != null) insert.set(ADMIN_NOTIFICATION_OUTBOX.CLAIMED_UNTIL, claimedUntil);
+        if (lastErrorType != null) insert.set(ADMIN_NOTIFICATION_OUTBOX.LAST_ERROR_TYPE, lastErrorType);
+        insert.execute();
+        return id;
+    }
+
+    private boolean notificationExists(UUID id) {
+        return dsl.fetchExists(ADMIN_NOTIFICATION_OUTBOX, ADMIN_NOTIFICATION_OUTBOX.ID.eq(id));
     }
 
     @Test

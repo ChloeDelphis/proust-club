@@ -64,6 +64,8 @@ app:
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
   admin:
     mfa-encryption-key: ${ADMIN_MFA_ENCRYPTION_KEY:}
+    notifications:
+      retention-days: ${ADMIN_NOTIFICATION_RETENTION_DAYS:30}
 
 rate-limit:
   login:
