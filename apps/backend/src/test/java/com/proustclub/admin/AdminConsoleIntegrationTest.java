@@ -19,8 +19,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockHttpSession;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import dev.samstevens.totp.code.DefaultCodeGenerator;
 
@@ -99,6 +103,64 @@ class AdminConsoleIntegrationTest {
         assertThat(repository.claimNotification()).isEmpty();
         assertThat(dsl.select(ADMIN_NOTIFICATION_OUTBOX.LAST_ERROR_TYPE).from(ADMIN_NOTIFICATION_OUTBOX)
                 .where(ADMIN_NOTIFICATION_OUTBOX.ID.eq(claim.id())).fetchOne(0, String.class)).isEqualTo("TestMailFailure");
+    }
+
+    @Test
+    void concurrentWorkersCannotClaimTheSameNotification() throws Exception {
+        var eventId = dsl.insertInto(ADMIN_NOTIFICATION_OUTBOX)
+                .set(ADMIN_NOTIFICATION_OUTBOX.EVENT_TYPE, "REGISTRATION")
+                .returningResult(ADMIN_NOTIFICATION_OUTBOX.ID)
+                .fetchOne(ADMIN_NOTIFICATION_OUTBOX.ID);
+        var ready = new CountDownLatch(2);
+        var start = new CountDownLatch(1);
+
+        try (var workers = Executors.newFixedThreadPool(2)) {
+            var first = workers.submit(() -> claimWhenReleased(ready, start));
+            var second = workers.submit(() -> claimWhenReleased(ready, start));
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+
+            var firstClaim = first.get(5, TimeUnit.SECONDS);
+            var secondClaim = second.get(5, TimeUnit.SECONDS);
+
+            assertThat(java.util.stream.Stream.of(firstClaim, secondClaim)
+                    .filter(java.util.Optional::isPresent).count()).isEqualTo(1);
+            assertThat(java.util.stream.Stream.of(firstClaim, secondClaim)
+                    .flatMap(java.util.Optional::stream)
+                    .map(AdminDataRepository.AdminNotificationClaim::id))
+                    .containsExactly(eventId);
+            assertThat(dsl.select(ADMIN_NOTIFICATION_OUTBOX.ATTEMPTS)
+                    .from(ADMIN_NOTIFICATION_OUTBOX)
+                    .where(ADMIN_NOTIFICATION_OUTBOX.ID.eq(eventId))
+                    .fetchOne(ADMIN_NOTIFICATION_OUTBOX.ATTEMPTS)).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void expiredNotificationLeaseCanBeClaimedAgain() {
+        var eventId = UUID.randomUUID();
+        dsl.insertInto(ADMIN_NOTIFICATION_OUTBOX)
+                .set(ADMIN_NOTIFICATION_OUTBOX.ID, eventId)
+                .set(ADMIN_NOTIFICATION_OUTBOX.EVENT_TYPE, "REGISTRATION")
+                .set(ADMIN_NOTIFICATION_OUTBOX.CLAIMED_UNTIL, OffsetDateTime.now().minusMinutes(1))
+                .set(ADMIN_NOTIFICATION_OUTBOX.ATTEMPTS, 1)
+                .execute();
+
+        var claim = repository.claimNotification().orElseThrow();
+
+        assertThat(claim.id()).isEqualTo(eventId);
+        assertThat(claim.attempts()).isEqualTo(2);
+        assertThat(dsl.select(ADMIN_NOTIFICATION_OUTBOX.CLAIMED_UNTIL)
+                .from(ADMIN_NOTIFICATION_OUTBOX)
+                .where(ADMIN_NOTIFICATION_OUTBOX.ID.eq(eventId))
+                .fetchOne(ADMIN_NOTIFICATION_OUTBOX.CLAIMED_UNTIL)).isAfter(OffsetDateTime.now());
+    }
+
+    private java.util.Optional<AdminDataRepository.AdminNotificationClaim> claimWhenReleased(
+            CountDownLatch ready, CountDownLatch start) throws InterruptedException {
+        ready.countDown();
+        if (!start.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("Concurrent claim test timed out");
+        return repository.claimNotification();
     }
 
     @Test

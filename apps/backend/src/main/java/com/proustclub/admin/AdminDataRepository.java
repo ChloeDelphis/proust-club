@@ -4,6 +4,7 @@ import com.proustclub.admin.dashboard.AdminDailyMetric;
 import com.proustclub.admin.notifications.AdminNotificationPreferences;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -186,6 +187,7 @@ public class AdminDataRepository {
                 .limit(1).fetchOptional(USERS.EMAIL);
     }
 
+    @Transactional
     public java.util.Optional<AdminNotificationClaim> claimNotification() {
         var now = OffsetDateTime.now();
         var row = dsl.selectFrom(ADMIN_NOTIFICATION_OUTBOX)
