@@ -222,4 +222,19 @@ public class AdminDataRepository {
                 .set(ADMIN_NOTIFICATION_OUTBOX.LAST_ERROR_TYPE, errorType)
                 .where(ADMIN_NOTIFICATION_OUTBOX.ID.eq(claim.id())).execute();
     }
+
+    @Transactional
+    public int purgeCompletedNotificationsBefore(OffsetDateTime completedBefore, int batchSize) {
+        var expiredIds = dsl.select(ADMIN_NOTIFICATION_OUTBOX.ID)
+                .from(ADMIN_NOTIFICATION_OUTBOX)
+                // Uniquement les événements terminés (envoyés ou neutralisés). Les états
+                // en attente, en reprise ou à examiner conservent sent_at à NULL.
+                .where(ADMIN_NOTIFICATION_OUTBOX.SENT_AT.isNotNull()
+                        .and(ADMIN_NOTIFICATION_OUTBOX.SENT_AT.lt(completedBefore)))
+                .orderBy(ADMIN_NOTIFICATION_OUTBOX.SENT_AT.asc())
+                .limit(batchSize);
+        return dsl.deleteFrom(ADMIN_NOTIFICATION_OUTBOX)
+                .where(ADMIN_NOTIFICATION_OUTBOX.ID.in(expiredIds))
+                .execute();
+    }
 }
