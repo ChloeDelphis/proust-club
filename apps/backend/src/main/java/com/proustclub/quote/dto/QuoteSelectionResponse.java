@@ -1,5 +1,6 @@
 package com.proustclub.quote.dto;
 
+import com.proustclub.tag.dto.TagResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;

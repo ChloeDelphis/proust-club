@@ -1,5 +1,9 @@
 package com.proustclub.auth;
 
+
+import com.proustclub.auth.repository.UserRepository;
+import com.proustclub.auth.PasswordBreachChecker;
+import com.proustclub.common.security.SessionPersister;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proustclub.TestcontainersConfiguration;
 import com.proustclub.auth.dto.LoginRequest;

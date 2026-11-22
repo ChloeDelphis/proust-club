@@ -1,16 +1,20 @@
 package com.proustclub.auth;
 
+
+import com.proustclub.auth.model.AuthUser;
+import com.proustclub.auth.repository.UserRepository;
+import com.proustclub.common.security.ProustClubPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
-class AuthUserDetailsService implements UserDetailsService {
+public class AuthUserDetailsService implements UserDetailsService {
 
     private final UserRepository repository;
 
-    AuthUserDetailsService(UserRepository repository) {
+    public AuthUserDetailsService(UserRepository repository) {
         this.repository = repository;
     }
 
@@ -33,7 +37,7 @@ class AuthUserDetailsService implements UserDetailsService {
     // lookup — used to open a session without re-running AuthenticationManager. Callers on that
     // path never go through ProviderManager, so they must call eraseCredentials() themselves
     // (see PasswordResetController).
-    static ProustClubPrincipal toUserDetails(AuthUser user) {
+    public static ProustClubPrincipal toUserDetails(AuthUser user) {
         return new ProustClubPrincipal(user.uuid(), user.username(), user.email(), user.passwordHash(), user.role());
     }
 }

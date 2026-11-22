@@ -1,5 +1,11 @@
 package com.proustclub.auth;
 
+
+import com.proustclub.auth.model.AuthUser;
+import com.proustclub.auth.repository.UserRepository;
+import com.proustclub.auth.EmailVerificationService;
+import com.proustclub.auth.ApiException;
+import com.proustclub.auth.PasswordBreachChecker;
 import com.proustclub.auth.dto.RegisterRequest;
 import com.proustclub.admin.AdminDataRepository;
 import org.junit.jupiter.api.Test;

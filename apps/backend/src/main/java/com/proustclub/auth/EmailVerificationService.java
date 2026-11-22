@@ -1,5 +1,11 @@
 package com.proustclub.auth;
 
+
+import com.proustclub.auth.repository.OneTimeTokenRepository;
+import com.proustclub.auth.ApiException;
+import com.proustclub.auth.repository.OneTimeTokenTable;
+import com.proustclub.auth.repository.UserRepository;
+import com.proustclub.auth.SecureToken;
 import com.proustclub.mail.MailFailureLogger;
 import com.proustclub.mail.MailService;
 import org.slf4j.Logger;
@@ -12,7 +18,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Service
-class EmailVerificationService {
+public class EmailVerificationService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailVerificationService.class);
     private static final Duration TOKEN_TTL = Duration.ofHours(24);
@@ -22,7 +28,7 @@ class EmailVerificationService {
     private final UserRepository userRepository;
     private final MailService mailService;
 
-    EmailVerificationService(
+    public EmailVerificationService(
             OneTimeTokenRepository tokenRepository, UserRepository userRepository, MailService mailService
     ) {
         this.tokenRepository = tokenRepository;
@@ -35,7 +41,7 @@ class EmailVerificationService {
     // send a link for a token whose transaction later rolls back. Delivery remains best-effort:
     // account creation is not blocked by an SMTP failure.
     @Transactional
-    void sendVerification(UUID userId, String email) {
+    public void sendVerification(UUID userId, String email) {
         var rawToken = SecureToken.generate();
         tokenRepository.insert(TOKEN_TABLE, userId, SecureToken.hash(rawToken), Instant.now().plus(TOKEN_TTL));
         MailFailureLogger.sendBestEffort(
@@ -47,7 +53,7 @@ class EmailVerificationService {
     // caller already proved they own the account), so there's no anti-enumeration reason to stay
     // generic — a clear 409 is more useful than a silent success that resends nothing.
     @Transactional
-    void resendVerification(UUID userId) {
+    public void resendVerification(UUID userId) {
         var user = userRepository.findByUuid(userId)
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + userId));
         if (user.emailVerified()) {
@@ -60,7 +66,7 @@ class EmailVerificationService {
     }
 
     @Transactional
-    void confirmVerification(String rawToken) {
+    public void confirmVerification(String rawToken) {
         // Validated and burned in one statement — see OneTimeTokenRepository for why.
         var token = tokenRepository.consumeValidToken(TOKEN_TABLE, SecureToken.hash(rawToken))
                 .orElseThrow(ApiException::invalidOrExpiredVerificationToken);

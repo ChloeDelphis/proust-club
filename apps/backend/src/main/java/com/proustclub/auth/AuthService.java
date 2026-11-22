@@ -1,7 +1,14 @@
 package com.proustclub.auth;
 
+
+import com.proustclub.auth.repository.UserRepository;
+import com.proustclub.auth.EmailVerificationService;
+import com.proustclub.common.EmailNormalizer;
+import com.proustclub.auth.ApiException;
+import com.proustclub.auth.PasswordBreachChecker;
+import com.proustclub.auth.PasswordPolicy;
 import com.proustclub.auth.dto.RegisterRequest;
-import com.proustclub.auth.dto.UserResponse;
+import com.proustclub.common.dto.UserResponse;
 import com.proustclub.admin.AdminDataRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-class AuthService {
+public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
@@ -27,7 +34,7 @@ class AuthService {
     private final PasswordBreachChecker passwordBreachChecker;
     private final AdminDataRepository adminDataRepository;
 
-    AuthService(
+    public AuthService(
             UserRepository repository, PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager, EmailVerificationService emailVerificationService,
             PasswordBreachChecker passwordBreachChecker, AdminDataRepository adminDataRepository
@@ -49,7 +56,7 @@ class AuthService {
     // inner method would silently do nothing. checkNoCheapConflicts() below follows the same
     // pattern, and is called first by the controller so a request that's already invalid never
     // pays for this HTTP round-trip.
-    void checkPasswordNotCompromised(String password) {
+    public void checkPasswordNotCompromised(String password) {
         boolean compromised;
         try {
             compromised = passwordBreachChecker.isCompromised(password);
@@ -81,7 +88,7 @@ class AuthService {
     // network round-trip first. register() re-runs the same checks inside its own transaction
     // regardless (see below) — that's not new work caused by this pre-check, it was already
     // required to close the TOCTOU race on email uniqueness.
-    String checkNoCheapConflicts(RegisterRequest request) {
+    public String checkNoCheapConflicts(RegisterRequest request) {
         var normalizedEmail = EmailNormalizer.normalize(request.email());
         PasswordPolicy.requireDistinctFromIdentifiers(request.password(), null, normalizedEmail);
         requireEmailAvailable(normalizedEmail);
@@ -89,7 +96,7 @@ class AuthService {
     }
 
     @Transactional
-    UserResponse register(RegisterRequest request) {
+    public UserResponse register(RegisterRequest request) {
         var normalizedEmail = checkNoCheapConflicts(request);
 
         var passwordHash = passwordEncoder.encode(request.password());
@@ -114,7 +121,7 @@ class AuthService {
     }
 
     @Transactional(readOnly = true)
-    Authentication authenticate(String email, String password) {
+    public Authentication authenticate(String email, String password) {
         return reauthenticate(email, password);
     }
 
@@ -127,7 +134,7 @@ class AuthService {
     // AuthenticationManager, so an unknown email pays the exact same DaoAuthenticationProvider
     // timing-attack mitigation as a wrong password (see ADR-013).
     @Transactional(readOnly = true)
-    Authentication reauthenticate(String email, String password) {
+    public Authentication reauthenticate(String email, String password) {
         var normalizedEmail = EmailNormalizer.normalize(email);
         try {
             return authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(normalizedEmail, password));
@@ -137,7 +144,7 @@ class AuthService {
     }
 
     @Transactional(readOnly = true)
-    UserResponse currentUser(UUID userId) {
+    public UserResponse currentUser(UUID userId) {
         var user = repository.findByUuid(userId)
                 .orElseThrow(ApiException::invalidCredentials);
         return new UserResponse(user.uuid(), user.username(), user.email(), user.role(), user.emailVerified());

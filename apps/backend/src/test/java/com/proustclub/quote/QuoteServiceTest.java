@@ -1,7 +1,15 @@
 package com.proustclub.quote;
 
+import com.proustclub.quote.model.QuoteSelection;
+import com.proustclub.quote.model.QuoteTag;
+import com.proustclub.quote.model.TimelineEntry;
+import com.proustclub.quote.repository.QuoteRepository;
+import com.proustclub.quote.repository.QuoteTagRepository;
+import com.proustclub.quote.repository.QuoteTimelineRepository;
+import com.proustclub.tag.model.TagData;
+import com.proustclub.tag.TagRepository;
 import com.proustclub.quote.dto.CreateQuoteSelectionRequest;
-import com.proustclub.quote.dto.TagResponse;
+import com.proustclub.tag.dto.TagResponse;
 import com.proustclub.volume.VolumeService;
 import com.proustclub.volume.dto.VolumeResponse;
 import org.junit.jupiter.api.Test;

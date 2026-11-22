@@ -1,8 +1,11 @@
 package com.proustclub.auth;
 
+import com.proustclub.auth.ApiException;
+import com.proustclub.common.security.CurrentUser;
+import com.proustclub.common.security.SessionPersister;
 import com.proustclub.auth.dto.LoginRequest;
 import com.proustclub.auth.dto.RegisterRequest;
-import com.proustclub.auth.dto.UserResponse;
+import com.proustclub.common.dto.UserResponse;
 import com.proustclub.ratelimit.RateLimiter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,7 +36,7 @@ import java.util.List;
 @Tag(name = "Auth", description = "Account creation and session-based authentication.")
 @Validated
 @RestController
-class AuthController {
+public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
@@ -43,7 +46,7 @@ class AuthController {
     private final RateLimiter rateLimiter;
     private final CurrentUser currentUser;
 
-    AuthController(
+    public AuthController(
             AuthService service,
             SessionPersister sessionPersister,
             List<LogoutHandler> logoutHandlers,
@@ -64,7 +67,7 @@ class AuthController {
     @ApiResponse(responseCode = "422", description = "Password found in a known data breach", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/register", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    UserResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+    public UserResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         rateLimiter.checkRegisterByIp(httpRequest);
         service.checkNoCheapConflicts(request);
         service.checkPasswordNotCompromised(request.password());
@@ -78,7 +81,7 @@ class AuthController {
     @ApiResponse(responseCode = "200", description = "Session opened", content = @Content(schema = @Schema(implementation = UserResponse.class)))
     @ApiResponse(responseCode = "401", description = "Invalid email or password", content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(value = "/api/auth/login", produces = MediaType.APPLICATION_JSON_VALUE)
-    UserResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+    public UserResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         // Baseline instrumentation for credential-stuffing detection (Phase A1) — see
         // docs/features/rate-limiting.md "Login attempt baseline" for scope/rationale.
         Authentication authentication;
@@ -115,7 +118,7 @@ class AuthController {
     @ApiResponse(responseCode = "204", description = "Session invalidated")
     @PostMapping("/api/auth/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+    public void logout(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         logoutHandlers.forEach(handler -> handler.logout(httpRequest, httpResponse, authentication));
         log.info("User logged out");
@@ -125,7 +128,7 @@ class AuthController {
     @ApiResponse(responseCode = "200", description = "Authenticated user", content = @Content(schema = @Schema(implementation = UserResponse.class)))
     @ApiResponse(responseCode = "401", description = "No active session")
     @GetMapping(value = "/api/auth/me", produces = MediaType.APPLICATION_JSON_VALUE)
-    UserResponse me(Authentication authentication) {
+    public UserResponse me(Authentication authentication) {
         return service.currentUser(currentUser.resolveUuid(authentication));
     }
 }

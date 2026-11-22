@@ -1,5 +1,12 @@
 package com.proustclub.auth;
 
+
+import com.proustclub.auth.repository.OneTimeTokenRepository;
+import com.proustclub.auth.repository.OneTimeTokenTable;
+import com.proustclub.auth.ApiException;
+import com.proustclub.auth.model.AuthUser;
+import com.proustclub.auth.model.OneTimeToken;
+import com.proustclub.auth.repository.UserRepository;
 import com.proustclub.mail.MailService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
