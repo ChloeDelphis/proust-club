@@ -41,7 +41,7 @@ describe('RegisterPage', () => {
   it('affiche le conseil de création du mot de passe', () => {
     render(<RegisterPage />, { wrapper })
 
-    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Vous pouvez utiliser plusieurs mots choisis au hasard.')).toBeInTheDocument()
   })
 
   it('confirme la longueur du mot de passe dès que le minimum est atteint', async () => {
@@ -55,7 +55,7 @@ describe('RegisterPage', () => {
     await userEvent.type(passwordInput, '5')
 
     expect(screen.getByText('Longueur suffisante.')).toBeInTheDocument()
-    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Vous pouvez utiliser plusieurs mots choisis au hasard.')).toBeInTheDocument()
   })
 
   it('valide le format de l’adresse e-mail avant envoi', async () => {
@@ -108,7 +108,7 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
 
-    expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
+    expect(await screen.findByText('Ce mot de passe est trop facile à deviner. Veuillez en choisir un autre.')).toBeInTheDocument()
   })
 
   it('bloque la soumission si le mot de passe est identique à l’adresse e-mail', async () => {
