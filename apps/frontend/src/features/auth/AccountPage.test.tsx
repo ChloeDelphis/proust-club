@@ -38,7 +38,7 @@ const connectedUser: authApi.UserResponse = {
 async function openPasswordForm() {
   await userEvent.click(await screen.findByRole('button', { name: 'Modifier' }))
   expect(screen.queryByRole('heading', { name: 'Mot de passe' })).not.toBeInTheDocument()
-  expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+  expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Vous pouvez utiliser plusieurs mots choisis au hasard.')).toBeInTheDocument()
 }
 
 beforeEach(() => {
@@ -78,12 +78,12 @@ describe('connected', () => {
     await userEvent.type(passwordInput, '12345678901234')
 
     expect(screen.getByText('Longueur insuffisante.')).toBeInTheDocument()
-    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Vous pouvez utiliser plusieurs mots choisis au hasard.')).toBeInTheDocument()
 
     await userEvent.type(passwordInput, '5')
 
     expect(screen.getByText('Longueur suffisante.')).toBeInTheDocument()
-    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Une phrase fonctionne très bien.')).toBeInTheDocument()
+    expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Vous pouvez utiliser plusieurs mots choisis au hasard.')).toBeInTheDocument()
   })
 
   it('rejects a new password matching the username before calling the API', async () => {
@@ -138,7 +138,7 @@ describe('connected', () => {
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
+    expect(await screen.findByText('Ce mot de passe est trop facile à deviner. Veuillez en choisir un autre.')).toBeInTheDocument()
   })
 
   it('shows the identifier policy message returned by the server', async () => {

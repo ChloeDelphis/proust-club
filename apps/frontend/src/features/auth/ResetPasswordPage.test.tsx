@@ -94,7 +94,7 @@ describe('ResetPasswordPage', () => {
     await userEvent.type(screen.getByLabelText('Nouveau mot de passe'), 'nouveau-mot-de-passe-long')
     await userEvent.click(screen.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }))
 
-    expect(await screen.findByText('Ce mot de passe est trop commun. Choisissez-en un autre.')).toBeInTheDocument()
+    expect(await screen.findByText('Ce mot de passe est trop facile à deviner. Veuillez en choisir un autre.')).toBeInTheDocument()
   })
 
   it('affiche la règle d’identifiant sans présenter le lien comme expiré', async () => {

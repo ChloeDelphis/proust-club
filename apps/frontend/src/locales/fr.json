@@ -124,7 +124,7 @@
     "newListLabel": "Nom de la liste"
   },
   "auth": {
-    "passwordCompromisedError": "Ce mot de passe est trop commun. Choisissez-en un autre."
+    "passwordCompromisedError": "Ce mot de passe est trop facile à deviner. Veuillez en choisir un autre."
   },
   "emailValidation": {
     "formatError": "Adresse email invalide."
@@ -138,10 +138,10 @@
     "hidePassword": "Masquer le mot de passe"
   },
   "passwordValidation": {
-    "passphraseSuggestion": "une phrase fonctionne très bien.",
+    "passphraseSuggestion": "Vous pouvez utiliser plusieurs mots choisis au hasard.",
     "tooShortError": "{{label}} doit contenir au moins {{min}} caractères — $t(passwordValidation.passphraseSuggestion)",
     "defaultLabel": "Le mot de passe",
-    "minLengthHint": "Choisissez un mot de passe d’au moins {{min}} caractères. Une phrase fonctionne très bien.",
+    "minLengthHint": "Choisissez un mot de passe d’au moins {{min}} caractères. Vous pouvez utiliser plusieurs mots choisis au hasard.",
     "lengthInsufficient": "Longueur insuffisante.",
     "lengthSatisfied": "Longueur suffisante."
   },
