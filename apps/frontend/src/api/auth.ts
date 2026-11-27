@@ -1,4 +1,4 @@
-import { apiFetch } from './client'
+import { apiFetch, apiFetchWithHeaders } from './client'
 import type { operations } from './schema.generated'
 
 // UserResponse fields are non-optional here on purpose, unlike the generated schema — springdoc
@@ -91,6 +91,13 @@ export function confirmEmail(params: EmailVerificationConfirmParams, signal?: Ab
   })
 }
 
-export function resendEmailConfirmation(signal?: AbortSignal): Promise<void> {
-  return apiFetch<void>('/api/auth/email/confirm/resend', { method: 'POST', signal })
+export async function resendEmailConfirmation(
+  options: { onCooldown?: (seconds: number) => void; signal?: AbortSignal } = {},
+): Promise<void> {
+  const response = await apiFetchWithHeaders<void>(
+    '/api/auth/email/confirm/resend',
+    { method: 'POST', signal: options.signal },
+  )
+  const retryAfterHeader = response.headers.get('X-Email-Verification-Resend-After')
+  if (retryAfterHeader && /^\d+$/.test(retryAfterHeader)) options.onCooldown?.(Number(retryAfterHeader))
 }

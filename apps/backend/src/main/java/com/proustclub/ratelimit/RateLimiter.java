@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -87,8 +88,20 @@ public class RateLimiter {
         check(passwordChangeByAccount, userId.toString(), "password-change", "account");
     }
 
-    public void checkEmailVerificationResendByAccount(UUID userId) {
-        check(emailVerificationResendByAccount, userId.toString(), "email-verification-resend", "account");
+    public Optional<Duration> consumeEmailVerificationResendByAccount(UUID userId) {
+        var bucket = emailVerificationResendByAccount.get(userId.toString());
+        var probe = bucket.tryConsumeAndReturnRemaining(1);
+        if (!probe.isConsumed()) {
+            log.warn("rate_limit_exceeded endpoint={} keyType={}", "email-verification-resend", "account");
+            throw new RateLimitExceededException(Duration.ofNanos(probe.getNanosToWaitForRefill()));
+        }
+        if (probe.getRemainingTokens() > 0) return Optional.empty();
+
+        var nextTokenProbe = bucket.estimateAbilityToConsume(1);
+        var nanosToNextToken = nextTokenProbe.getNanosToWaitForRefill();
+        return nanosToNextToken > 0
+                ? Optional.of(Duration.ofNanos(nanosToNextToken))
+                : Optional.empty();
     }
 
     public void checkAccountDeletionByAccount(UUID userId) {

@@ -176,7 +176,7 @@ export default function QuoteSelection({
             setSaveError(t('quoteSelection.duplicateListNameError'))
             return
           }
-          showToast(t('quoteSelection.saveErrorToast'))
+          showToast(t('quoteSelection.saveErrorToast'), { variant: 'error' })
           updatePhase({ kind: 'selected', start, end })
         },
       },

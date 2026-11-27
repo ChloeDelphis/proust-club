@@ -7,6 +7,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import java.time.Duration;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RateLimiterTest {
@@ -103,10 +104,25 @@ class RateLimiterTest {
         var userId = UUID.randomUUID();
 
         limiter.checkPasswordChangeByAccount(userId);
-        limiter.checkEmailVerificationResendByAccount(userId); // separate bucket, does not throw
+        limiter.consumeEmailVerificationResendByAccount(userId); // separate bucket, does not throw
 
-        assertThatThrownBy(() -> limiter.checkEmailVerificationResendByAccount(userId))
+        assertThatThrownBy(() -> limiter.consumeEmailVerificationResendByAccount(userId))
                 .isInstanceOf(RateLimitExceededException.class);
+    }
+
+    @Test
+    void returnsDelayWhenEmailResendConsumesTheLastAvailableToken() {
+        var limiter = newLimiter(3, Duration.ofMinutes(15));
+        var userId = UUID.randomUUID();
+
+        assertThat(limiter.consumeEmailVerificationResendByAccount(userId)).isEmpty();
+        assertThat(limiter.consumeEmailVerificationResendByAccount(userId)).isEmpty();
+        var delay = limiter.consumeEmailVerificationResendByAccount(userId);
+
+        assertThat(delay).isPresent();
+        assertThat(delay.orElseThrow())
+                .isGreaterThan(Duration.ZERO)
+                .isLessThanOrEqualTo(Duration.ofMinutes(5));
     }
 
     @Test

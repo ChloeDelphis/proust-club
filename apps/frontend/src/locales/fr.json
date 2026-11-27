@@ -43,12 +43,17 @@
       "ariaLabel": "Pagination",
       "previous": "← Précédent",
       "next": "Suivant →"
+    },
+    "toast": {
+      "closeButton": "Fermer le message"
     }
   },
   "header": {
     "brand": "Proust Club",
     "tagline": "À la recherche du temps perdu",
     "accountLink": "Mon compte",
+    "accountLinkUnverified": "Mon compte, adresse e-mail à confirmer",
+    "emailNeedsConfirmation": "adresse e-mail à confirmer",
     "loggedInAs": "Connecté en tant que {{username}}",
     "logout": "Se déconnecter",
     "accountMenuLabel": "Ouvrir le menu du compte",
@@ -58,12 +63,13 @@
     "login": "Se connecter",
     "register": "Créer un compte"
   },
-  "emailVerificationBanner": {
+  "emailVerification": {
     "resentToast": "Email de confirmation renvoyé.",
     "errorAlreadyConfirmed": "Votre adresse email est déjà confirmée.",
-    "errorGeneric": "Le renvoi a échoué. Réessayez.",
-    "message": "Confirmez votre adresse email pour finaliser votre inscription — consultez votre boîte de réception.",
-    "resendButton": "Renvoyer l'email de confirmation"
+    "errorGeneric": "Le renvoi a échoué. Réessayez."
+  },
+  "emailVerificationReminder": {
+    "message": "Veuillez confirmer votre adresse e-mail."
   },
   "searchForm": {
     "placeholder": "Un mot ou une phrase…",
@@ -127,7 +133,7 @@
     "passwordCompromisedError": "Ce mot de passe est trop facile à deviner. Veuillez en choisir un autre."
   },
   "emailValidation": {
-    "formatError": "Adresse email invalide."
+    "formatError": "Saisissez une adresse e-mail valide avec un domaine complet."
   },
   "passwordIdentifierValidation": {
     "matchesIdentifierError": "Le mot de passe doit être différent des identifiants du compte.",
@@ -182,7 +188,12 @@
     "genericError": "Le changement de mot de passe a échoué. Réessayez.",
     "title": "Mon compte",
     "personalInformationTitle": "Informations du compte",
+    "emailConfirmationBenefit": "La confirmation de votre adresse e-mail vous permettra notamment de réinitialiser votre mot de passe en cas d'oubli.",
     "emailLabel": "Adresse e-mail",
+    "emailVerificationStatus": "À confirmer",
+    "emailVerificationCooldownMinutes": "Vous pourrez renvoyer un lien dans environ {{minutes}} min.",
+    "emailVerificationCooldownSeconds": "Vous pourrez renvoyer un lien dans {{seconds}} s.",
+    "resendConfirmationLink": "Renvoyer le lien",
     "securityTitle": "Sécurité",
     "passwordTitle": "Mot de passe",
     "editPasswordButton": "Modifier",

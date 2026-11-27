@@ -210,9 +210,9 @@ class AuthControllerTest {
     }
 
     @Test
-    void registerInvalidEmailReturnsBadRequest() throws Exception {
+    void registerEmailWithoutQualifiedDomainReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("marcel", "not-an-email", "hunter2222password")))
+                        .content(registerJson("marcel", "chloe@test", "hunter2222password")))
                 .andExpect(status().isBadRequest());
     }
 

@@ -25,7 +25,7 @@ export default function RegisterForm({ onSubmit }: RegisterFormProps) {
     e.preventDefault()
     const trimmedEmail = email.trim()
 
-    const emailError = emailFormatError(trimmedEmail)
+    const emailError = emailFormatError(trimmedEmail, true)
     if (emailError) {
       setError(emailError)
       return

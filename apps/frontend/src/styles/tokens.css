@@ -25,6 +25,7 @@
   --palette-accent-coral: #e78c6b;
   --palette-accent-lavender: #d5d0ef;
   --palette-accent-highlight: #F7E8D4;
+  --palette-notification: #BC874F;
   --palette-rule: #f3dec4;
   --palette-border-soft: #e6dce1;
   --palette-accent-quiet: #6b3852;
@@ -82,6 +83,7 @@
 
   /* Pale apricot highlight used for search matches and selected controls. */
   --color-highlight-bg: var(--palette-accent-highlight);
+  --color-notification: var(--palette-notification);
 
   --color-danger-text: var(--palette-danger);
   --color-danger-bg: var(--palette-danger-bg);
