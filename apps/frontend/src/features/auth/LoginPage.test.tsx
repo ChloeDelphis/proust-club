@@ -54,7 +54,7 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222')
     await userEvent.click(screen.getByRole('button', { name: 'Se connecter' }))
 
-    expect(await screen.findByText('Adresse email invalide.')).toBeInTheDocument()
+    expect(await screen.findByText('Saisissez une adresse e-mail valide avec un domaine complet.')).toBeInTheDocument()
     expect(authApi.login).not.toHaveBeenCalled()
   })
 

@@ -71,7 +71,7 @@ describe('ForgotPasswordPage', () => {
     await userEvent.type(screen.getByLabelText('Adresse e-mail'), 'marcel@example.com')
     await userEvent.click(screen.getByRole('button', { name: 'Envoyer le lien' }))
 
-    expect(await screen.findByText('Adresse email invalide.')).toBeInTheDocument()
+    expect(await screen.findByText('Saisissez une adresse e-mail valide avec un domaine complet.')).toBeInTheDocument()
   })
 
   it('affiche un message dédié en cas de rate limiting (429)', async () => {
