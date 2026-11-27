@@ -24,6 +24,7 @@ class RateLimitExceededException extends ErrorResponseException {
     public HttpHeaders getHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds));
+        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.RETRY_AFTER);
         return headers;
     }
 }

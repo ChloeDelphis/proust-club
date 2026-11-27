@@ -59,7 +59,7 @@ The `password-change`/`email-verification-resend`/`account-deletion` account buc
 
 ## Response on exceeding a limit
 
-`429 Too Many Requests`, `Retry-After` header (seconds, rounded up so the client never sees "0s" and retries immediately into another rejection), body via the same `ProblemDetail` shape used by every other error in this API. No field in the response reveals which bucket was hit or how many attempts remain — that information has no legitimate client use and only helps an attacker calibrate.
+`429 Too Many Requests`, `Retry-After` header (seconds, rounded up so the client never sees "0s" and retries immediately into another rejection), body via the same `ProblemDetail` shape used by every other error in this API. A successful `POST /api/auth/email/confirm/resend` also includes `X-Email-Verification-Resend-After` when it consumes the final currently available token; this gives the authenticated account page enough information to disable the resend action until the bucket can accept another request, without exposing a remaining-attempt count. A `429` still provides the authoritative retry delay if another request exhausts the bucket concurrently or from another tab.
 
 ---
 
