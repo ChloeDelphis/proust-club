@@ -32,10 +32,10 @@ export default function QuoteTagEditor({ quoteId, tags, onTagsChange }: QuoteTag
     onError: error => {
       if (error instanceof ApiError && error.status === 409) {
         queryClient.invalidateQueries({ queryKey: ['quotes'] })
-        showToast(t('tagPicker.maxTagsReached', { max: MAX_TAGS_PER_QUOTE }))
+        showToast(t('tagPicker.maxTagsReached', { max: MAX_TAGS_PER_QUOTE }), { variant: 'error' })
         return
       }
-      showToast(t('quoteTagEditor.addErrorToast'))
+      showToast(t('quoteTagEditor.addErrorToast'), { variant: 'error' })
     },
   })
 
@@ -46,7 +46,7 @@ export default function QuoteTagEditor({ quoteId, tags, onTagsChange }: QuoteTag
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
-      showToast(t('quoteTagEditor.removeErrorToast'))
+      showToast(t('quoteTagEditor.removeErrorToast'), { variant: 'error' })
     },
   })
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { ToastItem } from './Toast.types'
+import type { ToastItem, ToastOptions } from './Toast.types'
 import { ToastContext } from './ToastContext'
 import Toast from './Toast'
 import styles from './ToastProvider.module.css'
@@ -24,9 +24,9 @@ export default function ToastProvider({ children }: { children: ReactNode }) {
     timers.current.clear()
   }, [])
 
-  const showToast = useCallback((message: string) => {
+  const showToast = useCallback((message: string, options: ToastOptions = {}) => {
     const id = nextId.current++
-    setToasts(current => [...current, { id, message }])
+    setToasts(current => [...current, { id, message, ...options, variant: options.variant ?? 'success' }])
     const timer = setTimeout(() => dismissToast(id), DISPLAY_DURATION_MS)
     timers.current.set(id, timer)
   }, [dismissToast])

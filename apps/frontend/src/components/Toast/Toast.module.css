@@ -5,19 +5,48 @@
   gap: var(--space-3);
   max-width: min(32rem, calc(100vw - var(--space-12)));
   padding: var(--space-2-5) var(--space-4);
-  background: color-mix(in srgb, var(--color-selection-bg) 55%, var(--color-page-bg));
+  background: var(--color-page-bg);
   color: var(--color-accent-quiet);
   border: var(--border-width) solid var(--color-border-soft);
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   line-height: var(--line-height-normal);
   box-shadow: var(--shadow-modal-soft);
-  animation: toast-in var(--motion-duration-fast) var(--motion-ease-out);
+  animation: toast-in var(--motion-duration-hover) var(--motion-ease-out);
+}
+
+.isError {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border-color: var(--color-danger-border);
 }
 
 .message {
   min-width: 0;
   padding-top: var(--space-0-5);
+}
+
+.actionButton {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: var(--space-0-5) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-quiet);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  color: var(--color-accent-hover);
+}
+
+.actionButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent-quiet);
+  outline-offset: var(--space-1);
 }
 
 .closeButton {
@@ -55,6 +84,12 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(var(--space-1));
+    transform: translateY(var(--space-3));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    animation: none;
   }
 }

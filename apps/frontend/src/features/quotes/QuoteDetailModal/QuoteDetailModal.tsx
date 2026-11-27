@@ -38,7 +38,7 @@ export default function QuoteDetailModal({ quote, volumeTitle, onTagsChange, onC
       await queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
-      showToast(t('quoteDetailModal.commentSaveErrorToast'))
+      showToast(t('quoteDetailModal.commentSaveErrorToast'), { variant: 'error' })
     },
   })
 

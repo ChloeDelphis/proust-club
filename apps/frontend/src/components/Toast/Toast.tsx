@@ -11,8 +11,20 @@ export default function Toast({ toast, onDismiss }: ToastProps) {
   const { t } = useTranslation()
 
   return (
-    <div className={styles.root}>
+    <div className={`${styles.root} ${toast.variant === 'error' ? styles.isError : ''}`}>
       <span className={styles.message} role="status">{toast.message}</span>
+      {toast.action && (
+        <button
+          type="button"
+          className={styles.actionButton}
+          onClick={() => {
+            onDismiss()
+            toast.action?.onClick()
+          }}
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         type="button"
         className={styles.closeButton}

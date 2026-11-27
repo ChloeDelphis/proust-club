@@ -17,7 +17,7 @@ export default function QuoteCard({ quote, onOpenDetail }: QuoteCardProps) {
       queryClient.invalidateQueries({ queryKey: ['quotes'] })
     },
     onError: () => {
-      showToast(t('quoteCard.deleteErrorToast'))
+      showToast(t('quoteCard.deleteErrorToast'), { variant: 'error' })
     },
   })
 

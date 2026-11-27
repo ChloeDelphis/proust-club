@@ -36,6 +36,7 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
         error instanceof ApiError && error.status === 409
           ? t('tagFilterBar.duplicateNameError')
           : t('tagFilterBar.renameErrorToast'),
+        { variant: 'error' },
       )
     },
   })
@@ -54,7 +55,7 @@ export default function TagFilterBar({ scope, activeTagId, onSelectSavedScope, o
       if (wasActiveFilter) onSelectSavedScope()
     },
     onError: () => {
-      showToast(t('tagFilterBar.deleteErrorToast'))
+      showToast(t('tagFilterBar.deleteErrorToast'), { variant: 'error' })
     },
   })
 

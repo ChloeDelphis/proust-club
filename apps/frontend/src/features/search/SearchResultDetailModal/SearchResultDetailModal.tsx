@@ -195,7 +195,7 @@ export default function SearchResultDetailModal({
           handleClose()
         },
         onError: () => {
-          showToast(t('quoteSelection.saveErrorToast'))
+          showToast(t('quoteSelection.saveErrorToast'), { variant: 'error' })
           transitionFlow({ type: 'restoreSelection', selection: activeSelection })
         },
       },
