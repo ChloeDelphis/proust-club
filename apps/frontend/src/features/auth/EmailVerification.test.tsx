@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import EmailVerificationReminder from './EmailVerificationReminder'
 import EmailVerificationStatus from './EmailVerificationStatus'
 import AccountPageContent from './AccountPageContent'
+import useEmailVerificationReminderVisibility from './useEmailVerificationReminderVisibility'
 import { emailVerificationResendCooldownStorageKey } from './emailVerificationCooldown'
 import ToastProvider from '../../components/Toast/ToastProvider'
 import * as authApi from '../../api/auth'
@@ -40,6 +41,26 @@ beforeEach(() => {
 })
 
 describe('email verification reminders', () => {
+  it('reveals the shared reminder state after one second only for unverified users', () => {
+    vi.useFakeTimers()
+    const { result, unmount } = renderHook(() =>
+      useEmailVerificationReminderVisibility(mockUser, true, 123),
+    )
+
+    expect(result.current).toBe(false)
+    act(() => vi.advanceTimersByTime(1000))
+    expect(result.current).toBe(true)
+    unmount()
+
+    const verifiedUser = { ...mockUser, emailVerified: true }
+    const verified = renderHook(() =>
+      useEmailVerificationReminderVisibility(verifiedUser, true, 124),
+    )
+    expect(verified.result.current).toBe(false)
+    verified.unmount()
+    vi.useRealTimers()
+  })
+
   it('shows a temporary reminder for a signed-in unverified user', async () => {
     vi.mocked(authApi.getCurrentUser).mockResolvedValue(mockUser)
 
