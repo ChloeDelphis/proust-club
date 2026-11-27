@@ -1,9 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router'
 import type { ReactNode } from 'react'
 import EmailVerificationReminder from './EmailVerificationReminder'
 import EmailVerificationStatus from './EmailVerificationStatus'
+import AccountPageContent from './AccountPageContent'
+import { emailVerificationResendCooldownStorageKey } from './emailVerificationCooldown'
 import ToastProvider from '../../components/Toast/ToastProvider'
 import * as authApi from '../../api/auth'
 import { ApiError } from '../../api/client'
@@ -16,7 +19,9 @@ function wrapper({ children }: { children: ReactNode }) {
   })
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <MemoryRouter>{children}</MemoryRouter>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }
@@ -31,21 +36,23 @@ const mockUser: authApi.UserResponse = {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  localStorage.clear()
 })
 
 describe('email verification reminders', () => {
   it('shows a temporary reminder for a signed-in unverified user', async () => {
     vi.mocked(authApi.getCurrentUser).mockResolvedValue(mockUser)
 
-    render(<EmailVerificationReminder />, { wrapper })
+    render(<EmailVerificationReminder isVisible />, { wrapper })
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Votre adresse e-mail reste à confirmer.')
+    expect(await screen.findByRole('status', {}, { timeout: 2000 }))
+      .toHaveTextContent('Veuillez confirmer votre adresse e-mail.')
   })
 
   it('does not show a reminder when there is no unverified account', async () => {
     vi.mocked(authApi.getCurrentUser).mockResolvedValue({ ...mockUser, emailVerified: true })
 
-    render(<EmailVerificationReminder />, { wrapper })
+    render(<EmailVerificationReminder isVisible={false} />, { wrapper })
 
     await waitFor(() => expect(authApi.getCurrentUser).toHaveBeenCalled())
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
@@ -56,7 +63,7 @@ describe('email verification reminders', () => {
     vi.mocked(authApi.resendEmailConfirmation).mockResolvedValue(undefined)
     const user = userEvent.setup()
 
-    render(<EmailVerificationStatus />, { wrapper })
+    render(<EmailVerificationStatus cooldown={null} />, { wrapper })
 
     expect(await screen.findByText('À confirmer')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Renvoyer le lien' }))
@@ -72,7 +79,7 @@ describe('email verification reminders', () => {
     vi.mocked(authApi.resendEmailConfirmation).mockRejectedValue(new ApiError(409))
     const user = userEvent.setup()
 
-    render(<EmailVerificationStatus />, { wrapper })
+    render(<EmailVerificationStatus cooldown={null} />, { wrapper })
 
     await user.click(await screen.findByRole('button', { name: 'Renvoyer le lien' }))
 
@@ -89,7 +96,7 @@ describe('email verification reminders', () => {
     )
     const user = userEvent.setup()
 
-    render(<EmailVerificationStatus />, { wrapper })
+    render(<EmailVerificationStatus cooldown={null} />, { wrapper })
 
     const resendButton = await screen.findByRole('button', { name: 'Renvoyer le lien' })
     await user.click(resendButton)
@@ -97,5 +104,38 @@ describe('email verification reminders', () => {
 
     resolveResend()
     await waitFor(() => expect(resendButton).not.toBeDisabled())
+  })
+
+  it('keeps resend disabled after a reload while the server cooldown is active', async () => {
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue(mockUser)
+    vi.mocked(authApi.resendEmailConfirmation).mockImplementation(async options => {
+      options?.onCooldown?.(60)
+    })
+    const user = userEvent.setup()
+
+    const firstPage = render(<AccountPageContent currentUser={mockUser} />, { wrapper })
+    await user.click(await screen.findByRole('button', { name: 'Renvoyer le lien' }))
+
+    expect(await screen.findByText('Vous pourrez renvoyer un lien dans environ 1 min.')).toBeInTheDocument()
+    firstPage.unmount()
+
+    render(<AccountPageContent currentUser={mockUser} />, { wrapper })
+
+    expect(await screen.findByRole('button', { name: 'Renvoyer le lien' })).toBeDisabled()
+  })
+
+  it('syncs the resend cooldown from another tab', async () => {
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue(mockUser)
+    render(<AccountPageContent currentUser={mockUser} />, { wrapper })
+
+    const resendButton = await screen.findByRole('button', { name: 'Renvoyer le lien' })
+    const key = emailVerificationResendCooldownStorageKey(mockUser.uuid)
+    const cooldown = { until: Date.now() + 60_000, displaySeconds: 60 }
+    const newValue = JSON.stringify(cooldown)
+    localStorage.setItem(key!, newValue)
+
+    window.dispatchEvent(new StorageEvent('storage', { key, newValue, storageArea: localStorage }))
+
+    await waitFor(() => expect(resendButton).toBeDisabled())
   })
 })

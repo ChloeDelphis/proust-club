@@ -295,6 +295,24 @@
   border: 1px solid var(--color-page-bg);
   border-radius: var(--radius-full);
   background: var(--color-notification);
+  animation: verification-dot-in var(--motion-duration-hover) var(--motion-ease-out) both;
+}
+
+@keyframes verification-dot-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .accountTrigger > .verificationDot {
@@ -311,8 +329,18 @@
   height: 0.55rem;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .verificationDot {
+    animation: none;
+  }
+}
+
 .menuItem:visited {
   color: var(--color-accent);
+}
+
+.menuItem .verificationDot {
+  animation: none;
 }
 
 .menuItem[data-highlighted] {

@@ -69,7 +69,7 @@
     "errorGeneric": "Le renvoi a échoué. Réessayez."
   },
   "emailVerificationReminder": {
-    "message": "Votre adresse e-mail reste à confirmer."
+    "message": "Veuillez confirmer votre adresse e-mail."
   },
   "searchForm": {
     "placeholder": "Un mot ou une phrase…",
@@ -188,8 +188,11 @@
     "genericError": "Le changement de mot de passe a échoué. Réessayez.",
     "title": "Mon compte",
     "personalInformationTitle": "Informations du compte",
+    "emailConfirmationBenefit": "La confirmation de votre adresse e-mail vous permettra notamment de réinitialiser votre mot de passe en cas d'oubli.",
     "emailLabel": "Adresse e-mail",
     "emailVerificationStatus": "À confirmer",
+    "emailVerificationCooldownMinutes": "Vous pourrez renvoyer un lien dans environ {{minutes}} min.",
+    "emailVerificationCooldownSeconds": "Vous pourrez renvoyer un lien dans {{seconds}} s.",
     "resendConfirmationLink": "Renvoyer le lien",
     "securityTitle": "Sécurité",
     "passwordTitle": "Mot de passe",

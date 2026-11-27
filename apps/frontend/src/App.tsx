@@ -17,6 +17,7 @@ import GuestQuoteSaveProvider from './features/search/GuestQuoteSaveProvider'
 import VolumeSelectionProvider from './features/search/VolumeSelectionProvider'
 import AdminLoginPage from './features/admin/AdminLoginPage'
 import AdminDashboardPage from './features/admin/AdminDashboardPage'
+import useEmailVerificationReminderVisibility from './features/auth/useEmailVerificationReminderVisibility'
 
 const queryClient = new QueryClient()
 
@@ -30,10 +31,17 @@ function CurrentUserErrorNotice() {
 function AppChrome() {
   const { pathname } = useLocation()
   if (pathname.startsWith('/admin')) return null
+  return <PublicAppChrome />
+}
+
+function PublicAppChrome() {
+  const { data: user, isSuccess, dataUpdatedAt } = useCurrentUser()
+  const showEmailVerificationReminder = useEmailVerificationReminderVisibility(user, isSuccess, dataUpdatedAt)
+
   return <>
-    <Header />
+    <Header showEmailVerificationReminder={showEmailVerificationReminder} />
     <CurrentUserErrorNotice />
-    <EmailVerificationReminder />
+    <EmailVerificationReminder isVisible={showEmailVerificationReminder} />
   </>
 }
 

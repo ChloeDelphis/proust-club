@@ -52,17 +52,12 @@
   gap: var(--space-1) var(--space-4);
 }
 
-.informationLabel,
 .itemDescription,
 .email {
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   line-height: var(--line-height-normal);
-}
-
-.informationLabel {
-  grid-area: label;
 }
 
 .emailVerification {
@@ -76,8 +71,28 @@
 }
 
 .verificationLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   margin: 0;
   color: var(--color-text-muted);
+}
+
+.emailVerificationCooldown {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: var(--line-height-normal);
+}
+
+.verificationDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-page-bg);
+  border-radius: var(--radius-full);
+  background: var(--color-notification);
 }
 
 .verificationResend {
@@ -110,9 +125,13 @@
   grid-column: 1 / -1;
 }
 
-.informationLabel,
 .itemDescription {
   color: var(--color-text-muted);
+}
+
+.emailVerificationDescription {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
 }
 
 .email {
@@ -123,6 +142,7 @@
 
 .emailUnverified {
   color: var(--color-text-muted);
+  font-weight: 400;
 }
 
 .passwordRow {
@@ -143,6 +163,10 @@
   font-size: var(--text-sm);
   font-weight: 500;
   line-height: var(--line-height-normal);
+}
+
+.informationLabel {
+  grid-area: label;
 }
 
 .secondaryButton {

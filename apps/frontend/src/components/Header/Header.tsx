@@ -10,7 +10,7 @@ import VolumeList from '../../features/quotes/VolumeList/VolumeList'
 import { useVolumeSelection } from '../../features/search/useVolumeSelection'
 import styles from './Header.module.css'
 
-export default function Header() {
+export default function Header({ showEmailVerificationReminder = false }: { showEmailVerificationReminder?: boolean } = {}) {
   const { t } = useTranslation()
   const { data: user, isSuccess } = useCurrentUser()
   const queryClient = useQueryClient()
@@ -19,7 +19,7 @@ export default function Header() {
   const [isNavigationOpen, setIsNavigationOpen] = useState(false)
   const touchOrigin = useRef<{ x: number; y: number } | null>(null)
   const isSearchPage = location.pathname === '/'
-  const hasUnverifiedEmail = Boolean(user && !user.emailVerified)
+  const hasUnverifiedEmail = showEmailVerificationReminder && Boolean(user && !user.emailVerified)
   const accountMenuLabel = user?.username
     ? t('header.loggedInAs', { username: user.username })
     : t('header.accountMenuLabel')

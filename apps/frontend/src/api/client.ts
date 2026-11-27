@@ -23,7 +23,10 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null
 }
 
-export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiFetchWithHeaders<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ data: T; headers: Headers }> {
   const method = (init?.method ?? 'GET').toUpperCase()
   const headers = new Headers(init?.headers)
 
@@ -47,7 +50,12 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     throw new ApiError(response.status, code, retryAfterSeconds)
   }
   if (response.status === 204) {
-    return undefined as T
+    return { data: undefined as T, headers: response.headers }
   }
-  return response.json() as Promise<T>
+  return { data: await response.json() as T, headers: response.headers }
+}
+
+export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await apiFetchWithHeaders<T>(path, init)
+  return response.data
 }
