@@ -46,7 +46,10 @@
 
 .informationItem {
   display: grid;
-  gap: var(--space-1);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'label status' 'email status';
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
 }
 
 .informationLabel,
@@ -58,14 +61,68 @@
   line-height: var(--line-height-normal);
 }
 
+.informationLabel {
+  grid-area: label;
+}
+
+.emailVerification {
+  grid-area: status;
+  display: grid;
+  justify-items: start;
+  gap: var(--space-0-5);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  line-height: var(--line-height-snug);
+}
+
+.verificationLabel {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.verificationResend {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-quiet);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.verificationResend:hover {
+  color: var(--color-accent-hover);
+}
+
+.verificationResend:focus-visible {
+  outline: var(--border-width) solid var(--color-accent-quiet);
+  outline-offset: var(--space-1);
+}
+
+.verificationResend:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.verificationError {
+  grid-column: 1 / -1;
+}
+
 .informationLabel,
 .itemDescription {
   color: var(--color-text-muted);
 }
 
 .email {
+  grid-area: email;
   color: var(--color-text);
   overflow-wrap: anywhere;
+}
+
+.emailUnverified {
+  color: var(--color-text-muted);
 }
 
 .passwordRow {
@@ -170,6 +227,18 @@
 
   .passwordRow {
     align-items: flex-start;
+  }
+
+  .informationItem {
+    align-items: start;
+    gap: var(--space-3) var(--space-2);
+  }
+}
+
+@media (width < 30rem) {
+  .informationItem {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'label' 'email' 'status';
   }
 }
 

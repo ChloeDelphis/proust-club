@@ -8,7 +8,7 @@ import ResetPasswordPage from './features/auth/ResetPasswordPage'
 import ConfirmEmailPage from './features/auth/ConfirmEmailPage'
 import AccountPage from './features/auth/AccountPage'
 import Header from './components/Header/Header'
-import EmailVerificationBanner from './components/EmailVerificationBanner/EmailVerificationBanner'
+import EmailVerificationReminder from './features/auth/EmailVerificationReminder'
 import ToastProvider from './components/Toast/ToastProvider'
 import { useTranslation } from 'react-i18next'
 import { useCurrentUser } from './features/auth/useCurrentUser'
@@ -33,7 +33,7 @@ function AppChrome() {
   return <>
     <Header />
     <CurrentUserErrorNotice />
-    <EmailVerificationBanner />
+    <EmailVerificationReminder />
   </>
 }
 

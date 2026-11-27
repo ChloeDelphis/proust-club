@@ -1,11 +1,55 @@
 .root {
-  padding: var(--space-3) var(--space-5);
-  background: var(--color-surface-inverse);
-  color: var(--color-text-on-accent);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-md);
-  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: min(32rem, calc(100vw - var(--space-12)));
+  padding: var(--space-2-5) var(--space-4);
+  background: color-mix(in srgb, var(--color-selection-bg) 55%, var(--color-page-bg));
+  color: var(--color-accent-quiet);
+  border: var(--border-width) solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  line-height: var(--line-height-normal);
+  box-shadow: var(--shadow-modal-soft);
   animation: toast-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+
+.message {
+  min-width: 0;
+  padding-top: var(--space-0-5);
+}
+
+.closeButton {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2)) 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 500 var(--text-lg) / 1 var(--font-ui);
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: color-mix(in srgb, var(--color-accent-quiet) 8%, transparent);
+  color: var(--color-accent-quiet);
+}
+
+.closeButton:focus-visible {
+  outline: var(--border-width) solid var(--color-accent-quiet);
+  outline-offset: var(--border-width);
+}
+
+@media (width < 34rem) {
+  .root {
+    max-width: none;
+  }
 }
 
 @keyframes toast-in {

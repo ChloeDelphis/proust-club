@@ -19,6 +19,10 @@ export default function Header() {
   const [isNavigationOpen, setIsNavigationOpen] = useState(false)
   const touchOrigin = useRef<{ x: number; y: number } | null>(null)
   const isSearchPage = location.pathname === '/'
+  const hasUnverifiedEmail = Boolean(user && !user.emailVerified)
+  const accountMenuLabel = user?.username
+    ? t('header.loggedInAs', { username: user.username })
+    : t('header.accountMenuLabel')
 
   function handleDrawerTouchStart(event: React.TouchEvent<HTMLDivElement>) {
     const touch = event.touches[0]
@@ -98,17 +102,25 @@ export default function Header() {
           <Menu.Root>
             <Menu.Trigger
               className={user.username ? styles.avatar : styles.accountTrigger}
-              aria-label={user.username ? t('header.loggedInAs', { username: user.username }) : t('header.accountMenuLabel')}
+              aria-label={hasUnverifiedEmail
+                ? `${accountMenuLabel}, ${t('header.emailNeedsConfirmation')}`
+                : accountMenuLabel}
             >
               {user.username
                 ? user.username.charAt(0).toUpperCase()
                 : <span className={styles.accountIcon} aria-hidden="true" />}
+              {hasUnverifiedEmail && <span className={styles.verificationDot} aria-hidden="true" />}
             </Menu.Trigger>
             <Menu.Portal>
               <Menu.Positioner className={styles.accountMenuPositioner} align="end" sideOffset={8}>
                 <Menu.Popup className={styles.accountMenu}>
-                  <Menu.Item className={styles.menuItem} render={<Link to="/account" />}>
+                  <Menu.Item
+                    className={styles.menuItem}
+                    render={<Link to="/account" />}
+                    aria-label={hasUnverifiedEmail ? t('header.accountLinkUnverified') : undefined}
+                  >
                     {t('header.accountLink')}
+                    {hasUnverifiedEmail && <span className={styles.verificationDot} aria-hidden="true" />}
                   </Menu.Item>
                   <Menu.Item className={styles.menuItem} onClick={() => logoutMutation.mutate()}>
                     {t('header.logout')}

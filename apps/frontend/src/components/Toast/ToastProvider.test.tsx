@@ -47,7 +47,7 @@ describe('ToastProvider / useToast', () => {
     expect(screen.getByRole('status')).toBeInTheDocument()
 
     await act(async () => {
-      vi.advanceTimersByTime(3000)
+      vi.advanceTimersByTime(5000)
     })
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument()

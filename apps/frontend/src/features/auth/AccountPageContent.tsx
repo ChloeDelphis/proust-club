@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import type { UserResponse } from '../../api/auth'
 import AccountDeletionSection from './AccountDeletionSection'
 import AccountPasswordSection from './AccountPasswordSection'
+import EmailVerificationStatus from './EmailVerificationStatus'
 import styles from './AccountPage.module.css'
 
 export default function AccountPageContent({ currentUser }: { currentUser: UserResponse }) {
@@ -17,7 +18,10 @@ export default function AccountPageContent({ currentUser }: { currentUser: UserR
         <dl className={styles.informationList}>
           <div className={styles.informationItem}>
             <dt className={styles.informationLabel}>{t('accountPage.emailLabel')}</dt>
-            <dd className={styles.email}>{currentUser.email}</dd>
+            <dd className={`${styles.email} ${!currentUser.emailVerified ? styles.emailUnverified : ''}`}>
+              {currentUser.email}
+            </dd>
+            {!currentUser.emailVerified && <EmailVerificationStatus />}
           </div>
         </dl>
       </section>

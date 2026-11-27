@@ -51,7 +51,7 @@ export default function ConfirmEmailPage() {
     if (isSuccess) {
       // Confirming doesn't require a session, so there's no user to update by default — but if
       // this browser happens to be logged in as the account being confirmed, refresh emailVerified
-      // so the reminder banner disappears without waiting for a reload.
+      // so the account menu indicator and inline reminder disappear without waiting for a reload.
       queryClient.invalidateQueries({ queryKey: CURRENT_USER_QUERY_KEY })
     }
   }, [isSuccess, queryClient])

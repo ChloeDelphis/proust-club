@@ -58,10 +58,10 @@ describe('RegisterPage', () => {
     expect(screen.getByText('Choisissez un mot de passe d’au moins 15 caractères. Vous pouvez utiliser plusieurs mots choisis au hasard.')).toBeInTheDocument()
   })
 
-  it('valide le format de l’adresse e-mail avant envoi', async () => {
+  it('refuse un domaine e-mail incomplet avant envoi', async () => {
     render(<RegisterPage />, { wrapper })
 
-    await userEvent.type(screen.getByLabelText('Email'), 'pas-une-adresse')
+    await userEvent.type(screen.getByLabelText('Email'), 'chloe@test')
     await userEvent.type(screen.getByLabelText('Mot de passe'), 'hunter2222password')
     await userEvent.click(screen.getByRole('button', { name: 'Créer un compte' }))
 
